@@ -227,7 +227,18 @@ to be.
 >                    ,"||"]
 
 > binOpKeywordNames :: [String]
-> binOpKeywordNames = ["and", "or", "like"]
+> binOpKeywordNames = ["and", "or", "like"
+>                     ,"overlaps"]
+
+> binOpMultiKeywordNames :: [[String]]
+> binOpMultiKeywordNames = map words
+>     ["not like"
+>     ,"not similar"
+>     ,"is similar to"
+>     ,"is not similar to"
+>     ,"is distinct from"
+>     ,"is not distinct from"]
+
 
 used for between parsing
 
@@ -296,11 +307,16 @@ postgresql handles this
 >                 ,betweenSuffix e0
 >                 ,postfixOp e0
 >                 ] >>= trysuffix
->     opSymbol = choice (map (try . symbol) binOpSymbolNames
->                       ++ map (try . keyword)
->                          (if bExpr
->                           then binOpKeywordNamesNoAnd
->                           else binOpKeywordNames))
+>     opSymbol = choice
+>         (map (try . symbol) binOpSymbolNames
+>         ++ map (try . keywords) binOpMultiKeywordNames
+>         ++ map (try . keyword)
+>                (if bExpr
+>                 then binOpKeywordNamesNoAnd
+>                 else binOpKeywordNames))
+>     keywords ks = intercalate " " <$> keywords' ks
+>     keywords' [] = return []
+>     keywords' (k:ks) = (:) <$> keyword k <*> keywords' ks
 
 > sparens :: P ScalarExpr
 > sparens = Parens <$> parens scalarExpr'
