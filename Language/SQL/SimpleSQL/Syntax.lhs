@@ -18,6 +18,9 @@
 
 > data ScalarExpr = NumLit String
 >                 | StringLit String
+>                 | IntervalLit String -- text of interval
+>                               String -- units of interval
+>                               (Maybe Int) -- precision
 >                 | Iden String
 >                 | Iden2 String String
 >                 | Star

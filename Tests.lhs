@@ -40,8 +40,10 @@
 >      ,("3e3", NumLit "3e3")
 >      ,("3e+3", NumLit "3e+3")
 >      ,("3e-3", NumLit "3e-3")
->     ,("'string'", StringLit "string")
->     ,("'1'", StringLit "1")
+>      ,("'string'", StringLit "string")
+>      ,("'1'", StringLit "1")
+>      ,("interval '3' day", IntervalLit "3" "day" Nothing)
+>      ,("interval '3' day (3)", IntervalLit "3" "day" $ Just 3)
 >     ]
 
 > identifiers :: TestItem
@@ -413,14 +415,15 @@
 > tpchTests :: TestItem
 > tpchTests =
 >     Group "parse tpch"
->     $ map (ParseQueryExpr . snd) tpchQueries
+>     $ map (ParseQueryExpr . snd)
+>     $ take 1 tpchQueries
 
 > testData :: TestItem
 > testData =
 >     Group "parserTest"
 >     [scalarExprParserTests
 >     ,queryExprParserTests
->     --,tpchTests
+>     ,tpchTests
 >     ]
 
 

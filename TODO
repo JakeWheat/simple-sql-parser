@@ -3,7 +3,7 @@
 first release:
 
 complete the parsing for the tests in the Tests.lhs
-case insensivity
+case insensivity DONE?
 get tpch parsing
 check the pretty printer on the tpch queries
 add automated tests to cabal
@@ -20,7 +20,7 @@ dialect switching
 
 refactor the join parsing
 
-left factor parsing code
+left factor parsing code in remaining places
 
 reimplement the fixity thing natively
 
@@ -30,8 +30,6 @@ position annotation
 
 
 = sql support
-
-case insensitivity
 
 scalar function syntax:
 
@@ -54,7 +52,6 @@ escapes in string literals
 full number literals -> other bases?
 group by (), grouping sets(), cube, rollup
 lateral
-corresponding
 named windows
 table, values
 cte

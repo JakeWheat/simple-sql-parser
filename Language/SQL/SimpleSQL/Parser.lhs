@@ -14,6 +14,7 @@
 > import qualified Language.Haskell.Exts.Fixity as HSE
 > import Data.Maybe
 > import Data.List
+> import Data.Char
 
 > import Language.SQL.SimpleSQL.Syntax
 
@@ -112,9 +113,15 @@ digitse[+-]digits
 >         i <- int
 >         return (p ++ "e" ++ s ++ i)
 
+> interval :: P ScalarExpr
+> interval = try (keyword_ "interval") >>
+>     IntervalLit
+>     <$> stringLiteral
+>     <*> identifierString
+>     <*> optionMaybe (try $ parens (read <$> many1 digit))
 
 > literal :: P ScalarExpr
-> literal = number <|> estring
+> literal = number <|> estring <|> interval
 
 > identifierString :: P String
 > identifierString = do
@@ -242,9 +249,9 @@ to be.
 > typeName :: P TypeName
 > typeName = choice
 >     [TypeName "double precision"
->      <$ keyword_ "double" <* keyword_ "precision"
+>      <$ try (keyword_ "double" <* keyword_ "precision")
 >     ,TypeName "character varying"
->      <$ keyword_ "character" <* keyword_ "varying"
+>      <$ try (keyword_ "character" <* keyword_ "varying")
 >     ,TypeName <$> identifierString]
 
 > binOpSymbolNames :: [String]
@@ -579,7 +586,7 @@ attempt to fix the precedence and associativity. Doesn't work
 > symbol_ s = symbol s *> return ()
 
 > keyword :: String -> P String
-> keyword s = string s
+> keyword s = ((map toLower) <$> string s)
 >             <* notFollowedBy (char '_' <|> alphaNum)
 >             <* whiteSpace
 

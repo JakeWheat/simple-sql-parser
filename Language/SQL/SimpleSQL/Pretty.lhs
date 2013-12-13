@@ -23,6 +23,10 @@ back into SQL source text. It attempts to format the output nicely.
 > scalarExpr :: ScalarExpr -> Doc
 > scalarExpr (StringLit s) = quotes $ text s
 > scalarExpr (NumLit s) = text s
+> scalarExpr (IntervalLit v u p) =
+>     text "interval" <+> quotes (text v)
+>     <+> text u
+>     <+> maybe empty (parens . text . show ) p
 > scalarExpr (Iden i) = text i
 > scalarExpr (Iden2 q i) = text q <> text "." <> text i
 > scalarExpr Star = text "*"
