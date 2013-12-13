@@ -161,6 +161,19 @@ to be.
 >               return $ App i es
 >           _ -> return $ AggregateApp i d es (fromMaybe [] od)
 
+> windowSuffix :: ScalarExpr -> P ScalarExpr
+> windowSuffix e@(App f es) =
+>     choice [try (keyword_ "over")
+>             *> parens (WindowApp f es
+>                        <$> option [] partitionBy
+>                        <*> option [] orderBy)
+>            ,return e]
+>   where
+>     partitionBy = try (keyword_ "partition") >>
+>         keyword_ "by" >>
+>         commaSep1 scalarExpr'
+
+> windowSuffix e = return e
 
 > scase :: P ScalarExpr
 > scase =
@@ -308,7 +321,7 @@ postgresql handles this
 >                     ,extract
 >                     ,subquery
 >                     ,prefixUnaryOp
->                     ,try app
+>                     ,(try app) >>= windowSuffix
 >                     ,try dottedIden
 >                     ,identifier
 >                     ,sparens]

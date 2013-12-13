@@ -39,6 +39,15 @@ back into SQL source text. It attempts to format the output nicely.
 >                <+> commaSep (map scalarExpr es)
 >                <+> orderBy od)
 
+> scalarExpr (WindowApp f es pb od) =
+>     text f <> parens (commaSep $ map scalarExpr es)
+>     <+> text "over"
+>     <+> parens ((case pb of
+>                     [] -> empty
+>                     _ -> text "partition by"
+>                           <+> nest 4 (commaSep $ map scalarExpr pb))
+>                 <+> orderBy od)
+
 > scalarExpr (SpecialOp nm [a,b,c]) | nm `elem` ["between", "not between"] =
 >   sep [scalarExpr a
 >       ,text nm <+> scalarExpr b

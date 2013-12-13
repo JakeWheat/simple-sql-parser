@@ -184,14 +184,20 @@
 
 > windowFunctions :: TestItem
 > windowFunctions = Group "windowFunctions" $ map (uncurry TestScalarExpr)
->     [{-("max(a) over ()", NumLit "1")
->     ,("count(*) over ()", NumLit "1")
->     ,("max(a) over (partition by b)", NumLit "1")
->     ,("sum(a) over (order by b)", NumLit "1")
->     ,("sum(a) over (partition by b order by c)", NumLit "1")
->     ,("sum(a) over (partition by b order by c)", NumLit "1")
+>     [("max(a) over ()", WindowApp "max" [Iden "a"] [] [])
+>     ,("count(*) over ()", WindowApp "count" [Star] [] [])
+>     ,("max(a) over (partition by b)"
+>      ,WindowApp "max" [Iden "a"] [Iden "b"] [])
+>     ,("max(a) over (partition by b,c)"
+>      ,WindowApp "max" [Iden "a"] [Iden "b",Iden "c"] [])
+>     ,("sum(a) over (order by b)"
+>      ,WindowApp "sum" [Iden "a"] [] [(Iden "b", Asc)])
+>     ,("sum(a) over (order by b desc,c)"
+>      ,WindowApp "sum" [Iden "a"] [] [(Iden "b", Desc)
+>                                     ,(Iden "c", Asc)])
+>     ,("sum(a) over (partition by b order by c)"
+>      ,WindowApp "sum" [Iden "a"] [Iden "b"] [(Iden "c", Asc)])
 >      -- todo: check order by options, add frames
->      -}
 >     ]
 
 > parens :: TestItem
