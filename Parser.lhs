@@ -1,6 +1,8 @@
 
 
-> module Parser (parseQueryExpr, parseScalarExpr) where
+> module Parser (parseQueryExpr
+>               ,parseScalarExpr
+>               ,ParseError(..)) where
 
 > import Text.Groom
 > import Text.Parsec
@@ -48,9 +50,10 @@
 >   where
 >     letterOrUnderscore = char '_' <|> letter
 >     letterDigitOrUnderscore = char '_' <|> alphaNum
->     blacklist = ["as", "from", "where", "having", "group", "order"
+> blacklist :: [String]
+> blacklist = ["as", "from", "where", "having", "group", "order"
 >                 ,"inner", "left", "right", "full", "natural", "join"
->                 ,"on", "using", "when", "then", "case", "end"]
+>                 ,"on", "using", "when", "then", "case", "end", "order"]
 
 TODO: talk about what must be in the blacklist, and what doesn't need
 to be.
@@ -68,7 +71,7 @@ to be.
 
 
 > app :: P ScalarExpr
-> app = App <$> identifierString <*> betweenParens (commaSep scalarExpr')
+> app = App <$> identifierString <*> parens (commaSep scalarExpr')
 
 > scase :: P ScalarExpr
 > scase =
@@ -80,12 +83,14 @@ to be.
 >     swhen = keyword_ "when" *>
 >             ((,) <$> scalarExpr' <*> (keyword_ "then" *> scalarExpr'))
 
-> binOpNames :: [String]
-> binOpNames = ["=", "<=", ">="
->              ,"!=", "<>", "<", ">"
->              ,"and", "or"
->              ,"*", "/", "+", "-"
->              ,"||", "like"]
+> binOpSymbolNames :: [String]
+> binOpSymbolNames = ["=", "<=", ">="
+>                    ,"!=", "<>", "<", ">"
+>                    ,"*", "/", "+", "-"
+>                    ,"||"]
+
+> binOpKeywordNames :: [String]
+> binOpKeywordNames = ["and", "or", "like"]
 
 > unaryOp :: P ScalarExpr
 > unaryOp = makeOp <$> (try (keyword_ "not") *> scalarExpr)
@@ -100,14 +105,15 @@ to be.
 >                     ,try app
 >                     ,try dottedIdentifier
 >                     ,identifier
->                     ,parens]
+>                     ,sparens]
 >     trysuffix e = try (suffix e) <|> return e
 >     suffix e0 = (makeOp e0 <$> opSymbol <*> factor) >>= trysuffix
->     opSymbol = choice (map (try . symbol) binOpNames)
+>     opSymbol = choice (map (try . symbol) binOpSymbolNames
+>                       ++ map (try . keyword) binOpKeywordNames)
 >     makeOp e0 op e1 = Op op [e0,e1]
 
-> parens :: P ScalarExpr
-> parens = betweenParens scalarExpr'
+> sparens :: P ScalarExpr
+> sparens = Parens <$> parens scalarExpr'
 
 > toHaskell :: ScalarExpr -> HSE.Exp
 > toHaskell e = case e of
@@ -188,8 +194,8 @@ to be.
 > from :: P [TableRef]
 > from = option [] (try (keyword_ "from") *> commaSep1 tref)
 >   where
->     tref = choice [try (JoinQueryExpr <$> betweenParens queryExpr)
->                   ,JoinParens <$> betweenParens tref
+>     tref = choice [try (JoinQueryExpr <$> parens queryExpr)
+>                   ,JoinParens <$> parens tref
 >                   ,SimpleTableRef <$> identifierString]
 >            >>= optionSuffix join
 >            >>= optionSuffix alias
@@ -218,7 +224,7 @@ to be.
 >     joinExpr = choice
 >                [(Just . JoinUsing)
 >                  <$> (try (keyword_ "using")
->                       *> betweenParens (commaSep1 identifierString))
+>                       *> parens (commaSep1 identifierString))
 >                ,(Just . JoinOn) <$> (try (keyword_ "on") *> scalarExpr)
 >                ,return Nothing
 >                ]
@@ -275,21 +281,25 @@ to be.
 > optionSuffix :: (a -> P a) -> a -> P a
 > optionSuffix p a = option a (p a)
 
-> betweenParens :: P a -> P a
-> betweenParens = between (symbol_ "(") (symbol_ ")")
+> parens :: P a -> P a
+> parens = between (symbol_ "(") (symbol_ ")")
 
 > commaSep :: P a -> P [a]
 > commaSep = (`sepBy` symbol_ ",")
 
 
 > symbol :: String -> P String
-> symbol s = string s <* whiteSpace
+> symbol s = string s
+>            -- <* notFollowedBy (oneOf "+-/*<>=!|")
+>            <* whiteSpace
 
 > symbol_ :: String -> P ()
 > symbol_ s = symbol s *> return ()
 
 > keyword :: String -> P String
-> keyword s = string s <* whiteSpace
+> keyword s = string s
+>             <* notFollowedBy (char '_' <|> alphaNum)
+>             <* whiteSpace
 
 > keyword_ :: String -> P ()
 > keyword_ s = keyword s *> return ()

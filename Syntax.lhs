@@ -1,5 +1,6 @@
 
 > module Syntax (QueryExpr(..)
+>               ,makeSelect
 >               ,ScalarExpr(..)
 >               ,TableRef(..)
 >               ,JoinType(..)

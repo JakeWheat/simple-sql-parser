@@ -1,0 +1,68 @@
+add tests
+
+left factor parsing code
+
+implement pretty printer
+
+reimplement the fixity thing natively
+
+dialect switching
+
+fix lexing wrt suffixes
+
+position annotation
+
+emacs parse error formatting
+
+= sql support
+
+count(*)
+decimal literals, split string and number literals
+order by directions
+distinct/all
+limit,offset, top
+
+scalar function syntax:
+  aggregate app
+  window app
+  cast
+  exists, in subquery
+  scalar subquery
+  in list
+  any/some/all
+  between
+  is null/ is not null
+  review all ansi sql operators
+  interval literal
+  typed string lit?
+  placeholder/positional arg
+
+other missing operators
+  unary + -
+  row constructors?
+  extract
+  substring
+
+except, intersect, union
+
+
+review identifiers
+order by nulls first/last
+extend case
+more dots in identifiers
+escapes in string literals
+full number literals
+quoted identifiers
+group by (), grouping sets(), cube, rollup
+lateral
+corresponding
+named windows
+cte
+apply, pivot
+full tableref aliases
+collate
+
+within group aggregate syntax
+try to do full review of sql2003 query syntax
+
+maybe later: other dml
