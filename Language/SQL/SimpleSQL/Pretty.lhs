@@ -35,6 +35,11 @@ back into SQL source text. It attempts to format the output nicely.
 >       ,text nm <+> scalarExpr b
 >       ,text "and" <+> scalarExpr c]
 
+> scalarExpr (SpecialOp "extract" [a,n]) =
+>   text "extract" <> parens (scalarExpr a
+>                             <+> text "from"
+>                             <+> scalarExpr n)
+
 > scalarExpr (SpecialOp nm es) =
 >   text nm <+> parens (commaSep $ map scalarExpr es)
 

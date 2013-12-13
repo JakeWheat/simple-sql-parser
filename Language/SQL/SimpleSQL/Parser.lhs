@@ -172,6 +172,13 @@ to be.
 >     prefixCast = try (CastOp <$> typeName
 >                              <*> stringLiteral)
 
+> extract :: P ScalarExpr
+> extract = try (keyword_ "extract") >>
+>     parens (makeOp <$> identifierString
+>                    <*> (keyword_ "from"
+>                         *> scalarExpr'))
+>   where makeOp n e = SpecialOp "extract" [Iden n, e]
+
 > inSuffix :: ScalarExpr -> P ScalarExpr
 > inSuffix e =
 >     In
@@ -289,7 +296,7 @@ postgresql handles this
 >     factor = choice [literal
 >                     ,scase
 >                     ,cast
->                     --,extract
+>                     ,extract
 >                     ,subquery
 >                     ,prefixUnaryOp
 >                     ,try app
