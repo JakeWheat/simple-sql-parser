@@ -6,10 +6,12 @@
 > import Language.SQL.SimpleSQL.Parser
 > import qualified Test.HUnit as H
 > import Control.Monad
+> import Tpch
 
 > data TestItem = Group String [TestItem]
 >               | TestScalarExpr String ScalarExpr
 >               | TestQueryExpr String QueryExpr
+>               | ParseQueryExpr String
 >                 deriving (Eq,Show)
 
 > scalarExprParserTests :: TestItem
@@ -21,6 +23,9 @@
 >     ,caseexp
 >     ,operators
 >     ,parens
+>     ,subqueries
+>     ,aggregates
+>     ,windowFunctions
 >     ]
 
 > literals :: TestItem
@@ -76,9 +81,98 @@
 >     ]
 
 > operators :: TestItem
-> operators = Group "operators" $ map (uncurry TestScalarExpr)
+> operators = Group "operators"
+>     [binaryOperators
+>     ,unaryOperators
+>     ,casts
+>     ,miscOps]
+
+> binaryOperators :: TestItem
+> binaryOperators = Group "binaryOperators" $ map (uncurry TestScalarExpr)
 >     [("a + b", Op "+" [Iden "a", Iden "b"])
+>      -- sanity check fixities
+>      -- todo: add more fixity checking
+>     ,("a + b * c"
+>      ,Op "+" [Iden "a"
+>              ,Op "*" [Iden "b"
+>                      ,Iden "c"]])
+>     ,("a * b + c"
+>      ,Op "+" [Op "*" [Iden "a", Iden "b"]
+>              ,Iden "c"])
+>     ]
+
+> unaryOperators :: TestItem
+> unaryOperators = Group "unaryOperators" $ map (uncurry TestScalarExpr)
+>     [("not a", Op "not" [Iden "a"])
 >     ,("not not a", Op "not" [Op "not" [Iden "a"]])
+>     ,("+a", Op "+" [Iden "a"])
+>     ,("-a", Op "-" [Iden "a"])
+>     ]
+
+
+> casts :: TestItem
+> casts = Group "operators" $ map (uncurry TestScalarExpr)
+>     [("cast('1' as int)"
+>      ,Cast (StringLit "1") $ TypeName "int")
+>     ,("int '3'"
+>      ,CastOp "1" $ TypeName "int")
+>     ,("cast('1' as double precision)"
+>      ,Cast (StringLit "1") $ TypeName "double precision")
+>     ,("double precision '3'"
+>      ,CastOp "1" $ TypeName "double precision")
+>     ]
+
+> subqueries :: TestItem
+> subqueries = Group "unaryOperators" $ map (uncurry TestScalarExpr)
+>     [("exists (select * from t)", Op "not" [Iden "a"])
+>     ,("(select a from t)", Op "not" [Op "not" [Iden "a"]])
+>     ,("in (select a from t)", Op "+" [Iden "a"])
+>     ,("not in (select a from t)", Op "+" [Iden "a"])
+>     ,("a > ALL (select a from t)", Op "-" [Iden "a"])
+>     ,("a > SOME (select a from t)", Op "-" [Iden "a"])
+>     ,("a > ANY (select a from t)", Op "-" [Iden "a"])
+>     ]
+
+> miscOps :: TestItem
+> miscOps = Group "unaryOperators" $ map (uncurry TestScalarExpr)
+>     [("a in (1,2,3)", Op "not" [Iden "a"])
+>     ,("a between b and c", Op "not" [])
+>     ,("a not between b and c", Op "not" [])
+>     ,("a is null", Op "not" [])
+>     ,("a is not null", Op "not" [])
+>     ,("a is distinct from b", Op "not" [])
+>     ,("a is not distinct from b", Op "not" [])
+>     ,("a is true", Op "not" [])
+>     ,("a s not true", Op "not" [])
+>     ,("a is false", Op "not" [])
+>     ,("a is not false", Op "not" [])
+>     ,("a is unknown", Op "not" [])
+>     ,("a is not unknown", Op "not" [])
+>     ,("a like b", Op "not" [])
+>     ,("a not like b", Op "not" [])
+>     ,("a is similar to b", Op "not" [])
+>     ,("a is not similar to b", Op "not" [])
+>     ,("a overlaps b", Op "not" [])
+>     ,("extract(day from t)", Op "not" [])
+>     ]
+
+> aggregates :: TestItem
+> aggregates = Group "aggregates" $ map (uncurry TestScalarExpr)
+>     [("count(*)",NumLit "1")
+>     ,("sum(a order by a)",NumLit "1")
+>     ,("sum(all a)",NumLit "1")
+>     ,("count(distinct a)",NumLit "1")
+>     ]
+
+> windowFunctions :: TestItem
+> windowFunctions = Group "windowFunctions" $ map (uncurry TestScalarExpr)
+>     [("max(a) over ()", NumLit "1")
+>     ,("count(*) over ()", NumLit "1")
+>     ,("max(a) over (partition by b)", NumLit "1")
+>     ,("sum(a) over (order by b)", NumLit "1")
+>     ,("sum(a) over (partition by b order by c)", NumLit "1")
+>     ,("sum(a) over (partition by b order by c)", NumLit "1")
+>      -- todo: check order by options, add frames
 >     ]
 
 > parens :: TestItem
@@ -97,6 +191,7 @@
 >     ,having
 >     ,orderBy
 >     ,limit
+>     ,combos
 >     ,fullQueries
 >     ]
 
@@ -242,6 +337,16 @@
 >              ,qeLimit = l
 >              ,qeOffset = o}
 
+> combos :: TestItem
+> combos = Group "combos" $ map (uncurry TestQueryExpr)
+>     [("select a from t union select b from u"
+>      ,makeSelect)
+>     ,("select a from t intersect select b from u"
+>      ,makeSelect)
+>     ,("select a from t except select b from u"
+>      ,makeSelect)
+>     ]
+
 > fullQueries :: TestItem
 > fullQueries = Group "queries" $ map (uncurry TestQueryExpr)
 >     [("select count(*) from t"
@@ -270,11 +375,17 @@
 >      )
 >     ]
 
+> tpchTests :: TestItem
+> tpchTests =
+>     Group "parse tpch"
+>     $ map (ParseQueryExpr . snd) tpchQueries
+
 > testData :: TestItem
 > testData =
 >     Group "parserTest"
 >     [scalarExprParserTests
->     ,queryExprParserTests]
+>     ,queryExprParserTests
+>     ,tpchTests]
 
 
 > runTests :: IO ()
@@ -287,6 +398,8 @@
 >     toTest parseScalarExpr prettyScalarExpr str expected
 > itemToTest (TestQueryExpr str expected) =
 >     toTest parseQueryExpr prettyQueryExpr str expected
+> itemToTest (ParseQueryExpr str) =
+>     toPTest parseQueryExpr prettyQueryExpr str
 
 > toTest :: (Eq a, Show a, Show e) =>
 >           (String -> Maybe (Int,Int) -> String -> Either e a)
@@ -305,3 +418,19 @@
 >                 case egot' of
 >                     Left e' -> H.assertFailure $ "pp roundtrip " ++ show e'
 >                     Right got' -> H.assertEqual "pp roundtrip" expected got'
+
+> toPTest :: (Eq a, Show a, Show e) =>
+>           (String -> Maybe (Int,Int) -> String -> Either e a)
+>        -> (a -> String)
+>        -> String
+>        -> H.Test
+> toPTest parser pp str = H.TestLabel str $ H.TestCase $ do
+>         let egot = parser "" Nothing str
+>         case egot of
+>             Left e -> H.assertFailure $ show e
+>             Right got -> do
+>                 let str' = pp got
+>                 let egot' = parser "" Nothing str'
+>                 case egot' of
+>                     Left e' -> H.assertFailure $ "pp roundtrip " ++ show e'
+>                     Right got' -> return ()

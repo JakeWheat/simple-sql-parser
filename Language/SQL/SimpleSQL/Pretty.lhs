@@ -47,6 +47,13 @@ back into SQL source text. It attempts to format the output nicely.
 >                     ,text "then" <+> scalarExpr t1]
 >     e el = text "else" <+> scalarExpr el
 > scalarExpr (Parens e) = parens $ scalarExpr e
+> scalarExpr (Cast e (TypeName tn)) =
+>     text "cast" <> parens (sep [scalarExpr e
+>                                ,text "as"
+>                                ,text tn])
+
+> scalarExpr (CastOp s (TypeName tn)) =
+>     text tn <+> quotes (text s)
 
 = query expressions
 

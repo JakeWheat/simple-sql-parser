@@ -1,9 +1,18 @@
 
-check tpch
 
-add tests to cabal
+first release
 
-haddock
+1. utility function to parse some sql and print the context of the
+   error using the position
+2. complete the parsing for the tests in the Tests.lhs
+3. get tpch parsing
+4. add tests to cabal
+5. do code documentation and haddock
+
+
+----
+
+Later general tasks:
 
 dialect switching
 
@@ -17,46 +26,28 @@ fix lexing wrt suffixes 1/2 done
 
 position annotation
 
-emacs parse error formatting
-
 
 = sql support
 
 scalar function syntax:
-  cast
-  exists, in subquery
-  scalar subquery
-  in list
-  any/some/all
-  between
-  is null/ is not null
-  interval literal
-  typed string lit
 
-  aggregate app
-  window app
+standard interval literal
+
   review all ansi sql operators
   placeholder/positional arg
 
 other missing operators
-  extract
-  substring
-  unary + -
-
-  row constructors?
-
-except, intersect, union
-
--- add docs and haddocks at this point
+  row constructors -> needed for stuff like
+  'where (a,b) = any (select a,b from t)'
 
 
-review identifiers
+review allowed identifier syntax
+  add quoted identifers
+more dots in identifiers
 order by nulls first/last
 extend case
-more dots in identifiers
 escapes in string literals
-full number literals
-quoted identifiers
+full number literals -> other bases?
 group by (), grouping sets(), cube, rollup
 lateral
 corresponding
@@ -68,6 +59,20 @@ full tableref aliases
 collate
 within group aggregate syntax
 
+support the ansi version for limit and offset, plus review other
+   dialects
+
 try to do full review of sql2003 query syntax
+
+make ansi dialect which only supports ansi sql. Maybe there is a use
+   for a separate SQL 92, 99 and 2003 dialects?
+
+other dialect targets:
+postgres
+oracle
+teradata
+ms sql server
+mysql?
+db2?
 
 maybe later: other dml

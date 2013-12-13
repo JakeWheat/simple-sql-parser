@@ -1,13 +1,14 @@
 
 > module Language.SQL.SimpleSQL.Syntax
->     (QueryExpr(..)
+>     (ScalarExpr(..)
+>     ,TypeName(..)
+>     ,QueryExpr(..)
 >     ,makeSelect
->     ,ScalarExpr(..)
+>     ,Duplicates(..)
+>     ,Direction(..)
 >     ,TableRef(..)
 >     ,JoinType(..)
 >     ,JoinCondition(..)
->     ,Duplicates(..)
->     ,Direction(..)
 >     ) where
 
 
@@ -23,7 +24,11 @@
 >                        [(ScalarExpr,ScalarExpr)] -- when branches
 >                        (Maybe ScalarExpr) -- else value
 >                 | Parens ScalarExpr
+>                 | Cast ScalarExpr TypeName
+>                 | CastOp String TypeName
 >                   deriving (Eq,Show)
+
+> data TypeName = TypeName String deriving (Eq,Show)
 
 > data QueryExpr
 >     = Select
