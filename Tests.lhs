@@ -365,11 +365,14 @@
 > combos :: TestItem
 > combos = Group "combos" $ map (uncurry TestQueryExpr)
 >     [("select a from t union select b from u"
->      ,CombineQueryExpr ms1 Union ms2)
+>      ,CombineQueryExpr ms1 Union All Respectively ms2)
 >     ,("select a from t intersect select b from u"
->      ,CombineQueryExpr ms1 Intersect ms2)
->     ,("select a from t except select b from u"
->      ,CombineQueryExpr ms1 Except ms2)
+>      ,CombineQueryExpr ms1 Intersect All Respectively ms2)
+>     ,("select a from t except all select b from u"
+>      ,CombineQueryExpr ms1 Except All Respectively ms2)
+>     ,("select a from t union distinct corresponding \
+>       \select b from u"
+>      ,CombineQueryExpr ms1 Union Distinct Corresponding ms2)
 >     ]
 >   where
 >     ms1 = makeSelect

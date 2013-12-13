@@ -530,9 +530,13 @@ attempt to fix the precedence and associativity. Doesn't work
 > queryExprSuffix qe =
 >     choice [CombineQueryExpr qe
 >             <$> try (choice
->                      [Union <$ keyword "union"
->                      ,Intersect <$ keyword "intersect"
->                      ,Except <$ keyword "except"])
+>                      [Union <$ keyword_ "union"
+>                      ,Intersect <$ keyword_ "intersect"
+>                      ,Except <$ keyword_ "except"])
+>             <*> (fromMaybe All <$> duplicates)
+>             <*> (option Respectively
+>                  $ try (Corresponding
+>                         <$ keyword_ "corresponding"))
 >             <*> queryExpr
 >            ,return qe]
 

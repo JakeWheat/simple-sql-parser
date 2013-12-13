@@ -119,12 +119,18 @@ back into SQL source text. It attempts to format the output nicely.
 >       ,maybeScalarExpr "limit" lm
 >       ,maybeScalarExpr "offset" off
 >       ]
-> queryExpr (CombineQueryExpr q1 ct q2) =
+> queryExpr (CombineQueryExpr q1 ct d c q2) =
 >   sep [queryExpr q1
->       ,text $ case ct of
->            Union -> "union"
->            Intersect -> "intersect"
->            Except -> "except"
+>       ,text (case ct of
+>                 Union -> "union"
+>                 Intersect -> "intersect"
+>                 Except -> "except")
+>        <+> case d of
+>                All -> empty
+>                Distinct -> text "distinct"
+>        <+> case c of
+>                Corresponding -> text "corresponding"
+>                Respectively -> empty
 >       ,queryExpr q2]
 
 > selectList :: [(Maybe String, ScalarExpr)] -> Doc

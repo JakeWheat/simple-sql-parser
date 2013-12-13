@@ -9,6 +9,7 @@
 >     ,Duplicates(..)
 >     ,Direction(..)
 >     ,CombineOp(..)
+>     ,Corresponding(..)
 >     ,TableRef(..)
 >     ,JoinType(..)
 >     ,JoinCondition(..)
@@ -69,6 +70,8 @@
 >     | CombineQueryExpr
 >       {qe1 :: QueryExpr
 >       ,qeCombOp :: CombineOp
+>       ,qeDuplicates :: Duplicates
+>       ,qeCorresponding :: Corresponding
 >       ,qe2 :: QueryExpr
 >       }
 >       deriving (Eq,Show)
@@ -76,6 +79,7 @@
 > data Duplicates = Distinct | All deriving (Eq,Show)
 > data Direction = Asc | Desc deriving (Eq,Show)
 > data CombineOp = Union | Except | Intersect deriving (Eq,Show)
+> data Corresponding = Corresponding | Respectively deriving (Eq,Show)
 
 > makeSelect :: QueryExpr
 > makeSelect = Select {qeDuplicates = All
