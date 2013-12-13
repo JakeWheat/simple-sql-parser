@@ -2,10 +2,8 @@
 
 first release:
 
-complete the parsing for the tests in the Tests.lhs
-case insensivity DONE?
-get tpch parsing
 check the pretty printer on the tpch queries
+fix the fixity issue
 add automated tests to cabal
 do code documentation and haddock
   check the order of exports, imports and functions/cases in the files
@@ -26,14 +24,12 @@ reimplement the fixity thing natively
 
 fix lexing wrt suffixes 1/2 done
 
-position annotation
+position annotation?
 
 
 = sql support
 
 scalar function syntax:
-
-standard interval literal
 
   review all ansi sql operators
   placeholder/positional arg
@@ -54,9 +50,7 @@ group by (), grouping sets(), cube, rollup
 lateral
 named windows
 table, values
-cte
 apply, pivot
-full tableref aliases
 collate
 within group aggregate syntax
 

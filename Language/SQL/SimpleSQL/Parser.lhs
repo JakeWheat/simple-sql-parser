@@ -59,6 +59,7 @@
 >                   ,pePosition :: (Int,Int)
 >                   ,peFormattedError :: String
 >                   } deriving (Eq,Show)
+
 > convParseError :: String -> P.ParseError -> ParseError
 > convParseError src e =
 >     ParseError
@@ -70,7 +71,8 @@
 >   where
 >     p = errorPos e
 
-format the error more nicely: emacs format for positioning, plus context
+format the error more nicely: emacs format for positioning, plus
+context
 
 > formatError :: String -> P.ParseError -> String
 > formatError src e =
