@@ -9,10 +9,10 @@
 >     ) where
 
 
-> data ScalarExpr = NumLiteral String
->                 | StringLiteral String
->                 | Identifier String
->                 | Identifier2 String String
+> data ScalarExpr = NumLit String
+>                 | StringLit String
+>                 | Iden String
+>                 | Iden2 String String
 >                 | Star
 >                 | Star2 String
 >                 | App String [ScalarExpr]

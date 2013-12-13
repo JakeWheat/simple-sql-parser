@@ -31,13 +31,35 @@
 = scalar expressions
 
 > estring :: P ScalarExpr
-> estring = StringLiteral <$> (symbol_ "'" *> manyTill anyChar (symbol_ "'"))
+> estring = StringLit <$> (symbol_ "'" *> manyTill anyChar (symbol_ "'"))
 
-> integer :: P ScalarExpr
-> integer = NumLiteral <$> (many1 digit <* whiteSpace)
+digits
+digits.[digits][e[+-]digits]
+[digits].digits[e[+-]digits]
+digitse[+-]digits
+
+> number :: P ScalarExpr
+> number =
+>     NumLit <$> (choice [int
+>                         >>= optionSuffix dot
+>                         >>= optionSuffix fracts
+>                         >>= optionSuffix expon
+>                        ,fract "" >>= optionSuffix expon]
+>                 <* whiteSpace)
+>   where
+>     int = many1 digit
+>     fract p = dot p >>= fracts
+>     dot p = ((p++) . (:[])) <$> char '.'
+>     fracts p = (p++) <$> int
+>     expon p = do
+>         void $ char 'e'
+>         s <- option "" ((:[]) <$> (char '+' <|> char '-'))
+>         i <- int
+>         return (p ++ "e" ++ s ++ i)
+
 
 > literal :: P ScalarExpr
-> literal = integer <|> estring
+> literal = number <|> estring
 
 > identifierString :: P String
 > identifierString = do
@@ -57,10 +79,10 @@ TODO: talk about what must be in the blacklist, and what doesn't need
 to be.
 
 > identifier :: P ScalarExpr
-> identifier = Identifier <$> identifierString
+> identifier = Iden <$> identifierString
 
-> dottedIdentifier :: P ScalarExpr
-> dottedIdentifier = Identifier2 <$> identifierString
+> dottedIden :: P ScalarExpr
+> dottedIden = Iden2 <$> identifierString
 >                                <*> (symbol "." *> identifierString)
 
 > star :: P ScalarExpr
@@ -104,7 +126,7 @@ to be.
 >                     ,scase
 >                     ,unaryOp
 >                     ,try app
->                     ,try dottedIdentifier
+>                     ,try dottedIden
 >                     ,identifier
 >                     ,sparens]
 >     trysuffix e = try (suffix e) <|> return e
@@ -118,21 +140,21 @@ to be.
 
 > toHaskell :: ScalarExpr -> HSE.Exp
 > toHaskell e = case e of
->     Identifier i -> HSE.Var $ HSE.UnQual $ HSE.Ident i
->     StringLiteral l -> HSE.Lit $ HSE.String $ 's':l
->     NumLiteral l -> HSE.Lit $ HSE.String $ 'n':l
->     App n es -> HSE.App (toHaskell $ Identifier n) $ ltoh es
+>     Iden i -> HSE.Var $ HSE.UnQual $ HSE.Ident i
+>     StringLit l -> HSE.Lit $ HSE.String $ 's':l
+>     NumLit l -> HSE.Lit $ HSE.String $ 'n':l
+>     App n es -> HSE.App (toHaskell $ Iden n) $ ltoh es
 >     Op n [e0,e1] -> HSE.InfixApp (toHaskell e0)
 >                                  (HSE.QVarOp $ HSE.UnQual $ HSE.Ident n)
 >                                  (toHaskell e1)
 >     Op "not" [e0] -> toHaskell $ App "not" [e0]
 >     Op {} -> error $ "bad args to operator " ++ groom e
 >     Star -> HSE.Var $ HSE.UnQual $ HSE.Ident "*"
->     Identifier2 a b -> HSE.Var $ HSE.Qual (HSE.ModuleName a) (HSE.Ident b)
+>     Iden2 a b -> HSE.Var $ HSE.Qual (HSE.ModuleName a) (HSE.Ident b)
 >     Star2 q -> HSE.Var $ HSE.Qual (HSE.ModuleName q) (HSE.Ident "*")
 >     Parens e0 -> HSE.Paren $ toHaskell e0
 >     -- map the two maybes to lists with either 0 or 1 element
->     Case v ts el -> HSE.App (toHaskell $ Identifier "$case")
+>     Case v ts el -> HSE.App (toHaskell $ Iden "$case")
 >                     (HSE.List [ltoh $ maybeToList v
 >                               ,HSE.List $ map (ltoh . (\(a,b) -> [a,b])) ts
 >                               ,ltoh $ maybeToList el])
@@ -143,10 +165,10 @@ to be.
 > toSql e = case e of
 >     HSE.Var (HSE.UnQual (HSE.Ident "*")) -> Star
 >     HSE.Var (HSE.Qual (HSE.ModuleName q) (HSE.Ident "*")) -> Star2 q
->     HSE.Var (HSE.Qual (HSE.ModuleName a) (HSE.Ident b)) -> Identifier2 a b
->     HSE.Var (HSE.UnQual (HSE.Ident i)) -> Identifier i
->     HSE.Lit (HSE.String ('s':l)) -> StringLiteral l
->     HSE.Lit (HSE.String ('n':l)) -> NumLiteral l
+>     HSE.Var (HSE.Qual (HSE.ModuleName a) (HSE.Ident b)) -> Iden2 a b
+>     HSE.Var (HSE.UnQual (HSE.Ident i)) -> Iden i
+>     HSE.Lit (HSE.String ('s':l)) -> StringLit l
+>     HSE.Lit (HSE.String ('n':l)) -> NumLit l
 >     HSE.App (HSE.Var (HSE.UnQual (HSE.Ident "$case"))) (HSE.List [v,ts,el]) ->
 >         Case (ltom v) (pairs ts) (ltom el)
 >     HSE.App (HSE.Var (HSE.UnQual (HSE.Ident "not")))
