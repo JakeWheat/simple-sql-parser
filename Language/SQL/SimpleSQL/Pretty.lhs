@@ -55,6 +55,16 @@ back into SQL source text. It attempts to format the output nicely.
 > scalarExpr (CastOp (TypeName tn) s) =
 >     text tn <+> quotes (text s)
 
+> scalarExpr (SubQueryExpr ty qe) =
+>     (case ty of
+>         SqSq -> empty
+>         SqExists -> text "exists"
+>         SqIn -> text "in"
+>         SqAll -> text "all"
+>         SqSome -> text "some"
+>         SqAny -> text "any"
+>     ) <+> parens (queryExpr qe)
+
 = query expressions
 
 > queryExpr :: QueryExpr -> Doc

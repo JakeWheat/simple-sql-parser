@@ -2,6 +2,7 @@
 > module Language.SQL.SimpleSQL.Syntax
 >     (ScalarExpr(..)
 >     ,TypeName(..)
+>     ,SubQueryExprType(..)
 >     ,QueryExpr(..)
 >     ,makeSelect
 >     ,Duplicates(..)
@@ -26,9 +27,13 @@
 >                 | Parens ScalarExpr
 >                 | Cast ScalarExpr TypeName
 >                 | CastOp TypeName String
+>                 | SubQueryExpr SubQueryExprType QueryExpr
 >                   deriving (Eq,Show)
 
 > data TypeName = TypeName String deriving (Eq,Show)
+
+> data SubQueryExprType = SqExists | SqIn | SqSq | SqAll | SqSome | SqAny
+>                         deriving (Eq,Show)
 
 > data QueryExpr
 >     = Select

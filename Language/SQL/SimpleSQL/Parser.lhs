@@ -130,9 +130,9 @@ digitse[+-]digits
 >     letterDigitOrUnderscore = char '_' <|> alphaNum
 > blacklist :: [String]
 > blacklist = ["as", "from", "where", "having", "group", "order"
->                 ,"inner", "left", "right", "full", "natural", "join"
->                 ,"on", "using", "when", "then", "case", "end", "order"
->                 ,"limit", "offset"]
+>             ,"inner", "left", "right", "full", "natural", "join"
+>             ,"on", "using", "when", "then", "case", "end", "order"
+>             ,"limit", "offset"]
 
 TODO: talk about what must be in the blacklist, and what doesn't need
 to be.
@@ -174,6 +174,19 @@ to be.
 >     prefixCast = try (CastOp <$> typeName
 >                              <*> stringLiteral)
 
+> subquery :: P ScalarExpr
+> subquery =
+>     choice
+>     [try $ SubQueryExpr SqSq <$> parens queryExpr
+>     ,SubQueryExpr <$> try sqkw <*> parens queryExpr]
+>   where
+>     sqkw = try $ choice
+>            [SqExists <$ keyword_ "exists"
+>            ,SqIn <$ keyword_ "in"
+>            ,SqAll <$ try (keyword_ "all")
+>            ,SqAny <$ keyword_ "any"
+>            ,SqSome <$ keyword_ "some"]
+
 > typeName :: P TypeName
 > typeName = choice
 >     [TypeName "double precision"
@@ -212,6 +225,7 @@ to be.
 >     factor = choice [literal
 >                     ,scase
 >                     ,cast
+>                     ,subquery
 >                     ,unaryOp
 >                     ,try app
 >                     ,try dottedIden
@@ -225,6 +239,8 @@ to be.
 
 > sparens :: P ScalarExpr
 > sparens = Parens <$> parens scalarExpr'
+
+attempt to fix the precedence and associativity. Doesn't work
 
 > toHaskell :: ScalarExpr -> HSE.Exp
 > toHaskell e = case e of
@@ -248,6 +264,7 @@ to be.
 >                     (HSE.List [ltoh $ maybeToList v
 >                               ,HSE.List $ map (ltoh . (\(a,b) -> [a,b])) ts
 >                               ,ltoh $ maybeToList el])
+>     _ -> error "please fix me 1"
 >   where
 >     ltoh = HSE.List . map toHaskell
 
@@ -294,14 +311,14 @@ to be.
 >               ++ HSE.infixl_ 1 ["and"]
 >               ++ HSE.infixl_ 0 ["or"]
 
-> fixFixity :: ScalarExpr -> ScalarExpr
-> fixFixity se = runIdentity $
+> _fixFixity :: ScalarExpr -> ScalarExpr
+> _fixFixity se = runIdentity $
 >      toSql <$> HSE.applyFixities sqlFixities (toHaskell se)
 
 > scalarExpr :: P ScalarExpr
 > scalarExpr =
 >     choice [try star
->            ,fixFixity <$> scalarExpr']
+>            ,{-fixFixity <$>-} scalarExpr']
 
 -------------------------------------------------
 

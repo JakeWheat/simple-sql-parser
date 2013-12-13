@@ -124,14 +124,22 @@
 
 > subqueries :: TestItem
 > subqueries = Group "unaryOperators" $ map (uncurry TestScalarExpr)
->     [{-("exists (select * from t)", Op "not" [Iden "a"])
->     ,("(select a from t)", Op "not" [Op "not" [Iden "a"]])
->     ,("in (select a from t)", Op "+" [Iden "a"])
->     ,("not in (select a from t)", Op "+" [Iden "a"])
->     ,("a > ALL (select a from t)", Op "-" [Iden "a"])
->     ,("a > SOME (select a from t)", Op "-" [Iden "a"])
->     ,("a > ANY (select a from t)", Op "-" [Iden "a"])-}
+>     [("exists (select a from t)", SubQueryExpr SqExists ms)
+>     ,("(select a from t)", SubQueryExpr SqSq ms)
+>     ,("in (select a from t)", SubQueryExpr SqIn ms)
+>     ,("not in (select a from t)", Op "not" [SubQueryExpr SqIn ms])
+>     ,("a > all (select a from t)"
+>      ,Op ">" [Iden "a", SubQueryExpr SqAll ms])
+>     ,("a = some (select a from t)"
+>      ,Op "=" [Iden "a", SubQueryExpr SqSome ms])
+>     ,("a <= any (select a from t)"
+>      ,Op "<=" [Iden "a", SubQueryExpr SqAny ms])
 >     ]
+>   where
+>     ms = makeSelect
+>          {qeSelectList = [(Nothing,Iden "a")]
+>          ,qeFrom = [SimpleTableRef "t"]
+>          }
 
 > miscOps :: TestItem
 > miscOps = Group "unaryOperators" $ map (uncurry TestScalarExpr)
