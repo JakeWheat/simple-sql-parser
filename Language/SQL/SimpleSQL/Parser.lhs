@@ -13,6 +13,7 @@
 > import qualified Language.Haskell.Exts.Syntax as HSE
 > import qualified Language.Haskell.Exts.Fixity as HSE
 > import Data.Maybe
+> import Data.List
 
 > import Language.SQL.SimpleSQL.Syntax
 
@@ -37,19 +38,20 @@
 
 > setPos :: FilePath -> Maybe (Int,Int) -> P ()
 > setPos f p = do
->   sp <- getPosition
->   let sp' = setSourceName sp f
->       sp'' = maybe sp'
->              (\(l,c) -> flip setSourceColumn c
->                         $ setSourceLine sp' l)
->              p
->   setPosition sp''
+>     sp <- getPosition
+>     let sp' = setSourceName sp f
+>         sp'' = maybe sp'
+>                (\(l,c) -> flip setSourceColumn c
+>                           $ setSourceLine sp' l)
+>                p
+>     setPosition sp''
 
 > data ParseError = ParseError
 >                   {peErrorString :: String
 >                   ,peFilename :: FilePath
 >                   ,pePosition :: (Int,Int)
->                   ,peFormattedError :: String}
+>                   ,peFormattedError :: String
+>                   } deriving (Eq,Show)
 
 > convParseError :: String -> P.ParseError -> ParseError
 > convParseError src e =
@@ -79,10 +81,7 @@ format the error more nicely: emacs format for positioning, plus context
 >              _ -> ""
 >     p = errorPos e
 
-Language/SQL/SimpleSQL/Parser.lhs:54:3:
-
 > type P a = ParsecT String () Identity a
-
 
 ------------------------------------------------
 
@@ -174,9 +173,20 @@ to be.
 > binOpKeywordNames :: [String]
 > binOpKeywordNames = ["and", "or", "like"]
 
+> unOpKeywordNames :: [String]
+> unOpKeywordNames = ["not"]
+
+> unOpSymbolNames :: [String]
+> unOpSymbolNames = ["+", "-"]
+
+
 > unaryOp :: P ScalarExpr
-> unaryOp = makeOp <$> (try (keyword_ "not") *> scalarExpr)
->   where makeOp e = Op "not" [e]
+> unaryOp =
+>     makeOp <$> opSymbol <*> scalarExpr
+>   where
+>     makeOp nm e = Op nm [e]
+>     opSymbol = choice (map (try . symbol) unOpSymbolNames
+>                       ++ map (try . keyword) unOpKeywordNames)
 
 > scalarExpr' :: P ScalarExpr
 > scalarExpr' = factor >>= trysuffix
@@ -206,7 +216,7 @@ to be.
 >     Op n [e0,e1] -> HSE.InfixApp (toHaskell e0)
 >                                  (HSE.QVarOp $ HSE.UnQual $ HSE.Ident n)
 >                                  (toHaskell e1)
->     Op "not" [e0] -> toHaskell $ App "not" [e0]
+>     Op o [e0] -> toHaskell $ App ("unary:" ++ o) [e0]
 >     Op {} -> error $ "bad args to operator " ++ groom e
 >     Star -> HSE.Var $ HSE.UnQual $ HSE.Ident "*"
 >     Iden2 a b -> HSE.Var $ HSE.Qual (HSE.ModuleName a) (HSE.Ident b)
@@ -230,8 +240,9 @@ to be.
 >     HSE.Lit (HSE.String ('n':l)) -> NumLit l
 >     HSE.App (HSE.Var (HSE.UnQual (HSE.Ident "$case"))) (HSE.List [v,ts,el]) ->
 >         Case (ltom v) (pairs ts) (ltom el)
->     HSE.App (HSE.Var (HSE.UnQual (HSE.Ident "not")))
->             (HSE.List [ea]) -> Op "not" [toSql ea]
+>     HSE.App (HSE.Var (HSE.UnQual (HSE.Ident x)))
+>             (HSE.List [ea]) | "unary:" `isPrefixOf` x ->
+>         Op (drop 6 x) [toSql ea]
 >     HSE.App (HSE.Var (HSE.UnQual (HSE.Ident i)))
 >             (HSE.List es) -> App i $ map toSql es
 >     HSE.InfixApp e0 (HSE.QVarOp (HSE.UnQual (HSE.Ident n))) e1 ->

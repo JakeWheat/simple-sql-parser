@@ -1,14 +1,15 @@
 
 
-first release
+first release:
 
-1. utility function to parse some sql and print the context of the
-   error using the position
-2. complete the parsing for the tests in the Tests.lhs
-3. get tpch parsing
-4. add tests to cabal
-5. do code documentation and haddock
-
+complete the parsing for the tests in the Tests.lhs
+case insensivity
+get tpch parsing
+check the pretty printer on the tpch queries
+add automated tests to cabal
+do code documentation and haddock
+do some tests for parse errors?
+website with haddock and table of parsing tests
 
 ----
 
@@ -28,6 +29,8 @@ position annotation
 
 
 = sql support
+
+case insensitivity
 
 scalar function syntax:
 
