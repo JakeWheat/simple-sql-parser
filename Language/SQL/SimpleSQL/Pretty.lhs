@@ -30,6 +30,15 @@ back into SQL source text. It attempts to format the output nicely.
 
 > scalarExpr (App f es) = text f <> parens (commaSep (map scalarExpr es))
 
+> scalarExpr (AggregateApp f d es od) =
+>     text f
+>     <> parens ((case d of
+>                   Just Distinct -> text "distinct"
+>                   Just All -> text "all"
+>                   Nothing -> empty)
+>                <+> commaSep (map scalarExpr es)
+>                <+> orderBy od)
+
 > scalarExpr (SpecialOp nm [a,b,c]) | nm `elem` ["between", "not between"] =
 >   sep [scalarExpr a
 >       ,text nm <+> scalarExpr b

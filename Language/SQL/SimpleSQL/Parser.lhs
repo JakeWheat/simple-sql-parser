@@ -148,10 +148,19 @@ to be.
 
 
 > app :: P ScalarExpr
-> app = App <$> identifierString
->       -- support for count(*)
->       <*> parens (choice[(:[]) <$> try star
->                         ,commaSep scalarExpr'])
+> app = do
+>       i <- identifierString
+>       _ <- symbol "("
+>       d <- try duplicates
+>       es <- choice [(:[]) <$> try star
+>                    ,commaSep scalarExpr']
+>       od <- try $ optionMaybe orderBy
+>       _ <- symbol ")"
+>       case (d,od) of
+>           (Nothing,Nothing) ->
+>               return $ App i es
+>           _ -> return $ AggregateApp i d es (fromMaybe [] od)
+
 
 > scase :: P ScalarExpr
 > scase =
@@ -406,9 +415,10 @@ attempt to fix the precedence and associativity. Doesn't work
 
 = query expressions
 
-> duplicates :: P Duplicates
-> duplicates = option All $ try $ choice [All <$ keyword_ "all"
->                                        ,Distinct <$ keyword "distinct"]
+> duplicates :: P (Maybe Duplicates)
+> duplicates = optionMaybe $ try $
+>     choice [All <$ keyword_ "all"
+>            ,Distinct <$ keyword "distinct"]
 
 > selectItem :: P (Maybe String, ScalarExpr)
 > selectItem = flip (,) <$> scalarExpr <*> optionMaybe (try alias)
@@ -472,9 +482,9 @@ attempt to fix the precedence and associativity. Doesn't work
 > having = optionalScalarExpr "having"
 
 > orderBy :: P [(ScalarExpr,Direction)]
-> orderBy = option [] (try (keyword_ "order")
->                      *> keyword_ "by"
->                      *> commaSep1 ob)
+> orderBy = try (keyword_ "order")
+>               *> keyword_ "by"
+>               *> commaSep1 ob
 >   where
 >     ob = (,) <$> scalarExpr
 >              <*> option Asc (choice [Asc <$ keyword_ "asc"
@@ -491,13 +501,13 @@ attempt to fix the precedence and associativity. Doesn't work
 > queryExpr =
 >     try (keyword_ "select") >>
 >     Select
->     <$> duplicates
+>     <$> (fromMaybe All <$> duplicates)
 >     <*> selectList
 >     <*> from
 >     <*> swhere
 >     <*> sgroupBy
 >     <*> having
->     <*> orderBy
+>     <*> option [] orderBy
 >     <*> limit
 >     <*> offset
 

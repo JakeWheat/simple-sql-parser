@@ -173,10 +173,13 @@
 
 > aggregates :: TestItem
 > aggregates = Group "aggregates" $ map (uncurry TestScalarExpr)
->     [{-("count(*)",NumLit "1")
->     ,("sum(a order by a)",NumLit "1")
->     ,("sum(all a)",NumLit "1")
->     ,("count(distinct a)",NumLit "1")-}
+>     [("count(*)",App "count" [Star])
+>     ,("sum(a order by a)"
+>     ,AggregateApp "sum" Nothing [Iden "a"] [(Iden "a", Asc)])
+>     ,("sum(all a)"
+>     ,AggregateApp "sum" (Just All) [Iden "a"] [])
+>     ,("count(distinct a)"
+>     ,AggregateApp "count" (Just Distinct) [Iden "a"] [])
 >     ]
 
 > windowFunctions :: TestItem

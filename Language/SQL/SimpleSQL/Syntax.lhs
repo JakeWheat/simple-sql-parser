@@ -21,6 +21,9 @@
 >                 | Star
 >                 | Star2 String
 >                 | App String [ScalarExpr]
+>                 | AggregateApp String (Maybe Duplicates)
+>                                [ScalarExpr]
+>                                [(ScalarExpr,Direction)]
 >                   -- the binop, prefixop and postfix op
 >                   -- are used for symbol and keyword operators
 >                   -- these are used even for the multiple keyword
