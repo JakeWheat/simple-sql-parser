@@ -26,8 +26,7 @@
 >                -> Either ParseError QueryExpr
 > parseQueryExpr f p src =
 >     either (Left . convParseError src) Right
->     $ parse (setPos p *> whiteSpace
->              *> queryExpr <* eof) f src
+>     $ parse (setPos p *> whiteSpace *> queryExpr <* eof) f src
 
 > parseQueryExprs :: FilePath
 >                 -> Maybe (Int,Int)
@@ -35,8 +34,7 @@
 >                 -> Either ParseError [QueryExpr]
 > parseQueryExprs f p src =
 >     either (Left . convParseError src) Right
->     $ parse (setPos p *> whiteSpace
->              *> queryExprs <* eof) f src
+>     $ parse (setPos p *> whiteSpace *> queryExprs <* eof) f src
 
 > parseScalarExpr :: FilePath
 >                 -> Maybe (Int,Int)
@@ -44,14 +42,7 @@
 >                 -> Either ParseError ScalarExpr
 > parseScalarExpr f p src =
 >     either (Left . convParseError src) Right
->     $ parse (setPos p *> whiteSpace
->              *> scalarExpr <* eof) f src
-
-> setPos :: Maybe (Int,Int) -> P ()
-> setPos Nothing = return ()
-> setPos (Just (l,c)) = fmap f getPosition >>= setPosition
->   where f = flip setSourceColumn c
->             . flip setSourceLine l
+>     $ parse (setPos p *> whiteSpace *> scalarExpr <* eof) f src
 
 > data ParseError = ParseError
 >                   {peErrorString :: String
@@ -60,38 +51,9 @@
 >                   ,peFormattedError :: String
 >                   } deriving (Eq,Show)
 
-> convParseError :: String -> P.ParseError -> ParseError
-> convParseError src e =
->     ParseError
->     {peErrorString = show e
->     ,peFilename = sourceName p
->     ,pePosition = (sourceLine p, sourceColumn p)
->     ,peFormattedError = formatError src e
->     }
->   where
->     p = errorPos e
-
-format the error more nicely: emacs format for positioning, plus
-context
-
-> formatError :: String -> P.ParseError -> String
-> formatError src e =
->     sourceName p ++ ":" ++ show (sourceLine p)
->     ++ ":" ++ show (sourceColumn p) ++ ":"
->     ++ context
->     ++ show e
->   where
->     context =
->         let lns = take 1 $ drop (sourceLine p - 1) $ lines src
->         in case lns of
->              [x] -> "\n" ++ x ++ "\n"
->                     ++ replicate (sourceColumn p - 1) ' ' ++ "^\n"
->              _ -> ""
->     p = errorPos e
+------------------------------------------------
 
 > type P a = ParsecT String () Identity a
-
-------------------------------------------------
 
 = scalar expressions
 
@@ -217,39 +179,34 @@ to be.
 > extract :: P ScalarExpr
 > extract = try (keyword_ "extract") >>
 >     parens (makeOp <$> identifierString
->                    <*> (keyword_ "from"
->                         *> scalarExpr'))
+>                    <*> (keyword_ "from" *> scalarExpr'))
 >   where makeOp n e = SpecialOp "extract" [Iden n, e]
 
 > substring :: P ScalarExpr
 > substring = try (keyword_ "substring") >>
 >     parens (makeOp <$> scalarExpr'
->                    <*> (keyword_ "from"
->                         *> scalarExpr')
->                    <*> (keyword_ "for"
->                         *> scalarExpr')
+>                    <*> (keyword_ "from" *> scalarExpr')
+>                    <*> (keyword_ "for" *> scalarExpr')
 >                    )
 >   where makeOp a b c = SpecialOp "substring" [a,b,c]
 
 > inSuffix :: ScalarExpr -> P ScalarExpr
 > inSuffix e =
->     In
->     <$> inty
->     <*> return e
->     <*> parens (choice
->                 [InQueryExpr <$> queryExpr
->                 ,InList <$> commaSep1 scalarExpr'])
+>     In <$> inty
+>        <*> return e
+>        <*> parens (choice
+>                    [InQueryExpr <$> queryExpr
+>                    ,InList <$> commaSep1 scalarExpr'])
 >   where
 >     inty = try $ choice [True <$ keyword_ "in"
 >                         ,False <$ keyword_ "not" <* keyword_ "in"]
 
 > betweenSuffix :: ScalarExpr -> P ScalarExpr
 > betweenSuffix e =
->     makeOp
->     <$> opName
->     <*> return e
->     <*> scalarExpr'' True
->     <*> (keyword_ "and" *> scalarExpr')
+>     makeOp <$> opName
+>            <*> return e
+>            <*> scalarExpr'' True
+>            <*> (keyword_ "and" *> scalarExpr')
 >   where
 >     opName = try $ choice
 >              ["between" <$ keyword_ "between"
@@ -277,14 +234,13 @@ to be.
 >     ,TypeName <$> identifierString]
 
 > binOpSymbolNames :: [String]
-> binOpSymbolNames = ["=", "<=", ">="
->                    ,"!=", "<>", "<", ">"
->                    ,"*", "/", "+", "-"
->                    ,"||"]
+> binOpSymbolNames =
+>     ["=", "<=", ">=", "!=", "<>", "<", ">"
+>     ,"*", "/", "+", "-"
+>     ,"||"]
 
 > binOpKeywordNames :: [String]
-> binOpKeywordNames = ["and", "or", "like"
->                     ,"overlaps"]
+> binOpKeywordNames = ["and", "or", "like", "overlaps"]
 
 > binOpMultiKeywordNames :: [[String]]
 > binOpMultiKeywordNames = map words
@@ -329,8 +285,7 @@ used for between parsing
 >           ,"is unknown"
 >           ,"is not unknown"]
 >     opPairs = flip map ops $ \o -> (o, words o)
->     makeOp (o,ws) =
->       try $ PostfixOp o e <$ keywords_ ws
+>     makeOp (o,ws) = try $ PostfixOp o e <$ keywords_ ws
 >     keywords_ = try . mapM_ keyword_
 
 > scalarExpr' :: P ScalarExpr
@@ -352,7 +307,7 @@ postgresql handles this
 >                     ,substring
 >                     ,subquery
 >                     ,prefixUnaryOp
->                     ,(try app) >>= windowSuffix
+>                     ,try app >>= windowSuffix
 >                     ,try dottedIden
 >                     ,identifier
 >                     ,sparens]
@@ -527,9 +482,7 @@ attempt to fix the precedence and associativity. Doesn't work
 > having = optionalScalarExpr "having"
 
 > orderBy :: P [(ScalarExpr,Direction)]
-> orderBy = try (keyword_ "order")
->               *> keyword_ "by"
->               *> commaSep1 ob
+> orderBy = try (keyword_ "order") *> keyword_ "by" *> commaSep1 ob
 >   where
 >     ob = (,) <$> scalarExpr
 >              <*> option Asc (choice [Asc <$ keyword_ "asc"
@@ -543,12 +496,11 @@ attempt to fix the precedence and associativity. Doesn't work
 
 > with :: P QueryExpr
 > with = try (keyword_ "with") >>
->     With <$> commaSep1 withQuery
->          <*> queryExpr
+>     With <$> commaSep1 withQuery <*> queryExpr
 >   where
->     withQuery = (,) <$> (identifierString
->                          <* optional (try $ keyword_ "as"))
->                     <*> parens queryExpr
+>     withQuery =
+>         (,) <$> (identifierString <* optional (try $ keyword_ "as"))
+>             <*> parens queryExpr
 
 > queryExpr :: P QueryExpr
 > queryExpr =
@@ -574,9 +526,9 @@ attempt to fix the precedence and associativity. Doesn't work
 >                       ,Intersect <$ keyword_ "intersect"
 >                       ,Except <$ keyword_ "except"])
 >              <*> (fromMaybe All <$> duplicates)
->              <*> (option Respectively
->                   $ try (Corresponding
->                          <$ keyword_ "corresponding"))
+>              <*> option Respectively
+>                         (try (Corresponding
+>                               <$ keyword_ "corresponding"))
 >              <*> queryExpr)
 >             >>= queryExprSuffix
 >            ,return qe]
@@ -591,7 +543,7 @@ attempt to fix the precedence and associativity. Doesn't work
 
 ------------------------------------------------
 
-= helper functions
+= helper parsers
 
 > whiteSpace :: P ()
 > whiteSpace =
@@ -628,7 +580,7 @@ attempt to fix the precedence and associativity. Doesn't work
 > symbol_ s = symbol s *> return ()
 
 > keyword :: String -> P String
-> keyword s = ((map toLower) <$> string s)
+> keyword s = (map toLower <$> string s)
 >             <* notFollowedBy (char '_' <|> alphaNum)
 >             <* whiteSpace
 
@@ -637,3 +589,42 @@ attempt to fix the precedence and associativity. Doesn't work
 
 > commaSep1 :: P a -> P [a]
 > commaSep1 = (`sepBy1` symbol_ ",")
+
+--------------------------------------------
+
+= helper functions
+
+> setPos :: Maybe (Int,Int) -> P ()
+> setPos Nothing = return ()
+> setPos (Just (l,c)) = fmap f getPosition >>= setPosition
+>   where f = flip setSourceColumn c
+>             . flip setSourceLine l
+
+> convParseError :: String -> P.ParseError -> ParseError
+> convParseError src e =
+>     ParseError
+>     {peErrorString = show e
+>     ,peFilename = sourceName p
+>     ,pePosition = (sourceLine p, sourceColumn p)
+>     ,peFormattedError = formatError src e
+>     }
+>   where
+>     p = errorPos e
+
+format the error more nicely: emacs format for positioning, plus
+context
+
+> formatError :: String -> P.ParseError -> String
+> formatError src e =
+>     sourceName p ++ ":" ++ show (sourceLine p)
+>     ++ ":" ++ show (sourceColumn p) ++ ":"
+>     ++ context
+>     ++ show e
+>   where
+>     context =
+>         let lns = take 1 $ drop (sourceLine p - 1) $ lines src
+>         in case lns of
+>              [x] -> "\n" ++ x ++ "\n"
+>                     ++ replicate (sourceColumn p - 1) ' ' ++ "^\n"
+>              _ -> ""
+>     p = errorPos e

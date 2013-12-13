@@ -165,7 +165,7 @@ back into SQL source text. It attempts to format the output nicely.
 >     tr (SimpleTableRef t) = text t
 >     tr (JoinAlias t a cs) =
 >         tr t <+> text "as" <+> text a
->         <+> maybe empty (\cs' -> parens $ commaSep $ map text cs') cs
+>         <+> maybe empty (parens . commaSep . map text) cs
 >     tr (JoinParens t) = parens $ tr t
 >     tr (JoinQueryExpr q) = parens $ queryExpr q
 >     tr (JoinTableRef jt t0 t1 jc) =
