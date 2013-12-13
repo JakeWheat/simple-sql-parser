@@ -89,14 +89,30 @@
 
 > queryExprParserTests :: TestItem
 > queryExprParserTests = Group "queryExprParserTests"
->     [selectLists
+>     [duplicates
+>     ,selectLists
 >     ,from
 >     ,whereClause
 >     ,groupByClause
 >     ,having
 >     ,orderBy
+>     ,limit
 >     ,fullQueries
 >     ]
+
+
+
+> duplicates :: TestItem
+> duplicates = Group "duplicates" $ map (uncurry TestQueryExpr)
+>     [("select a from t" ,ms All)
+>     ,("select all a from t" ,ms All)
+>     ,("select distinct a from t", ms Distinct)
+>     ]
+>  where
+>    ms d = makeSelect
+>           {qeDuplicates = d
+>           ,qeSelectList = [(Nothing,Iden "a")]
+>           ,qeFrom = [SimpleTableRef "t"]}
 
 > selectLists :: TestItem
 > selectLists = Group "selectLists" $ map (uncurry TestQueryExpr)
@@ -211,6 +227,20 @@
 >     ms o = makeSelect {qeSelectList = [(Nothing,Iden "a")]
 >                       ,qeFrom = [SimpleTableRef "t"]
 >                       ,qeOrderBy = o}
+
+> limit :: TestItem
+> limit = Group "limit" $ map (uncurry TestQueryExpr)
+>     [("select a from t limit 10"
+>      ,ms (Just $ NumLit "10") Nothing)
+>     ,("select a from t limit 10 offset 10"
+>      ,ms (Just $ NumLit "10") (Just $ NumLit "10"))
+>     ]
+>   where
+>     ms l o = makeSelect
+>              {qeSelectList = [(Nothing,Iden "a")]
+>              ,qeFrom = [SimpleTableRef "t"]
+>              ,qeLimit = l
+>              ,qeOffset = o}
 
 > fullQueries :: TestItem
 > fullQueries = Group "queries" $ map (uncurry TestQueryExpr)

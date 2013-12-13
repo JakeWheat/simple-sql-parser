@@ -22,12 +22,7 @@ emacs parse error formatting
 
 = sql support
 
-distinct/all
-limit,offset, top
-
 scalar function syntax:
-  aggregate app
-  window app
   cast
   exists, in subquery
   scalar subquery
@@ -35,16 +30,20 @@ scalar function syntax:
   any/some/all
   between
   is null/ is not null
-  review all ansi sql operators
   interval literal
-  typed string lit?
+  typed string lit
+
+  aggregate app
+  window app
+  review all ansi sql operators
   placeholder/positional arg
 
 other missing operators
-  unary + -
-  row constructors?
   extract
   substring
+  unary + -
+
+  row constructors?
 
 except, intersect, union
 

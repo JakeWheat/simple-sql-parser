@@ -51,14 +51,20 @@ back into SQL source text. It attempts to format the output nicely.
 = query expressions
 
 > queryExpr :: QueryExpr -> Doc
-> queryExpr (Select sl fr wh gb hv od) =
+> queryExpr (Select d sl fr wh gb hv od lm off) =
 >   sep [text "select"
+>       ,case d of
+>           All -> empty
+>           Distinct -> text "distinct"
 >       ,nest 4 $ sep [selectList sl]
 >       ,from fr
->       ,whr wh
+>       ,maybeScalarExpr "where" wh
 >       ,grpBy gb
->       ,having hv
->       ,orderBy od]
+>       ,maybeScalarExpr "having" hv
+>       ,orderBy od
+>       ,maybeScalarExpr "limit" lm
+>       ,maybeScalarExpr "offset" off
+>       ]
 
 > selectList :: [(Maybe String, ScalarExpr)] -> Doc
 > selectList is = commaSep $ map si is
@@ -97,20 +103,16 @@ back into SQL source text. It attempts to format the output nicely.
 >     joinCond Nothing = empty
 >     joinCond (Just JoinNatural) = empty
 
-> whr :: Maybe ScalarExpr -> Doc
-> whr = maybe empty
->       (\w -> sep [text "where"
->                  ,nest 4 $ scalarExpr w])
+> maybeScalarExpr :: String -> Maybe ScalarExpr -> Doc
+> maybeScalarExpr k = maybe empty
+>       (\e -> sep [text k
+>                  ,nest 4 $ scalarExpr e])
 
 > grpBy :: [ScalarExpr] -> Doc
 > grpBy [] = empty
 > grpBy gs = sep [text "group by"
 >                ,nest 4 $ commaSep $ map scalarExpr gs]
 
-> having :: Maybe ScalarExpr -> Doc
-> having = maybe empty
->          (\w -> sep [text "having"
->                     ,nest 4 $ scalarExpr w])
 > orderBy :: [(ScalarExpr,Direction)] -> Doc
 > orderBy [] = empty
 > orderBy os = sep [text "order by"

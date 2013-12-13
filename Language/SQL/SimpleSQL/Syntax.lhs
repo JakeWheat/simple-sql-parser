@@ -6,6 +6,7 @@
 >     ,TableRef(..)
 >     ,JoinType(..)
 >     ,JoinCondition(..)
+>     ,Duplicates(..)
 >     ,Direction(..)
 >     ) where
 
@@ -26,23 +27,30 @@
 
 > data QueryExpr
 >     = Select
->       {qeSelectList :: [(Maybe String,ScalarExpr)]
+>       {qeDuplicates :: Duplicates
+>       ,qeSelectList :: [(Maybe String,ScalarExpr)]
 >       ,qeFrom :: [TableRef]
 >       ,qeWhere :: Maybe ScalarExpr
 >       ,qeGroupBy :: [ScalarExpr]
 >       ,qeHaving :: Maybe ScalarExpr
 >       ,qeOrderBy :: [(ScalarExpr,Direction)]
+>       ,qeLimit :: Maybe ScalarExpr
+>       ,qeOffset :: Maybe ScalarExpr
 >       } deriving (Eq,Show)
 
+> data Duplicates = Distinct | All deriving (Eq,Show)
 > data Direction = Asc | Desc deriving (Eq,Show)
 
 > makeSelect :: QueryExpr
-> makeSelect = Select {qeSelectList = []
+> makeSelect = Select {qeDuplicates = All
+>                     ,qeSelectList = []
 >                     ,qeFrom = []
 >                     ,qeWhere = Nothing
 >                     ,qeGroupBy = []
 >                     ,qeHaving = Nothing
->                     ,qeOrderBy = []}
+>                     ,qeOrderBy = []
+>                     ,qeLimit = Nothing
+>                     ,qeOffset = Nothing}
 
 
 > data TableRef = SimpleTableRef String

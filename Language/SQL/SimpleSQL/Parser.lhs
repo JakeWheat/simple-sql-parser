@@ -73,7 +73,8 @@ digitse[+-]digits
 > blacklist :: [String]
 > blacklist = ["as", "from", "where", "having", "group", "order"
 >                 ,"inner", "left", "right", "full", "natural", "join"
->                 ,"on", "using", "when", "then", "case", "end", "order"]
+>                 ,"on", "using", "when", "then", "case", "end", "order"
+>                 ,"limit", "offset"]
 
 TODO: talk about what must be in the blacklist, and what doesn't need
 to be.
@@ -209,12 +210,16 @@ to be.
 
 = query expressions
 
+> duplicates :: P Duplicates
+> duplicates = option All $ try $ choice [All <$ keyword_ "all"
+>                                        ,Distinct <$ keyword "distinct"]
+
 > selectItem :: P (Maybe String, ScalarExpr)
 > selectItem = flip (,) <$> scalarExpr <*> optionMaybe (try alias)
 >   where alias = optional (try (keyword_ "as")) *> identifierString
 
 > selectList :: P [(Maybe String,ScalarExpr)]
-> selectList = try (keyword_ "select") *> commaSep1 selectItem
+> selectList = commaSep1 selectItem
 
 > from :: P [TableRef]
 > from = option [] (try (keyword_ "from") *> commaSep1 tref)
@@ -256,8 +261,11 @@ to be.
 >     alias j = let a1 = optional (try (keyword_ "as")) *> identifierString
 >               in option j (JoinAlias j <$> try a1)
 
+> optionalScalarExpr :: String -> P (Maybe ScalarExpr)
+> optionalScalarExpr k = optionMaybe (try (keyword_ k) *> scalarExpr)
+
 > swhere :: P (Maybe ScalarExpr)
-> swhere = optionMaybe (try (keyword_ "where") *> scalarExpr)
+> swhere = optionalScalarExpr "where"
 
 > sgroupBy :: P [ScalarExpr]
 > sgroupBy = option [] (try (keyword_ "group")
@@ -265,7 +273,7 @@ to be.
 >                       *> commaSep1 scalarExpr)
 
 > having :: P (Maybe ScalarExpr)
-> having = optionMaybe (try (keyword_ "having") *> scalarExpr)
+> having = optionalScalarExpr "having"
 
 > orderBy :: P [(ScalarExpr,Direction)]
 > orderBy = option [] (try (keyword_ "order")
@@ -276,16 +284,26 @@ to be.
 >              <*> option Asc (choice [Asc <$ keyword_ "asc"
 >                                     ,Desc <$ keyword_ "desc"])
 
+> limit :: P (Maybe ScalarExpr)
+> limit = optionalScalarExpr "limit"
+
+> offset :: P (Maybe ScalarExpr)
+> offset = optionalScalarExpr "offset"
+
+
 > queryExpr :: P QueryExpr
 > queryExpr =
+>     try (keyword_ "select") >>
 >     Select
->     <$> selectList
+>     <$> duplicates
+>     <*> selectList
 >     <*> from
 >     <*> swhere
 >     <*> sgroupBy
 >     <*> having
 >     <*> orderBy
-
+>     <*> limit
+>     <*> offset
 
 ------------------------------------------------
 
