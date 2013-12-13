@@ -24,8 +24,8 @@
 >                -> Either ParseError QueryExpr
 > parseQueryExpr f p src =
 >     either (Left . convParseError src) Right
->     $ parse (setPos f p *> whiteSpace
->              *> queryExpr <* eof) "" src
+>     $ parse (setPos p *> whiteSpace
+>              *> queryExpr <* eof) f src
 
 > parseScalarExpr :: FilePath
 >                 -> Maybe (Int,Int)
@@ -33,18 +33,17 @@
 >                 -> Either ParseError ScalarExpr
 > parseScalarExpr f p src =
 >     either (Left . convParseError src) Right
->     $ parse (setPos f p *> whiteSpace
->              *> scalarExpr <* eof) "" src
+>     $ parse (setPos p *> whiteSpace
+>              *> scalarExpr <* eof) f src
 
-> setPos :: FilePath -> Maybe (Int,Int) -> P ()
-> setPos f p = do
->     sp <- getPosition
->     let sp' = setSourceName sp f
->         sp'' = maybe sp'
->                (\(l,c) -> flip setSourceColumn c
->                           $ setSourceLine sp' l)
->                p
->     setPosition sp''
+> setPos :: Maybe (Int,Int) -> P ()
+> setPos Nothing = return ()
+> setPos (Just (l,c)) =
+>     getPosition
+>     >>= (return
+>          . flip setSourceColumn c
+>          . flip setSourceLine l)
+>     >>= setPosition
 
 > data ParseError = ParseError
 >                   {peErrorString :: String
@@ -52,7 +51,6 @@
 >                   ,pePosition :: (Int,Int)
 >                   ,peFormattedError :: String
 >                   } deriving (Eq,Show)
-
 > convParseError :: String -> P.ParseError -> ParseError
 > convParseError src e =
 >     ParseError
