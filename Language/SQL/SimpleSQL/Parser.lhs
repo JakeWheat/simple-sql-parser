@@ -507,7 +507,8 @@ attempt to fix the precedence and associativity. Doesn't work
 >                ,return Nothing
 >                ]
 >     alias j = let a1 = optional (try (keyword_ "as")) *> identifierString
->               in option j (JoinAlias j <$> try a1)
+>                   a2 = optionMaybe (try $ parens (commaSep1 identifierString))
+>               in option j (JoinAlias j <$> try a1 <*> try a2)
 
 > optionalScalarExpr :: String -> P (Maybe ScalarExpr)
 > optionalScalarExpr k = optionMaybe (try (keyword_ k) *> scalarExpr)

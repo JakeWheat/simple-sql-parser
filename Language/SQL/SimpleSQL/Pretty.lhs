@@ -157,7 +157,9 @@ back into SQL source text. It attempts to format the output nicely.
 >         ,nest 4 $ commaSep $ map tr ts]
 >   where
 >     tr (SimpleTableRef t) = text t
->     tr (JoinAlias t a) = tr t <+> text "as" <+> text a
+>     tr (JoinAlias t a cs) =
+>         tr t <+> text "as" <+> text a
+>         <+> maybe empty (\cs' -> parens $ commaSep $ map text cs') cs
 >     tr (JoinParens t) = parens $ tr t
 >     tr (JoinQueryExpr q) = parens $ queryExpr q
 >     tr (JoinTableRef jt t0 t1 jc) =

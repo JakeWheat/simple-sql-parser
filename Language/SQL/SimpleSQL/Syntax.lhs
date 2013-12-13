@@ -99,7 +99,7 @@
 > data TableRef = SimpleTableRef String
 >               | JoinTableRef JoinType TableRef TableRef (Maybe JoinCondition)
 >               | JoinParens TableRef
->               | JoinAlias TableRef String
+>               | JoinAlias TableRef String (Maybe [String])
 >               | JoinQueryExpr QueryExpr
 >                 deriving (Eq,Show)
 

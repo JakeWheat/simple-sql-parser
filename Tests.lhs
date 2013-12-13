@@ -289,12 +289,14 @@
 >     ,("select a from (select a from t)"
 >      ,ms [JoinQueryExpr $ ms [SimpleTableRef "t"]])
 >     ,("select a from t as u"
->      ,ms [JoinAlias (SimpleTableRef "t") "u"])
+>      ,ms [JoinAlias (SimpleTableRef "t") "u" Nothing])
 >     ,("select a from t u"
->      ,ms [JoinAlias (SimpleTableRef "t") "u"])
+>      ,ms [JoinAlias (SimpleTableRef "t") "u" Nothing])
+>     ,("select a from t u(b)"
+>      ,ms [JoinAlias (SimpleTableRef "t") "u" $ Just ["b"]])
 >     ,("select a from (t cross join u) as u"
 >      ,ms [JoinAlias (JoinParens $ JoinTableRef Cross (SimpleTableRef "t")
->                             (SimpleTableRef "u") Nothing) "u"])
+>                             (SimpleTableRef "u") Nothing) "u" Nothing])
 >     ]
 >   where
 >     ms f = makeSelect {qeSelectList = [(Nothing,Iden "a")]
