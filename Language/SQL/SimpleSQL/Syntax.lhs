@@ -23,6 +23,8 @@
 >                 | App String [ScalarExpr]
 >                   -- the binop, prefixop and postfix op
 >                   -- are used for symbol and keyword operators
+>                   -- these are used even for the multiple keyword
+>                   -- operators
 >                 | BinOp String ScalarExpr ScalarExpr
 >                 | PrefixOp String ScalarExpr
 >                 | PostfixOp String ScalarExpr

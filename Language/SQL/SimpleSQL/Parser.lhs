@@ -251,8 +251,22 @@ used for between parsing
 
 > postfixOp :: ScalarExpr -> P ScalarExpr
 > postfixOp e =
->     try $ choice
->     [PostfixOp "is null" e <$ keyword_ "is" <* keyword_ "null"]
+>     try $ choice $ map makeOp opPairs
+>   where
+>     -- could left factor here?
+>     ops = ["is null"
+>           ,"is not null"
+>           ,"is true"
+>           ,"is not true"
+>           ,"is false"
+>           ,"is not false"
+>           ,"is unknown"
+>           ,"is not unknown"]
+>     opPairs = flip map ops $ \o -> (o, words o)
+>     makeOp (o,ws) =
+>       try $ PostfixOp o e <$ keywords_ ws
+>     keywords_ [] = return ()
+>     keywords_ (k:ks) = keyword_ k <* keywords_ ks
 
 > scalarExpr' :: P ScalarExpr
 > scalarExpr' = scalarExpr'' False
