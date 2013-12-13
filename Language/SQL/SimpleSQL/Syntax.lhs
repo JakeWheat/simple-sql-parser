@@ -77,6 +77,7 @@
 >       ,qeCorresponding :: Corresponding
 >       ,qe2 :: QueryExpr
 >       }
+>     | With [(String,QueryExpr)] QueryExpr
 >       deriving (Eq,Show)
 
 > data Duplicates = Distinct | All deriving (Eq,Show)

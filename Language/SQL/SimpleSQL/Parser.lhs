@@ -539,34 +539,44 @@ attempt to fix the precedence and associativity. Doesn't work
 > offset :: P (Maybe ScalarExpr)
 > offset = optionalScalarExpr "offset"
 
+> with :: P QueryExpr
+> with = try (keyword_ "with") >>
+>     With <$> commaSep1 withQuery
+>          <*> queryExpr
+>   where
+>     withQuery = (,) <$> (identifierString
+>                          <* optional (try $ keyword_ "as"))
+>                     <*> parens queryExpr
 
 > queryExpr :: P QueryExpr
 > queryExpr =
->     (try (keyword_ "select") >>
->      Select
->      <$> (fromMaybe All <$> duplicates)
->      <*> selectList
->      <*> from
->      <*> swhere
->      <*> sgroupBy
->      <*> having
->      <*> option [] orderBy
->      <*> limit
->      <*> offset)
->     >>= queryExprSuffix
+>   choice [select >>= queryExprSuffix, with]
+>   where
+>     select = try (keyword_ "select") >>
+>         Select
+>         <$> (fromMaybe All <$> duplicates)
+>         <*> selectList
+>         <*> from
+>         <*> swhere
+>         <*> sgroupBy
+>         <*> having
+>         <*> option [] orderBy
+>         <*> limit
+>         <*> offset
 
 > queryExprSuffix :: QueryExpr -> P QueryExpr
 > queryExprSuffix qe =
->     choice [CombineQueryExpr qe
->             <$> try (choice
->                      [Union <$ keyword_ "union"
->                      ,Intersect <$ keyword_ "intersect"
->                      ,Except <$ keyword_ "except"])
->             <*> (fromMaybe All <$> duplicates)
->             <*> (option Respectively
->                  $ try (Corresponding
->                         <$ keyword_ "corresponding"))
->             <*> queryExpr
+>     choice [(CombineQueryExpr qe
+>              <$> try (choice
+>                       [Union <$ keyword_ "union"
+>                       ,Intersect <$ keyword_ "intersect"
+>                       ,Except <$ keyword_ "except"])
+>              <*> (fromMaybe All <$> duplicates)
+>              <*> (option Respectively
+>                   $ try (Corresponding
+>                          <$ keyword_ "corresponding"))
+>              <*> queryExpr)
+>             >>= queryExprSuffix
 >            ,return qe]
 
 > queryExprs :: P [QueryExpr]

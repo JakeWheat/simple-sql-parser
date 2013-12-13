@@ -221,6 +221,7 @@
 >     ,orderBy
 >     ,limit
 >     ,combos
+>     ,withQueries
 >     ,fullQueries
 >     ]
 
@@ -387,6 +388,25 @@
 >     ms2 = makeSelect
 >           {qeSelectList = [(Nothing,Iden "b")]
 >           ,qeFrom = [SimpleTableRef "u"]}
+
+
+> withQueries :: TestItem
+> withQueries = Group "with queries" $ map (uncurry TestQueryExpr)
+>     [("with u as (select a from t) select a from u"
+>      ,With [("u", ms1)] ms2)
+>     ,("with x as (select a from t),\n\
+>       \     u as (select a from x)\n\
+>       \select a from u"
+>      ,With [("x", ms1), ("u",ms3)] ms2)
+>     ]
+>  where
+>    ms c t = makeSelect
+>             {qeSelectList = [(Nothing,Iden c)]
+>             ,qeFrom = [SimpleTableRef t]}
+>    ms1 = ms "a" "t"
+>    ms2 = ms "a" "u"
+>    ms3 = ms "a" "x"
+
 
 > fullQueries :: TestItem
 > fullQueries = Group "queries" $ map (uncurry TestQueryExpr)

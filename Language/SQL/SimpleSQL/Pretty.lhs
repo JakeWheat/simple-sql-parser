@@ -143,6 +143,12 @@ back into SQL source text. It attempts to format the output nicely.
 >                Corresponding -> text "corresponding"
 >                Respectively -> empty
 >       ,queryExpr q2]
+> queryExpr (With withs qe) =
+>   text "with"
+>   <+> vcat [nest 4
+>             (vcat $ punctuate comma $ flip map withs $ \(n,q) ->
+>              text n <+> text "as" <+> parens (queryExpr q))
+>            ,queryExpr qe]
 
 > selectList :: [(Maybe String, ScalarExpr)] -> Doc
 > selectList is = commaSep $ map si is

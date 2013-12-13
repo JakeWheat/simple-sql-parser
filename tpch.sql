@@ -360,8 +360,6 @@ order by
 
 -- q13
 
--- needs full table alias
-/*
 select
         c_count,
         count(*) as custdist
@@ -382,7 +380,6 @@ group by
 order by
         custdist desc,
         c_count desc;
-*/
 
 -- q14
 
@@ -401,7 +398,6 @@ where
         and l_shipdate < date '1994-12-01' + interval '1' month;
 
 -- q15
--- needs cte
 /*create view revenue0 (supplier_no, total_revenue) as
         select
                 l_suppkey,
@@ -413,7 +409,7 @@ where
                 and l_shipdate < date '1995-06-01' + interval '3' month
         group by
                 l_suppkey;*/
-/*
+
 with
 revenue0 as
         (select
@@ -445,7 +441,6 @@ where
         )
 order by
         s_suppkey;
-*/
 
 -- q16
 
