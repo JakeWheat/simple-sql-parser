@@ -132,7 +132,7 @@ digitse[+-]digits
 > blacklist = ["as", "from", "where", "having", "group", "order"
 >             ,"inner", "left", "right", "full", "natural", "join"
 >             ,"on", "using", "when", "then", "case", "end", "order"
->             ,"limit", "offset"]
+>             ,"limit", "offset", "in"]
 
 TODO: talk about what must be in the blacklist, and what doesn't need
 to be.
@@ -174,6 +174,18 @@ to be.
 >     prefixCast = try (CastOp <$> typeName
 >                              <*> stringLiteral)
 
+> inSuffix :: ScalarExpr -> P ScalarExpr
+> inSuffix e =
+>     In
+>     <$> inty
+>     <*> return e
+>     <*> parens (choice
+>                 [InQueryExpr <$> queryExpr
+>                 ,InList <$> commaSep1 scalarExpr])
+>   where
+>     inty = try $ choice [True <$ keyword_ "in"
+>                         ,False <$ keyword_ "not" <* keyword_ "in"]
+
 > subquery :: P ScalarExpr
 > subquery =
 >     choice
@@ -182,7 +194,6 @@ to be.
 >   where
 >     sqkw = try $ choice
 >            [SqExists <$ keyword_ "exists"
->            ,SqIn <$ keyword_ "in"
 >            ,SqAll <$ try (keyword_ "all")
 >            ,SqAny <$ keyword_ "any"
 >            ,SqSome <$ keyword_ "some"]
@@ -232,7 +243,10 @@ to be.
 >                     ,identifier
 >                     ,sparens]
 >     trysuffix e = try (suffix e) <|> return e
->     suffix e0 = (makeOp e0 <$> opSymbol <*> factor) >>= trysuffix
+>     suffix e0 = choice
+>                 [makeOp e0 <$> opSymbol <*> factor
+>                 ,inSuffix e0 
+>                 ] >>= trysuffix
 >     opSymbol = choice (map (try . symbol) binOpSymbolNames
 >                       ++ map (try . keyword) binOpKeywordNames)
 >     makeOp e0 op e1 = Op op [e0,e1]

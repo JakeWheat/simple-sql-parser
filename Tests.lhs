@@ -126,8 +126,10 @@
 > subqueries = Group "unaryOperators" $ map (uncurry TestScalarExpr)
 >     [("exists (select a from t)", SubQueryExpr SqExists ms)
 >     ,("(select a from t)", SubQueryExpr SqSq ms)
->     ,("in (select a from t)", SubQueryExpr SqIn ms)
->     ,("not in (select a from t)", Op "not" [SubQueryExpr SqIn ms])
+>     ,("a in (select a from t)"
+>      ,In True (Iden "a") (InQueryExpr ms))
+>     ,("a not in (select a from t)"
+>      ,In False (Iden "a") (InQueryExpr ms))
 >     ,("a > all (select a from t)"
 >      ,Op ">" [Iden "a", SubQueryExpr SqAll ms])
 >     ,("a = some (select a from t)"
@@ -143,25 +145,26 @@
 
 > miscOps :: TestItem
 > miscOps = Group "unaryOperators" $ map (uncurry TestScalarExpr)
->     [{-("a in (1,2,3)", Op "not" [Iden "a"])
->     ,("a between b and c", Op "not" [])
->     ,("a not between b and c", Op "not" [])
->     ,("a is null", Op "not" [])
->     ,("a is not null", Op "not" [])
->     ,("a is distinct from b", Op "not" [])
->     ,("a is not distinct from b", Op "not" [])
->     ,("a is true", Op "not" [])
->     ,("a s not true", Op "not" [])
->     ,("a is false", Op "not" [])
->     ,("a is not false", Op "not" [])
->     ,("a is unknown", Op "not" [])
->     ,("a is not unknown", Op "not" [])
->     ,("a like b", Op "not" [])
->     ,("a not like b", Op "not" [])
->     ,("a is similar to b", Op "not" [])
->     ,("a is not similar to b", Op "not" [])
->     ,("a overlaps b", Op "not" [])
->     ,("extract(day from t)", Op "not" [])-}
+>     [("a in (1,2,3)"
+>      ,In True (Iden "a") $ InList $ map NumLit ["1","2","3"])
+>     --,("a between b and c", Op "not" [])
+>     --,("a not between b and c", Op "not" [])
+>     --,("a is null", Op "not" [])
+>     --,("a is not null", Op "not" [])
+>     --,("a is distinct from b", Op "not" [])
+>     --,("a is not distinct from b", Op "not" [])
+>     --,("a is true", Op "not" [])
+>     --,("a s not true", Op "not" [])
+>     --,("a is false", Op "not" [])
+>     --,("a is not false", Op "not" [])
+>     --,("a is unknown", Op "not" [])
+>     --,("a is not unknown", Op "not" [])
+>     --,("a like b", Op "not" [])
+>     --,("a not like b", Op "not" [])
+>     --,("a is similar to b", Op "not" [])
+>     --,("a is not similar to b", Op "not" [])
+>     --,("a overlaps b", Op "not" [])
+>     --,("extract(day from t)", Op "not" [])
 >     ]
 
 > aggregates :: TestItem

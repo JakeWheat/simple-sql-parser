@@ -3,6 +3,7 @@
 >     (ScalarExpr(..)
 >     ,TypeName(..)
 >     ,SubQueryExprType(..)
+>     ,InThing(..)
 >     ,QueryExpr(..)
 >     ,makeSelect
 >     ,Duplicates(..)
@@ -28,11 +29,16 @@
 >                 | Cast ScalarExpr TypeName
 >                 | CastOp TypeName String
 >                 | SubQueryExpr SubQueryExprType QueryExpr
+>                 | In Bool -- true if in, false if not in
+>                      ScalarExpr InThing
 >                   deriving (Eq,Show)
 
 > data TypeName = TypeName String deriving (Eq,Show)
+> data InThing = InList [ScalarExpr]
+>              | InQueryExpr QueryExpr
+>              deriving (Eq,Show)
 
-> data SubQueryExprType = SqExists | SqIn | SqSq | SqAll | SqSome | SqAny
+> data SubQueryExprType = SqExists | SqSq | SqAll | SqSome | SqAny
 >                         deriving (Eq,Show)
 
 > data QueryExpr

@@ -59,11 +59,19 @@ back into SQL source text. It attempts to format the output nicely.
 >     (case ty of
 >         SqSq -> empty
 >         SqExists -> text "exists"
->         SqIn -> text "in"
 >         SqAll -> text "all"
 >         SqSome -> text "some"
 >         SqAny -> text "any"
 >     ) <+> parens (queryExpr qe)
+
+> scalarExpr (In b se x) =
+>     sep [scalarExpr se
+>         ,if b then empty else text "not"
+>         ,text "in"
+>         ,parens (nest 4 $
+>                  case x of
+>                      InList es -> commaSep $ map scalarExpr es
+>                      InQueryExpr qe -> queryExpr qe)]
 
 = query expressions
 
