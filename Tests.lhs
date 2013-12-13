@@ -199,7 +199,13 @@
 
 > fullQueries :: TestItem
 > fullQueries = Group "queries" $ map (uncurry TestQueryExpr)
->     [("select a, sum(c+d) as s\n\
+>     [("select count(*) from t"
+>      ,makeSelect
+>       {qeSelectList = [(Nothing, App "count" [Star])]
+>       ,qeFrom = [SimpleTableRef "t"]
+>       }
+>      )
+>     ,("select a, sum(c+d) as s\n\
 >       \  from t,u\n\
 >       \  where a > 5\n\
 >       \  group by a\n\

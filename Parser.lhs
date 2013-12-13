@@ -71,7 +71,10 @@ to be.
 
 
 > app :: P ScalarExpr
-> app = App <$> identifierString <*> parens (commaSep scalarExpr')
+> app = App <$> identifierString
+>       -- support for count(*)
+>       <*> parens (choice[(:[]) <$> try star
+>                         ,commaSep scalarExpr'])
 
 > scase :: P ScalarExpr
 > scase =
