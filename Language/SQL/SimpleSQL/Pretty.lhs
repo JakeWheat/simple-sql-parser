@@ -53,22 +53,29 @@ back into SQL source text. It attempts to format the output nicely.
 >                 <+> orderBy od)
 
 > scalarExpr (SpecialOp nm [a,b,c]) | nm `elem` ["between", "not between"] =
->   sep [scalarExpr a
->       ,text nm <+> scalarExpr b
->       ,text "and" <+> scalarExpr c]
+>   scalarExpr a <+> text nm <+> scalarExpr b <+> text "and" <+> scalarExpr c
 
 > scalarExpr (SpecialOp "extract" [a,n]) =
 >   text "extract" <> parens (scalarExpr a
 >                             <+> text "from"
 >                             <+> scalarExpr n)
 
+> scalarExpr (SpecialOp "substring" [a,s,e]) =
+>   text "substring" <> parens (scalarExpr a
+>                             <+> text "from"
+>                             <+> scalarExpr s
+>                             <+> text "for"
+>                             <+> scalarExpr e)
+
 > scalarExpr (SpecialOp nm es) =
 >   text nm <+> parens (commaSep $ map scalarExpr es)
 
 > scalarExpr (PrefixOp f e) = text f <+> scalarExpr e
 > scalarExpr (PostfixOp f e) = scalarExpr e <+> text f
+> scalarExpr (BinOp "and" e0 e1) =
+>     sep [scalarExpr e0, text "and" <+> scalarExpr e1]
 > scalarExpr (BinOp f e0 e1) =
->     sep [scalarExpr e0, text f, scalarExpr e1]
+>     scalarExpr e0 <+> text f <+> scalarExpr e1
 
 > scalarExpr (Case t ws els) =
 >     sep [text "case" <+> maybe empty scalarExpr t

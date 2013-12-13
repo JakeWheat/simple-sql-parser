@@ -3,6 +3,7 @@
 > module Language.SQL.SimpleSQL.Parser
 >     (parseQueryExpr
 >     ,parseScalarExpr
+>     ,parseQueryExprs
 >     ,ParseError(..)) where
 
 > import Text.Groom
@@ -27,6 +28,15 @@
 >     either (Left . convParseError src) Right
 >     $ parse (setPos p *> whiteSpace
 >              *> queryExpr <* eof) f src
+
+> parseQueryExprs :: FilePath
+>                 -> Maybe (Int,Int)
+>                 -> String
+>                 -> Either ParseError [QueryExpr]
+> parseQueryExprs f p src =
+>     either (Left . convParseError src) Right
+>     $ parse (setPos p *> whiteSpace
+>              *> queryExprs <* eof) f src
 
 > parseScalarExpr :: FilePath
 >                 -> Maybe (Int,Int)
@@ -209,6 +219,16 @@ to be.
 >                         *> scalarExpr'))
 >   where makeOp n e = SpecialOp "extract" [Iden n, e]
 
+> substring :: P ScalarExpr
+> substring = try (keyword_ "substring") >>
+>     parens (makeOp <$> scalarExpr'
+>                    <*> (keyword_ "from"
+>                         *> scalarExpr')
+>                    <*> (keyword_ "for"
+>                         *> scalarExpr')
+>                    )
+>   where makeOp a b c = SpecialOp "substring" [a,b,c]
+
 > inSuffix :: ScalarExpr -> P ScalarExpr
 > inSuffix e =
 >     In
@@ -327,6 +347,7 @@ postgresql handles this
 >                     ,scase
 >                     ,cast
 >                     ,extract
+>                     ,substring
 >                     ,subquery
 >                     ,prefixUnaryOp
 >                     ,(try app) >>= windowSuffix
@@ -546,6 +567,14 @@ attempt to fix the precedence and associativity. Doesn't work
 >                         <$ keyword_ "corresponding"))
 >             <*> queryExpr
 >            ,return qe]
+
+> queryExprs :: P [QueryExpr]
+> queryExprs = do
+>     qe <- queryExpr
+>     choice [[qe] <$ eof
+>            ,symbol ";" *>
+>             choice [[qe] <$ eof
+>                    ,(:) qe <$> queryExprs]]
 
 ------------------------------------------------
 

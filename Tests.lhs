@@ -171,6 +171,8 @@
 >     ,("a is not similar to b", BinOp "is not similar to" (Iden "a") (Iden "b"))
 >     ,("a overlaps b", BinOp "overlaps" (Iden "a") (Iden "b"))
 >     ,("extract(day from t)", SpecialOp "extract" [Iden "day", Iden "t"])
+>     ,("substring(x from 1 for 2)"
+>      ,SpecialOp "substring" [Iden "x", NumLit "1", NumLit "2"])
 >     ]
 
 > aggregates :: TestItem
@@ -415,8 +417,7 @@
 > tpchTests :: TestItem
 > tpchTests =
 >     Group "parse tpch"
->     $ map (ParseQueryExpr . snd)
->     $ take 1 tpchQueries
+>     $ map (ParseQueryExpr . snd) tpchQueries
 
 > testData :: TestItem
 > testData =
