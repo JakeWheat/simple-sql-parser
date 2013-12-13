@@ -3,10 +3,11 @@
 > module Language.SQL.SimpleSQL.Parser
 >     (parseQueryExpr
 >     ,parseScalarExpr
->     ,ParseError) where
+>     ,ParseError(..)) where
 
 > import Text.Groom
-> import Text.Parsec
+> import Text.Parsec hiding (ParseError)
+> import qualified Text.Parsec as P
 > import Control.Monad.Identity
 > import Control.Applicative hiding (many, (<|>), optional)
 > import qualified Language.Haskell.Exts.Syntax as HSE
@@ -16,12 +17,69 @@
 > import Language.SQL.SimpleSQL.Syntax
 
 
-> parseQueryExpr :: FilePath -> Maybe (Int,Int) -> String -> Either ParseError QueryExpr
-> parseQueryExpr _ _ = parse (whiteSpace *> queryExpr <* eof) ""
+> parseQueryExpr :: FilePath
+>                -> Maybe (Int,Int)
+>                -> String
+>                -> Either ParseError QueryExpr
+> parseQueryExpr f p src =
+>     either (Left . convParseError src) Right
+>     $ parse (setPos f p *> whiteSpace
+>              *> queryExpr <* eof) "" src
 
-> parseScalarExpr :: FilePath -> Maybe (Int,Int) -> String -> Either ParseError ScalarExpr
-> parseScalarExpr _ _ = parse (whiteSpace *> scalarExpr <* eof) ""
+> parseScalarExpr :: FilePath
+>                 -> Maybe (Int,Int)
+>                 -> String
+>                 -> Either ParseError ScalarExpr
+> parseScalarExpr f p src =
+>     either (Left . convParseError src) Right
+>     $ parse (setPos f p *> whiteSpace
+>              *> scalarExpr <* eof) "" src
 
+> setPos :: FilePath -> Maybe (Int,Int) -> P ()
+> setPos f p = do
+>   sp <- getPosition
+>   let sp' = setSourceName sp f
+>       sp'' = maybe sp'
+>              (\(l,c) -> flip setSourceColumn c
+>                         $ setSourceLine sp' l)
+>              p
+>   setPosition sp''
+
+> data ParseError = ParseError
+>                   {peErrorString :: String
+>                   ,peFilename :: FilePath
+>                   ,pePosition :: (Int,Int)
+>                   ,peFormattedError :: String}
+
+> convParseError :: String -> P.ParseError -> ParseError
+> convParseError src e =
+>     ParseError
+>     {peErrorString = show e
+>     ,peFilename = sourceName p
+>     ,pePosition = (sourceLine p, sourceColumn p)
+>     ,peFormattedError = formatError src e
+>     }
+>   where
+>     p = errorPos e
+
+format the error more nicely: emacs format for positioning, plus context
+
+> formatError :: String -> P.ParseError -> String
+> formatError src e =
+>     sourceName p ++ ":" ++ show (sourceLine p)
+>     ++ ":" ++ show (sourceColumn p) ++ ":"
+>     ++ context
+>     ++ show e
+>   where
+>     context =
+>         let lns = take 1 $ drop (sourceLine p - 1) $ lines src
+>         in case lns of
+>              [x] -> "\n" ++ x ++ "\n"
+>                     ++ replicate (sourceColumn p - 1) ' ' ++ "^\n"
+>              _ -> ""
+>     p = errorPos e
+
+Language/SQL/SimpleSQL/Parser.lhs:54:3:
 
 > type P a = ParsecT String () Identity a
 

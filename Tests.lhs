@@ -401,8 +401,8 @@
 > itemToTest (ParseQueryExpr str) =
 >     toPTest parseQueryExpr prettyQueryExpr str
 
-> toTest :: (Eq a, Show a, Show e) =>
->           (String -> Maybe (Int,Int) -> String -> Either e a)
+> toTest :: (Eq a, Show a) =>
+>           (String -> Maybe (Int,Int) -> String -> Either ParseError a)
 >        -> (a -> String)
 >        -> String
 >        -> a
@@ -410,27 +410,27 @@
 > toTest parser pp str expected = H.TestLabel str $ H.TestCase $ do
 >         let egot = parser "" Nothing str
 >         case egot of
->             Left e -> H.assertFailure $ show e
+>             Left e -> H.assertFailure $ peFormattedError e
 >             Right got -> do
 >                 H.assertEqual "" expected got
 >                 let str' = pp got
 >                 let egot' = parser "" Nothing str'
 >                 case egot' of
->                     Left e' -> H.assertFailure $ "pp roundtrip " ++ show e'
+>                     Left e' -> H.assertFailure $ "pp roundtrip " ++ peFormattedError e'
 >                     Right got' -> H.assertEqual "pp roundtrip" expected got'
 
-> toPTest :: (Eq a, Show a, Show e) =>
->           (String -> Maybe (Int,Int) -> String -> Either e a)
+> toPTest :: (Eq a, Show a) =>
+>           (String -> Maybe (Int,Int) -> String -> Either ParseError a)
 >        -> (a -> String)
 >        -> String
 >        -> H.Test
 > toPTest parser pp str = H.TestLabel str $ H.TestCase $ do
 >         let egot = parser "" Nothing str
 >         case egot of
->             Left e -> H.assertFailure $ show e
+>             Left e -> H.assertFailure $ peFormattedError e
 >             Right got -> do
 >                 let str' = pp got
 >                 let egot' = parser "" Nothing str'
 >                 case egot' of
->                     Left e' -> H.assertFailure $ "pp roundtrip " ++ show e'
->                     Right got' -> return ()
+>                     Left e' -> H.assertFailure $ "pp roundtrip " ++ peFormattedError e'
+>                     Right _got' -> return ()
