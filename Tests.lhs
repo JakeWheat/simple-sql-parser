@@ -1,9 +1,9 @@
 
 > module Tests (testData, runTests) where
 
-> import Syntax
-> import Pretty
-> import Parser
+> import Language.SQL.SimpleSQL.Syntax
+> import Language.SQL.SimpleSQL.Pretty
+> import Language.SQL.SimpleSQL.Parser
 > import qualified Test.HUnit as H
 > import Control.Monad
 

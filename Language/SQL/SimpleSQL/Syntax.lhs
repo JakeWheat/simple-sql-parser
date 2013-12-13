@@ -1,11 +1,12 @@
 
-> module Syntax (QueryExpr(..)
->               ,makeSelect
->               ,ScalarExpr(..)
->               ,TableRef(..)
->               ,JoinType(..)
->               ,JoinCondition(..))
->        where
+> module Language.SQL.SimpleSQL.Syntax
+>     (QueryExpr(..)
+>     ,makeSelect
+>     ,ScalarExpr(..)
+>     ,TableRef(..)
+>     ,JoinType(..)
+>     ,JoinCondition(..)
+>     ) where
 
 
 > data ScalarExpr = Literal String

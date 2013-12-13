@@ -2,9 +2,12 @@
 This is the pretty printer code which takes AST values and turns them
 back into SQL source text. It attempts to format the output nicely.
 
-> module Pretty (prettyQueryExpr, prettyScalarExpr) where
+> module Language.SQL.SimpleSQL.Pretty
+>     (prettyQueryExpr
+>     ,prettyScalarExpr
+>     ) where
 
-> import Syntax
+> import Language.SQL.SimpleSQL.Syntax
 > import Text.PrettyPrint
 > import Data.Maybe
 

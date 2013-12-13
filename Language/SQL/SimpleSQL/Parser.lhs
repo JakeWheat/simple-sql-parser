@@ -1,8 +1,9 @@
 
 
-> module Parser (parseQueryExpr
->               ,parseScalarExpr
->               ,ParseError) where
+> module Language.SQL.SimpleSQL.Parser
+>     (parseQueryExpr
+>     ,parseScalarExpr
+>     ,ParseError) where
 
 > import Text.Groom
 > import Text.Parsec
@@ -12,7 +13,7 @@
 > import qualified Language.Haskell.Exts.Fixity as HSE
 > import Data.Maybe
 
-> import Syntax
+> import Language.SQL.SimpleSQL.Syntax
 
 
 > parseQueryExpr :: FilePath -> Maybe (Int,Int) -> String -> Either ParseError QueryExpr
