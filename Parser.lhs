@@ -2,15 +2,12 @@
 
 > module Parser (parseQueryExpr
 >               ,parseScalarExpr
->               ,ParseError(..)) where
+>               ,ParseError) where
 
 > import Text.Groom
 > import Text.Parsec
 > import Control.Monad.Identity
 > import Control.Applicative hiding (many, (<|>), optional)
-> import Debug.Trace
-> import Data.List
-> import Text.Parsec.Expr
 > import qualified Language.Haskell.Exts.Syntax as HSE
 > import qualified Language.Haskell.Exts.Fixity as HSE
 > import Data.Maybe
@@ -200,9 +197,9 @@ to be.
 >     tref = choice [try (JoinQueryExpr <$> parens queryExpr)
 >                   ,JoinParens <$> parens tref
 >                   ,SimpleTableRef <$> identifierString]
->            >>= optionSuffix join
+>            >>= optionSuffix pjoin
 >            >>= optionSuffix alias
->     join tref0 =
+>     pjoin tref0 =
 >         choice
 >         [try (keyword_ "natural") *> keyword_ "inner"
 >          *> conditionlessSuffix tref0 Inner (Just JoinNatural)
@@ -217,7 +214,7 @@ to be.
 >         ,try (keyword_ "cross")
 >          *> conditionlessSuffix tref0 Cross Nothing
 >         ]
->         >>= optionSuffix join
+>         >>= optionSuffix pjoin
 >     outerJoinSuffix tref0 jt =
 >         optional (keyword_ "outer") *> conditionSuffix tref0 jt
 >     conditionSuffix tref0 jt =

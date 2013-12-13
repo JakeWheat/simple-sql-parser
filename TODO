@@ -1,24 +1,24 @@
-add tests
 
-left factor parsing code
+add tests to cabal
 
-implement pretty printer
-
-reimplement the fixity thing natively
+haddock
 
 dialect switching
 
-fix lexing wrt suffixes
+
+left factor parsing code
+
+reimplement the fixity thing natively
+
+fix lexing wrt suffixes 1/2 done
 
 position annotation
 
 emacs parse error formatting
 
-haddock
 
 = sql support
 
-count(*)
 decimal literals, split string and number literals
 order by directions
 distinct/all
@@ -59,12 +59,13 @@ group by (), grouping sets(), cube, rollup
 lateral
 corresponding
 named windows
+table, values
 cte
 apply, pivot
 full tableref aliases
 collate
-
 within group aggregate syntax
+
 try to do full review of sql2003 query syntax
 
 maybe later: other dml

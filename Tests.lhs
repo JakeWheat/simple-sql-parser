@@ -1,5 +1,5 @@
 
-> module Tests (testData) where
+> module Tests (testData, runTests) where
 
 > import Syntax
 > import Pretty
@@ -239,12 +239,24 @@
 > itemToTest (Group nm ts) =
 >     H.TestLabel nm $ H.TestList $ map itemToTest ts
 > itemToTest (TestScalarExpr str expected) =
->     toTest parseScalarExpr str expected
+>     toTest parseScalarExpr prettyScalarExpr str expected
 > itemToTest (TestQueryExpr str expected) =
->     toTest parseQueryExpr str expected
+>     toTest parseQueryExpr prettyQueryExpr str expected
 
-> toTest parser str expected = H.TestLabel str $ H.TestCase $ do
+> toTest :: (Eq a, Show a, Show e) =>
+>           (String -> Maybe (Int,Int) -> String -> Either e a)
+>        -> (a -> String)
+>        -> String
+>        -> a
+>        -> H.Test
+> toTest parser pp str expected = H.TestLabel str $ H.TestCase $ do
 >         let egot = parser "" Nothing str
 >         case egot of
 >             Left e -> H.assertFailure $ show e
->             Right got -> H.assertEqual "" expected got
+>             Right got -> do
+>                 H.assertEqual "" expected got
+>                 let str' = pp got
+>                 let egot' = parser "" Nothing str'
+>                 case egot' of
+>                     Left e' -> H.assertFailure $ "pp roundtrip " ++ show e'
+>                     Right got' -> H.assertEqual "pp roundtrip" expected got'
