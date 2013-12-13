@@ -25,7 +25,7 @@
 >                        (Maybe ScalarExpr) -- else value
 >                 | Parens ScalarExpr
 >                 | Cast ScalarExpr TypeName
->                 | CastOp String TypeName
+>                 | CastOp TypeName String
 >                   deriving (Eq,Show)
 
 > data TypeName = TypeName String deriving (Eq,Show)

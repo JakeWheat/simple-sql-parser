@@ -52,7 +52,7 @@ back into SQL source text. It attempts to format the output nicely.
 >                                ,text "as"
 >                                ,text tn])
 
-> scalarExpr (CastOp s (TypeName tn)) =
+> scalarExpr (CastOp (TypeName tn) s) =
 >     text tn <+> quotes (text s)
 
 = query expressions

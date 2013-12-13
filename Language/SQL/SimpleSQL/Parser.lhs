@@ -85,8 +85,11 @@ format the error more nicely: emacs format for positioning, plus context
 
 = scalar expressions
 
+> stringLiteral :: P String
+> stringLiteral = symbol_ "'" *> manyTill anyChar (symbol_ "'")
+
 > estring :: P ScalarExpr
-> estring = StringLit <$> (symbol_ "'" *> manyTill anyChar (symbol_ "'"))
+> estring = StringLit <$> stringLiteral
 
 digits
 digits.[digits][e[+-]digits]
@@ -162,6 +165,23 @@ to be.
 >     swhen = keyword_ "when" *>
 >             ((,) <$> scalarExpr' <*> (keyword_ "then" *> scalarExpr'))
 
+> cast :: P ScalarExpr
+> cast = parensCast <|> prefixCast
+>   where
+>     parensCast = try (keyword_ "cast") >>
+>                  parens (Cast <$> scalarExpr
+>                          <*> (keyword_ "as" *> typeName))
+>     prefixCast = try (CastOp <$> typeName
+>                              <*> stringLiteral)
+
+> typeName :: P TypeName
+> typeName = choice
+>     [TypeName "double precision"
+>      <$ keyword_ "double" <* keyword_ "precision"
+>     ,TypeName "character varying"
+>      <$ keyword_ "character" <* keyword_ "varying"
+>     ,TypeName <$> identifierString]
+
 > binOpSymbolNames :: [String]
 > binOpSymbolNames = ["=", "<=", ">="
 >                    ,"!=", "<>", "<", ">"
@@ -191,6 +211,7 @@ to be.
 >   where
 >     factor = choice [literal
 >                     ,scase
+>                     ,cast
 >                     ,unaryOp
 >                     ,try app
 >                     ,try dottedIden
@@ -211,6 +232,8 @@ to be.
 >     StringLit l -> HSE.Lit $ HSE.String $ 's':l
 >     NumLit l -> HSE.Lit $ HSE.String $ 'n':l
 >     App n es -> HSE.App (toHaskell $ Iden n) $ ltoh es
+>     Cast e0 (TypeName tn) -> toHaskell $ App ("cast:" ++ tn) [e0]
+>     CastOp (TypeName tn) s -> toHaskell $ App ("castop:" ++ tn) [StringLit s]
 >     Op n [e0,e1] -> HSE.InfixApp (toHaskell e0)
 >                                  (HSE.QVarOp $ HSE.UnQual $ HSE.Ident n)
 >                                  (toHaskell e1)
@@ -239,8 +262,15 @@ to be.
 >     HSE.App (HSE.Var (HSE.UnQual (HSE.Ident "$case"))) (HSE.List [v,ts,el]) ->
 >         Case (ltom v) (pairs ts) (ltom el)
 >     HSE.App (HSE.Var (HSE.UnQual (HSE.Ident x)))
->             (HSE.List [ea]) | "unary:" `isPrefixOf` x ->
->         Op (drop 6 x) [toSql ea]
+>             (HSE.List [ea])
+>         | "unary:" `isPrefixOf` x ->
+>           Op (drop 6 x) [toSql ea]
+>         | "cast:" `isPrefixOf` x ->
+>           Cast (toSql ea) (TypeName $ drop 5 x)
+>     HSE.App (HSE.Var (HSE.UnQual (HSE.Ident x)))
+>             (HSE.List [HSE.Lit (HSE.String ('s':ea))])
+>         | "castop:" `isPrefixOf` x ->
+>           CastOp (TypeName $ drop 7 x) ea
 >     HSE.App (HSE.Var (HSE.UnQual (HSE.Ident i)))
 >             (HSE.List es) -> App i $ map toSql es
 >     HSE.InfixApp e0 (HSE.QVarOp (HSE.UnQual (HSE.Ident n))) e1 ->
