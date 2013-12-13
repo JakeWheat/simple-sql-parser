@@ -44,8 +44,8 @@ back into SQL source text. It attempts to format the output nicely.
 >     sep [scalarExpr e0, text f, scalarExpr e1]
 
 > scalarExpr (Case t ws els) =
->     sep [text "case" <+> (maybe empty scalarExpr t)
->         ,nest 4 (sep ((map w ws)
+>     sep [text "case" <+> maybe empty scalarExpr t
+>         ,nest 4 (sep (map w ws
 >                       ++ maybeToList (fmap e els)))
 >         ,text "end"]
 >   where

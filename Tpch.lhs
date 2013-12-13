@@ -2,7 +2,7 @@
 test data for tpch queries
 
 
-> {-# LANGUAGE QuasiQuotes,OverloadedStrings #-}
+> {-# LANGUAGE OverloadedStrings #-}
 
 > module Tpch (tpchQueries) where
 >

@@ -38,12 +38,9 @@
 
 > setPos :: Maybe (Int,Int) -> P ()
 > setPos Nothing = return ()
-> setPos (Just (l,c)) =
->     getPosition
->     >>= (return
->          . flip setSourceColumn c
->          . flip setSourceLine l)
->     >>= setPosition
+> setPos (Just (l,c)) = fmap f getPosition >>= setPosition
+>   where f = flip setSourceColumn c
+>             . flip setSourceLine l
 
 > data ParseError = ParseError
 >                   {peErrorString :: String
@@ -254,9 +251,8 @@ used for between parsing
 
 > prefixUnaryOp :: P ScalarExpr
 > prefixUnaryOp =
->     makeOp <$> opSymbol <*> scalarExpr'
+>     PrefixOp <$> opSymbol <*> scalarExpr'
 >   where
->     makeOp nm e = PrefixOp nm e
 >     opSymbol = choice (map (try . symbol) prefixUnOpSymbolNames
 >                       ++ map (try . keyword) prefixUnOpKeywordNames)
 
@@ -276,8 +272,7 @@ used for between parsing
 >     opPairs = flip map ops $ \o -> (o, words o)
 >     makeOp (o,ws) =
 >       try $ PostfixOp o e <$ keywords_ ws
->     keywords_ [] = return ()
->     keywords_ (k:ks) = keyword_ k <* keywords_ ks
+>     keywords_ = try . mapM_ keyword_
 
 > scalarExpr' :: P ScalarExpr
 > scalarExpr' = scalarExpr'' False
@@ -294,6 +289,7 @@ postgresql handles this
 >     factor = choice [literal
 >                     ,scase
 >                     ,cast
+>                     --,extract
 >                     ,subquery
 >                     ,prefixUnaryOp
 >                     ,try app
@@ -314,9 +310,7 @@ postgresql handles this
 >                (if bExpr
 >                 then binOpKeywordNamesNoAnd
 >                 else binOpKeywordNames))
->     keywords ks = intercalate " " <$> keywords' ks
->     keywords' [] = return []
->     keywords' (k:ks) = (:) <$> keyword k <*> keywords' ks
+>     keywords ks = unwords <$> mapM keyword ks
 
 > sparens :: P ScalarExpr
 > sparens = Parens <$> parens scalarExpr'

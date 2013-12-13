@@ -8,6 +8,7 @@ get tpch parsing
 check the pretty printer on the tpch queries
 add automated tests to cabal
 do code documentation and haddock
+  check the order of exports, imports and functions/cases in the files
 do some tests for parse errors?
 website with haddock and table of parsing tests
 

@@ -168,7 +168,7 @@
 >     ,("a is similar to b", BinOp "is similar to" (Iden "a") (Iden "b"))
 >     ,("a is not similar to b", BinOp "is not similar to" (Iden "a") (Iden "b"))
 >     ,("a overlaps b", BinOp "overlaps" (Iden "a") (Iden "b"))
->     --,("extract(day from t)", Op "not" [])
+>     --,("extract(day from t)", SpecialOp "extract" [Iden "day", Iden "t"])
 >     ]
 
 > aggregates :: TestItem
