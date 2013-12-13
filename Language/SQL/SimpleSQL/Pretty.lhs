@@ -29,6 +29,15 @@ back into SQL source text. It attempts to format the output nicely.
 > scalarExpr (Star2 q) = text q <> text "." <> text "*"
 
 > scalarExpr (App f es) = text f <> parens (commaSep (map scalarExpr es))
+
+special cases
+
+> scalarExpr (Op nm [a,b,c]) | nm `elem` ["between", "not between"] =
+>   sep [scalarExpr a
+>       ,text nm <+> scalarExpr b
+>       ,text "and" <+> scalarExpr c]
+
+
 > scalarExpr (Op f [e]) = text f <+> scalarExpr e
 > scalarExpr (Op f [e0,e1]) =
 >     sep [scalarExpr e0, text f, scalarExpr e1]

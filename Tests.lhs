@@ -147,8 +147,12 @@
 > miscOps = Group "unaryOperators" $ map (uncurry TestScalarExpr)
 >     [("a in (1,2,3)"
 >      ,In True (Iden "a") $ InList $ map NumLit ["1","2","3"])
->     --,("a between b and c", Op "not" [])
->     --,("a not between b and c", Op "not" [])
+>     ,("a between b and c", Op "between" [Iden "a"
+>                                         ,Iden "b"
+>                                         ,Iden "c"])
+>     ,("a not between b and c", Op "not between" [Iden "a"
+>                                                 ,Iden "b"
+>                                                 ,Iden "c"])
 >     --,("a is null", Op "not" [])
 >     --,("a is not null", Op "not" [])
 >     --,("a is distinct from b", Op "not" [])

@@ -128,6 +128,7 @@ digitse[+-]digits
 >   where
 >     letterOrUnderscore = char '_' <|> letter
 >     letterDigitOrUnderscore = char '_' <|> alphaNum
+
 > blacklist :: [String]
 > blacklist = ["as", "from", "where", "having", "group", "order"
 >             ,"inner", "left", "right", "full", "natural", "join"
@@ -142,7 +143,7 @@ to be.
 
 > dottedIden :: P ScalarExpr
 > dottedIden = Iden2 <$> identifierString
->                                <*> (symbol "." *> identifierString)
+>                    <*> (symbol "." *> identifierString)
 
 > star :: P ScalarExpr
 > star = choice [Star <$ symbol "*"
@@ -169,7 +170,7 @@ to be.
 > cast = parensCast <|> prefixCast
 >   where
 >     parensCast = try (keyword_ "cast") >>
->                  parens (Cast <$> scalarExpr
+>                  parens (Cast <$> scalarExpr'
 >                          <*> (keyword_ "as" *> typeName))
 >     prefixCast = try (CastOp <$> typeName
 >                              <*> stringLiteral)
@@ -181,10 +182,23 @@ to be.
 >     <*> return e
 >     <*> parens (choice
 >                 [InQueryExpr <$> queryExpr
->                 ,InList <$> commaSep1 scalarExpr])
+>                 ,InList <$> commaSep1 scalarExpr'])
 >   where
 >     inty = try $ choice [True <$ keyword_ "in"
 >                         ,False <$ keyword_ "not" <* keyword_ "in"]
+
+> betweenSuffix :: ScalarExpr -> P ScalarExpr
+> betweenSuffix e =
+>     makeOp
+>     <$> opName
+>     <*> return e
+>     <*> scalarExpr'' True
+>     <*> (keyword_ "and" *> scalarExpr')
+>   where
+>     opName = try $ choice
+>              ["between" <$ keyword_ "between"
+>              ,"not between" <$ keyword_ "not" <* keyword_ "between"]
+>     makeOp n a b c = Op n [a,b,c]
 
 > subquery :: P ScalarExpr
 > subquery =
@@ -215,6 +229,11 @@ to be.
 > binOpKeywordNames :: [String]
 > binOpKeywordNames = ["and", "or", "like"]
 
+used for between parsing
+
+> binOpKeywordNamesNoAnd :: [String]
+> binOpKeywordNamesNoAnd = filter (/="and") binOpKeywordNames
+
 > unOpKeywordNames :: [String]
 > unOpKeywordNames = ["not"]
 
@@ -224,14 +243,23 @@ to be.
 
 > unaryOp :: P ScalarExpr
 > unaryOp =
->     makeOp <$> opSymbol <*> scalarExpr
+>     makeOp <$> opSymbol <*> scalarExpr'
 >   where
 >     makeOp nm e = Op nm [e]
 >     opSymbol = choice (map (try . symbol) unOpSymbolNames
 >                       ++ map (try . keyword) unOpKeywordNames)
 
 > scalarExpr' :: P ScalarExpr
-> scalarExpr' = factor >>= trysuffix
+> scalarExpr' = scalarExpr'' False
+
+the bexpr is to deal with between x and y
+
+when we are parsing the scalar expr for x, we don't allow and as a
+binary operator except nested in parens. This is taken from how
+postgresql handles this
+
+> scalarExpr'' :: Bool -> P ScalarExpr
+> scalarExpr'' bExpr = factor >>= trysuffix
 >   where
 >     factor = choice [literal
 >                     ,scase
@@ -245,10 +273,14 @@ to be.
 >     trysuffix e = try (suffix e) <|> return e
 >     suffix e0 = choice
 >                 [makeOp e0 <$> opSymbol <*> factor
->                 ,inSuffix e0 
+>                 ,inSuffix e0
+>                 ,betweenSuffix e0
 >                 ] >>= trysuffix
 >     opSymbol = choice (map (try . symbol) binOpSymbolNames
->                       ++ map (try . keyword) binOpKeywordNames)
+>                       ++ map (try . keyword)
+>                          (if bExpr
+>                           then binOpKeywordNamesNoAnd
+>                           else binOpKeywordNames))
 >     makeOp e0 op e1 = Op op [e0,e1]
 
 > sparens :: P ScalarExpr
