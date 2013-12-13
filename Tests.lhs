@@ -199,9 +199,13 @@
 > orderBy :: TestItem
 > orderBy = Group "orderBy" $ map (uncurry TestQueryExpr)
 >     [("select a from t order by a"
->      ,ms [Iden "a"])
+>      ,ms [(Iden "a", Asc)])
 >     ,("select a from t order by a, b"
->      ,ms [Iden "a", Iden "b"])
+>      ,ms [(Iden "a", Asc), (Iden "b", Asc)])
+>     ,("select a from t order by a asc"
+>      ,ms [(Iden "a", Asc)])
+>     ,("select a from t order by a desc, b desc"
+>      ,ms [(Iden "a", Desc), (Iden "b", Desc)])
 >     ]
 >   where
 >     ms o = makeSelect {qeSelectList = [(Nothing,Iden "a")]
@@ -231,7 +235,7 @@
 >       ,qeGroupBy = [Iden "a"]
 >       ,qeHaving = Just $ Op ">" [App "count" [NumLit "1"]
 >                                 ,NumLit "5"]
->       ,qeOrderBy = [Iden "s"]
+>       ,qeOrderBy = [(Iden "s", Asc)]
 >       }
 >      )
 >     ]

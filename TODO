@@ -1,10 +1,13 @@
 
+check tpch
+
 add tests to cabal
 
 haddock
 
 dialect switching
 
+refactor the join parsing
 
 left factor parsing code
 
@@ -19,8 +22,6 @@ emacs parse error formatting
 
 = sql support
 
-decimal literals, split string and number literals
-order by directions
 distinct/all
 limit,offset, top
 
@@ -46,6 +47,8 @@ other missing operators
   substring
 
 except, intersect, union
+
+-- add docs and haddocks at this point
 
 
 review identifiers

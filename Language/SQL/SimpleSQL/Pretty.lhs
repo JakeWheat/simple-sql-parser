@@ -111,10 +111,13 @@ back into SQL source text. It attempts to format the output nicely.
 > having = maybe empty
 >          (\w -> sep [text "having"
 >                     ,nest 4 $ scalarExpr w])
-> orderBy :: [ScalarExpr] -> Doc
+> orderBy :: [(ScalarExpr,Direction)] -> Doc
 > orderBy [] = empty
 > orderBy os = sep [text "order by"
->                  ,nest 4 $ commaSep $ map scalarExpr os]
+>                  ,nest 4 $ commaSep $ map f os]
+>   where
+>     f (e,Asc) = scalarExpr e
+>     f (e,Desc) = scalarExpr e <+> text "desc"
 
 
 = utils

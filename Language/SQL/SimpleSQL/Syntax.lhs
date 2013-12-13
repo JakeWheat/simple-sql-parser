@@ -6,6 +6,7 @@
 >     ,TableRef(..)
 >     ,JoinType(..)
 >     ,JoinCondition(..)
+>     ,Direction(..)
 >     ) where
 
 
@@ -30,8 +31,10 @@
 >       ,qeWhere :: Maybe ScalarExpr
 >       ,qeGroupBy :: [ScalarExpr]
 >       ,qeHaving :: Maybe ScalarExpr
->       ,qeOrderBy :: [ScalarExpr]
+>       ,qeOrderBy :: [(ScalarExpr,Direction)]
 >       } deriving (Eq,Show)
+
+> data Direction = Asc | Desc deriving (Eq,Show)
 
 > makeSelect :: QueryExpr
 > makeSelect = Select {qeSelectList = []

@@ -267,10 +267,14 @@ to be.
 > having :: P (Maybe ScalarExpr)
 > having = optionMaybe (try (keyword_ "having") *> scalarExpr)
 
-> orderBy :: P [ScalarExpr]
+> orderBy :: P [(ScalarExpr,Direction)]
 > orderBy = option [] (try (keyword_ "order")
 >                      *> keyword_ "by"
->                      *> commaSep1 scalarExpr)
+>                      *> commaSep1 ob)
+>   where
+>     ob = (,) <$> scalarExpr
+>              <*> option Asc (choice [Asc <$ keyword_ "asc"
+>                                     ,Desc <$ keyword_ "desc"])
 
 > queryExpr :: P QueryExpr
 > queryExpr =
