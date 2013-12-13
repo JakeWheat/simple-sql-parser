@@ -119,6 +119,13 @@ back into SQL source text. It attempts to format the output nicely.
 >       ,maybeScalarExpr "limit" lm
 >       ,maybeScalarExpr "offset" off
 >       ]
+> queryExpr (CombineQueryExpr q1 ct q2) =
+>   sep [queryExpr q1
+>       ,text $ case ct of
+>            Union -> "union"
+>            Intersect -> "intersect"
+>            Except -> "except"
+>       ,queryExpr q2]
 
 > selectList :: [(Maybe String, ScalarExpr)] -> Doc
 > selectList is = commaSep $ map si is

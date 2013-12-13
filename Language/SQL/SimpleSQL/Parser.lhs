@@ -130,7 +130,8 @@ digitse[+-]digits
 > blacklist = ["as", "from", "where", "having", "group", "order"
 >             ,"inner", "left", "right", "full", "natural", "join"
 >             ,"on", "using", "when", "then", "case", "end", "order"
->             ,"limit", "offset", "in"]
+>             ,"limit", "offset", "in"
+>             ,"except", "intersect", "union"]
 
 TODO: talk about what must be in the blacklist, and what doesn't need
 to be.
@@ -512,17 +513,28 @@ attempt to fix the precedence and associativity. Doesn't work
 
 > queryExpr :: P QueryExpr
 > queryExpr =
->     try (keyword_ "select") >>
->     Select
->     <$> (fromMaybe All <$> duplicates)
->     <*> selectList
->     <*> from
->     <*> swhere
->     <*> sgroupBy
->     <*> having
->     <*> option [] orderBy
->     <*> limit
->     <*> offset
+>     (try (keyword_ "select") >>
+>      Select
+>      <$> (fromMaybe All <$> duplicates)
+>      <*> selectList
+>      <*> from
+>      <*> swhere
+>      <*> sgroupBy
+>      <*> having
+>      <*> option [] orderBy
+>      <*> limit
+>      <*> offset)
+>     >>= queryExprSuffix
+
+> queryExprSuffix :: QueryExpr -> P QueryExpr
+> queryExprSuffix qe =
+>     choice [CombineQueryExpr qe
+>             <$> try (choice
+>                      [Union <$ keyword "union"
+>                      ,Intersect <$ keyword "intersect"
+>                      ,Except <$ keyword "except"])
+>             <*> queryExpr
+>            ,return qe]
 
 ------------------------------------------------
 

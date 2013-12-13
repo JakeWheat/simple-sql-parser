@@ -364,13 +364,20 @@
 
 > combos :: TestItem
 > combos = Group "combos" $ map (uncurry TestQueryExpr)
->     [{-("select a from t union select b from u"
->      ,makeSelect)
+>     [("select a from t union select b from u"
+>      ,CombineQueryExpr ms1 Union ms2)
 >     ,("select a from t intersect select b from u"
->      ,makeSelect)
+>      ,CombineQueryExpr ms1 Intersect ms2)
 >     ,("select a from t except select b from u"
->      ,makeSelect)-}
+>      ,CombineQueryExpr ms1 Except ms2)
 >     ]
+>   where
+>     ms1 = makeSelect
+>           {qeSelectList = [(Nothing,Iden "a")]
+>           ,qeFrom = [SimpleTableRef "t"]}
+>     ms2 = makeSelect
+>           {qeSelectList = [(Nothing,Iden "b")]
+>           ,qeFrom = [SimpleTableRef "u"]}
 
 > fullQueries :: TestItem
 > fullQueries = Group "queries" $ map (uncurry TestQueryExpr)

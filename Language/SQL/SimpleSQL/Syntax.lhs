@@ -8,6 +8,7 @@
 >     ,makeSelect
 >     ,Duplicates(..)
 >     ,Direction(..)
+>     ,CombineOp(..)
 >     ,TableRef(..)
 >     ,JoinType(..)
 >     ,JoinCondition(..)
@@ -64,10 +65,17 @@
 >       ,qeOrderBy :: [(ScalarExpr,Direction)]
 >       ,qeLimit :: Maybe ScalarExpr
 >       ,qeOffset :: Maybe ScalarExpr
->       } deriving (Eq,Show)
+>       }
+>     | CombineQueryExpr
+>       {qe1 :: QueryExpr
+>       ,qeCombOp :: CombineOp
+>       ,qe2 :: QueryExpr
+>       }
+>       deriving (Eq,Show)
 
 > data Duplicates = Distinct | All deriving (Eq,Show)
 > data Direction = Asc | Desc deriving (Eq,Show)
+> data CombineOp = Union | Except | Intersect deriving (Eq,Show)
 
 > makeSelect :: QueryExpr
 > makeSelect = Select {qeDuplicates = All
