@@ -25,8 +25,8 @@
 
 > literals :: TestItem
 > literals = Group "literals" $ map (uncurry TestScalarExpr)
->     [("3", Literal "3")
->     ,("'string'", Literal "string")
+>     [("3", NumLiteral "3")
+>     ,("'string'", StringLiteral "string")
 >     ]
 
 > identifiers :: TestItem
@@ -51,17 +51,18 @@
 > caseexp :: TestItem
 > caseexp = Group "caseexp" $ map (uncurry TestScalarExpr)
 >     [("case a when 1 then 2 end"
->      ,Case (Just $ Identifier "a") [(Literal "1", Literal "2")] Nothing)
+>      ,Case (Just $ Identifier "a") [(NumLiteral "1"
+>                                     ,NumLiteral "2")] Nothing)
 >     ,("case a when 1 then 2 when 3 then 4 end"
->      ,Case (Just $ Identifier "a") [(Literal "1", Literal "2")
->                                    ,(Literal "3", Literal "4")] Nothing)
+>      ,Case (Just $ Identifier "a") [(NumLiteral "1", NumLiteral "2")
+>                                    ,(NumLiteral "3", NumLiteral "4")] Nothing)
 >     ,("case a when 1 then 2 when 3 then 4 else 5 end"
->      ,Case (Just $ Identifier "a") [(Literal "1", Literal "2")
->                                    ,(Literal "3", Literal "4")] (Just $ Literal "5"))
+>      ,Case (Just $ Identifier "a") [(NumLiteral "1", NumLiteral "2")
+>                                    ,(NumLiteral "3", NumLiteral "4")] (Just $ NumLiteral "5"))
 >     ,("case when a=1 then 2 when a=3 then 4 else 5 end"
->      ,Case Nothing [(Op "=" [Identifier "a", Literal "1"], Literal "2")
->                    ,(Op "=" [Identifier "a", Literal "3"], Literal "4")]
->                    (Just $ Literal "5"))
+>      ,Case Nothing [(Op "=" [Identifier "a", NumLiteral "1"], NumLiteral "2")
+>                    ,(Op "=" [Identifier "a",NumLiteral "3"], NumLiteral "4")]
+>                    (Just $ NumLiteral "5"))
 >     ]
 
 > operators :: TestItem
@@ -90,7 +91,7 @@
 > selectLists :: TestItem
 > selectLists = Group "selectLists" $ map (uncurry TestQueryExpr)
 >     [("select 1",
->       makeSelect {qeSelectList = [(Nothing,Literal "1")]})
+>       makeSelect {qeSelectList = [(Nothing,NumLiteral "1")]})
 >     ,("select a"
 >      ,makeSelect {qeSelectList = [(Nothing,Identifier "a")]})
 >     ,("select a,b"
@@ -98,8 +99,8 @@
 >                                  ,(Nothing,Identifier "b")]})
 >     ,("select 1+2,3+4"
 >      ,makeSelect {qeSelectList =
->                      [(Nothing,Op "+" [Literal "1",Literal "2"])
->                      ,(Nothing,Op "+" [Literal "3",Literal "4"])]})
+>                      [(Nothing,Op "+" [NumLiteral "1",NumLiteral "2"])
+>                      ,(Nothing,Op "+" [NumLiteral "3",NumLiteral "4"])]})
 >     ,("select a as a, /*comment*/ b as b"
 >      ,makeSelect {qeSelectList = [(Just "a", Identifier "a")
 >                                  ,(Just "b", Identifier "b")]})
@@ -154,7 +155,7 @@
 >     [("select a from t where a = 5"
 >      ,makeSelect {qeSelectList = [(Nothing,Identifier "a")]
 >                  ,qeFrom = [SimpleTableRef "t"]
->                  ,qeWhere = Just $ Op "=" [Identifier "a", Literal "5"]})
+>                  ,qeWhere = Just $ Op "=" [Identifier "a", NumLiteral "5"]})
 >     ]
 
 > groupByClause :: TestItem
@@ -181,7 +182,7 @@
 >                                  ,(Nothing, App "sum" [Identifier "b"])]
 >                  ,qeFrom = [SimpleTableRef "t"]
 >                  ,qeGroupBy = [Identifier "a"]
->                  ,qeHaving = Just $ Op ">" [App "sum" [Identifier "b"], Literal "5"]
+>                  ,qeHaving = Just $ Op ">" [App "sum" [Identifier "b"], NumLiteral "5"]
 >                  })
 >     ]
 
@@ -216,10 +217,10 @@
 >                       ,(Just "s", App "sum" [Op "+" [Identifier "c"
 >                                                     ,Identifier "d"]])]
 >       ,qeFrom = [SimpleTableRef "t", SimpleTableRef "u"]
->       ,qeWhere = Just $ Op ">" [Identifier "a", Literal "5"]
+>       ,qeWhere = Just $ Op ">" [Identifier "a", NumLiteral "5"]
 >       ,qeGroupBy = [Identifier "a"]
->       ,qeHaving = Just $ Op ">" [App "count" [Literal "1"]
->                                 ,Literal "5"]
+>       ,qeHaving = Just $ Op ">" [App "count" [NumLiteral "1"]
+>                                 ,NumLiteral "5"]
 >       ,qeOrderBy = [Identifier "s"]
 >       }
 >      )

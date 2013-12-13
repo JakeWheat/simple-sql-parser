@@ -9,7 +9,8 @@
 >     ) where
 
 
-> data ScalarExpr = Literal String
+> data ScalarExpr = NumLiteral String
+>                 | StringLiteral String
 >                 | Identifier String
 >                 | Identifier2 String String
 >                 | Star

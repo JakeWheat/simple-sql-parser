@@ -21,7 +21,8 @@ back into SQL source text. It attempts to format the output nicely.
 = scalar expressions
 
 > scalarExpr :: ScalarExpr -> Doc
-> scalarExpr (Literal s) = quotes $ text s
+> scalarExpr (StringLiteral s) = quotes $ text s
+> scalarExpr (NumLiteral s) = text s
 > scalarExpr (Identifier i) = text i
 > scalarExpr (Identifier2 q i) = text q <> text "." <> text i
 > scalarExpr Star = text "*"

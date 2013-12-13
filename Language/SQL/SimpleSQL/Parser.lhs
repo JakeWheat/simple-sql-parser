@@ -31,10 +31,10 @@
 = scalar expressions
 
 > estring :: P ScalarExpr
-> estring = Literal <$> (symbol_ "'" *> manyTill anyChar (symbol_ "'"))
+> estring = StringLiteral <$> (symbol_ "'" *> manyTill anyChar (symbol_ "'"))
 
 > integer :: P ScalarExpr
-> integer = Literal <$> (many1 digit <* whiteSpace)
+> integer = NumLiteral <$> (many1 digit <* whiteSpace)
 
 > literal :: P ScalarExpr
 > literal = integer <|> estring
@@ -119,7 +119,8 @@ to be.
 > toHaskell :: ScalarExpr -> HSE.Exp
 > toHaskell e = case e of
 >     Identifier i -> HSE.Var $ HSE.UnQual $ HSE.Ident i
->     Literal l -> HSE.Lit $ HSE.String l
+>     StringLiteral l -> HSE.Lit $ HSE.String $ 's':l
+>     NumLiteral l -> HSE.Lit $ HSE.String $ 'n':l
 >     App n es -> HSE.App (toHaskell $ Identifier n) $ ltoh es
 >     Op n [e0,e1] -> HSE.InfixApp (toHaskell e0)
 >                                  (HSE.QVarOp $ HSE.UnQual $ HSE.Ident n)
@@ -144,7 +145,8 @@ to be.
 >     HSE.Var (HSE.Qual (HSE.ModuleName q) (HSE.Ident "*")) -> Star2 q
 >     HSE.Var (HSE.Qual (HSE.ModuleName a) (HSE.Ident b)) -> Identifier2 a b
 >     HSE.Var (HSE.UnQual (HSE.Ident i)) -> Identifier i
->     HSE.Lit (HSE.String l) -> Literal l
+>     HSE.Lit (HSE.String ('s':l)) -> StringLiteral l
+>     HSE.Lit (HSE.String ('n':l)) -> NumLiteral l
 >     HSE.App (HSE.Var (HSE.UnQual (HSE.Ident "$case"))) (HSE.List [v,ts,el]) ->
 >         Case (ltom v) (pairs ts) (ltom el)
 >     HSE.App (HSE.Var (HSE.UnQual (HSE.Ident "not")))
