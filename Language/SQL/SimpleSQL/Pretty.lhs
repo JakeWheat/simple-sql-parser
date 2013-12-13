@@ -30,21 +30,18 @@ back into SQL source text. It attempts to format the output nicely.
 
 > scalarExpr (App f es) = text f <> parens (commaSep (map scalarExpr es))
 
-special cases
-
-> scalarExpr (Op nm [a,b,c]) | nm `elem` ["between", "not between"] =
+> scalarExpr (SpecialOp nm [a,b,c]) | nm `elem` ["between", "not between"] =
 >   sep [scalarExpr a
 >       ,text nm <+> scalarExpr b
 >       ,text "and" <+> scalarExpr c]
 
+> scalarExpr (SpecialOp nm es) =
+>   text nm <+> parens (commaSep $ map scalarExpr es)
 
-> scalarExpr (Op f [e]) = text f <+> scalarExpr e
-> scalarExpr (Op f [e0,e1]) =
+> scalarExpr (PrefixOp f e) = text f <+> scalarExpr e
+> scalarExpr (PostfixOp f e) = scalarExpr e <+> text f
+> scalarExpr (BinOp f e0 e1) =
 >     sep [scalarExpr e0, text f, scalarExpr e1]
-
-> scalarExpr (Op f es) =
->     -- TODO: how to handle this? error or either seems poor
->     text f <> parens (commaSep (map scalarExpr es))
 
 > scalarExpr (Case t ws els) =
 >     sep [text "case" <+> (maybe empty scalarExpr t)

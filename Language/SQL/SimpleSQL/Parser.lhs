@@ -198,7 +198,7 @@ to be.
 >     opName = try $ choice
 >              ["between" <$ keyword_ "between"
 >              ,"not between" <$ keyword_ "not" <* keyword_ "between"]
->     makeOp n a b c = Op n [a,b,c]
+>     makeOp n a b c = SpecialOp n [a,b,c]
 
 > subquery :: P ScalarExpr
 > subquery =
@@ -234,20 +234,25 @@ used for between parsing
 > binOpKeywordNamesNoAnd :: [String]
 > binOpKeywordNamesNoAnd = filter (/="and") binOpKeywordNames
 
-> unOpKeywordNames :: [String]
-> unOpKeywordNames = ["not"]
+> prefixUnOpKeywordNames :: [String]
+> prefixUnOpKeywordNames = ["not"]
 
-> unOpSymbolNames :: [String]
-> unOpSymbolNames = ["+", "-"]
+> prefixUnOpSymbolNames :: [String]
+> prefixUnOpSymbolNames = ["+", "-"]
 
 
-> unaryOp :: P ScalarExpr
-> unaryOp =
+> prefixUnaryOp :: P ScalarExpr
+> prefixUnaryOp =
 >     makeOp <$> opSymbol <*> scalarExpr'
 >   where
->     makeOp nm e = Op nm [e]
->     opSymbol = choice (map (try . symbol) unOpSymbolNames
->                       ++ map (try . keyword) unOpKeywordNames)
+>     makeOp nm e = PrefixOp nm e
+>     opSymbol = choice (map (try . symbol) prefixUnOpSymbolNames
+>                       ++ map (try . keyword) prefixUnOpKeywordNames)
+
+> postfixOp :: ScalarExpr -> P ScalarExpr
+> postfixOp e =
+>     try $ choice
+>     [PostfixOp "is null" e <$ keyword_ "is" <* keyword_ "null"]
 
 > scalarExpr' :: P ScalarExpr
 > scalarExpr' = scalarExpr'' False
@@ -265,23 +270,23 @@ postgresql handles this
 >                     ,scase
 >                     ,cast
 >                     ,subquery
->                     ,unaryOp
+>                     ,prefixUnaryOp
 >                     ,try app
 >                     ,try dottedIden
 >                     ,identifier
 >                     ,sparens]
 >     trysuffix e = try (suffix e) <|> return e
 >     suffix e0 = choice
->                 [makeOp e0 <$> opSymbol <*> factor
+>                 [BinOp <$> opSymbol <*> return e0 <*> factor
 >                 ,inSuffix e0
 >                 ,betweenSuffix e0
+>                 ,postfixOp e0
 >                 ] >>= trysuffix
 >     opSymbol = choice (map (try . symbol) binOpSymbolNames
 >                       ++ map (try . keyword)
 >                          (if bExpr
 >                           then binOpKeywordNamesNoAnd
 >                           else binOpKeywordNames))
->     makeOp e0 op e1 = Op op [e0,e1]
 
 > sparens :: P ScalarExpr
 > sparens = Parens <$> parens scalarExpr'
@@ -296,11 +301,11 @@ attempt to fix the precedence and associativity. Doesn't work
 >     App n es -> HSE.App (toHaskell $ Iden n) $ ltoh es
 >     Cast e0 (TypeName tn) -> toHaskell $ App ("cast:" ++ tn) [e0]
 >     CastOp (TypeName tn) s -> toHaskell $ App ("castop:" ++ tn) [StringLit s]
->     Op n [e0,e1] -> HSE.InfixApp (toHaskell e0)
->                                  (HSE.QVarOp $ HSE.UnQual $ HSE.Ident n)
->                                  (toHaskell e1)
->     Op o [e0] -> toHaskell $ App ("unary:" ++ o) [e0]
->     Op {} -> error $ "bad args to operator " ++ groom e
+>     --Op n [e0,e1] -> HSE.InfixApp (toHaskell e0)
+>     --                             (HSE.QVarOp $ HSE.UnQual $ HSE.Ident n)
+>     --                             (toHaskell e1)
+>     --Op o [e0] -> toHaskell $ App ("unary:" ++ o) [e0]
+>     --Op {} -> error $ "bad args to operator " ++ groom e
 >     Star -> HSE.Var $ HSE.UnQual $ HSE.Ident "*"
 >     Iden2 a b -> HSE.Var $ HSE.Qual (HSE.ModuleName a) (HSE.Ident b)
 >     Star2 q -> HSE.Var $ HSE.Qual (HSE.ModuleName q) (HSE.Ident "*")
@@ -324,20 +329,20 @@ attempt to fix the precedence and associativity. Doesn't work
 >     HSE.Lit (HSE.String ('n':l)) -> NumLit l
 >     HSE.App (HSE.Var (HSE.UnQual (HSE.Ident "$case"))) (HSE.List [v,ts,el]) ->
 >         Case (ltom v) (pairs ts) (ltom el)
->     HSE.App (HSE.Var (HSE.UnQual (HSE.Ident x)))
+>     {-HSE.App (HSE.Var (HSE.UnQual (HSE.Ident x)))
 >             (HSE.List [ea])
 >         | "unary:" `isPrefixOf` x ->
 >           Op (drop 6 x) [toSql ea]
 >         | "cast:" `isPrefixOf` x ->
->           Cast (toSql ea) (TypeName $ drop 5 x)
+>           Cast (toSql ea) (TypeName $ drop 5 x)-}
 >     HSE.App (HSE.Var (HSE.UnQual (HSE.Ident x)))
 >             (HSE.List [HSE.Lit (HSE.String ('s':ea))])
 >         | "castop:" `isPrefixOf` x ->
 >           CastOp (TypeName $ drop 7 x) ea
 >     HSE.App (HSE.Var (HSE.UnQual (HSE.Ident i)))
 >             (HSE.List es) -> App i $ map toSql es
->     HSE.InfixApp e0 (HSE.QVarOp (HSE.UnQual (HSE.Ident n))) e1 ->
->         Op n [toSql e0, toSql e1]
+>     {-HSE.InfixApp e0 (HSE.QVarOp (HSE.UnQual (HSE.Ident n))) e1 ->
+>         Op n [toSql e0, toSql e1]-}
 >     HSE.Paren e0 -> Parens $ toSql e0
 >     _ -> error $ "unsupported haskell " ++ groom e
 >   where

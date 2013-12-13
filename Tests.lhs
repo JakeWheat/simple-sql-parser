@@ -75,8 +75,8 @@
 >      ,Case (Just $ Iden "a") [(NumLit "1", NumLit "2")
 >                                    ,(NumLit "3", NumLit "4")] (Just $ NumLit "5"))
 >     ,("case when a=1 then 2 when a=3 then 4 else 5 end"
->      ,Case Nothing [(Op "=" [Iden "a", NumLit "1"], NumLit "2")
->                    ,(Op "=" [Iden "a",NumLit "3"], NumLit "4")]
+>      ,Case Nothing [(BinOp "=" (Iden "a") (NumLit "1"), NumLit "2")
+>                    ,(BinOp "=" (Iden "a") (NumLit "3"), NumLit "4")]
 >                    (Just $ NumLit "5"))
 >     ]
 
@@ -89,7 +89,7 @@
 
 > binaryOperators :: TestItem
 > binaryOperators = Group "binaryOperators" $ map (uncurry TestScalarExpr)
->     [("a + b", Op "+" [Iden "a", Iden "b"])
+>     [("a + b", BinOp "+" (Iden "a") (Iden "b"))
 >      -- sanity check fixities
 >      -- todo: add more fixity checking
 >     {-,("a + b * c"
@@ -103,10 +103,10 @@
 
 > unaryOperators :: TestItem
 > unaryOperators = Group "unaryOperators" $ map (uncurry TestScalarExpr)
->     [("not a", Op "not" [Iden "a"])
->     ,("not not a", Op "not" [Op "not" [Iden "a"]])
->     ,("+a", Op "+" [Iden "a"])
->     ,("-a", Op "-" [Iden "a"])
+>     [("not a", PrefixOp "not" $ Iden "a")
+>     ,("not not a", PrefixOp "not" $ PrefixOp "not" $ Iden "a")
+>     ,("+a", PrefixOp "+" $ Iden "a")
+>     ,("-a", PrefixOp "-" $ Iden "a")
 >     ]
 
 
@@ -131,11 +131,11 @@
 >     ,("a not in (select a from t)"
 >      ,In False (Iden "a") (InQueryExpr ms))
 >     ,("a > all (select a from t)"
->      ,Op ">" [Iden "a", SubQueryExpr SqAll ms])
+>      ,BinOp ">" (Iden "a") (SubQueryExpr SqAll ms))
 >     ,("a = some (select a from t)"
->      ,Op "=" [Iden "a", SubQueryExpr SqSome ms])
+>      ,BinOp "=" (Iden "a") (SubQueryExpr SqSome ms))
 >     ,("a <= any (select a from t)"
->      ,Op "<=" [Iden "a", SubQueryExpr SqAny ms])
+>      ,BinOp "<=" (Iden "a") (SubQueryExpr SqAny ms))
 >     ]
 >   where
 >     ms = makeSelect
@@ -147,13 +147,13 @@
 > miscOps = Group "unaryOperators" $ map (uncurry TestScalarExpr)
 >     [("a in (1,2,3)"
 >      ,In True (Iden "a") $ InList $ map NumLit ["1","2","3"])
->     ,("a between b and c", Op "between" [Iden "a"
->                                         ,Iden "b"
->                                         ,Iden "c"])
->     ,("a not between b and c", Op "not between" [Iden "a"
->                                                 ,Iden "b"
->                                                 ,Iden "c"])
->     --,("a is null", Op "not" [])
+>     ,("a between b and c", SpecialOp "between" [Iden "a"
+>                                                ,Iden "b"
+>                                                ,Iden "c"])
+>     ,("a not between b and c", SpecialOp "not between" [Iden "a"
+>                                                        ,Iden "b"
+>                                                        ,Iden "c"])
+>     ,("a is null", PostfixOp "is null" (Iden "a"))
 >     --,("a is not null", Op "not" [])
 >     --,("a is distinct from b", Op "not" [])
 >     --,("a is not distinct from b", Op "not" [])
@@ -194,7 +194,7 @@
 > parens :: TestItem
 > parens = Group "parens" $ map (uncurry TestScalarExpr)
 >     [("(a)", Parens (Iden "a"))
->     ,("(a + b)", Parens (Op "+" [Iden "a", Iden "b"]))
+>     ,("(a + b)", Parens (BinOp "+" (Iden "a") (Iden "b")))
 >     ]
 
 > queryExprParserTests :: TestItem
@@ -236,8 +236,8 @@
 >                                  ,(Nothing,Iden "b")]})
 >     ,("select 1+2,3+4"
 >      ,makeSelect {qeSelectList =
->                      [(Nothing,Op "+" [NumLit "1",NumLit "2"])
->                      ,(Nothing,Op "+" [NumLit "3",NumLit "4"])]})
+>                      [(Nothing,BinOp "+" (NumLit "1") (NumLit "2"))
+>                      ,(Nothing,BinOp "+" (NumLit "3") (NumLit "4"))]})
 >     ,("select a as a, /*comment*/ b as b"
 >      ,makeSelect {qeSelectList = [(Just "a", Iden "a")
 >                                  ,(Just "b", Iden "b")]})
@@ -292,7 +292,7 @@
 >     [("select a from t where a = 5"
 >      ,makeSelect {qeSelectList = [(Nothing,Iden "a")]
 >                  ,qeFrom = [SimpleTableRef "t"]
->                  ,qeWhere = Just $ Op "=" [Iden "a", NumLit "5"]})
+>                  ,qeWhere = Just $ BinOp "=" (Iden "a") (NumLit "5")})
 >     ]
 
 > groupByClause :: TestItem
@@ -319,7 +319,7 @@
 >                                  ,(Nothing, App "sum" [Iden "b"])]
 >                  ,qeFrom = [SimpleTableRef "t"]
 >                  ,qeGroupBy = [Iden "a"]
->                  ,qeHaving = Just $ Op ">" [App "sum" [Iden "b"], NumLit "5"]
+>                  ,qeHaving = Just $ BinOp ">" (App "sum" [Iden "b"]) (NumLit "5")
 >                  })
 >     ]
 
@@ -379,13 +379,13 @@
 >       \  order by s"
 >      ,makeSelect
 >       {qeSelectList = [(Nothing, Iden "a")
->                       ,(Just "s", App "sum" [Op "+" [Iden "c"
->                                                     ,Iden "d"]])]
+>                       ,(Just "s", App "sum" [BinOp "+" (Iden "c")
+>                                                        (Iden "d")])]
 >       ,qeFrom = [SimpleTableRef "t", SimpleTableRef "u"]
->       ,qeWhere = Just $ Op ">" [Iden "a", NumLit "5"]
+>       ,qeWhere = Just $ BinOp ">" (Iden "a") (NumLit "5")
 >       ,qeGroupBy = [Iden "a"]
->       ,qeHaving = Just $ Op ">" [App "count" [NumLit "1"]
->                                 ,NumLit "5"]
+>       ,qeHaving = Just $ BinOp ">" (App "count" [NumLit "1"])
+>                                    (NumLit "5")
 >       ,qeOrderBy = [(Iden "s", Asc)]
 >       }
 >      )

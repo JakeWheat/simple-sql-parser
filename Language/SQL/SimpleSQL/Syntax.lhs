@@ -21,7 +21,13 @@
 >                 | Star
 >                 | Star2 String
 >                 | App String [ScalarExpr]
->                 | Op String [ScalarExpr]
+>                   -- the binop, prefixop and postfix op
+>                   -- are used for symbol and keyword operators
+>                 | BinOp String ScalarExpr ScalarExpr
+>                 | PrefixOp String ScalarExpr
+>                 | PostfixOp String ScalarExpr
+>                   -- the special op is used for ternary, mixfix and other non orthodox operators
+>                 | SpecialOp String [ScalarExpr]
 >                 | Case (Maybe ScalarExpr) -- test value
 >                        [(ScalarExpr,ScalarExpr)] -- when branches
 >                        (Maybe ScalarExpr) -- else value
