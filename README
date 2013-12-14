@@ -1,1 +1,5 @@
 A parser for SQL queries in Haskell.
+
+Homepage: https://github.com/JakeWheat/simple_sql_parser
+
+Contact: jakewheatmail@gmail.com

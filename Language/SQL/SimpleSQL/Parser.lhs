@@ -16,26 +16,26 @@
 > import Language.SQL.SimpleSQL.Syntax
 > import Language.SQL.SimpleSQL.Fixity
 
-The public api functions.
+The public API functions.
 
 > -- | Parses a query expr, trailing semicolon optional.
 > parseQueryExpr :: FilePath -- ^ filename to use in errors
 >                -> Maybe (Int,Int) -- ^ line number and column number to use in errors
->                -> String -- ^ the sql source to parse
+>                -> String -- ^ the SQL source to parse
 >                -> Either ParseError QueryExpr
 > parseQueryExpr = wrapParse topLevelQueryExpr
 
 > -- | Parses a list of query exprs, with semi colons between them. The final semicolon is optional.
 > parseQueryExprs :: FilePath -- ^ filename to use in errors
 >                 -> Maybe (Int,Int) -- ^ line number and column number to use in errors
->                 -> String -- ^ the sql source to parse
+>                 -> String -- ^ the SQL source to parse
 >                 -> Either ParseError [QueryExpr]
 > parseQueryExprs = wrapParse queryExprs
 
 > -- | Parses a scalar expression.
 > parseScalarExpr :: FilePath -- ^ filename to use in errors
 >                 -> Maybe (Int,Int) -- ^ line number and column number to use in errors
->                 -> String -- ^ the sql source to parse
+>                 -> String -- ^ the SQL source to parse
 >                 -> Either ParseError ScalarExpr
 > parseScalarExpr = wrapParse scalarExpr
 
@@ -145,7 +145,7 @@ aggregate([all|distinct] args [order by orderitems])
 
 parse a window call as a suffix of a regular function call
 this looks like this:
-functioncall(args) over ([partition by ids] [order by orderitems])
+functionname(args) over ([partition by ids] [order by orderitems])
 
 No support for explicit frames yet.
 
@@ -362,7 +362,7 @@ The parsers:
 >     keywords_ = try . mapM_ keyword_
 
 All the binary operators are parsed as same precedence and left
-associativity. This is fixed with a separate pass over the ast.
+associativity. This is fixed with a separate pass over the AST.
 
 > binaryOperatorSuffix :: Bool -> ScalarExpr -> P ScalarExpr
 > binaryOperatorSuffix bExpr e0 =
@@ -381,7 +381,7 @@ associativity. This is fixed with a separate pass over the ast.
 > sqlFixities = highPrec ++ defaultPrec ++ lowPrec
 >   where
 >     allOps = binOpSymbolNames ++ binOpKeywordNames
->              ++ (map unwords binOpMultiKeywordNames)
+>              ++ map unwords binOpMultiKeywordNames
 >              ++ prefixUnOpKeywordNames ++ prefixUnOpSymbolNames
 >              ++ postfixOpKeywords
 >     -- these are the ops with the highest precedence in order
@@ -498,7 +498,7 @@ tref
 >                             $ commaSep1 identifierString
 >         in option j (TRAlias j <$> try tableAlias <*> try columnAliases)
 >     joinTrefSuffix t = (do
->          nat <- option False $ try (True <$ (try $ keyword_ "natural"))
+>          nat <- option False $ try (True <$ try (keyword_ "natural"))
 >          TRJoin t <$> joinType
 >                   <*> nonJoinTref
 >                   <*> optionMaybe (joinCondition nat))
@@ -610,8 +610,8 @@ must be separated by semicolon, but for the last expression, the
 trailing semicolon is optional.
 
 > queryExprs :: P [QueryExpr]
-> queryExprs = do
->     ((:[]) <$> queryExpr)
+> queryExprs =
+>     (:[]) <$> queryExpr
 >     >>= optionSuffix ((symbol ";" *>) . return)
 >     >>= optionSuffix (\p -> (p++) <$> queryExprs)
 
@@ -687,7 +687,7 @@ digits.[digits][e[+-]digits]
 [digits].digits[e[+-]digits]
 digitse[+-]digits
 
-numbers are parsed to strings, not to a numeric type. This is to aoivd
+numbers are parsed to strings, not to a numeric type. This is to avoid
 making a decision on how to represent numbers, the client code can
 make this choice.
 
@@ -710,7 +710,7 @@ make this choice.
 >               ,option "" (string "+" <|> string "-")
 >               ,int]
 
-lexer for integer literals which appear in some places in sql
+lexer for integer literals which appear in some places in SQL
 
 > integerLiteral :: P Int
 > integerLiteral = read <$> many1 digit <* whiteSpace

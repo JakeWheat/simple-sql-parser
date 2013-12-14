@@ -2,8 +2,7 @@
 first release:
 
 add automated tests to cabal
-do code documentation and haddock
-  check the order of exports, imports and functions/cases in the files
+check the order of exports, imports and functions/cases in the files
 fix up the import namespaces/explicit names nicely
 do some tests for parse errors?
 website with haddock and table of parsing tests
@@ -14,16 +13,11 @@ Later general tasks:
 
 dialect switching
 
-refactor the join parsing
-
 left factor parsing code in remaining places
 
 reimplement the fixity thing natively
 
-fix lexing wrt suffixes 1/2 done
-
 position annotation?
-
 
 = sql support
 
@@ -38,7 +32,7 @@ other missing operators
 
 
 review allowed identifier syntax
-  add quoted identifers
+  add quoted identifiers
 more dots in identifiers
 order by nulls first/last
 extend case

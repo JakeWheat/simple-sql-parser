@@ -88,13 +88,13 @@ the fixity code.
 >         HSE.App (var ('a':nm))
 >         $ HSE.List [str $ show (d,map snd od)
 >                    ,HSE.List $ map toHaskell es
->                    ,HSE.List $ map toHaskell $ map fst od]
+>                    ,HSE.List $ map (toHaskell . fst) od]
 >     WindowApp nm es pb od ->
 >         HSE.App (var ('w':nm))
 >         $ HSE.List [str $ show (map snd od)
 >                    ,HSE.List $ map toHaskell es
 >                    ,HSE.List $ map toHaskell pb
->                    ,HSE.List $ map toHaskell $ map fst od]
+>                    ,HSE.List $ map (toHaskell . fst) od]
 >     PrefixOp nm e0 ->
 >         HSE.App (HSE.Var $ sym nm) (toHaskell e0)
 >     PostfixOp nm e0 ->
