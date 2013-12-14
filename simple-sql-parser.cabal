@@ -2,10 +2,6 @@ name:                simple-sql-parser
 version:             0.1.0.0
 synopsis:            A parser for SQL queries
 
-description:         A parser for SQL queries, using Parsec. Also includes
-                     pretty printer. Aims to support most of SQL:2003
-                     queries plus other SQL dialects.
-
 homepage:            https://github.com/JakeWheat/simple_sql_parser
 license:             BSD3
 license-file:        LICENSE

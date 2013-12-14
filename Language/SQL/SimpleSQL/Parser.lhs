@@ -312,7 +312,6 @@ keyword.
 > binOpMultiKeywordNames :: [[String]]
 > binOpMultiKeywordNames = map words
 >     ["not like"
->     ,"not similar"
 >     ,"is similar to"
 >     ,"is not similar to"
 >     ,"is distinct from"
@@ -352,6 +351,10 @@ The parsers:
 >   where
 >     opSymbol = choice (map (try . symbol) prefixUnOpSymbolNames
 >                        ++ map (try . keyword) prefixUnOpKeywordNames)
+
+TODO: the handling of multikeyword args is different in
+postfixopsuffix and binaryoperatorsuffix. It should be the same in
+both cases
 
 > postfixOpSuffix :: ScalarExpr -> P ScalarExpr
 > postfixOpSuffix e =
@@ -462,9 +465,6 @@ expression tree (for efficiency and code clarity).
 -------------------------------------------------
 
 = query expressions
-
-TODO: maybe refactor all the parsers. A parser wouldn't usually be
-optional or use try itself. The caller could do this.
 
 == select lists
 

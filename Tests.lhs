@@ -1,5 +1,5 @@
 
-> module Tests (testData, runTests) where
+> module Tests (testData, TestItem(..), runTests) where
 
 > import Language.SQL.SimpleSQL.Syntax
 > import Language.SQL.SimpleSQL.Pretty

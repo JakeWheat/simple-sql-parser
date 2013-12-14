@@ -1,7 +1,4 @@
 
-This is the pretty printer code which takes AST values and turns them
-back into SQL source text. It attempts to format the output nicely.
-
 > -- | These is the pretty printing functions, which produce SQL
 > -- source from ASTs. The code attempts to format the output in a
 > -- readable way.
