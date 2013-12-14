@@ -60,7 +60,10 @@ back into SQL source text. It attempts to format the output nicely.
 >                 <+> orderBy od)
 
 > scalarExpr (SpecialOp nm [a,b,c]) | nm `elem` ["between", "not between"] =
->   scalarExpr a <+> text nm <+> scalarExpr b <+> text "and" <+> scalarExpr c
+>   sep [scalarExpr a
+>       ,text nm <+> scalarExpr b
+>       ,nest (length nm + 1)
+>        $ text "and" <+> scalarExpr c]
 
 > scalarExpr (SpecialOp "extract" [a,n]) =
 >   text "extract" <> parens (scalarExpr a
@@ -93,13 +96,14 @@ back into SQL source text. It attempts to format the output nicely.
 >     scalarExpr e0 <+> text f <+> scalarExpr e1
 
 > scalarExpr (Case t ws els) =
->     sep [text "case" <+> maybe empty scalarExpr t
->         ,nest 5 (sep (map w ws
->                       ++ maybeToList (fmap e els)))
->         ,text "end"]
+>     sep $ [text "case" <+> maybe empty scalarExpr t]
+>           ++ map w ws
+>           ++ maybeToList (fmap e els)
+>           ++ [text "end"]
 >   where
->     w (t0,t1) = sep [text "when" <+> nest 5 (scalarExpr t0)
->                     ,text "then" <+> nest 5 (scalarExpr t1)]
+>     w (t0,t1) =
+>       text "when" <+> nest 5 (scalarExpr t0)
+>       <+> text "then" <+> nest 5 (scalarExpr t1)
 >     e el = text "else" <+> nest 5 (scalarExpr el)
 > scalarExpr (Parens e) = parens $ scalarExpr e
 > scalarExpr (Cast e (TypeName tn)) =
@@ -120,13 +124,13 @@ back into SQL source text. It attempts to format the output nicely.
 >     ) <+> parens (queryExpr qe)
 
 > scalarExpr (In b se x) =
->     sep [scalarExpr se
->         ,if b then empty else text "not"
->         ,text "in"
->         ,parens (nest (if b then 3 else 7) $
+>     scalarExpr se <+>
+>     (if b then empty else text "not")
+>     <+> text "in"
+>     <+> parens (nest (if b then 3 else 7) $
 >                  case x of
 >                      InList es -> commaSep $ map scalarExpr es
->                      InQueryExpr qe -> queryExpr qe)]
+>                      InQueryExpr qe -> queryExpr qe)
 
 = query expressions
 
@@ -179,14 +183,14 @@ back into SQL source text. It attempts to format the output nicely.
 >   where
 >     tr (TRSimple t) = text t
 >     tr (TRAlias t a cs) =
->         tr t <+> text "as" <+> text a
->         <+> maybe empty (parens . commaSep . map text) cs
+>         sep [tr t
+>             ,text "as" <+> text a
+>              <+> maybe empty (parens . commaSep . map text) cs]
 >     tr (TRParens t) = parens $ tr t
 >     tr (TRQueryExpr q) = parens $ queryExpr q
 >     tr (TRJoin t0 jt t1 jc) =
 >        sep [tr t0
->            ,joinText jt jc
->            ,tr t1
+>            ,joinText jt jc <+> tr t1
 >            ,joinCond jc]
 >     joinText jt jc =
 >       sep [case jc of
