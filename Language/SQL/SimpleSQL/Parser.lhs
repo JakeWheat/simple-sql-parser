@@ -87,7 +87,7 @@ interval '5' month
 >     IntervalLit
 >     <$> stringLiteral
 >     <*> identifierString
->     <*> optionMaybe (try $ parens (read <$> many1 digit))
+>     <*> optionMaybe (try $ parens integerLiteral)
 
 > literal :: P ScalarExpr
 > literal = number <|> estring <|> interval
@@ -151,22 +151,26 @@ functioncall(args) over ([partition by ids] [order by orderitems])
 
 No support for explicit frames yet.
 
+The convention in this file is that the 'Suffix', erm, suffix on
+parser names means that they have been left factored.
+
 > windowSuffix :: ScalarExpr -> P ScalarExpr
-> windowSuffix e@(App f es) =
->     choice [try (keyword_ "over")
->             *> parens (WindowApp f es
->                        <$> option [] partitionBy
->                        <*> option [] orderBy)
->            ,return e]
+> windowSuffix (App f es) =
+>     try (keyword_ "over")
+>     *> parens (WindowApp f es
+>                <$> option [] partitionBy
+>                <*> option [] orderBy)
 >   where
 >     partitionBy = try (keyword_ "partition") >>
 >         keyword_ "by" >>
 >         commaSep1 scalarExpr'
+> windowSuffix _ = fail ""
 
-> windowSuffix e = return e
+TODO: review all the suffix functions, use the optionSuffix combinator
+to simplify the suffix parsers
 
 > app :: P ScalarExpr
-> app = aggOrApp >>= windowSuffix
+> app = aggOrApp >>= optionSuffix windowSuffix
 
 == case expression
 
@@ -411,9 +415,16 @@ split out the binary op parsing from this function to above
 >     keywords ks = unwords <$> mapM keyword ks
 
 TODO: create the fixity adjuster. This should take a list of operators
-with precendence and associativity and adjust a scalar expr tree to
+with precedence and associativity and adjust a scalar expr tree to
 match these. It shouldn't attempt to descend into scalar expressions
-inside nested query exprs in subqueries.
+inside nested query exprs in subqueries. This way we separate out
+parsing from handling the precedence and associativity. Is it a good
+idea to separate these? I'm not sure. I think it makes some error
+messages potentially a little less helpful without some extra work,
+but apart from that, I think it is a win in terms of code clarity. The
+errors which are harder to produce nicely I think are limited to
+chained binary operators with no parens which have no associativity
+which should be a parse error.
 
 > {-sqlFixities :: [HSE.Fixity]
 > sqlFixities = HSE.infixl_ 9 ["*", "/"]
@@ -698,6 +709,10 @@ make this choice.
 >         i <- int
 >         return (p ++ "e" ++ s ++ i)
 
+lexer for integer literals which appear in some places in sql
+
+> integerLiteral :: P Int
+> integerLiteral = read <$> many1 digit <* whiteSpace
 
 whitespace parser which skips comments also
 
