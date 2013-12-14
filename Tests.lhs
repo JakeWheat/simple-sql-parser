@@ -95,13 +95,12 @@
 >     [("a + b", BinOp (Iden "a") "+" (Iden "b"))
 >      -- sanity check fixities
 >      -- todo: add more fixity checking
->     {-,("a + b * c"
->      ,Op "+" [Iden "a"
->              ,Op "*" [Iden "b"
->                      ,Iden "c"]])
+>     ,("a + b * c"
+>      ,BinOp  (Iden "a") "+"
+>              (BinOp (Iden "b") "*" (Iden "c")))
 >     ,("a * b + c"
->      ,Op "+" [Op "*" [Iden "a", Iden "b"]
->              ,Iden "c"])-}
+>      ,BinOp (BinOp (Iden "a") "*" (Iden "b"))
+>             "+" (Iden "c"))
 >     ]
 
 > unaryOperators :: TestItem

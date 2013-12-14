@@ -250,7 +250,7 @@ and operator. This is the call to scalarExpr'' True.
 >     makeOp <$> opName
 >            <*> return e
 >            <*> scalarExpr'' True
->            <*> (keyword_ "and" *> scalarExpr')
+>            <*> (keyword_ "and" *> scalarExpr'' True)
 >   where
 >     opName = try $ choice
 >              ["between" <$ keyword_ "between"
@@ -361,7 +361,7 @@ The parsers:
 >     keywords_ = try . mapM_ keyword_
 
 All the binary operators are parsed as same precedence and left
-associativity.
+associativity. This is fixed with a separate pass over the ast.
 
 > binaryOperatorSuffix :: Bool -> ScalarExpr -> P ScalarExpr
 > binaryOperatorSuffix bExpr e0 =
@@ -383,10 +383,12 @@ associativity.
 >              ++ (map unwords binOpMultiKeywordNames)
 >              ++ prefixUnOpKeywordNames ++ prefixUnOpSymbolNames
 >              ++ postfixOpKeywords
+>     -- these are the ops with the highest precedence in order
 >     highPrec = [infixl_ ["*","/"]
 >                ,infixl_ ["+", "-"]
 >                ,infixl_ ["<=",">=","!=","<>","||","like"]
 >                ]
+>     -- these are the ops with the lowest precedence in order
 >     lowPrec = [infix_ ["<",">"]
 >               ,infixr_ ["="]
 >               ,infixr_ ["not"]
@@ -394,6 +396,8 @@ associativity.
 >               ,infixl_ ["or"]]
 >     already = concatMap (map fName) highPrec
 >               ++ concatMap (map fName)  lowPrec
+>     -- all the other ops have equal precedence and go between the
+>     -- high and low precedence ops
 >     defaultPrecOps = filter (`notElem` already) allOps
 >     -- almost correct, have to do some more work to
 >     -- get the associativity correct for these operators

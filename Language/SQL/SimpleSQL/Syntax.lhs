@@ -105,17 +105,17 @@
 >                   -- (1,2)')
 >                 | In Bool -- true if in, false if not in
 >                      ScalarExpr InThing
->                   deriving (Eq,Show)
+>                   deriving (Eq,Show,Read)
 
 > -- | Represents a type name, used in casts.
-> data TypeName = TypeName String deriving (Eq,Show)
+> data TypeName = TypeName String deriving (Eq,Show,Read)
 
 
 > -- | Used for 'expr in (scalar expression list)', and 'expr in
 > -- | (subquery)' syntax
 > data InThing = InList [ScalarExpr]
 >              | InQueryExpr QueryExpr
->              deriving (Eq,Show)
+>              deriving (Eq,Show,Read)
 
 > -- | A subquery in a scalar expression
 > data SubQueryExprType
@@ -129,7 +129,7 @@
 >     | SqSome
 >       -- | any (query expr)
 >     | SqAny
->                         deriving (Eq,Show)
+>       deriving (Eq,Show,Read)
 
 > -- | Represents a query expression, which can be:
 > --
@@ -163,7 +163,7 @@
 >       ,qe2 :: QueryExpr
 >       }
 >     | With [(String,QueryExpr)] QueryExpr
->       deriving (Eq,Show)
+>       deriving (Eq,Show,Read)
 
 TODO: add queryexpr parens to deal with e.g.
 (select 1 union select 2) union select 3
@@ -173,14 +173,14 @@ I'm not sure if this is valid syntax or not
 > -- | represents the Distinct or All keywords, which can be used
 > -- before a select list, in an aggregate/window function
 > -- application, or in a query expression set operator
-> data Duplicates = Distinct | All deriving (Eq,Show)
+> data Duplicates = Distinct | All deriving (Eq,Show,Read)
 
 > -- | The direction for a column in order by.
-> data Direction = Asc | Desc deriving (Eq,Show)
+> data Direction = Asc | Desc deriving (Eq,Show,Read)
 > -- | Query expression set operators
-> data CombineOp = Union | Except | Intersect deriving (Eq,Show)
+> data CombineOp = Union | Except | Intersect deriving (Eq,Show,Read)
 > -- | Corresponding, an option for the set operators
-> data Corresponding = Corresponding | Respectively deriving (Eq,Show)
+> data Corresponding = Corresponding | Respectively deriving (Eq,Show,Read)
 
 > -- | helper/'default' value for query exprs to make creating query expr values a little easier
 > makeSelect :: QueryExpr
@@ -205,16 +205,16 @@ I'm not sure if this is valid syntax or not
 >               | TRAlias TableRef String (Maybe [String])
 >                 -- | from (query expr)
 >               | TRQueryExpr QueryExpr
->                 deriving (Eq,Show)
+>                 deriving (Eq,Show,Read)
 
 TODO: add function table ref
 
 > -- | The type of a join
 > data JoinType = JInner | JLeft | JRight | JFull | JCross
->                 deriving (Eq,Show)
+>                 deriving (Eq,Show,Read)
 
 > -- | The join condition.
 > data JoinCondition = JoinOn ScalarExpr -- ^ on expr
 >                    | JoinUsing [String] -- ^ using (column list)
 >                    | JoinNatural -- ^ natural join was used
->                      deriving (Eq,Show)
+>                      deriving (Eq,Show,Read)
