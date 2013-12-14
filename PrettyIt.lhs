@@ -11,8 +11,7 @@
 >     case args of
 >       [f] -> do
 >              src <- readFile f
->              either (error . peFormattedError
->                     )
+>              either (error . peFormattedError)
 >                     (putStrLn . intercalate "\n" . map prettyQueryExpr)
 >                     $ parseQueryExprs f Nothing src
 >       _ -> error "please pass filename to prettify"
