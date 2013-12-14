@@ -123,13 +123,19 @@ the SQL Standard documentation
 
 # Installation
 
+from hackage
+
+~~~~
+cabal update && cabal install simple-sql-parser
+~~~~
+
+latest devopment
+
 ~~~~
 git clone https://github.com/JakeWheat/simple_sql_parser.git
 cd simple_sql_parser
 cabal install
 ~~~~
-
-hackage coming soon
 
 # Documentation
 
@@ -140,6 +146,7 @@ hackage coming soon
 # Links
 
 * homepage: <http://jakewheat.github.io/simple_sql_parser>
+* hackage: <http://hackage.haskell.org/package/simple-sql-parser>
 * repository: <https://github.com/JakeWheat/simple_sql_parser>
 * bug tracker: <https://github.com/JakeWheat/simple_sql_parser/issues>
 
