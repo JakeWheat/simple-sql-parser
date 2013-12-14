@@ -3,7 +3,7 @@ version:             0.1.0.0
 synopsis:            A parser for SQL queries
 description:         A parser for SQL queries
 
-homepage:            https://github.com/JakeWheat/simple_sql_parser
+homepage:            http://jakewheat.github.io/simple_sql_parser/
 license:             BSD3
 license-file:        LICENSE
 author:              Jake Wheat
