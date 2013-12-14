@@ -56,7 +56,7 @@ back into SQL source text. It attempts to format the output nicely.
 >     <+> parens ((case pb of
 >                     [] -> empty
 >                     _ -> text "partition by"
->                           <+> nest 4 (commaSep $ map scalarExpr pb))
+>                           <+> nest 13 (commaSep $ map scalarExpr pb))
 >                 <+> orderBy od)
 
 > scalarExpr (SpecialOp nm [a,b,c]) | nm `elem` ["between", "not between"] =
@@ -79,20 +79,28 @@ back into SQL source text. It attempts to format the output nicely.
 
 > scalarExpr (PrefixOp f e) = text f <+> scalarExpr e
 > scalarExpr (PostfixOp f e) = scalarExpr e <+> text f
-> scalarExpr (BinOp e0 "and" e1) =
->     sep [scalarExpr e0, text "and" <+> scalarExpr e1]
+> scalarExpr e@(BinOp _ op _) | op `elem` ["and", "or"] =
+>     -- special case for and, or, get all the ands so we can vcat them
+>     -- nicely
+>     case ands e of
+>       (e':es) -> vcat (scalarExpr e'
+>                        : map ((text op <+>) . scalarExpr) es)
+>       [] -> empty -- shouldn't be possible
+>   where
+>     ands (BinOp a op' b) | op == op' = ands a ++ ands b
+>     ands x = [x]
 > scalarExpr (BinOp e0 f e1) =
 >     scalarExpr e0 <+> text f <+> scalarExpr e1
 
 > scalarExpr (Case t ws els) =
 >     sep [text "case" <+> maybe empty scalarExpr t
->         ,nest 4 (sep (map w ws
+>         ,nest 5 (sep (map w ws
 >                       ++ maybeToList (fmap e els)))
 >         ,text "end"]
 >   where
->     w (t0,t1) = sep [text "when" <+> scalarExpr t0
->                     ,text "then" <+> scalarExpr t1]
->     e el = text "else" <+> scalarExpr el
+>     w (t0,t1) = sep [text "when" <+> nest 5 (scalarExpr t0)
+>                     ,text "then" <+> nest 5 (scalarExpr t1)]
+>     e el = text "else" <+> nest 5 (scalarExpr el)
 > scalarExpr (Parens e) = parens $ scalarExpr e
 > scalarExpr (Cast e (TypeName tn)) =
 >     text "cast" <> parens (sep [scalarExpr e
@@ -115,7 +123,7 @@ back into SQL source text. It attempts to format the output nicely.
 >     sep [scalarExpr se
 >         ,if b then empty else text "not"
 >         ,text "in"
->         ,parens (nest 4 $
+>         ,parens (nest (if b then 3 else 7) $
 >                  case x of
 >                      InList es -> commaSep $ map scalarExpr es
 >                      InQueryExpr qe -> queryExpr qe)]
@@ -128,7 +136,7 @@ back into SQL source text. It attempts to format the output nicely.
 >       ,case d of
 >           All -> empty
 >           Distinct -> text "distinct"
->       ,nest 4 $ sep [selectList sl]
+>       ,nest 7 $ sep [selectList sl]
 >       ,from fr
 >       ,maybeScalarExpr "where" wh
 >       ,grpBy gb
@@ -152,7 +160,7 @@ back into SQL source text. It attempts to format the output nicely.
 >       ,queryExpr q2]
 > queryExpr (With withs qe) =
 >   text "with"
->   <+> vcat [nest 4
+>   <+> vcat [nest 5
 >             (vcat $ punctuate comma $ flip map withs $ \(n,q) ->
 >              text n <+> text "as" <+> parens (queryExpr q))
 >            ,queryExpr qe]
@@ -167,7 +175,7 @@ back into SQL source text. It attempts to format the output nicely.
 > from [] = empty
 > from ts =
 >     sep [text "from"
->         ,nest 4 $ commaSep $ map tr ts]
+>         ,nest 5 $ vcat $ punctuate comma $ map tr ts]
 >   where
 >     tr (TRSimple t) = text t
 >     tr (TRAlias t a cs) =
@@ -199,17 +207,17 @@ back into SQL source text. It attempts to format the output nicely.
 > maybeScalarExpr :: String -> Maybe ScalarExpr -> Doc
 > maybeScalarExpr k = maybe empty
 >       (\e -> sep [text k
->                  ,nest 4 $ scalarExpr e])
+>                  ,nest (length k + 1) $ scalarExpr e])
 
 > grpBy :: [ScalarExpr] -> Doc
 > grpBy [] = empty
 > grpBy gs = sep [text "group by"
->                ,nest 4 $ commaSep $ map scalarExpr gs]
+>                ,nest 9 $ commaSep $ map scalarExpr gs]
 
 > orderBy :: [(ScalarExpr,Direction)] -> Doc
 > orderBy [] = empty
 > orderBy os = sep [text "order by"
->                  ,nest 4 $ commaSep $ map f os]
+>                  ,nest 9 $ commaSep $ map f os]
 >   where
 >     f (e,Asc) = scalarExpr e
 >     f (e,Desc) = scalarExpr e <+> text "desc"
