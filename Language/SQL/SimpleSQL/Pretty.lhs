@@ -169,13 +169,13 @@ back into SQL source text. It attempts to format the output nicely.
 >     sep [text "from"
 >         ,nest 4 $ commaSep $ map tr ts]
 >   where
->     tr (SimpleTableRef t) = text t
->     tr (JoinAlias t a cs) =
+>     tr (TRSimple t) = text t
+>     tr (TRAlias t a cs) =
 >         tr t <+> text "as" <+> text a
 >         <+> maybe empty (parens . commaSep . map text) cs
->     tr (JoinParens t) = parens $ tr t
->     tr (JoinQueryExpr q) = parens $ queryExpr q
->     tr (JoinTableRef t0 jt t1 jc) =
+>     tr (TRParens t) = parens $ tr t
+>     tr (TRQueryExpr q) = parens $ queryExpr q
+>     tr (TRJoin t0 jt t1 jc) =
 >        sep [tr t0
 >            ,joinText jt jc
 >            ,tr t1

@@ -24,12 +24,14 @@ The public api functions.
 >                -> Either ParseError QueryExpr
 > parseQueryExpr = wrapParse topLevelQueryExpr
 
+> -- | Parses a list of query exprs, with semi colons between them. The final semicolon is optional.
 > parseQueryExprs :: FilePath -- ^ filename to use in errors
 >                 -> Maybe (Int,Int) -- ^ line number and column number to use in errors
 >                 -> String -- ^ the sql source to parse
 >                 -> Either ParseError [QueryExpr]
 > parseQueryExprs = wrapParse queryExprs
 
+> -- | Parses a scalar expression.
 > parseScalarExpr :: FilePath -- ^ filename to use in errors
 >                 -> Maybe (Int,Int) -- ^ line number and column number to use in errors
 >                 -> String -- ^ the sql source to parse
@@ -480,20 +482,20 @@ tref
 > from = try (keyword_ "from") *> commaSep1 tref
 >   where
 >     tref = nonJoinTref >>= optionSuffix joinTrefSuffix
->     nonJoinTref = choice [try (JoinQueryExpr <$> parens queryExpr)
->                          ,JoinParens <$> parens tref
->                          ,SimpleTableRef <$> identifierString]
+>     nonJoinTref = choice [try (TRQueryExpr <$> parens queryExpr)
+>                          ,TRParens <$> parens tref
+>                          ,TRSimple <$> identifierString]
 >                   >>= optionSuffix aliasSuffix
 >     aliasSuffix j =
 >         let tableAlias = optional (try $ keyword_ "as") *> identifierString
 >             columnAliases = optionMaybe $ try $ parens
 >                             $ commaSep1 identifierString
->         in option j (JoinAlias j <$> try tableAlias <*> try columnAliases)
+>         in option j (TRAlias j <$> try tableAlias <*> try columnAliases)
 >     joinTrefSuffix t = (do
 >          nat <- option False $ try (True <$ (try $ keyword_ "natural"))
->          JoinTableRef t <$> joinType
->                         <*> nonJoinTref
->                         <*> optionMaybe (joinCondition nat))
+>          TRJoin t <$> joinType
+>                   <*> nonJoinTref
+>                   <*> optionMaybe (joinCondition nat))
 >         >>= optionSuffix joinTrefSuffix
 >     joinType = choice
 >                [JCross <$ try (keyword_ "cross")

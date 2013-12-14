@@ -143,7 +143,7 @@
 >   where
 >     ms = makeSelect
 >          {qeSelectList = [(Nothing,Iden "a")]
->          ,qeFrom = [SimpleTableRef "t"]
+>          ,qeFrom = [TRSimple "t"]
 >          }
 
 > miscOps :: TestItem
@@ -240,7 +240,7 @@
 >    ms d = makeSelect
 >           {qeDuplicates = d
 >           ,qeSelectList = [(Nothing,Iden "a")]
->           ,qeFrom = [SimpleTableRef "t"]}
+>           ,qeFrom = [TRSimple "t"]}
 
 > selectLists :: TestItem
 > selectLists = Group "selectLists" $ map (uncurry TestQueryExpr)
@@ -266,50 +266,48 @@
 > from :: TestItem
 > from = Group "from" $ map (uncurry TestQueryExpr)
 >     [("select a from t"
->      ,ms [SimpleTableRef "t"])
+>      ,ms [TRSimple "t"])
 >     ,("select a from t,u"
->      ,ms [SimpleTableRef "t", SimpleTableRef "u"])
+>      ,ms [TRSimple "t", TRSimple "u"])
 >     ,("select a from t inner join u on expr"
->      ,ms [JoinTableRef (SimpleTableRef "t") JInner (SimpleTableRef "u")
+>      ,ms [TRJoin (TRSimple "t") JInner (TRSimple "u")
 >                        (Just $ JoinOn $ Iden "expr")])
 >     ,("select a from t left join u on expr"
->      ,ms [JoinTableRef (SimpleTableRef "t") JLeft (SimpleTableRef "u")
+>      ,ms [TRJoin (TRSimple "t") JLeft (TRSimple "u")
 >                        (Just $ JoinOn $ Iden "expr")])
 >     ,("select a from t right join u on expr"
->      ,ms [JoinTableRef (SimpleTableRef "t") JRight (SimpleTableRef "u")
+>      ,ms [TRJoin (TRSimple "t") JRight (TRSimple "u")
 >                        (Just $ JoinOn $ Iden "expr")])
 >     ,("select a from t full join u on expr"
->      ,ms [JoinTableRef (SimpleTableRef "t") JFull (SimpleTableRef "u")
+>      ,ms [TRJoin (TRSimple "t") JFull (TRSimple "u")
 >                        (Just $ JoinOn $ Iden "expr")])
 >     ,("select a from t cross join u"
->      ,ms [JoinTableRef (SimpleTableRef "t")
->                        JCross (SimpleTableRef "u") Nothing])
+>      ,ms [TRJoin (TRSimple "t")
+>                        JCross (TRSimple "u") Nothing])
 >     ,("select a from t natural inner join u"
->      ,ms [JoinTableRef (SimpleTableRef "t") JInner (SimpleTableRef "u")
+>      ,ms [TRJoin (TRSimple "t") JInner (TRSimple "u")
 >                        (Just JoinNatural)])
 >     ,("select a from t inner join u using(a,b)"
->      ,ms [JoinTableRef (SimpleTableRef "t") JInner (SimpleTableRef "u")
+>      ,ms [TRJoin (TRSimple "t") JInner (TRSimple "u")
 >                        (Just $ JoinUsing ["a", "b"])])
 >     ,("select a from (select a from t)"
->      ,ms [JoinQueryExpr $ ms [SimpleTableRef "t"]])
+>      ,ms [TRQueryExpr $ ms [TRSimple "t"]])
 >     ,("select a from t as u"
->      ,ms [JoinAlias (SimpleTableRef "t") "u" Nothing])
+>      ,ms [TRAlias (TRSimple "t") "u" Nothing])
 >     ,("select a from t u"
->      ,ms [JoinAlias (SimpleTableRef "t") "u" Nothing])
+>      ,ms [TRAlias (TRSimple "t") "u" Nothing])
 >     ,("select a from t u(b)"
->      ,ms [JoinAlias (SimpleTableRef "t") "u" $ Just ["b"]])
+>      ,ms [TRAlias (TRSimple "t") "u" $ Just ["b"]])
 >     ,("select a from (t cross join u) as u"
->      ,ms [JoinAlias (JoinParens $
->                      JoinTableRef (SimpleTableRef "t")
->                                   JCross
->                                   (SimpleTableRef "u") Nothing)
->                     "u" Nothing])
+>      ,ms [TRAlias (TRParens $
+>                    TRJoin (TRSimple "t") JCross (TRSimple "u") Nothing)
+>                           "u" Nothing])
 >      -- todo: not sure if the associativity is correct
 >     ,("select a from t cross join u cross join v",
->        ms [JoinTableRef
->            (JoinTableRef (SimpleTableRef "t")
->                          JCross (SimpleTableRef "u") Nothing)
->            JCross (SimpleTableRef "v") Nothing])
+>        ms [TRJoin
+>            (TRJoin (TRSimple "t")
+>                    JCross (TRSimple "u") Nothing)
+>            JCross (TRSimple "v") Nothing])
 >     ]
 >   where
 >     ms f = makeSelect {qeSelectList = [(Nothing,Iden "a")]
@@ -319,7 +317,7 @@
 > whereClause = Group "whereClause" $ map (uncurry TestQueryExpr)
 >     [("select a from t where a = 5"
 >      ,makeSelect {qeSelectList = [(Nothing,Iden "a")]
->                  ,qeFrom = [SimpleTableRef "t"]
+>                  ,qeFrom = [TRSimple "t"]
 >                  ,qeWhere = Just $ BinOp (Iden "a") "=" (NumLit "5")})
 >     ]
 
@@ -328,14 +326,14 @@
 >     [("select a,sum(b) from t group by a"
 >      ,makeSelect {qeSelectList = [(Nothing, Iden "a")
 >                                  ,(Nothing, App "sum" [Iden "b"])]
->                  ,qeFrom = [SimpleTableRef "t"]
+>                  ,qeFrom = [TRSimple "t"]
 >                  ,qeGroupBy = [Iden "a"]
 >                  })
 >     ,("select a,b,sum(c) from t group by a,b"
 >      ,makeSelect {qeSelectList = [(Nothing, Iden "a")
 >                                  ,(Nothing, Iden "b")
 >                                  ,(Nothing, App "sum" [Iden "c"])]
->                  ,qeFrom = [SimpleTableRef "t"]
+>                  ,qeFrom = [TRSimple "t"]
 >                  ,qeGroupBy = [Iden "a",Iden "b"]
 >                  })
 >     ]
@@ -345,7 +343,7 @@
 >     [("select a,sum(b) from t group by a having sum(b) > 5"
 >      ,makeSelect {qeSelectList = [(Nothing, Iden "a")
 >                                  ,(Nothing, App "sum" [Iden "b"])]
->                  ,qeFrom = [SimpleTableRef "t"]
+>                  ,qeFrom = [TRSimple "t"]
 >                  ,qeGroupBy = [Iden "a"]
 >                  ,qeHaving = Just $ BinOp (App "sum" [Iden "b"])
 >                                           ">" (NumLit "5")
@@ -365,7 +363,7 @@
 >     ]
 >   where
 >     ms o = makeSelect {qeSelectList = [(Nothing,Iden "a")]
->                       ,qeFrom = [SimpleTableRef "t"]
+>                       ,qeFrom = [TRSimple "t"]
 >                       ,qeOrderBy = o}
 
 > limit :: TestItem
@@ -378,7 +376,7 @@
 >   where
 >     ms l o = makeSelect
 >              {qeSelectList = [(Nothing,Iden "a")]
->              ,qeFrom = [SimpleTableRef "t"]
+>              ,qeFrom = [TRSimple "t"]
 >              ,qeLimit = l
 >              ,qeOffset = o}
 
@@ -401,10 +399,10 @@
 >   where
 >     ms1 = makeSelect
 >           {qeSelectList = [(Nothing,Iden "a")]
->           ,qeFrom = [SimpleTableRef "t"]}
+>           ,qeFrom = [TRSimple "t"]}
 >     ms2 = makeSelect
 >           {qeSelectList = [(Nothing,Iden "b")]
->           ,qeFrom = [SimpleTableRef "u"]}
+>           ,qeFrom = [TRSimple "u"]}
 
 
 > withQueries :: TestItem
@@ -419,7 +417,7 @@
 >  where
 >    ms c t = makeSelect
 >             {qeSelectList = [(Nothing,Iden c)]
->             ,qeFrom = [SimpleTableRef t]}
+>             ,qeFrom = [TRSimple t]}
 >    ms1 = ms "a" "t"
 >    ms2 = ms "a" "u"
 >    ms3 = ms "a" "x"
@@ -430,7 +428,7 @@
 >     [("select count(*) from t"
 >      ,makeSelect
 >       {qeSelectList = [(Nothing, App "count" [Star])]
->       ,qeFrom = [SimpleTableRef "t"]
+>       ,qeFrom = [TRSimple "t"]
 >       }
 >      )
 >     ,("select a, sum(c+d) as s\n\
@@ -444,7 +442,7 @@
 >                       ,(Just "s"
 >                        ,App "sum" [BinOp (Iden "c")
 >                                          "+" (Iden "d")])]
->       ,qeFrom = [SimpleTableRef "t", SimpleTableRef "u"]
+>       ,qeFrom = [TRSimple "t", TRSimple "u"]
 >       ,qeWhere = Just $ BinOp (Iden "a") ">" (NumLit "5")
 >       ,qeGroupBy = [Iden "a"]
 >       ,qeHaving = Just $ BinOp (App "count" [NumLit "1"])
