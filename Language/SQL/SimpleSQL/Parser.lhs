@@ -612,7 +612,7 @@ wrapper for query expr which ignores optional trailing semicolon.
 
 > topLevelQueryExpr :: P QueryExpr
 > topLevelQueryExpr =
->     queryExpr <* (choice [try $ symbol_ ";", return()])
+>      queryExpr >>= optionSuffix ((symbol ";" *>) . return)
 
 wrapper to parse a series of query exprs from a single source. They
 must be separated by semicolon, but for the last expression, the
@@ -620,11 +620,9 @@ trailing semicolon is optional.
 
 > queryExprs :: P [QueryExpr]
 > queryExprs = do
->     qe <- queryExpr
->     choice [[qe] <$ eof
->            ,symbol_ ";" *>
->             choice [[qe] <$ eof
->                    ,(:) qe <$> queryExprs]]
+>     ((:[]) <$> queryExpr)
+>     >>= optionSuffix ((symbol ";" *>) . return)
+>     >>= optionSuffix (\p -> (p++) <$> queryExprs)
 
 ------------------------------------------------
 

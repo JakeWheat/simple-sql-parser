@@ -11,6 +11,7 @@
 > data TestItem = Group String [TestItem]
 >               | TestScalarExpr String ScalarExpr
 >               | TestQueryExpr String QueryExpr
+>               | TestQueryExprs String [QueryExpr]
 >               | ParseQueryExpr String
 >                 deriving (Eq,Show)
 
@@ -440,6 +441,17 @@
 >      )
 >     ]
 
+> queryExprsParserTests :: TestItem
+> queryExprsParserTests = Group "query exprs" $ map (uncurry TestQueryExprs)
+>     [("select 1",[ms])
+>     ,("select 1;",[ms])
+>     ,("select 1;select 1",[ms,ms])
+>     ,("select 1;select 1;",[ms,ms])
+>     ,(" select 1;select 1; ",[ms,ms])
+>     ]
+>   where
+>     ms = makeSelect {qeSelectList = [(Nothing,NumLit "1")]}
+
 > tpchTests :: TestItem
 > tpchTests =
 >     Group "parse tpch"
@@ -450,6 +462,7 @@
 >     Group "parserTest"
 >     [scalarExprParserTests
 >     ,queryExprParserTests
+>     ,queryExprsParserTests
 >     ,tpchTests
 >     ]
 
@@ -464,6 +477,8 @@
 >     toTest parseScalarExpr prettyScalarExpr str expected
 > itemToTest (TestQueryExpr str expected) =
 >     toTest parseQueryExpr prettyQueryExpr str expected
+> itemToTest (TestQueryExprs str expected) =
+>     toTest parseQueryExprs prettyQueryExprs str expected
 > itemToTest (ParseQueryExpr str) =
 >     toPTest parseQueryExpr prettyQueryExpr str
 

@@ -5,6 +5,7 @@ back into SQL source text. It attempts to format the output nicely.
 > module Language.SQL.SimpleSQL.Pretty
 >     (prettyQueryExpr
 >     ,prettyScalarExpr
+>     ,prettyQueryExprs
 >     ) where
 
 > import Language.SQL.SimpleSQL.Syntax
@@ -17,6 +18,8 @@ back into SQL source text. It attempts to format the output nicely.
 > prettyScalarExpr :: ScalarExpr -> String
 > prettyScalarExpr = render . scalarExpr
 
+> prettyQueryExprs :: [QueryExpr] -> String
+> prettyQueryExprs = render . vcat . map ((<> text ";") . queryExpr)
 
 = scalar expressions
 
