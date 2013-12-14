@@ -80,6 +80,10 @@
 >     | With [(String,QueryExpr)] QueryExpr
 >       deriving (Eq,Show)
 
+TODO: add queryexpr parens to deal with e.g.
+(select 1 union select 2) union select 3
+I'm not sure if this is valid syntax or not
+
 > data Duplicates = Distinct | All deriving (Eq,Show)
 > data Direction = Asc | Desc deriving (Eq,Show)
 > data CombineOp = Union | Except | Intersect deriving (Eq,Show)
@@ -103,6 +107,9 @@
 >               | JoinAlias TableRef String (Maybe [String])
 >               | JoinQueryExpr QueryExpr
 >                 deriving (Eq,Show)
+
+TODO: add function table ref
+
 
 > data JoinType = Inner | JLeft | JRight | Full | Cross
 >                 deriving (Eq,Show)

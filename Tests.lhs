@@ -380,6 +380,10 @@
 >     ,("select a from t union distinct corresponding \
 >       \select b from u"
 >      ,CombineQueryExpr ms1 Union Distinct Corresponding ms2)
+>     ,("select a from t union select a from t union select a from t"
+>      -- is this the correct associativity? 
+>      ,CombineQueryExpr ms1 Union All Respectively
+>        (CombineQueryExpr ms1 Union All Respectively ms1))
 >     ]
 >   where
 >     ms1 = makeSelect

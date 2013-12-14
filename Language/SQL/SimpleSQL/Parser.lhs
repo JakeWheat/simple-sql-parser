@@ -144,15 +144,14 @@ aggregate([all|distinct] args [order by orderitems])
 >            ,Distinct <$ keyword "distinct"]
 
 parse a window call as a suffix of a regular function call
-
 this looks like this:
-
 functioncall(args) over ([partition by ids] [order by orderitems])
 
 No support for explicit frames yet.
 
 The convention in this file is that the 'Suffix', erm, suffix on
-parser names means that they have been left factored.
+parser names means that they have been left factored. These are almost
+always used with the optionSuffix combinator.
 
 > windowSuffix :: ScalarExpr -> P ScalarExpr
 > windowSuffix (App f es) =
@@ -489,7 +488,7 @@ join tref
 
 
 > from :: P [TableRef]
-> from = option [] (try (keyword_ "from") *> commaSep1 tref)
+> from = try (keyword_ "from") *> commaSep1 tref
 >   where
 >     tref = choice [try (JoinQueryExpr <$> parens queryExpr)
 >                   ,JoinParens <$> parens tref
@@ -537,19 +536,19 @@ pretty trivial.
 Here is a helper for parsing a few parts of the query expr (currently
 where, having, limit, offset).
 
-> optionalScalarExpr :: String -> P (Maybe ScalarExpr)
-> optionalScalarExpr k = optionMaybe (try (keyword_ k) *> scalarExpr)
+> keywordScalarExpr :: String -> P ScalarExpr
+> keywordScalarExpr k = try (keyword_ k) *> scalarExpr
 
-> swhere :: P (Maybe ScalarExpr)
-> swhere = optionalScalarExpr "where"
+> swhere :: P ScalarExpr
+> swhere = keywordScalarExpr "where"
 
 > sgroupBy :: P [ScalarExpr]
-> sgroupBy = option [] (try (keyword_ "group")
->                       *> keyword_ "by"
->                       *> commaSep1 scalarExpr)
+> sgroupBy = try (keyword_ "group")
+>            *> keyword_ "by"
+>            *> commaSep1 scalarExpr
 
-> having :: P (Maybe ScalarExpr)
-> having = optionalScalarExpr "having"
+> having :: P ScalarExpr
+> having = keywordScalarExpr "having"
 
 > orderBy :: P [(ScalarExpr,Direction)]
 > orderBy = try (keyword_ "order") *> keyword_ "by" *> commaSep1 ob
@@ -558,11 +557,11 @@ where, having, limit, offset).
 >              <*> option Asc (choice [Asc <$ keyword_ "asc"
 >                                     ,Desc <$ keyword_ "desc"])
 
-> limit :: P (Maybe ScalarExpr)
-> limit = optionalScalarExpr "limit"
+> limit :: P ScalarExpr
+> limit = keywordScalarExpr "limit"
 
-> offset :: P (Maybe ScalarExpr)
-> offset = optionalScalarExpr "offset"
+> offset :: P ScalarExpr
+> offset = keywordScalarExpr "offset"
 
 == common table expressions
 
@@ -581,34 +580,33 @@ and union, etc..
 
 > queryExpr :: P QueryExpr
 > queryExpr =
->   choice [select >>= queryExprSuffix, with]
+>   choice [with
+>          ,select >>= optionSuffix queryExprSuffix]
 >   where
 >     select = try (keyword_ "select") >>
 >         Select
 >         <$> (fromMaybe All <$> duplicates)
 >         <*> selectList
->         <*> from
->         <*> swhere
->         <*> sgroupBy
->         <*> having
+>         <*> option [] from
+>         <*> optionMaybe swhere
+>         <*> option [] sgroupBy
+>         <*> optionMaybe having
 >         <*> option [] orderBy
->         <*> limit
->         <*> offset
+>         <*> optionMaybe limit
+>         <*> optionMaybe offset
 
 > queryExprSuffix :: QueryExpr -> P QueryExpr
 > queryExprSuffix qe =
->     choice [(CombineQueryExpr qe
->              <$> try (choice
->                       [Union <$ keyword_ "union"
->                       ,Intersect <$ keyword_ "intersect"
->                       ,Except <$ keyword_ "except"])
->              <*> (fromMaybe All <$> duplicates)
->              <*> option Respectively
->                         (try (Corresponding
->                               <$ keyword_ "corresponding"))
->              <*> queryExpr)
->             >>= queryExprSuffix
->            ,return qe]
+>     (CombineQueryExpr qe
+>      <$> try (choice
+>               [Union <$ keyword_ "union"
+>               ,Intersect <$ keyword_ "intersect"
+>               ,Except <$ keyword_ "except"])
+>      <*> (fromMaybe All <$> duplicates)
+>      <*> option Respectively
+>                 (try (Corresponding <$ keyword_ "corresponding"))
+>      <*> queryExpr)
+>     >>= optionSuffix queryExprSuffix
 
 wrapper for query expr which ignores optional trailing semicolon.
 
@@ -632,7 +630,11 @@ trailing semicolon is optional.
 
 = lexing parsers
 
-The lexing is a bit 'virtual', in the usual parsec style.
+The lexing is a bit 'virtual', in the usual parsec style. The
+convention in this file is to put all the parsers which access
+characters directly or indirectly here (i.e. ones which use char,
+string, digit, etc.), except for the parsers which only indirectly
+access them via these functions, if you follow?
 
 > symbol :: String -> P String
 > symbol s = string s
