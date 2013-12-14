@@ -331,7 +331,8 @@ There aren't any multi keyword prefix operators currently supported.
 > prefixUnOpSymbolNames :: [String]
 > prefixUnOpSymbolNames = ["+", "-"]
 
-There aren't any single keyword postfix operators currently supported. Maybe all these 'is's can be left factored?
+There aren't any single keyword postfix operators currently
+supported. Maybe all these 'is's can be left factored?
 
 > postfixOpKeywords :: [String]
 > postfixOpKeywords = ["is null"
@@ -664,8 +665,12 @@ blacklist of keywords which aren't supported as identifiers.
 >     ,"when", "then", "case", "end", "in"
 >     ,"except", "intersect", "union"]
 
-TODO: talk about what must be in the blacklist, and what doesn't need
-to be.
+These blacklisted names are mostly needed when we parse something with
+an optional alias, e.g. select a a from t. If we write select a from
+t, we have to make sure the from isn't parsed as an alias. I'm not
+sure what other places strictly need the blacklist, and in theory it
+could be tuned differently for each place the identifierString/
+identifier parsers are used to only blacklist the bare minimum.
 
 String literals: limited at the moment, no escaping \' or other
 variations.

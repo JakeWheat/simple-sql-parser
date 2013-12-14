@@ -4,7 +4,7 @@ trees for the operator precedence and associativity (aka 'fixity').
 
 It currently uses haskell-src-exts as a hack, the algorithm from there
 should be ported to work on these trees natively. Maybe it could be
-made generic?
+made generic to use in places other than the scalar expr parser?
 
 > {-# LANGUAGE TupleSections #-}
 > module Language.SQL.SimpleSQL.Fixity

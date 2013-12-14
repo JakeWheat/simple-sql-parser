@@ -2,7 +2,9 @@
 This is the pretty printer code which takes AST values and turns them
 back into SQL source text. It attempts to format the output nicely.
 
-> -- | These is the pretty printing functions, which produce SQL source from ASTs. The code attempts to format the output in a readable way.
+> -- | These is the pretty printing functions, which produce SQL
+> -- source from ASTs. The code attempts to format the output in a
+> -- readable way.
 > module Language.SQL.SimpleSQL.Pretty
 >     (prettyQueryExpr
 >     ,prettyScalarExpr
@@ -21,7 +23,8 @@ back into SQL source text. It attempts to format the output nicely.
 > prettyScalarExpr :: ScalarExpr -> String
 > prettyScalarExpr = render . scalarExpr
 
-> -- | Convert a list of query exprs to concrete syntax. A semi colon is inserted following each query expr.
+> -- | Convert a list of query exprs to concrete syntax. A semi colon
+> -- is inserted after each query expr.
 > prettyQueryExprs :: [QueryExpr] -> String
 > prettyQueryExprs = render . vcat . map ((<> text ";\n") . queryExpr)
 
@@ -204,7 +207,8 @@ back into SQL source text. It attempts to format the output nicely.
 >               JCross -> text "cross"
 >           ,text "join"]
 >     joinCond (Just (JoinOn e)) = text "on" <+> scalarExpr e
->     joinCond (Just (JoinUsing es)) = text "using" <+> parens (commaSep $ map text es)
+>     joinCond (Just (JoinUsing es)) =
+>         text "using" <+> parens (commaSep $ map text es)
 >     joinCond Nothing = empty
 >     joinCond (Just JoinNatural) = empty
 
@@ -225,7 +229,6 @@ back into SQL source text. It attempts to format the output nicely.
 >   where
 >     f (e,Asc) = scalarExpr e
 >     f (e,Desc) = scalarExpr e <+> text "desc"
-
 
 = utils
 
