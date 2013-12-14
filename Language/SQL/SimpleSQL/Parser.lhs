@@ -166,9 +166,6 @@ parser names means that they have been left factored.
 >         commaSep1 scalarExpr'
 > windowSuffix _ = fail ""
 
-TODO: review all the suffix functions, use the optionSuffix combinator
-to simplify the suffix parsers
-
 > app :: P ScalarExpr
 > app = aggOrApp >>= optionSuffix windowSuffix
 
@@ -365,46 +362,13 @@ The parsers:
 >     makeOp (o,ws) = try $ PostfixOp o e <$ keywords_ ws
 >     keywords_ = try . mapM_ keyword_
 
-Wrapper for non 'bExpr' parsing. See the between parser for
-explanation.
+All the binary operators are parsed as same precedence and left
+associativity.
 
-> scalarExpr' :: P ScalarExpr
-> scalarExpr' = scalarExpr'' False
-
-The main scalar expression parser which includes the binary operator
-parsing. All the binary operators are parsed as same precedence and
-left associativity. This will be fixed in a pass over the abstract
-syntax, which isn't working at the moment.
-
-TODO:
-left factor: stuff which starts with identifier
-
-move app>>=windowSuffix to a separate parser above next to app and
-windowSuffix themselves
-
-split out the binary op parsing from this function to above
-
-> scalarExpr'' :: Bool -> P ScalarExpr
-> scalarExpr'' bExpr = factor >>= trysuffix
+> binaryOperatorSuffix :: Bool -> ScalarExpr -> P ScalarExpr
+> binaryOperatorSuffix bExpr e0 =
+>     BinOp <$> opSymbol <*> return e0 <*> factor
 >   where
->     factor = choice [literal
->                     ,scase
->                     ,cast
->                     ,extract
->                     ,substring
->                     ,subquery
->                     ,prefixUnaryOp
->                     ,try app
->                     ,try dottedIden
->                     ,identifier
->                     ,sparens]
->     trysuffix e = try (suffix e) <|> return e
->     suffix e0 = choice
->                 [BinOp <$> opSymbol <*> return e0 <*> factor
->                 ,inSuffix e0
->                 ,betweenSuffix e0
->                 ,postfixOpSuffix e0
->                 ] >>= trysuffix
 >     opSymbol = choice
 >         (map (try . symbol) binOpSymbolNames
 >         ++ map (try . keywords) binOpMultiKeywordNames
@@ -438,6 +402,48 @@ which should be a parse error.
 
 > fixFixities :: ScalarExpr -> ScalarExpr
 > fixFixities = id
+
+== scalar expressions
+
+TODO:
+left factor stuff which starts with identifier
+
+This parses most of the scalar exprs. I'm not sure if factor is the
+correct terminology here. The order of the parsers and use of try is
+carefully done to make everything work. It is a little fragile and
+could at least do with some heavy explanation.
+
+> factor :: P ScalarExpr
+> factor = choice [literal
+>                 ,scase
+>                 ,cast
+>                 ,extract
+>                 ,substring
+>                 ,subquery
+>                 ,prefixUnaryOp
+>                 ,try app
+>                 ,try dottedIden
+>                 ,identifier
+>                 ,sparens]
+
+putting the factor together with the extra bits
+
+> scalarExpr'' :: Bool -> P ScalarExpr
+> scalarExpr'' bExpr = factor >>= trysuffix
+>   where
+>     trysuffix e = try (suffix e) <|> return e
+>     suffix e0 = choice
+>                 [binaryOperatorSuffix bExpr e0
+>                 ,inSuffix e0
+>                 ,betweenSuffix e0
+>                 ,postfixOpSuffix e0
+>                 ] >>= trysuffix
+
+Wrapper for non 'bExpr' parsing. See the between parser for
+explanation.
+
+> scalarExpr' :: P ScalarExpr
+> scalarExpr' = scalarExpr'' False
 
 The scalarExpr wrapper. The idea is that directly nested scalar
 expressions use the scalarExpr' parser, then other code uses the
