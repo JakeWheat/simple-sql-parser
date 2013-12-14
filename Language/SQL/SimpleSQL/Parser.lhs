@@ -14,6 +14,7 @@
 > import qualified Text.Parsec as P
 
 > import Language.SQL.SimpleSQL.Syntax
+> import Language.SQL.SimpleSQL.Fixity
 
 The public api functions.
 
@@ -375,30 +376,30 @@ associativity.
 >                 else binOpKeywordNames))
 >     keywords ks = unwords <$> mapM keyword ks
 
-TODO: create the fixity adjuster. This should take a list of operators
-with precedence and associativity and adjust a scalar expr tree to
-match these. It shouldn't attempt to descend into scalar expressions
-inside nested query exprs in subqueries. This way we separate out
-parsing from handling the precedence and associativity. Is it a good
-idea to separate these? I'm not sure. I think it makes some error
-messages potentially a little less helpful without some extra work,
-but apart from that, I think it is a win in terms of code clarity. The
-errors which are harder to produce nicely I think are limited to
-chained binary operators with no parens which have no associativity
-which should be a parse error.
+> sqlFixities :: [[Fixity]]
+> sqlFixities = highPrec ++ defaultPrec ++ lowPrec
+>   where
+>     allOps = binOpSymbolNames ++ binOpKeywordNames
+>              ++ (map unwords binOpMultiKeywordNames)
+>              ++ prefixUnOpKeywordNames ++ prefixUnOpSymbolNames
+>              ++ postfixOpKeywords
+>     highPrec = [infixl_ ["*","/"]
+>                ,infixl_ ["+", "-"]
+>                ,infixl_ ["<=",">=","!=","<>","||","like"]
+>                ]
+>     lowPrec = [infix_ ["<",">"]
+>               ,infixr_ ["="]
+>               ,infixr_ ["not"]
+>               ,infixl_ ["and"]
+>               ,infixl_ ["or"]]
+>     already = concatMap (map fName) highPrec
+>               ++ concatMap (map fName)  lowPrec
+>     defaultPrecOps = filter (`notElem` already) allOps
+>     -- almost correct, have to do some more work to
+>     -- get the associativity correct for these operators
+>     defaultPrec = [infixl_ defaultPrecOps]
+>     fName (Fixity n _) = n
 
-> {-sqlFixities :: [HSE.Fixity]
-> sqlFixities = HSE.infixl_ 9 ["*", "/"]
->               ++ HSE.infixl_ 8 ["+", "-"]
->               ++ HSE.infixl_ 6 ["<=",">=","!=","<>","||", "like"]
->               ++ HSE.infix_ 4 ["<", ">"]
->               ++ HSE.infixr_ 3 ["="]
->               ++ HSE.infixr_ 2 ["or"]
->               ++ HSE.infixl_ 1 ["and"]
->               ++ HSE.infixl_ 0 ["or"]-}
-
-> fixFixities :: ScalarExpr -> ScalarExpr
-> fixFixities = id
 
 == scalar expressions
 
@@ -451,7 +452,7 @@ expression tree (for efficiency and code clarity).
 > scalarExpr :: P ScalarExpr
 > scalarExpr =
 >     choice [try star
->            ,fixFixities <$> scalarExpr']
+>            ,fixFixities sqlFixities <$> scalarExpr']
 
 -------------------------------------------------
 
