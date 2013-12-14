@@ -28,7 +28,7 @@ supports. It also parses all the [TPC-H queries](tpch.sql.html).
 
 ## select lists
 
-full support (I think!)
+full support (I think)
 
 ## from
 
@@ -58,7 +58,7 @@ Support for nulls first/last coming soon.
 
 supports scalar expressions
 
-Support for standard ansi syntax, plus other variations coming soon.
+Support for standard ANSI syntax, plus other variations coming soon.
 
 ## set operators
 
@@ -95,7 +95,7 @@ union, except, intersect + all/distinct and corresponding
     - any/some/all
     - exists
 * case expressions
-* parenthesis(!)
+* parenthesis
 
 more operators coming soon.
 

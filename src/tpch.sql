@@ -1,12 +1,12 @@
-I have made two changes compared with the pristine tpc-h queries:
+I have made two changes compared with the pristine TPC-H queries:
 
-* replaced set rowcount with limit. This will be changed to the ansi
-  standard syntax soon.
+* replaced set rowcount with limit. This will be changed to the ANSI
+  standard syntax when this is added.
 * replaced the create view/query/drop view sequence for q15 with a
   common table expression query.
 
 Apart from that, the query text is unchanged. The parser is able to
-successfully parse all these queries.
+successfully parse all these queries. See the bottom of the [simple-sql-parser test cases](test_cases.html).
 
 ~~~~{.sql}
 -- q1

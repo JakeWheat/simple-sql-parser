@@ -24,15 +24,14 @@ Converts the test data to markdown
 
 
 > render :: [TableItem] -> IO ()
-> render ts =
->     go False ts
+> render = go False
 >   where
->     go t ((Heading level title):is) = do
+>     go t (Heading level title : is) = do
 >         when t $ putStrLn "</table>"
 >         putStrLn $ replicate level '#' ++ " " ++ title
 >         go False is
->     go t ((Row sql hask):is) = do
->         when (not t) $ putStrLn "<table>"
+>     go t (Row sql hask : is) = do
+>         unless t $ putStrLn "<table>"
 >         let sql' = "\n~~~~{.sql}\n" ++ sql ++ "\n~~~~\n"
 >             hask' = "\n~~~~{.haskell}\n" ++ hask ++ "\n~~~~\n"
 >         putStrLn $ "<tr><td>" ++ sql'

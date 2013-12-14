@@ -26,12 +26,12 @@ code > span.er { color: #ff0000; font-weight: bold; }
   </style>
 </head>
 <body>
-<p>I have made two changes compared with the pristine tpc-h queries:</p>
+<p>I have made two changes compared with the pristine TPC-H queries:</p>
 <ul>
-<li>replaced set rowcount with limit. This will be changed to the ansi standard syntax soon.</li>
+<li>replaced set rowcount with limit. This will be changed to the ANSI standard syntax when this is added.</li>
 <li>replaced the create view/query/drop view sequence for q15 with a common table expression query.</li>
 </ul>
-<p>Apart from that, the query text is unchanged. The parser is able to successfully parse all these queries.</p>
+<p>Apart from that, the query text is unchanged. The parser is able to successfully parse all these queries. See the bottom of the <a href="test_cases.html">simple-sql-parser test cases</a>.</p>
 <pre class="sourceCode sql"><code class="sourceCode sql"><span class="co">-- q1</span>
 <span class="kw">select</span>
         l_returnflag,
