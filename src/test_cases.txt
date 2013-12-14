@@ -1,0 +1,3393 @@
+# parserTest
+## scalarExprParserTests
+### literals
+<table>
+<tr><td>
+~~~~{.sql}
+3
+~~~~
+</td><td>
+~~~~{.haskell}
+NumLit "3"
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+3.
+~~~~
+</td><td>
+~~~~{.haskell}
+NumLit "3."
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+3.3
+~~~~
+</td><td>
+~~~~{.haskell}
+NumLit "3.3"
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+.3
+~~~~
+</td><td>
+~~~~{.haskell}
+NumLit ".3"
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+3.e3
+~~~~
+</td><td>
+~~~~{.haskell}
+NumLit "3.e3"
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+3.3e3
+~~~~
+</td><td>
+~~~~{.haskell}
+NumLit "3.3e3"
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+.3e3
+~~~~
+</td><td>
+~~~~{.haskell}
+NumLit ".3e3"
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+3e3
+~~~~
+</td><td>
+~~~~{.haskell}
+NumLit "3e3"
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+3e+3
+~~~~
+</td><td>
+~~~~{.haskell}
+NumLit "3e+3"
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+3e-3
+~~~~
+</td><td>
+~~~~{.haskell}
+NumLit "3e-3"
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+'string'
+~~~~
+</td><td>
+~~~~{.haskell}
+StringLit "string"
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+'1'
+~~~~
+</td><td>
+~~~~{.haskell}
+StringLit "1"
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+interval '3' day
+~~~~
+</td><td>
+~~~~{.haskell}
+IntervalLit "3" "day" Nothing
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+interval '3' day (3)
+~~~~
+</td><td>
+~~~~{.haskell}
+IntervalLit "3" "day" (Just 3)
+~~~~
+</td></tr>
+</table>
+### identifiers
+<table>
+<tr><td>
+~~~~{.sql}
+iden1
+~~~~
+</td><td>
+~~~~{.haskell}
+Iden "iden1"
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+t.a
+~~~~
+</td><td>
+~~~~{.haskell}
+Iden2 "t" "a"
+~~~~
+</td></tr>
+</table>
+### star
+<table>
+<tr><td>
+~~~~{.sql}
+*
+~~~~
+</td><td>
+~~~~{.haskell}
+Star
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+t.*
+~~~~
+</td><td>
+~~~~{.haskell}
+Star2 "t"
+~~~~
+</td></tr>
+</table>
+### app
+<table>
+<tr><td>
+~~~~{.sql}
+f()
+~~~~
+</td><td>
+~~~~{.haskell}
+App "f" []
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+f(a)
+~~~~
+</td><td>
+~~~~{.haskell}
+App "f" [Iden "a"]
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+f(a,b)
+~~~~
+</td><td>
+~~~~{.haskell}
+App "f" [Iden "a", Iden "b"]
+~~~~
+</td></tr>
+</table>
+### caseexp
+<table>
+<tr><td>
+~~~~{.sql}
+case a when 1 then 2 end
+~~~~
+</td><td>
+~~~~{.haskell}
+Case (Just (Iden "a")) [(NumLit "1", NumLit "2")] Nothing
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+case a when 1 then 2 when 3 then 4 end
+~~~~
+</td><td>
+~~~~{.haskell}
+Case (Just (Iden "a"))
+  [(NumLit "1", NumLit "2"), (NumLit "3", NumLit "4")]
+  Nothing
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+case a when 1 then 2 when 3 then 4 else 5 end
+~~~~
+</td><td>
+~~~~{.haskell}
+Case (Just (Iden "a"))
+  [(NumLit "1", NumLit "2"), (NumLit "3", NumLit "4")]
+  (Just (NumLit "5"))
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+case when a=1 then 2 when a=3 then 4 else 5 end
+~~~~
+</td><td>
+~~~~{.haskell}
+Case Nothing
+  [(BinOp (Iden "a") "=" (NumLit "1"), NumLit "2"),
+   (BinOp (Iden "a") "=" (NumLit "3"), NumLit "4")]
+  (Just (NumLit "5"))
+~~~~
+</td></tr>
+</table>
+### operators
+#### binaryOperators
+<table>
+<tr><td>
+~~~~{.sql}
+a + b
+~~~~
+</td><td>
+~~~~{.haskell}
+BinOp (Iden "a") "+" (Iden "b")
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+a + b * c
+~~~~
+</td><td>
+~~~~{.haskell}
+BinOp (Iden "a") "+" (BinOp (Iden "b") "*" (Iden "c"))
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+a * b + c
+~~~~
+</td><td>
+~~~~{.haskell}
+BinOp (BinOp (Iden "a") "*" (Iden "b")) "+" (Iden "c")
+~~~~
+</td></tr>
+</table>
+#### unaryOperators
+<table>
+<tr><td>
+~~~~{.sql}
+not a
+~~~~
+</td><td>
+~~~~{.haskell}
+PrefixOp "not" (Iden "a")
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+not not a
+~~~~
+</td><td>
+~~~~{.haskell}
+PrefixOp "not" (PrefixOp "not" (Iden "a"))
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
++a
+~~~~
+</td><td>
+~~~~{.haskell}
+PrefixOp "+" (Iden "a")
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+-a
+~~~~
+</td><td>
+~~~~{.haskell}
+PrefixOp "-" (Iden "a")
+~~~~
+</td></tr>
+</table>
+#### operators
+<table>
+<tr><td>
+~~~~{.sql}
+cast('1' as int)
+~~~~
+</td><td>
+~~~~{.haskell}
+Cast (StringLit "1") (TypeName "int")
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+int '3'
+~~~~
+</td><td>
+~~~~{.haskell}
+CastOp (TypeName "int") "3"
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+cast('1' as double precision)
+~~~~
+</td><td>
+~~~~{.haskell}
+Cast (StringLit "1") (TypeName "double precision")
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+double precision '3'
+~~~~
+</td><td>
+~~~~{.haskell}
+CastOp (TypeName "double precision") "3"
+~~~~
+</td></tr>
+</table>
+#### unaryOperators
+<table>
+<tr><td>
+~~~~{.sql}
+a in (1,2,3)
+~~~~
+</td><td>
+~~~~{.haskell}
+In True (Iden "a") (InList [NumLit "1", NumLit "2", NumLit "3"])
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+a between b and c
+~~~~
+</td><td>
+~~~~{.haskell}
+SpecialOp "between" [Iden "a", Iden "b", Iden "c"]
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+a not between b and c
+~~~~
+</td><td>
+~~~~{.haskell}
+SpecialOp "not between" [Iden "a", Iden "b", Iden "c"]
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+a is null
+~~~~
+</td><td>
+~~~~{.haskell}
+PostfixOp "is null" (Iden "a")
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+a is not null
+~~~~
+</td><td>
+~~~~{.haskell}
+PostfixOp "is not null" (Iden "a")
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+a is true
+~~~~
+</td><td>
+~~~~{.haskell}
+PostfixOp "is true" (Iden "a")
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+a is not true
+~~~~
+</td><td>
+~~~~{.haskell}
+PostfixOp "is not true" (Iden "a")
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+a is false
+~~~~
+</td><td>
+~~~~{.haskell}
+PostfixOp "is false" (Iden "a")
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+a is not false
+~~~~
+</td><td>
+~~~~{.haskell}
+PostfixOp "is not false" (Iden "a")
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+a is unknown
+~~~~
+</td><td>
+~~~~{.haskell}
+PostfixOp "is unknown" (Iden "a")
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+a is not unknown
+~~~~
+</td><td>
+~~~~{.haskell}
+PostfixOp "is not unknown" (Iden "a")
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+a is distinct from b
+~~~~
+</td><td>
+~~~~{.haskell}
+BinOp (Iden "a") "is distinct from" (Iden "b")
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+a is not distinct from b
+~~~~
+</td><td>
+~~~~{.haskell}
+BinOp (Iden "a") "is not distinct from" (Iden "b")
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+a like b
+~~~~
+</td><td>
+~~~~{.haskell}
+BinOp (Iden "a") "like" (Iden "b")
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+a not like b
+~~~~
+</td><td>
+~~~~{.haskell}
+BinOp (Iden "a") "not like" (Iden "b")
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+a is similar to b
+~~~~
+</td><td>
+~~~~{.haskell}
+BinOp (Iden "a") "is similar to" (Iden "b")
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+a is not similar to b
+~~~~
+</td><td>
+~~~~{.haskell}
+BinOp (Iden "a") "is not similar to" (Iden "b")
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+a overlaps b
+~~~~
+</td><td>
+~~~~{.haskell}
+BinOp (Iden "a") "overlaps" (Iden "b")
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+extract(day from t)
+~~~~
+</td><td>
+~~~~{.haskell}
+SpecialOp "extract" [Iden "day", Iden "t"]
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+substring(x from 1 for 2)
+~~~~
+</td><td>
+~~~~{.haskell}
+SpecialOp "substring" [Iden "x", NumLit "1", NumLit "2"]
+~~~~
+</td></tr>
+</table>
+### parens
+<table>
+<tr><td>
+~~~~{.sql}
+(a)
+~~~~
+</td><td>
+~~~~{.haskell}
+Parens (Iden "a")
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+(a + b)
+~~~~
+</td><td>
+~~~~{.haskell}
+Parens (BinOp (Iden "a") "+" (Iden "b"))
+~~~~
+</td></tr>
+</table>
+### unaryOperators
+<table>
+<tr><td>
+~~~~{.sql}
+exists (select a from t)
+~~~~
+</td><td>
+~~~~{.haskell}
+SubQueryExpr SqExists
+  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+          qeFrom = [TRSimple "t"], qeWhere = Nothing, qeGroupBy = [],
+          qeHaving = Nothing, qeOrderBy = [], qeLimit = Nothing,
+          qeOffset = Nothing})
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+(select a from t)
+~~~~
+</td><td>
+~~~~{.haskell}
+SubQueryExpr SqSq
+  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+          qeFrom = [TRSimple "t"], qeWhere = Nothing, qeGroupBy = [],
+          qeHaving = Nothing, qeOrderBy = [], qeLimit = Nothing,
+          qeOffset = Nothing})
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+a in (select a from t)
+~~~~
+</td><td>
+~~~~{.haskell}
+In True (Iden "a")
+  (InQueryExpr
+     (Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+             qeFrom = [TRSimple "t"], qeWhere = Nothing, qeGroupBy = [],
+             qeHaving = Nothing, qeOrderBy = [], qeLimit = Nothing,
+             qeOffset = Nothing}))
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+a not in (select a from t)
+~~~~
+</td><td>
+~~~~{.haskell}
+In False (Iden "a")
+  (InQueryExpr
+     (Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+             qeFrom = [TRSimple "t"], qeWhere = Nothing, qeGroupBy = [],
+             qeHaving = Nothing, qeOrderBy = [], qeLimit = Nothing,
+             qeOffset = Nothing}))
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+a > all (select a from t)
+~~~~
+</td><td>
+~~~~{.haskell}
+BinOp (Iden "a") ">"
+  (SubQueryExpr SqAll
+     (Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+             qeFrom = [TRSimple "t"], qeWhere = Nothing, qeGroupBy = [],
+             qeHaving = Nothing, qeOrderBy = [], qeLimit = Nothing,
+             qeOffset = Nothing}))
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+a = some (select a from t)
+~~~~
+</td><td>
+~~~~{.haskell}
+BinOp (Iden "a") "="
+  (SubQueryExpr SqSome
+     (Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+             qeFrom = [TRSimple "t"], qeWhere = Nothing, qeGroupBy = [],
+             qeHaving = Nothing, qeOrderBy = [], qeLimit = Nothing,
+             qeOffset = Nothing}))
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+a <= any (select a from t)
+~~~~
+</td><td>
+~~~~{.haskell}
+BinOp (Iden "a") "<="
+  (SubQueryExpr SqAny
+     (Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+             qeFrom = [TRSimple "t"], qeWhere = Nothing, qeGroupBy = [],
+             qeHaving = Nothing, qeOrderBy = [], qeLimit = Nothing,
+             qeOffset = Nothing}))
+~~~~
+</td></tr>
+</table>
+### aggregates
+<table>
+<tr><td>
+~~~~{.sql}
+count(*)
+~~~~
+</td><td>
+~~~~{.haskell}
+App "count" [Star]
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+sum(a order by a)
+~~~~
+</td><td>
+~~~~{.haskell}
+AggregateApp "sum" Nothing [Iden "a"] [(Iden "a", Asc)]
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+sum(all a)
+~~~~
+</td><td>
+~~~~{.haskell}
+AggregateApp "sum" (Just All) [Iden "a"] []
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+count(distinct a)
+~~~~
+</td><td>
+~~~~{.haskell}
+AggregateApp "count" (Just Distinct) [Iden "a"] []
+~~~~
+</td></tr>
+</table>
+### windowFunctions
+<table>
+<tr><td>
+~~~~{.sql}
+max(a) over ()
+~~~~
+</td><td>
+~~~~{.haskell}
+WindowApp "max" [Iden "a"] [] []
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+count(*) over ()
+~~~~
+</td><td>
+~~~~{.haskell}
+WindowApp "count" [Star] [] []
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+max(a) over (partition by b)
+~~~~
+</td><td>
+~~~~{.haskell}
+WindowApp "max" [Iden "a"] [Iden "b"] []
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+max(a) over (partition by b,c)
+~~~~
+</td><td>
+~~~~{.haskell}
+WindowApp "max" [Iden "a"] [Iden "b", Iden "c"] []
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+sum(a) over (order by b)
+~~~~
+</td><td>
+~~~~{.haskell}
+WindowApp "sum" [Iden "a"] [] [(Iden "b", Asc)]
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+sum(a) over (order by b desc,c)
+~~~~
+</td><td>
+~~~~{.haskell}
+WindowApp "sum" [Iden "a"] [] [(Iden "b", Desc), (Iden "c", Asc)]
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+sum(a) over (partition by b order by c)
+~~~~
+</td><td>
+~~~~{.haskell}
+WindowApp "sum" [Iden "a"] [Iden "b"] [(Iden "c", Asc)]
+~~~~
+</td></tr>
+</table>
+## queryExprParserTests
+### duplicates
+<table>
+<tr><td>
+~~~~{.sql}
+select a from t
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+       qeFrom = [TRSimple "t"], qeWhere = Nothing, qeGroupBy = [],
+       qeHaving = Nothing, qeOrderBy = [], qeLimit = Nothing,
+       qeOffset = Nothing}
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select all a from t
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+       qeFrom = [TRSimple "t"], qeWhere = Nothing, qeGroupBy = [],
+       qeHaving = Nothing, qeOrderBy = [], qeLimit = Nothing,
+       qeOffset = Nothing}
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select distinct a from t
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = Distinct,
+       qeSelectList = [(Nothing, Iden "a")], qeFrom = [TRSimple "t"],
+       qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+       qeOrderBy = [], qeLimit = Nothing, qeOffset = Nothing}
+~~~~
+</td></tr>
+</table>
+### selectLists
+<table>
+<tr><td>
+~~~~{.sql}
+select 1
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All, qeSelectList = [(Nothing, NumLit "1")],
+       qeFrom = [], qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+       qeOrderBy = [], qeLimit = Nothing, qeOffset = Nothing}
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select a
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+       qeFrom = [], qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+       qeOrderBy = [], qeLimit = Nothing, qeOffset = Nothing}
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select a,b
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All,
+       qeSelectList = [(Nothing, Iden "a"), (Nothing, Iden "b")],
+       qeFrom = [], qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+       qeOrderBy = [], qeLimit = Nothing, qeOffset = Nothing}
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select 1+2,3+4
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All,
+       qeSelectList =
+         [(Nothing, BinOp (NumLit "1") "+" (NumLit "2")),
+          (Nothing, BinOp (NumLit "3") "+" (NumLit "4"))],
+       qeFrom = [], qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+       qeOrderBy = [], qeLimit = Nothing, qeOffset = Nothing}
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select a as a, /*comment*/ b as b
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All,
+       qeSelectList = [(Just "a", Iden "a"), (Just "b", Iden "b")],
+       qeFrom = [], qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+       qeOrderBy = [], qeLimit = Nothing, qeOffset = Nothing}
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select a a, b b
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All,
+       qeSelectList = [(Just "a", Iden "a"), (Just "b", Iden "b")],
+       qeFrom = [], qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+       qeOrderBy = [], qeLimit = Nothing, qeOffset = Nothing}
+~~~~
+</td></tr>
+</table>
+### from
+<table>
+<tr><td>
+~~~~{.sql}
+select a from t
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+       qeFrom = [TRSimple "t"], qeWhere = Nothing, qeGroupBy = [],
+       qeHaving = Nothing, qeOrderBy = [], qeLimit = Nothing,
+       qeOffset = Nothing}
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select a from t,u
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+       qeFrom = [TRSimple "t", TRSimple "u"], qeWhere = Nothing,
+       qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
+       qeLimit = Nothing, qeOffset = Nothing}
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select a from t inner join u on expr
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+       qeFrom =
+         [TRJoin (TRSimple "t") JInner (TRSimple "u")
+            (Just (JoinOn (Iden "expr")))],
+       qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+       qeOrderBy = [], qeLimit = Nothing, qeOffset = Nothing}
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select a from t left join u on expr
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+       qeFrom =
+         [TRJoin (TRSimple "t") JLeft (TRSimple "u")
+            (Just (JoinOn (Iden "expr")))],
+       qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+       qeOrderBy = [], qeLimit = Nothing, qeOffset = Nothing}
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select a from t right join u on expr
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+       qeFrom =
+         [TRJoin (TRSimple "t") JRight (TRSimple "u")
+            (Just (JoinOn (Iden "expr")))],
+       qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+       qeOrderBy = [], qeLimit = Nothing, qeOffset = Nothing}
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select a from t full join u on expr
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+       qeFrom =
+         [TRJoin (TRSimple "t") JFull (TRSimple "u")
+            (Just (JoinOn (Iden "expr")))],
+       qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+       qeOrderBy = [], qeLimit = Nothing, qeOffset = Nothing}
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select a from t cross join u
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+       qeFrom = [TRJoin (TRSimple "t") JCross (TRSimple "u") Nothing],
+       qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+       qeOrderBy = [], qeLimit = Nothing, qeOffset = Nothing}
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select a from t natural inner join u
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+       qeFrom =
+         [TRJoin (TRSimple "t") JInner (TRSimple "u") (Just JoinNatural)],
+       qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+       qeOrderBy = [], qeLimit = Nothing, qeOffset = Nothing}
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select a from t inner join u using(a,b)
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+       qeFrom =
+         [TRJoin (TRSimple "t") JInner (TRSimple "u")
+            (Just (JoinUsing ["a", "b"]))],
+       qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+       qeOrderBy = [], qeLimit = Nothing, qeOffset = Nothing}
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select a from (select a from t)
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+       qeFrom =
+         [TRQueryExpr
+            (Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+                    qeFrom = [TRSimple "t"], qeWhere = Nothing, qeGroupBy = [],
+                    qeHaving = Nothing, qeOrderBy = [], qeLimit = Nothing,
+                    qeOffset = Nothing})],
+       qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+       qeOrderBy = [], qeLimit = Nothing, qeOffset = Nothing}
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select a from t as u
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+       qeFrom = [TRAlias (TRSimple "t") "u" Nothing], qeWhere = Nothing,
+       qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
+       qeLimit = Nothing, qeOffset = Nothing}
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select a from t u
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+       qeFrom = [TRAlias (TRSimple "t") "u" Nothing], qeWhere = Nothing,
+       qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
+       qeLimit = Nothing, qeOffset = Nothing}
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select a from t u(b)
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+       qeFrom = [TRAlias (TRSimple "t") "u" (Just ["b"])],
+       qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+       qeOrderBy = [], qeLimit = Nothing, qeOffset = Nothing}
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select a from (t cross join u) as u
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+       qeFrom =
+         [TRAlias
+            (TRParens (TRJoin (TRSimple "t") JCross (TRSimple "u") Nothing))
+            "u"
+            Nothing],
+       qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+       qeOrderBy = [], qeLimit = Nothing, qeOffset = Nothing}
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select a from t cross join u cross join v
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+       qeFrom =
+         [TRJoin (TRJoin (TRSimple "t") JCross (TRSimple "u") Nothing)
+            JCross
+            (TRSimple "v")
+            Nothing],
+       qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+       qeOrderBy = [], qeLimit = Nothing, qeOffset = Nothing}
+~~~~
+</td></tr>
+</table>
+### whereClause
+<table>
+<tr><td>
+~~~~{.sql}
+select a from t where a = 5
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+       qeFrom = [TRSimple "t"],
+       qeWhere = Just (BinOp (Iden "a") "=" (NumLit "5")), qeGroupBy = [],
+       qeHaving = Nothing, qeOrderBy = [], qeLimit = Nothing,
+       qeOffset = Nothing}
+~~~~
+</td></tr>
+</table>
+### groupByClause
+<table>
+<tr><td>
+~~~~{.sql}
+select a,sum(b) from t group by a
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All,
+       qeSelectList =
+         [(Nothing, Iden "a"), (Nothing, App "sum" [Iden "b"])],
+       qeFrom = [TRSimple "t"], qeWhere = Nothing, qeGroupBy = [Iden "a"],
+       qeHaving = Nothing, qeOrderBy = [], qeLimit = Nothing,
+       qeOffset = Nothing}
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select a,b,sum(c) from t group by a,b
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All,
+       qeSelectList =
+         [(Nothing, Iden "a"), (Nothing, Iden "b"),
+          (Nothing, App "sum" [Iden "c"])],
+       qeFrom = [TRSimple "t"], qeWhere = Nothing,
+       qeGroupBy = [Iden "a", Iden "b"], qeHaving = Nothing,
+       qeOrderBy = [], qeLimit = Nothing, qeOffset = Nothing}
+~~~~
+</td></tr>
+</table>
+### having
+<table>
+<tr><td>
+~~~~{.sql}
+select a,sum(b) from t group by a having sum(b) > 5
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All,
+       qeSelectList =
+         [(Nothing, Iden "a"), (Nothing, App "sum" [Iden "b"])],
+       qeFrom = [TRSimple "t"], qeWhere = Nothing, qeGroupBy = [Iden "a"],
+       qeHaving = Just (BinOp (App "sum" [Iden "b"]) ">" (NumLit "5")),
+       qeOrderBy = [], qeLimit = Nothing, qeOffset = Nothing}
+~~~~
+</td></tr>
+</table>
+### orderBy
+<table>
+<tr><td>
+~~~~{.sql}
+select a from t order by a
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+       qeFrom = [TRSimple "t"], qeWhere = Nothing, qeGroupBy = [],
+       qeHaving = Nothing, qeOrderBy = [(Iden "a", Asc)],
+       qeLimit = Nothing, qeOffset = Nothing}
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select a from t order by a, b
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+       qeFrom = [TRSimple "t"], qeWhere = Nothing, qeGroupBy = [],
+       qeHaving = Nothing, qeOrderBy = [(Iden "a", Asc), (Iden "b", Asc)],
+       qeLimit = Nothing, qeOffset = Nothing}
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select a from t order by a asc
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+       qeFrom = [TRSimple "t"], qeWhere = Nothing, qeGroupBy = [],
+       qeHaving = Nothing, qeOrderBy = [(Iden "a", Asc)],
+       qeLimit = Nothing, qeOffset = Nothing}
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select a from t order by a desc, b desc
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+       qeFrom = [TRSimple "t"], qeWhere = Nothing, qeGroupBy = [],
+       qeHaving = Nothing,
+       qeOrderBy = [(Iden "a", Desc), (Iden "b", Desc)],
+       qeLimit = Nothing, qeOffset = Nothing}
+~~~~
+</td></tr>
+</table>
+### limit
+<table>
+<tr><td>
+~~~~{.sql}
+select a from t limit 10
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+       qeFrom = [TRSimple "t"], qeWhere = Nothing, qeGroupBy = [],
+       qeHaving = Nothing, qeOrderBy = [], qeLimit = Just (NumLit "10"),
+       qeOffset = Nothing}
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select a from t limit 10 offset 10
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+       qeFrom = [TRSimple "t"], qeWhere = Nothing, qeGroupBy = [],
+       qeHaving = Nothing, qeOrderBy = [], qeLimit = Just (NumLit "10"),
+       qeOffset = Just (NumLit "10")}
+~~~~
+</td></tr>
+</table>
+### combos
+<table>
+<tr><td>
+~~~~{.sql}
+select a from t union select b from u
+~~~~
+</td><td>
+~~~~{.haskell}
+CombineQueryExpr{qe1 =
+                   Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+                          qeFrom = [TRSimple "t"], qeWhere = Nothing, qeGroupBy = [],
+                          qeHaving = Nothing, qeOrderBy = [], qeLimit = Nothing,
+                          qeOffset = Nothing},
+                 qeCombOp = Union, qeDuplicates = All,
+                 qeCorresponding = Respectively,
+                 qe2 =
+                   Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "b")],
+                          qeFrom = [TRSimple "u"], qeWhere = Nothing, qeGroupBy = [],
+                          qeHaving = Nothing, qeOrderBy = [], qeLimit = Nothing,
+                          qeOffset = Nothing}}
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select a from t intersect select b from u
+~~~~
+</td><td>
+~~~~{.haskell}
+CombineQueryExpr{qe1 =
+                   Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+                          qeFrom = [TRSimple "t"], qeWhere = Nothing, qeGroupBy = [],
+                          qeHaving = Nothing, qeOrderBy = [], qeLimit = Nothing,
+                          qeOffset = Nothing},
+                 qeCombOp = Intersect, qeDuplicates = All,
+                 qeCorresponding = Respectively,
+                 qe2 =
+                   Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "b")],
+                          qeFrom = [TRSimple "u"], qeWhere = Nothing, qeGroupBy = [],
+                          qeHaving = Nothing, qeOrderBy = [], qeLimit = Nothing,
+                          qeOffset = Nothing}}
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select a from t except all select b from u
+~~~~
+</td><td>
+~~~~{.haskell}
+CombineQueryExpr{qe1 =
+                   Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+                          qeFrom = [TRSimple "t"], qeWhere = Nothing, qeGroupBy = [],
+                          qeHaving = Nothing, qeOrderBy = [], qeLimit = Nothing,
+                          qeOffset = Nothing},
+                 qeCombOp = Except, qeDuplicates = All,
+                 qeCorresponding = Respectively,
+                 qe2 =
+                   Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "b")],
+                          qeFrom = [TRSimple "u"], qeWhere = Nothing, qeGroupBy = [],
+                          qeHaving = Nothing, qeOrderBy = [], qeLimit = Nothing,
+                          qeOffset = Nothing}}
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select a from t union distinct corresponding select b from u
+~~~~
+</td><td>
+~~~~{.haskell}
+CombineQueryExpr{qe1 =
+                   Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+                          qeFrom = [TRSimple "t"], qeWhere = Nothing, qeGroupBy = [],
+                          qeHaving = Nothing, qeOrderBy = [], qeLimit = Nothing,
+                          qeOffset = Nothing},
+                 qeCombOp = Union, qeDuplicates = Distinct,
+                 qeCorresponding = Corresponding,
+                 qe2 =
+                   Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "b")],
+                          qeFrom = [TRSimple "u"], qeWhere = Nothing, qeGroupBy = [],
+                          qeHaving = Nothing, qeOrderBy = [], qeLimit = Nothing,
+                          qeOffset = Nothing}}
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select a from t union select a from t union select a from t
+~~~~
+</td><td>
+~~~~{.haskell}
+CombineQueryExpr{qe1 =
+                   Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+                          qeFrom = [TRSimple "t"], qeWhere = Nothing, qeGroupBy = [],
+                          qeHaving = Nothing, qeOrderBy = [], qeLimit = Nothing,
+                          qeOffset = Nothing},
+                 qeCombOp = Union, qeDuplicates = All,
+                 qeCorresponding = Respectively,
+                 qe2 =
+                   CombineQueryExpr{qe1 =
+                                      Select{qeDuplicates = All,
+                                             qeSelectList = [(Nothing, Iden "a")],
+                                             qeFrom = [TRSimple "t"], qeWhere = Nothing,
+                                             qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
+                                             qeLimit = Nothing, qeOffset = Nothing},
+                                    qeCombOp = Union, qeDuplicates = All,
+                                    qeCorresponding = Respectively,
+                                    qe2 =
+                                      Select{qeDuplicates = All,
+                                             qeSelectList = [(Nothing, Iden "a")],
+                                             qeFrom = [TRSimple "t"], qeWhere = Nothing,
+                                             qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
+                                             qeLimit = Nothing, qeOffset = Nothing}}}
+~~~~
+</td></tr>
+</table>
+### with queries
+<table>
+<tr><td>
+~~~~{.sql}
+with u as (select a from t) select a from u
+~~~~
+</td><td>
+~~~~{.haskell}
+With
+  [("u",
+    Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+           qeFrom = [TRSimple "t"], qeWhere = Nothing, qeGroupBy = [],
+           qeHaving = Nothing, qeOrderBy = [], qeLimit = Nothing,
+           qeOffset = Nothing})]
+  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+          qeFrom = [TRSimple "u"], qeWhere = Nothing, qeGroupBy = [],
+          qeHaving = Nothing, qeOrderBy = [], qeLimit = Nothing,
+          qeOffset = Nothing})
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+with x as (select a from t),
+     u as (select a from x)
+select a from u
+~~~~
+</td><td>
+~~~~{.haskell}
+With
+  [("x",
+    Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+           qeFrom = [TRSimple "t"], qeWhere = Nothing, qeGroupBy = [],
+           qeHaving = Nothing, qeOrderBy = [], qeLimit = Nothing,
+           qeOffset = Nothing}),
+   ("u",
+    Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+           qeFrom = [TRSimple "x"], qeWhere = Nothing, qeGroupBy = [],
+           qeHaving = Nothing, qeOrderBy = [], qeLimit = Nothing,
+           qeOffset = Nothing})]
+  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Iden "a")],
+          qeFrom = [TRSimple "u"], qeWhere = Nothing, qeGroupBy = [],
+          qeHaving = Nothing, qeOrderBy = [], qeLimit = Nothing,
+          qeOffset = Nothing})
+~~~~
+</td></tr>
+</table>
+### queries
+<table>
+<tr><td>
+~~~~{.sql}
+select count(*) from t
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All,
+       qeSelectList = [(Nothing, App "count" [Star])],
+       qeFrom = [TRSimple "t"], qeWhere = Nothing, qeGroupBy = [],
+       qeHaving = Nothing, qeOrderBy = [], qeLimit = Nothing,
+       qeOffset = Nothing}
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select a, sum(c+d) as s
+  from t,u
+  where a > 5
+  group by a
+  having count(1) > 5
+  order by s
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeDuplicates = All,
+       qeSelectList =
+         [(Nothing, Iden "a"),
+          (Just "s", App "sum" [BinOp (Iden "c") "+" (Iden "d")])],
+       qeFrom = [TRSimple "t", TRSimple "u"],
+       qeWhere = Just (BinOp (Iden "a") ">" (NumLit "5")),
+       qeGroupBy = [Iden "a"],
+       qeHaving =
+         Just (BinOp (App "count" [NumLit "1"]) ">" (NumLit "5")),
+       qeOrderBy = [(Iden "s", Asc)], qeLimit = Nothing,
+       qeOffset = Nothing}
+~~~~
+</td></tr>
+</table>
+## query exprs
+<table>
+<tr><td>
+~~~~{.sql}
+select 1
+~~~~
+</td><td>
+~~~~{.haskell}
+[Select{qeDuplicates = All, qeSelectList = [(Nothing, NumLit "1")],
+        qeFrom = [], qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+        qeOrderBy = [], qeLimit = Nothing, qeOffset = Nothing}]
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select 1;
+~~~~
+</td><td>
+~~~~{.haskell}
+[Select{qeDuplicates = All, qeSelectList = [(Nothing, NumLit "1")],
+        qeFrom = [], qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+        qeOrderBy = [], qeLimit = Nothing, qeOffset = Nothing}]
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select 1;select 1
+~~~~
+</td><td>
+~~~~{.haskell}
+[Select{qeDuplicates = All, qeSelectList = [(Nothing, NumLit "1")],
+        qeFrom = [], qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+        qeOrderBy = [], qeLimit = Nothing, qeOffset = Nothing},
+ Select{qeDuplicates = All, qeSelectList = [(Nothing, NumLit "1")],
+        qeFrom = [], qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+        qeOrderBy = [], qeLimit = Nothing, qeOffset = Nothing}]
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select 1;select 1;
+~~~~
+</td><td>
+~~~~{.haskell}
+[Select{qeDuplicates = All, qeSelectList = [(Nothing, NumLit "1")],
+        qeFrom = [], qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+        qeOrderBy = [], qeLimit = Nothing, qeOffset = Nothing},
+ Select{qeDuplicates = All, qeSelectList = [(Nothing, NumLit "1")],
+        qeFrom = [], qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+        qeOrderBy = [], qeLimit = Nothing, qeOffset = Nothing}]
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+ select 1;select 1; 
+~~~~
+</td><td>
+~~~~{.haskell}
+[Select{qeDuplicates = All, qeSelectList = [(Nothing, NumLit "1")],
+        qeFrom = [], qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+        qeOrderBy = [], qeLimit = Nothing, qeOffset = Nothing},
+ Select{qeDuplicates = All, qeSelectList = [(Nothing, NumLit "1")],
+        qeFrom = [], qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+        qeOrderBy = [], qeLimit = Nothing, qeOffset = Nothing}]
+~~~~
+</td></tr>
+</table>
+## parse tpch
+<table>
+<tr><td>
+~~~~{.sql}
+
+select
+        l_returnflag,
+        l_linestatus,
+        sum(l_quantity) as sum_qty,
+        sum(l_extendedprice) as sum_base_price,
+        sum(l_extendedprice * (1 - l_discount)) as sum_disc_price,
+        sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge,
+        avg(l_quantity) as avg_qty,
+        avg(l_extendedprice) as avg_price,
+        avg(l_discount) as avg_disc,
+        count(*) as count_order
+from
+        lineitem
+where
+        l_shipdate <= date '1998-12-01' - interval '63' day (3)
+group by
+        l_returnflag,
+        l_linestatus
+order by
+        l_returnflag,
+        l_linestatus
+~~~~
+</td><td>
+~~~~{.haskell}
+Right
+  (Select{qeDuplicates = All,
+          qeSelectList =
+            [(Nothing, Iden "l_returnflag"), (Nothing, Iden "l_linestatus"),
+             (Just "sum_qty", App "sum" [Iden "l_quantity"]),
+             (Just "sum_base_price", App "sum" [Iden "l_extendedprice"]),
+             (Just "sum_disc_price",
+              App "sum"
+                [BinOp (Iden "l_extendedprice") "*"
+                   (Parens (BinOp (NumLit "1") "-" (Iden "l_discount")))]),
+             (Just "sum_charge",
+              App "sum"
+                [BinOp
+                   (BinOp (Iden "l_extendedprice") "*"
+                      (Parens (BinOp (NumLit "1") "-" (Iden "l_discount"))))
+                   "*"
+                   (Parens (BinOp (NumLit "1") "+" (Iden "l_tax")))]),
+             (Just "avg_qty", App "avg" [Iden "l_quantity"]),
+             (Just "avg_price", App "avg" [Iden "l_extendedprice"]),
+             (Just "avg_disc", App "avg" [Iden "l_discount"]),
+             (Just "count_order", App "count" [Star])],
+          qeFrom = [TRSimple "lineitem"],
+          qeWhere =
+            Just
+              (BinOp (Iden "l_shipdate") "<="
+                 (BinOp (CastOp (TypeName "date") "1998-12-01") "-"
+                    (IntervalLit "63" "day" (Just 3)))),
+          qeGroupBy = [Iden "l_returnflag", Iden "l_linestatus"],
+          qeHaving = Nothing,
+          qeOrderBy =
+            [(Iden "l_returnflag", Asc), (Iden "l_linestatus", Asc)],
+          qeLimit = Nothing, qeOffset = Nothing})
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+
+select
+        s_acctbal,
+        s_name,
+        n_name,
+        p_partkey,
+        p_mfgr,
+        s_address,
+        s_phone,
+        s_comment
+from
+        part,
+        supplier,
+        partsupp,
+        nation,
+        region
+where
+        p_partkey = ps_partkey
+        and s_suppkey = ps_suppkey
+        and p_size = 15
+        and p_type like '%BRASS'
+        and s_nationkey = n_nationkey
+        and n_regionkey = r_regionkey
+        and r_name = 'EUROPE'
+        and ps_supplycost = (
+                select
+                        min(ps_supplycost)
+                from
+                        partsupp,
+                        supplier,
+                        nation,
+                        region
+                where
+                        p_partkey = ps_partkey
+                        and s_suppkey = ps_suppkey
+                        and s_nationkey = n_nationkey
+                        and n_regionkey = r_regionkey
+                        and r_name = 'EUROPE'
+        )
+order by
+        s_acctbal desc,
+        n_name,
+        s_name,
+        p_partkey
+limit 100
+~~~~
+</td><td>
+~~~~{.haskell}
+Right
+  (Select{qeDuplicates = All,
+          qeSelectList =
+            [(Nothing, Iden "s_acctbal"), (Nothing, Iden "s_name"),
+             (Nothing, Iden "n_name"), (Nothing, Iden "p_partkey"),
+             (Nothing, Iden "p_mfgr"), (Nothing, Iden "s_address"),
+             (Nothing, Iden "s_phone"), (Nothing, Iden "s_comment")],
+          qeFrom =
+            [TRSimple "part", TRSimple "supplier", TRSimple "partsupp",
+             TRSimple "nation", TRSimple "region"],
+          qeWhere =
+            Just
+              (BinOp
+                 (BinOp
+                    (BinOp
+                       (BinOp
+                          (BinOp
+                             (BinOp
+                                (BinOp (BinOp (Iden "p_partkey") "=" (Iden "ps_partkey")) "and"
+                                   (BinOp (Iden "s_suppkey") "=" (Iden "ps_suppkey")))
+                                "and"
+                                (BinOp (Iden "p_size") "=" (NumLit "15")))
+                             "and"
+                             (BinOp (Iden "p_type") "like" (StringLit "%BRASS")))
+                          "and"
+                          (BinOp (Iden "s_nationkey") "=" (Iden "n_nationkey")))
+                       "and"
+                       (BinOp (Iden "n_regionkey") "=" (Iden "r_regionkey")))
+                    "and"
+                    (BinOp (Iden "r_name") "=" (StringLit "EUROPE")))
+                 "and"
+                 (BinOp (Iden "ps_supplycost") "="
+                    (SubQueryExpr SqSq
+                       (Select{qeDuplicates = All,
+                               qeSelectList = [(Nothing, App "min" [Iden "ps_supplycost"])],
+                               qeFrom =
+                                 [TRSimple "partsupp", TRSimple "supplier", TRSimple "nation",
+                                  TRSimple "region"],
+                               qeWhere =
+                                 Just
+                                   (BinOp
+                                      (BinOp
+                                         (BinOp
+                                            (BinOp
+                                               (BinOp (Iden "p_partkey") "=" (Iden "ps_partkey"))
+                                               "and"
+                                               (BinOp (Iden "s_suppkey") "=" (Iden "ps_suppkey")))
+                                            "and"
+                                            (BinOp (Iden "s_nationkey") "=" (Iden "n_nationkey")))
+                                         "and"
+                                         (BinOp (Iden "n_regionkey") "=" (Iden "r_regionkey")))
+                                      "and"
+                                      (BinOp (Iden "r_name") "=" (StringLit "EUROPE"))),
+                               qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
+                               qeLimit = Nothing, qeOffset = Nothing})))),
+          qeGroupBy = [], qeHaving = Nothing,
+          qeOrderBy =
+            [(Iden "s_acctbal", Desc), (Iden "n_name", Asc),
+             (Iden "s_name", Asc), (Iden "p_partkey", Asc)],
+          qeLimit = Just (NumLit "100"), qeOffset = Nothing})
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+
+ select
+         l_orderkey,
+         sum(l_extendedprice * (1 - l_discount)) as revenue,
+         o_orderdate,
+         o_shippriority
+ from
+         customer,
+         orders,
+         lineitem
+ where
+         c_mktsegment = 'MACHINERY'
+         and c_custkey = o_custkey
+         and l_orderkey = o_orderkey
+         and o_orderdate < date '1995-03-21'
+         and l_shipdate > date '1995-03-21'
+ group by
+         l_orderkey,
+         o_orderdate,
+         o_shippriority
+ order by
+         revenue desc,
+         o_orderdate
+ limit 10
+~~~~
+</td><td>
+~~~~{.haskell}
+Right
+  (Select{qeDuplicates = All,
+          qeSelectList =
+            [(Nothing, Iden "l_orderkey"),
+             (Just "revenue",
+              App "sum"
+                [BinOp (Iden "l_extendedprice") "*"
+                   (Parens (BinOp (NumLit "1") "-" (Iden "l_discount")))]),
+             (Nothing, Iden "o_orderdate"), (Nothing, Iden "o_shippriority")],
+          qeFrom =
+            [TRSimple "customer", TRSimple "orders", TRSimple "lineitem"],
+          qeWhere =
+            Just
+              (BinOp
+                 (BinOp
+                    (BinOp
+                       (BinOp (BinOp (Iden "c_mktsegment") "=" (StringLit "MACHINERY"))
+                          "and"
+                          (BinOp (Iden "c_custkey") "=" (Iden "o_custkey")))
+                       "and"
+                       (BinOp (Iden "l_orderkey") "=" (Iden "o_orderkey")))
+                    "and"
+                    (BinOp (Iden "o_orderdate") "<"
+                       (CastOp (TypeName "date") "1995-03-21")))
+                 "and"
+                 (BinOp (Iden "l_shipdate") ">"
+                    (CastOp (TypeName "date") "1995-03-21"))),
+          qeGroupBy =
+            [Iden "l_orderkey", Iden "o_orderdate", Iden "o_shippriority"],
+          qeHaving = Nothing,
+          qeOrderBy = [(Iden "revenue", Desc), (Iden "o_orderdate", Asc)],
+          qeLimit = Just (NumLit "10"), qeOffset = Nothing})
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+
+ select
+         o_orderpriority,
+         count(*) as order_count
+ from
+         orders
+ where
+         o_orderdate >= date '1996-03-01'
+         and o_orderdate < date '1996-03-01' + interval '3' month
+         and exists (
+                 select
+                         *
+                 from
+                         lineitem
+                 where
+                         l_orderkey = o_orderkey
+                         and l_commitdate < l_receiptdate
+         )
+ group by
+         o_orderpriority
+ order by
+         o_orderpriority
+~~~~
+</td><td>
+~~~~{.haskell}
+Right
+  (Select{qeDuplicates = All,
+          qeSelectList =
+            [(Nothing, Iden "o_orderpriority"),
+             (Just "order_count", App "count" [Star])],
+          qeFrom = [TRSimple "orders"],
+          qeWhere =
+            Just
+              (BinOp
+                 (BinOp
+                    (BinOp (Iden "o_orderdate") ">="
+                       (CastOp (TypeName "date") "1996-03-01"))
+                    "and"
+                    (BinOp (Iden "o_orderdate") "<"
+                       (BinOp (CastOp (TypeName "date") "1996-03-01") "+"
+                          (IntervalLit "3" "month" Nothing))))
+                 "and"
+                 (SubQueryExpr SqExists
+                    (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+                            qeFrom = [TRSimple "lineitem"],
+                            qeWhere =
+                              Just
+                                (BinOp (BinOp (Iden "l_orderkey") "=" (Iden "o_orderkey")) "and"
+                                   (BinOp (Iden "l_commitdate") "<" (Iden "l_receiptdate"))),
+                            qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
+                            qeLimit = Nothing, qeOffset = Nothing}))),
+          qeGroupBy = [Iden "o_orderpriority"], qeHaving = Nothing,
+          qeOrderBy = [(Iden "o_orderpriority", Asc)], qeLimit = Nothing,
+          qeOffset = Nothing})
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+
+ select
+         n_name,
+         sum(l_extendedprice * (1 - l_discount)) as revenue
+ from
+         customer,
+         orders,
+         lineitem,
+         supplier,
+         nation,
+         region
+ where
+         c_custkey = o_custkey
+         and l_orderkey = o_orderkey
+         and l_suppkey = s_suppkey
+         and c_nationkey = s_nationkey
+         and s_nationkey = n_nationkey
+         and n_regionkey = r_regionkey
+         and r_name = 'EUROPE'
+         and o_orderdate >= date '1997-01-01'
+         and o_orderdate < date '1997-01-01' + interval '1' year
+ group by
+         n_name
+ order by
+         revenue desc
+~~~~
+</td><td>
+~~~~{.haskell}
+Right
+  (Select{qeDuplicates = All,
+          qeSelectList =
+            [(Nothing, Iden "n_name"),
+             (Just "revenue",
+              App "sum"
+                [BinOp (Iden "l_extendedprice") "*"
+                   (Parens (BinOp (NumLit "1") "-" (Iden "l_discount")))])],
+          qeFrom =
+            [TRSimple "customer", TRSimple "orders", TRSimple "lineitem",
+             TRSimple "supplier", TRSimple "nation", TRSimple "region"],
+          qeWhere =
+            Just
+              (BinOp
+                 (BinOp
+                    (BinOp
+                       (BinOp
+                          (BinOp
+                             (BinOp
+                                (BinOp
+                                   (BinOp (BinOp (Iden "c_custkey") "=" (Iden "o_custkey")) "and"
+                                      (BinOp (Iden "l_orderkey") "=" (Iden "o_orderkey")))
+                                   "and"
+                                   (BinOp (Iden "l_suppkey") "=" (Iden "s_suppkey")))
+                                "and"
+                                (BinOp (Iden "c_nationkey") "=" (Iden "s_nationkey")))
+                             "and"
+                             (BinOp (Iden "s_nationkey") "=" (Iden "n_nationkey")))
+                          "and"
+                          (BinOp (Iden "n_regionkey") "=" (Iden "r_regionkey")))
+                       "and"
+                       (BinOp (Iden "r_name") "=" (StringLit "EUROPE")))
+                    "and"
+                    (BinOp (Iden "o_orderdate") ">="
+                       (CastOp (TypeName "date") "1997-01-01")))
+                 "and"
+                 (BinOp (Iden "o_orderdate") "<"
+                    (BinOp (CastOp (TypeName "date") "1997-01-01") "+"
+                       (IntervalLit "1" "year" Nothing)))),
+          qeGroupBy = [Iden "n_name"], qeHaving = Nothing,
+          qeOrderBy = [(Iden "revenue", Desc)], qeLimit = Nothing,
+          qeOffset = Nothing})
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+
+ select
+         sum(l_extendedprice * l_discount) as revenue
+ from
+         lineitem
+ where
+         l_shipdate >= date '1997-01-01'
+         and l_shipdate < date '1997-01-01' + interval '1' year
+         and l_discount between 0.07 - 0.01 and 0.07 + 0.01
+         and l_quantity < 24
+~~~~
+</td><td>
+~~~~{.haskell}
+Right
+  (Select{qeDuplicates = All,
+          qeSelectList =
+            [(Just "revenue",
+              App "sum"
+                [BinOp (Iden "l_extendedprice") "*" (Iden "l_discount")])],
+          qeFrom = [TRSimple "lineitem"],
+          qeWhere =
+            Just
+              (BinOp
+                 (SpecialOp "between"
+                    [BinOp
+                       (BinOp
+                          (BinOp (Iden "l_shipdate") ">="
+                             (CastOp (TypeName "date") "1997-01-01"))
+                          "and"
+                          (BinOp (Iden "l_shipdate") "<"
+                             (BinOp (CastOp (TypeName "date") "1997-01-01") "+"
+                                (IntervalLit "1" "year" Nothing))))
+                       "and"
+                       (Iden "l_discount"),
+                     BinOp (NumLit "0.07") "-" (NumLit "0.01"),
+                     BinOp (NumLit "0.07") "+" (NumLit "0.01")])
+                 "and"
+                 (BinOp (Iden "l_quantity") "<" (NumLit "24"))),
+          qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
+          qeLimit = Nothing, qeOffset = Nothing})
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+
+ select
+         supp_nation,
+         cust_nation,
+         l_year,
+         sum(volume) as revenue
+ from
+         (
+                 select
+                         n1.n_name as supp_nation,
+                         n2.n_name as cust_nation,
+                         extract(year from l_shipdate) as l_year,
+                         l_extendedprice * (1 - l_discount) as volume
+                 from
+                         supplier,
+                         lineitem,
+                         orders,
+                         customer,
+                         nation n1,
+                         nation n2
+                 where
+                         s_suppkey = l_suppkey
+                         and o_orderkey = l_orderkey
+                         and c_custkey = o_custkey
+                         and s_nationkey = n1.n_nationkey
+                         and c_nationkey = n2.n_nationkey
+                         and (
+                                 (n1.n_name = 'PERU' and n2.n_name = 'IRAQ')
+                                 or (n1.n_name = 'IRAQ' and n2.n_name = 'PERU')
+                         )
+                         and l_shipdate between date '1995-01-01' and date '1996-12-31'
+         ) as shipping
+ group by
+         supp_nation,
+         cust_nation,
+         l_year
+ order by
+         supp_nation,
+         cust_nation,
+         l_year
+~~~~
+</td><td>
+~~~~{.haskell}
+Right
+  (Select{qeDuplicates = All,
+          qeSelectList =
+            [(Nothing, Iden "supp_nation"), (Nothing, Iden "cust_nation"),
+             (Nothing, Iden "l_year"),
+             (Just "revenue", App "sum" [Iden "volume"])],
+          qeFrom =
+            [TRAlias
+               (TRQueryExpr
+                  (Select{qeDuplicates = All,
+                          qeSelectList =
+                            [(Just "supp_nation", Iden2 "n1" "n_name"),
+                             (Just "cust_nation", Iden2 "n2" "n_name"),
+                             (Just "l_year",
+                              SpecialOp "extract" [Iden "year", Iden "l_shipdate"]),
+                             (Just "volume",
+                              BinOp (Iden "l_extendedprice") "*"
+                                (Parens (BinOp (NumLit "1") "-" (Iden "l_discount"))))],
+                          qeFrom =
+                            [TRSimple "supplier", TRSimple "lineitem", TRSimple "orders",
+                             TRSimple "customer", TRAlias (TRSimple "nation") "n1" Nothing,
+                             TRAlias (TRSimple "nation") "n2" Nothing],
+                          qeWhere =
+                            Just
+                              (SpecialOp "between"
+                                 [BinOp
+                                    (BinOp
+                                       (BinOp
+                                          (BinOp
+                                             (BinOp
+                                                (BinOp
+                                                   (BinOp (Iden "s_suppkey") "=" (Iden "l_suppkey"))
+                                                   "and"
+                                                   (BinOp (Iden "o_orderkey") "="
+                                                      (Iden "l_orderkey")))
+                                                "and"
+                                                (BinOp (Iden "c_custkey") "=" (Iden "o_custkey")))
+                                             "and"
+                                             (BinOp (Iden "s_nationkey") "="
+                                                (Iden2 "n1" "n_nationkey")))
+                                          "and"
+                                          (BinOp (Iden "c_nationkey") "="
+                                             (Iden2 "n2" "n_nationkey")))
+                                       "and"
+                                       (Parens
+                                          (BinOp
+                                             (Parens
+                                                (BinOp
+                                                   (BinOp (Iden2 "n1" "n_name") "="
+                                                      (StringLit "PERU"))
+                                                   "and"
+                                                   (BinOp (Iden2 "n2" "n_name") "="
+                                                      (StringLit "IRAQ"))))
+                                             "or"
+                                             (Parens
+                                                (BinOp
+                                                   (BinOp (Iden2 "n1" "n_name") "="
+                                                      (StringLit "IRAQ"))
+                                                   "and"
+                                                   (BinOp (Iden2 "n2" "n_name") "="
+                                                      (StringLit "PERU")))))))
+                                    "and"
+                                    (Iden "l_shipdate"),
+                                  CastOp (TypeName "date") "1995-01-01",
+                                  CastOp (TypeName "date") "1996-12-31"]),
+                          qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
+                          qeLimit = Nothing, qeOffset = Nothing}))
+               "shipping"
+               Nothing],
+          qeWhere = Nothing,
+          qeGroupBy =
+            [Iden "supp_nation", Iden "cust_nation", Iden "l_year"],
+          qeHaving = Nothing,
+          qeOrderBy =
+            [(Iden "supp_nation", Asc), (Iden "cust_nation", Asc),
+             (Iden "l_year", Asc)],
+          qeLimit = Nothing, qeOffset = Nothing})
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+
+ select
+         o_year,
+         sum(case
+                 when nation = 'IRAQ' then volume
+                 else 0
+         end) / sum(volume) as mkt_share
+ from
+         (
+                 select
+                         extract(year from o_orderdate) as o_year,
+                         l_extendedprice * (1 - l_discount) as volume,
+                         n2.n_name as nation
+                 from
+                         part,
+                         supplier,
+                         lineitem,
+                         orders,
+                         customer,
+                         nation n1,
+                         nation n2,
+                         region
+                 where
+                         p_partkey = l_partkey
+                         and s_suppkey = l_suppkey
+                         and l_orderkey = o_orderkey
+                         and o_custkey = c_custkey
+                         and c_nationkey = n1.n_nationkey
+                         and n1.n_regionkey = r_regionkey
+                         and r_name = 'MIDDLE EAST'
+                         and s_nationkey = n2.n_nationkey
+                         and o_orderdate between date '1995-01-01' and date '1996-12-31'
+                         and p_type = 'STANDARD ANODIZED BRASS'
+         ) as all_nations
+ group by
+         o_year
+ order by
+         o_year
+~~~~
+</td><td>
+~~~~{.haskell}
+Right
+  (Select{qeDuplicates = All,
+          qeSelectList =
+            [(Nothing, Iden "o_year"),
+             (Just "mkt_share",
+              BinOp
+                (App "sum"
+                   [Case Nothing
+                      [(BinOp (Iden "nation") "=" (StringLit "IRAQ"), Iden "volume")]
+                      (Just (NumLit "0"))])
+                "/"
+                (App "sum" [Iden "volume"]))],
+          qeFrom =
+            [TRAlias
+               (TRQueryExpr
+                  (Select{qeDuplicates = All,
+                          qeSelectList =
+                            [(Just "o_year",
+                              SpecialOp "extract" [Iden "year", Iden "o_orderdate"]),
+                             (Just "volume",
+                              BinOp (Iden "l_extendedprice") "*"
+                                (Parens (BinOp (NumLit "1") "-" (Iden "l_discount")))),
+                             (Just "nation", Iden2 "n2" "n_name")],
+                          qeFrom =
+                            [TRSimple "part", TRSimple "supplier", TRSimple "lineitem",
+                             TRSimple "orders", TRSimple "customer",
+                             TRAlias (TRSimple "nation") "n1" Nothing,
+                             TRAlias (TRSimple "nation") "n2" Nothing, TRSimple "region"],
+                          qeWhere =
+                            Just
+                              (BinOp
+                                 (SpecialOp "between"
+                                    [BinOp
+                                       (BinOp
+                                          (BinOp
+                                             (BinOp
+                                                (BinOp
+                                                   (BinOp
+                                                      (BinOp
+                                                         (BinOp
+                                                            (BinOp (Iden "p_partkey") "="
+                                                               (Iden "l_partkey"))
+                                                            "and"
+                                                            (BinOp (Iden "s_suppkey") "="
+                                                               (Iden "l_suppkey")))
+                                                         "and"
+                                                         (BinOp (Iden "l_orderkey") "="
+                                                            (Iden "o_orderkey")))
+                                                      "and"
+                                                      (BinOp (Iden "o_custkey") "="
+                                                         (Iden "c_custkey")))
+                                                   "and"
+                                                   (BinOp (Iden "c_nationkey") "="
+                                                      (Iden2 "n1" "n_nationkey")))
+                                                "and"
+                                                (BinOp (Iden2 "n1" "n_regionkey") "="
+                                                   (Iden "r_regionkey")))
+                                             "and"
+                                             (BinOp (Iden "r_name") "=" (StringLit "MIDDLE EAST")))
+                                          "and"
+                                          (BinOp (Iden "s_nationkey") "="
+                                             (Iden2 "n2" "n_nationkey")))
+                                       "and"
+                                       (Iden "o_orderdate"),
+                                     CastOp (TypeName "date") "1995-01-01",
+                                     CastOp (TypeName "date") "1996-12-31"])
+                                 "and"
+                                 (BinOp (Iden "p_type") "=" (StringLit "STANDARD ANODIZED BRASS"))),
+                          qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
+                          qeLimit = Nothing, qeOffset = Nothing}))
+               "all_nations"
+               Nothing],
+          qeWhere = Nothing, qeGroupBy = [Iden "o_year"], qeHaving = Nothing,
+          qeOrderBy = [(Iden "o_year", Asc)], qeLimit = Nothing,
+          qeOffset = Nothing})
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+
+ select
+         nation,
+         o_year,
+         sum(amount) as sum_profit
+ from
+         (
+                 select
+                         n_name as nation,
+                         extract(year from o_orderdate) as o_year,
+                         l_extendedprice * (1 - l_discount) - ps_supplycost * l_quantity as amount
+                 from
+                         part,
+                         supplier,
+                         lineitem,
+                         partsupp,
+                         orders,
+                         nation
+                 where
+                         s_suppkey = l_suppkey
+                         and ps_suppkey = l_suppkey
+                         and ps_partkey = l_partkey
+                         and p_partkey = l_partkey
+                         and o_orderkey = l_orderkey
+                         and s_nationkey = n_nationkey
+                         and p_name like '%antique%'
+         ) as profit
+ group by
+         nation,
+         o_year
+ order by
+         nation,
+         o_year desc
+~~~~
+</td><td>
+~~~~{.haskell}
+Right
+  (Select{qeDuplicates = All,
+          qeSelectList =
+            [(Nothing, Iden "nation"), (Nothing, Iden "o_year"),
+             (Just "sum_profit", App "sum" [Iden "amount"])],
+          qeFrom =
+            [TRAlias
+               (TRQueryExpr
+                  (Select{qeDuplicates = All,
+                          qeSelectList =
+                            [(Just "nation", Iden "n_name"),
+                             (Just "o_year",
+                              SpecialOp "extract" [Iden "year", Iden "o_orderdate"]),
+                             (Just "amount",
+                              BinOp
+                                (BinOp (Iden "l_extendedprice") "*"
+                                   (Parens (BinOp (NumLit "1") "-" (Iden "l_discount"))))
+                                "-"
+                                (BinOp (Iden "ps_supplycost") "*" (Iden "l_quantity")))],
+                          qeFrom =
+                            [TRSimple "part", TRSimple "supplier", TRSimple "lineitem",
+                             TRSimple "partsupp", TRSimple "orders", TRSimple "nation"],
+                          qeWhere =
+                            Just
+                              (BinOp
+                                 (BinOp
+                                    (BinOp
+                                       (BinOp
+                                          (BinOp
+                                             (BinOp
+                                                (BinOp (Iden "s_suppkey") "=" (Iden "l_suppkey"))
+                                                "and"
+                                                (BinOp (Iden "ps_suppkey") "=" (Iden "l_suppkey")))
+                                             "and"
+                                             (BinOp (Iden "ps_partkey") "=" (Iden "l_partkey")))
+                                          "and"
+                                          (BinOp (Iden "p_partkey") "=" (Iden "l_partkey")))
+                                       "and"
+                                       (BinOp (Iden "o_orderkey") "=" (Iden "l_orderkey")))
+                                    "and"
+                                    (BinOp (Iden "s_nationkey") "=" (Iden "n_nationkey")))
+                                 "and"
+                                 (BinOp (Iden "p_name") "like" (StringLit "%antique%"))),
+                          qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
+                          qeLimit = Nothing, qeOffset = Nothing}))
+               "profit"
+               Nothing],
+          qeWhere = Nothing, qeGroupBy = [Iden "nation", Iden "o_year"],
+          qeHaving = Nothing,
+          qeOrderBy = [(Iden "nation", Asc), (Iden "o_year", Desc)],
+          qeLimit = Nothing, qeOffset = Nothing})
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+
+ select
+         c_custkey,
+         c_name,
+         sum(l_extendedprice * (1 - l_discount)) as revenue,
+         c_acctbal,
+         n_name,
+         c_address,
+         c_phone,
+         c_comment
+ from
+         customer,
+         orders,
+         lineitem,
+         nation
+ where
+         c_custkey = o_custkey
+         and l_orderkey = o_orderkey
+         and o_orderdate >= date '1993-12-01'
+         and o_orderdate < date '1993-12-01' + interval '3' month
+         and l_returnflag = 'R'
+         and c_nationkey = n_nationkey
+ group by
+         c_custkey,
+         c_name,
+         c_acctbal,
+         c_phone,
+         n_name,
+         c_address,
+         c_comment
+ order by
+         revenue desc
+ limit 20
+~~~~
+</td><td>
+~~~~{.haskell}
+Right
+  (Select{qeDuplicates = All,
+          qeSelectList =
+            [(Nothing, Iden "c_custkey"), (Nothing, Iden "c_name"),
+             (Just "revenue",
+              App "sum"
+                [BinOp (Iden "l_extendedprice") "*"
+                   (Parens (BinOp (NumLit "1") "-" (Iden "l_discount")))]),
+             (Nothing, Iden "c_acctbal"), (Nothing, Iden "n_name"),
+             (Nothing, Iden "c_address"), (Nothing, Iden "c_phone"),
+             (Nothing, Iden "c_comment")],
+          qeFrom =
+            [TRSimple "customer", TRSimple "orders", TRSimple "lineitem",
+             TRSimple "nation"],
+          qeWhere =
+            Just
+              (BinOp
+                 (BinOp
+                    (BinOp
+                       (BinOp
+                          (BinOp (BinOp (Iden "c_custkey") "=" (Iden "o_custkey")) "and"
+                             (BinOp (Iden "l_orderkey") "=" (Iden "o_orderkey")))
+                          "and"
+                          (BinOp (Iden "o_orderdate") ">="
+                             (CastOp (TypeName "date") "1993-12-01")))
+                       "and"
+                       (BinOp (Iden "o_orderdate") "<"
+                          (BinOp (CastOp (TypeName "date") "1993-12-01") "+"
+                             (IntervalLit "3" "month" Nothing))))
+                    "and"
+                    (BinOp (Iden "l_returnflag") "=" (StringLit "R")))
+                 "and"
+                 (BinOp (Iden "c_nationkey") "=" (Iden "n_nationkey"))),
+          qeGroupBy =
+            [Iden "c_custkey", Iden "c_name", Iden "c_acctbal", Iden "c_phone",
+             Iden "n_name", Iden "c_address", Iden "c_comment"],
+          qeHaving = Nothing, qeOrderBy = [(Iden "revenue", Desc)],
+          qeLimit = Just (NumLit "20"), qeOffset = Nothing})
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+
+ select
+         ps_partkey,
+         sum(ps_supplycost * ps_availqty) as value
+ from
+         partsupp,
+         supplier,
+         nation
+ where
+         ps_suppkey = s_suppkey
+         and s_nationkey = n_nationkey
+         and n_name = 'CHINA'
+ group by
+         ps_partkey having
+                 sum(ps_supplycost * ps_availqty) > (
+                         select
+                                 sum(ps_supplycost * ps_availqty) * 0.0001000000
+                         from
+                                 partsupp,
+                                 supplier,
+                                 nation
+                         where
+                                 ps_suppkey = s_suppkey
+                                 and s_nationkey = n_nationkey
+                                 and n_name = 'CHINA'
+                 )
+ order by
+         value desc
+~~~~
+</td><td>
+~~~~{.haskell}
+Right
+  (Select{qeDuplicates = All,
+          qeSelectList =
+            [(Nothing, Iden "ps_partkey"),
+             (Just "value",
+              App "sum"
+                [BinOp (Iden "ps_supplycost") "*" (Iden "ps_availqty")])],
+          qeFrom =
+            [TRSimple "partsupp", TRSimple "supplier", TRSimple "nation"],
+          qeWhere =
+            Just
+              (BinOp
+                 (BinOp (BinOp (Iden "ps_suppkey") "=" (Iden "s_suppkey")) "and"
+                    (BinOp (Iden "s_nationkey") "=" (Iden "n_nationkey")))
+                 "and"
+                 (BinOp (Iden "n_name") "=" (StringLit "CHINA"))),
+          qeGroupBy = [Iden "ps_partkey"],
+          qeHaving =
+            Just
+              (BinOp
+                 (App "sum" [BinOp (Iden "ps_supplycost") "*" (Iden "ps_availqty")])
+                 ">"
+                 (SubQueryExpr SqSq
+                    (Select{qeDuplicates = All,
+                            qeSelectList =
+                              [(Nothing,
+                                BinOp
+                                  (App "sum"
+                                     [BinOp (Iden "ps_supplycost") "*" (Iden "ps_availqty")])
+                                  "*"
+                                  (NumLit "0.0001000000"))],
+                            qeFrom =
+                              [TRSimple "partsupp", TRSimple "supplier", TRSimple "nation"],
+                            qeWhere =
+                              Just
+                                (BinOp
+                                   (BinOp (BinOp (Iden "ps_suppkey") "=" (Iden "s_suppkey")) "and"
+                                      (BinOp (Iden "s_nationkey") "=" (Iden "n_nationkey")))
+                                   "and"
+                                   (BinOp (Iden "n_name") "=" (StringLit "CHINA"))),
+                            qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
+                            qeLimit = Nothing, qeOffset = Nothing}))),
+          qeOrderBy = [(Iden "value", Desc)], qeLimit = Nothing,
+          qeOffset = Nothing})
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+
+ select
+         l_shipmode,
+         sum(case
+                 when o_orderpriority = '1-URGENT'
+                         or o_orderpriority = '2-HIGH'
+                         then 1
+                 else 0
+         end) as high_line_count,
+         sum(case
+                 when o_orderpriority <> '1-URGENT'
+                         and o_orderpriority <> '2-HIGH'
+                         then 1
+                 else 0
+         end) as low_line_count
+ from
+         orders,
+         lineitem
+ where
+         o_orderkey = l_orderkey
+         and l_shipmode in ('AIR', 'RAIL')
+         and l_commitdate < l_receiptdate
+         and l_shipdate < l_commitdate
+         and l_receiptdate >= date '1994-01-01'
+         and l_receiptdate < date '1994-01-01' + interval '1' year
+ group by
+         l_shipmode
+ order by
+         l_shipmode
+~~~~
+</td><td>
+~~~~{.haskell}
+Right
+  (Select{qeDuplicates = All,
+          qeSelectList =
+            [(Nothing, Iden "l_shipmode"),
+             (Just "high_line_count",
+              App "sum"
+                [Case Nothing
+                   [(BinOp (BinOp (Iden "o_orderpriority") "=" (StringLit "1-URGENT"))
+                       "or"
+                       (BinOp (Iden "o_orderpriority") "=" (StringLit "2-HIGH")),
+                     NumLit "1")]
+                   (Just (NumLit "0"))]),
+             (Just "low_line_count",
+              App "sum"
+                [Case Nothing
+                   [(BinOp
+                       (BinOp (Iden "o_orderpriority") "<>" (StringLit "1-URGENT"))
+                       "and"
+                       (BinOp (Iden "o_orderpriority") "<>" (StringLit "2-HIGH")),
+                     NumLit "1")]
+                   (Just (NumLit "0"))])],
+          qeFrom = [TRSimple "orders", TRSimple "lineitem"],
+          qeWhere =
+            Just
+              (BinOp
+                 (BinOp
+                    (BinOp
+                       (BinOp
+                          (In True
+                             (BinOp (BinOp (Iden "o_orderkey") "=" (Iden "l_orderkey")) "and"
+                                (Iden "l_shipmode"))
+                             (InList [StringLit "AIR", StringLit "RAIL"]))
+                          "and"
+                          (BinOp (Iden "l_commitdate") "<" (Iden "l_receiptdate")))
+                       "and"
+                       (BinOp (Iden "l_shipdate") "<" (Iden "l_commitdate")))
+                    "and"
+                    (BinOp (Iden "l_receiptdate") ">="
+                       (CastOp (TypeName "date") "1994-01-01")))
+                 "and"
+                 (BinOp (Iden "l_receiptdate") "<"
+                    (BinOp (CastOp (TypeName "date") "1994-01-01") "+"
+                       (IntervalLit "1" "year" Nothing)))),
+          qeGroupBy = [Iden "l_shipmode"], qeHaving = Nothing,
+          qeOrderBy = [(Iden "l_shipmode", Asc)], qeLimit = Nothing,
+          qeOffset = Nothing})
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+
+ select
+         c_count,
+         count(*) as custdist
+ from
+         (
+                 select
+                         c_custkey,
+                         count(o_orderkey)
+                 from
+                         customer left outer join orders on
+                                 c_custkey = o_custkey
+                                 and o_comment not like '%pending%requests%'
+                 group by
+                         c_custkey
+         ) as c_orders (c_custkey, c_count)
+ group by
+         c_count
+ order by
+         custdist desc,
+         c_count desc
+~~~~
+</td><td>
+~~~~{.haskell}
+Right
+  (Select{qeDuplicates = All,
+          qeSelectList =
+            [(Nothing, Iden "c_count"), (Just "custdist", App "count" [Star])],
+          qeFrom =
+            [TRAlias
+               (TRQueryExpr
+                  (Select{qeDuplicates = All,
+                          qeSelectList =
+                            [(Nothing, Iden "c_custkey"),
+                             (Nothing, App "count" [Iden "o_orderkey"])],
+                          qeFrom =
+                            [TRJoin (TRSimple "customer") JLeft (TRSimple "orders")
+                               (Just
+                                  (JoinOn
+                                     (BinOp (BinOp (Iden "c_custkey") "=" (Iden "o_custkey")) "and"
+                                        (BinOp (Iden "o_comment") "not like"
+                                           (StringLit "%pending%requests%")))))],
+                          qeWhere = Nothing, qeGroupBy = [Iden "c_custkey"],
+                          qeHaving = Nothing, qeOrderBy = [], qeLimit = Nothing,
+                          qeOffset = Nothing}))
+               "c_orders"
+               (Just ["c_custkey", "c_count"])],
+          qeWhere = Nothing, qeGroupBy = [Iden "c_count"],
+          qeHaving = Nothing,
+          qeOrderBy = [(Iden "custdist", Desc), (Iden "c_count", Desc)],
+          qeLimit = Nothing, qeOffset = Nothing})
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+
+ select
+         100.00 * sum(case
+                 when p_type like 'PROMO%'
+                         then l_extendedprice * (1 - l_discount)
+                 else 0
+         end) / sum(l_extendedprice * (1 - l_discount)) as promo_revenue
+ from
+         lineitem,
+         part
+ where
+         l_partkey = p_partkey
+         and l_shipdate >= date '1994-12-01'
+         and l_shipdate < date '1994-12-01' + interval '1' month
+~~~~
+</td><td>
+~~~~{.haskell}
+Right
+  (Select{qeDuplicates = All,
+          qeSelectList =
+            [(Just "promo_revenue",
+              BinOp
+                (BinOp (NumLit "100.00") "*"
+                   (App "sum"
+                      [Case Nothing
+                         [(BinOp (Iden "p_type") "like" (StringLit "PROMO%"),
+                           BinOp (Iden "l_extendedprice") "*"
+                             (Parens (BinOp (NumLit "1") "-" (Iden "l_discount"))))]
+                         (Just (NumLit "0"))]))
+                "/"
+                (App "sum"
+                   [BinOp (Iden "l_extendedprice") "*"
+                      (Parens (BinOp (NumLit "1") "-" (Iden "l_discount")))]))],
+          qeFrom = [TRSimple "lineitem", TRSimple "part"],
+          qeWhere =
+            Just
+              (BinOp
+                 (BinOp (BinOp (Iden "l_partkey") "=" (Iden "p_partkey")) "and"
+                    (BinOp (Iden "l_shipdate") ">="
+                       (CastOp (TypeName "date") "1994-12-01")))
+                 "and"
+                 (BinOp (Iden "l_shipdate") "<"
+                    (BinOp (CastOp (TypeName "date") "1994-12-01") "+"
+                       (IntervalLit "1" "month" Nothing)))),
+          qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
+          qeLimit = Nothing, qeOffset = Nothing})
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+
+ /*create view revenue0 (supplier_no, total_revenue) as
+         select
+                 l_suppkey,
+                 sum(l_extendedprice * (1 - l_discount))
+         from
+                 lineitem
+         where
+                 l_shipdate >= date '1995-06-01'
+                 and l_shipdate < date '1995-06-01' + interval '3' month
+         group by
+                 l_suppkey;*/
+ with
+ revenue0 as
+         (select
+                 l_suppkey as supplier_no,
+                 sum(l_extendedprice * (1 - l_discount)) as total_revenue
+         from
+                 lineitem
+         where
+                 l_shipdate >= date '1995-06-01'
+                 and l_shipdate < date '1995-06-01' + interval '3' month
+         group by
+                 l_suppkey)
+ select
+         s_suppkey,
+         s_name,
+         s_address,
+         s_phone,
+         total_revenue
+ from
+         supplier,
+         revenue0
+ where
+         s_suppkey = supplier_no
+         and total_revenue = (
+                 select
+                         max(total_revenue)
+                 from
+                         revenue0
+         )
+ order by
+         s_suppkey
+~~~~
+</td><td>
+~~~~{.haskell}
+Right
+  (With
+     [("revenue0",
+       Select{qeDuplicates = All,
+              qeSelectList =
+                [(Just "supplier_no", Iden "l_suppkey"),
+                 (Just "total_revenue",
+                  App "sum"
+                    [BinOp (Iden "l_extendedprice") "*"
+                       (Parens (BinOp (NumLit "1") "-" (Iden "l_discount")))])],
+              qeFrom = [TRSimple "lineitem"],
+              qeWhere =
+                Just
+                  (BinOp
+                     (BinOp (Iden "l_shipdate") ">="
+                        (CastOp (TypeName "date") "1995-06-01"))
+                     "and"
+                     (BinOp (Iden "l_shipdate") "<"
+                        (BinOp (CastOp (TypeName "date") "1995-06-01") "+"
+                           (IntervalLit "3" "month" Nothing)))),
+              qeGroupBy = [Iden "l_suppkey"], qeHaving = Nothing, qeOrderBy = [],
+              qeLimit = Nothing, qeOffset = Nothing})]
+     (Select{qeDuplicates = All,
+             qeSelectList =
+               [(Nothing, Iden "s_suppkey"), (Nothing, Iden "s_name"),
+                (Nothing, Iden "s_address"), (Nothing, Iden "s_phone"),
+                (Nothing, Iden "total_revenue")],
+             qeFrom = [TRSimple "supplier", TRSimple "revenue0"],
+             qeWhere =
+               Just
+                 (BinOp (BinOp (Iden "s_suppkey") "=" (Iden "supplier_no")) "and"
+                    (BinOp (Iden "total_revenue") "="
+                       (SubQueryExpr SqSq
+                          (Select{qeDuplicates = All,
+                                  qeSelectList = [(Nothing, App "max" [Iden "total_revenue"])],
+                                  qeFrom = [TRSimple "revenue0"], qeWhere = Nothing, qeGroupBy = [],
+                                  qeHaving = Nothing, qeOrderBy = [], qeLimit = Nothing,
+                                  qeOffset = Nothing})))),
+             qeGroupBy = [], qeHaving = Nothing,
+             qeOrderBy = [(Iden "s_suppkey", Asc)], qeLimit = Nothing,
+             qeOffset = Nothing}))
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+
+ select
+         p_brand,
+         p_type,
+         p_size,
+         count(distinct ps_suppkey) as supplier_cnt
+ from
+         partsupp,
+         part
+ where
+         p_partkey = ps_partkey
+         and p_brand <> 'Brand#15'
+         and p_type not like 'MEDIUM BURNISHED%'
+         and p_size in (39, 26, 18, 45, 19, 1, 3, 9)
+         and ps_suppkey not in (
+                 select
+                         s_suppkey
+                 from
+                         supplier
+                 where
+                         s_comment like '%Customer%Complaints%'
+         )
+ group by
+         p_brand,
+         p_type,
+         p_size
+ order by
+         supplier_cnt desc,
+         p_brand,
+         p_type,
+         p_size
+~~~~
+</td><td>
+~~~~{.haskell}
+Right
+  (Select{qeDuplicates = All,
+          qeSelectList =
+            [(Nothing, Iden "p_brand"), (Nothing, Iden "p_type"),
+             (Nothing, Iden "p_size"),
+             (Just "supplier_cnt",
+              AggregateApp "count" (Just Distinct) [Iden "ps_suppkey"] [])],
+          qeFrom = [TRSimple "partsupp", TRSimple "part"],
+          qeWhere =
+            Just
+              (In False
+                 (BinOp
+                    (In True
+                       (BinOp
+                          (BinOp
+                             (BinOp (BinOp (Iden "p_partkey") "=" (Iden "ps_partkey")) "and"
+                                (BinOp (Iden "p_brand") "<>" (StringLit "Brand#15")))
+                             "and"
+                             (BinOp (Iden "p_type") "not like" (StringLit "MEDIUM BURNISHED%")))
+                          "and"
+                          (Iden "p_size"))
+                       (InList
+                          [NumLit "39", NumLit "26", NumLit "18", NumLit "45", NumLit "19",
+                           NumLit "1", NumLit "3", NumLit "9"]))
+                    "and"
+                    (Iden "ps_suppkey"))
+                 (InQueryExpr
+                    (Select{qeDuplicates = All,
+                            qeSelectList = [(Nothing, Iden "s_suppkey")],
+                            qeFrom = [TRSimple "supplier"],
+                            qeWhere =
+                              Just
+                                (BinOp (Iden "s_comment") "like"
+                                   (StringLit "%Customer%Complaints%")),
+                            qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
+                            qeLimit = Nothing, qeOffset = Nothing}))),
+          qeGroupBy = [Iden "p_brand", Iden "p_type", Iden "p_size"],
+          qeHaving = Nothing,
+          qeOrderBy =
+            [(Iden "supplier_cnt", Desc), (Iden "p_brand", Asc),
+             (Iden "p_type", Asc), (Iden "p_size", Asc)],
+          qeLimit = Nothing, qeOffset = Nothing})
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+
+ select
+         sum(l_extendedprice) / 7.0 as avg_yearly
+ from
+         lineitem,
+         part
+ where
+         p_partkey = l_partkey
+         and p_brand = 'Brand#52'
+         and p_container = 'JUMBO CAN'
+         and l_quantity < (
+                 select
+                         0.2 * avg(l_quantity)
+                 from
+                         lineitem
+                 where
+                         l_partkey = p_partkey
+         )
+~~~~
+</td><td>
+~~~~{.haskell}
+Right
+  (Select{qeDuplicates = All,
+          qeSelectList =
+            [(Just "avg_yearly",
+              BinOp (App "sum" [Iden "l_extendedprice"]) "/" (NumLit "7.0"))],
+          qeFrom = [TRSimple "lineitem", TRSimple "part"],
+          qeWhere =
+            Just
+              (BinOp
+                 (BinOp
+                    (BinOp (BinOp (Iden "p_partkey") "=" (Iden "l_partkey")) "and"
+                       (BinOp (Iden "p_brand") "=" (StringLit "Brand#52")))
+                    "and"
+                    (BinOp (Iden "p_container") "=" (StringLit "JUMBO CAN")))
+                 "and"
+                 (BinOp (Iden "l_quantity") "<"
+                    (SubQueryExpr SqSq
+                       (Select{qeDuplicates = All,
+                               qeSelectList =
+                                 [(Nothing,
+                                   BinOp (NumLit "0.2") "*" (App "avg" [Iden "l_quantity"]))],
+                               qeFrom = [TRSimple "lineitem"],
+                               qeWhere = Just (BinOp (Iden "l_partkey") "=" (Iden "p_partkey")),
+                               qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
+                               qeLimit = Nothing, qeOffset = Nothing})))),
+          qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
+          qeLimit = Nothing, qeOffset = Nothing})
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+
+ select
+         c_name,
+         c_custkey,
+         o_orderkey,
+         o_orderdate,
+         o_totalprice,
+         sum(l_quantity)
+ from
+         customer,
+         orders,
+         lineitem
+ where
+         o_orderkey in (
+                 select
+                         l_orderkey
+                 from
+                         lineitem
+                 group by
+                         l_orderkey having
+                                 sum(l_quantity) > 313
+         )
+         and c_custkey = o_custkey
+         and o_orderkey = l_orderkey
+ group by
+         c_name,
+         c_custkey,
+         o_orderkey,
+         o_orderdate,
+         o_totalprice
+ order by
+         o_totalprice desc,
+         o_orderdate
+ limit 100
+~~~~
+</td><td>
+~~~~{.haskell}
+Right
+  (Select{qeDuplicates = All,
+          qeSelectList =
+            [(Nothing, Iden "c_name"), (Nothing, Iden "c_custkey"),
+             (Nothing, Iden "o_orderkey"), (Nothing, Iden "o_orderdate"),
+             (Nothing, Iden "o_totalprice"),
+             (Nothing, App "sum" [Iden "l_quantity"])],
+          qeFrom =
+            [TRSimple "customer", TRSimple "orders", TRSimple "lineitem"],
+          qeWhere =
+            Just
+              (BinOp
+                 (BinOp
+                    (In True (Iden "o_orderkey")
+                       (InQueryExpr
+                          (Select{qeDuplicates = All,
+                                  qeSelectList = [(Nothing, Iden "l_orderkey")],
+                                  qeFrom = [TRSimple "lineitem"], qeWhere = Nothing,
+                                  qeGroupBy = [Iden "l_orderkey"],
+                                  qeHaving =
+                                    Just (BinOp (App "sum" [Iden "l_quantity"]) ">" (NumLit "313")),
+                                  qeOrderBy = [], qeLimit = Nothing, qeOffset = Nothing})))
+                    "and"
+                    (BinOp (Iden "c_custkey") "=" (Iden "o_custkey")))
+                 "and"
+                 (BinOp (Iden "o_orderkey") "=" (Iden "l_orderkey"))),
+          qeGroupBy =
+            [Iden "c_name", Iden "c_custkey", Iden "o_orderkey",
+             Iden "o_orderdate", Iden "o_totalprice"],
+          qeHaving = Nothing,
+          qeOrderBy =
+            [(Iden "o_totalprice", Desc), (Iden "o_orderdate", Asc)],
+          qeLimit = Just (NumLit "100"), qeOffset = Nothing})
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+
+ select
+         sum(l_extendedprice* (1 - l_discount)) as revenue
+ from
+         lineitem,
+         part
+ where
+         (
+                 p_partkey = l_partkey
+                 and p_brand = 'Brand#43'
+                 and p_container in ('SM CASE', 'SM BOX', 'SM PACK', 'SM PKG')
+                 and l_quantity >= 3 and l_quantity <= 3 + 10
+                 and p_size between 1 and 5
+                 and l_shipmode in ('AIR', 'AIR REG')
+                 and l_shipinstruct = 'DELIVER IN PERSON'
+         )
+         or
+         (
+                 p_partkey = l_partkey
+                 and p_brand = 'Brand#25'
+                 and p_container in ('MED BAG', 'MED BOX', 'MED PKG', 'MED PACK')
+                 and l_quantity >= 10 and l_quantity <= 10 + 10
+                 and p_size between 1 and 10
+                 and l_shipmode in ('AIR', 'AIR REG')
+                 and l_shipinstruct = 'DELIVER IN PERSON'
+         )
+         or
+         (
+                 p_partkey = l_partkey
+                 and p_brand = 'Brand#24'
+                 and p_container in ('LG CASE', 'LG BOX', 'LG PACK', 'LG PKG')
+                 and l_quantity >= 22 and l_quantity <= 22 + 10
+                 and p_size between 1 and 15
+                 and l_shipmode in ('AIR', 'AIR REG')
+                 and l_shipinstruct = 'DELIVER IN PERSON'
+         )
+~~~~
+</td><td>
+~~~~{.haskell}
+Right
+  (Select{qeDuplicates = All,
+          qeSelectList =
+            [(Just "revenue",
+              App "sum"
+                [BinOp (Iden "l_extendedprice") "*"
+                   (Parens (BinOp (NumLit "1") "-" (Iden "l_discount")))])],
+          qeFrom = [TRSimple "lineitem", TRSimple "part"],
+          qeWhere =
+            Just
+              (BinOp
+                 (BinOp
+                    (Parens
+                       (BinOp
+                          (In True
+                             (BinOp
+                                (SpecialOp "between"
+                                   [BinOp
+                                      (BinOp
+                                         (BinOp
+                                            (In True
+                                               (BinOp
+                                                  (BinOp
+                                                     (BinOp (Iden "p_partkey") "="
+                                                        (Iden "l_partkey"))
+                                                     "and"
+                                                     (BinOp (Iden "p_brand") "="
+                                                        (StringLit "Brand#43")))
+                                                  "and"
+                                                  (Iden "p_container"))
+                                               (InList
+                                                  [StringLit "SM CASE", StringLit "SM BOX",
+                                                   StringLit "SM PACK", StringLit "SM PKG"]))
+                                            "and"
+                                            (BinOp (Iden "l_quantity") ">=" (NumLit "3")))
+                                         "and"
+                                         (BinOp (Iden "l_quantity") "<="
+                                            (BinOp (NumLit "3") "+" (NumLit "10"))))
+                                      "and"
+                                      (Iden "p_size"),
+                                    NumLit "1", NumLit "5"])
+                                "and"
+                                (Iden "l_shipmode"))
+                             (InList [StringLit "AIR", StringLit "AIR REG"]))
+                          "and"
+                          (BinOp (Iden "l_shipinstruct") "="
+                             (StringLit "DELIVER IN PERSON"))))
+                    "or"
+                    (Parens
+                       (BinOp
+                          (In True
+                             (BinOp
+                                (SpecialOp "between"
+                                   [BinOp
+                                      (BinOp
+                                         (BinOp
+                                            (In True
+                                               (BinOp
+                                                  (BinOp
+                                                     (BinOp (Iden "p_partkey") "="
+                                                        (Iden "l_partkey"))
+                                                     "and"
+                                                     (BinOp (Iden "p_brand") "="
+                                                        (StringLit "Brand#25")))
+                                                  "and"
+                                                  (Iden "p_container"))
+                                               (InList
+                                                  [StringLit "MED BAG", StringLit "MED BOX",
+                                                   StringLit "MED PKG", StringLit "MED PACK"]))
+                                            "and"
+                                            (BinOp (Iden "l_quantity") ">=" (NumLit "10")))
+                                         "and"
+                                         (BinOp (Iden "l_quantity") "<="
+                                            (BinOp (NumLit "10") "+" (NumLit "10"))))
+                                      "and"
+                                      (Iden "p_size"),
+                                    NumLit "1", NumLit "10"])
+                                "and"
+                                (Iden "l_shipmode"))
+                             (InList [StringLit "AIR", StringLit "AIR REG"]))
+                          "and"
+                          (BinOp (Iden "l_shipinstruct") "="
+                             (StringLit "DELIVER IN PERSON")))))
+                 "or"
+                 (Parens
+                    (BinOp
+                       (In True
+                          (BinOp
+                             (SpecialOp "between"
+                                [BinOp
+                                   (BinOp
+                                      (BinOp
+                                         (In True
+                                            (BinOp
+                                               (BinOp
+                                                  (BinOp (Iden "p_partkey") "=" (Iden "l_partkey"))
+                                                  "and"
+                                                  (BinOp (Iden "p_brand") "="
+                                                     (StringLit "Brand#24")))
+                                               "and"
+                                               (Iden "p_container"))
+                                            (InList
+                                               [StringLit "LG CASE", StringLit "LG BOX",
+                                                StringLit "LG PACK", StringLit "LG PKG"]))
+                                         "and"
+                                         (BinOp (Iden "l_quantity") ">=" (NumLit "22")))
+                                      "and"
+                                      (BinOp (Iden "l_quantity") "<="
+                                         (BinOp (NumLit "22") "+" (NumLit "10"))))
+                                   "and"
+                                   (Iden "p_size"),
+                                 NumLit "1", NumLit "15"])
+                             "and"
+                             (Iden "l_shipmode"))
+                          (InList [StringLit "AIR", StringLit "AIR REG"]))
+                       "and"
+                       (BinOp (Iden "l_shipinstruct") "="
+                          (StringLit "DELIVER IN PERSON"))))),
+          qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
+          qeLimit = Nothing, qeOffset = Nothing})
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+
+ select
+         s_name,
+         s_address
+ from
+         supplier,
+         nation
+ where
+         s_suppkey in (
+                 select
+                         ps_suppkey
+                 from
+                         partsupp
+                 where
+                         ps_partkey in (
+                                 select
+                                         p_partkey
+                                 from
+                                         part
+                                 where
+                                         p_name like 'lime%'
+                         )
+                         and ps_availqty > (
+                                 select
+                                         0.5 * sum(l_quantity)
+                                 from
+                                         lineitem
+                                 where
+                                         l_partkey = ps_partkey
+                                         and l_suppkey = ps_suppkey
+                                         and l_shipdate >= date '1994-01-01'
+                                         and l_shipdate < date '1994-01-01' + interval '1' year
+                         )
+         )
+         and s_nationkey = n_nationkey
+         and n_name = 'VIETNAM'
+ order by
+         s_name
+~~~~
+</td><td>
+~~~~{.haskell}
+Right
+  (Select{qeDuplicates = All,
+          qeSelectList =
+            [(Nothing, Iden "s_name"), (Nothing, Iden "s_address")],
+          qeFrom = [TRSimple "supplier", TRSimple "nation"],
+          qeWhere =
+            Just
+              (BinOp
+                 (BinOp
+                    (In True (Iden "s_suppkey")
+                       (InQueryExpr
+                          (Select{qeDuplicates = All,
+                                  qeSelectList = [(Nothing, Iden "ps_suppkey")],
+                                  qeFrom = [TRSimple "partsupp"],
+                                  qeWhere =
+                                    Just
+                                      (BinOp
+                                         (In True (Iden "ps_partkey")
+                                            (InQueryExpr
+                                               (Select{qeDuplicates = All,
+                                                       qeSelectList = [(Nothing, Iden "p_partkey")],
+                                                       qeFrom = [TRSimple "part"],
+                                                       qeWhere =
+                                                         Just
+                                                           (BinOp (Iden "p_name") "like"
+                                                              (StringLit "lime%")),
+                                                       qeGroupBy = [], qeHaving = Nothing,
+                                                       qeOrderBy = [], qeLimit = Nothing,
+                                                       qeOffset = Nothing})))
+                                         "and"
+                                         (BinOp (Iden "ps_availqty") ">"
+                                            (SubQueryExpr SqSq
+                                               (Select{qeDuplicates = All,
+                                                       qeSelectList =
+                                                         [(Nothing,
+                                                           BinOp (NumLit "0.5") "*"
+                                                             (App "sum" [Iden "l_quantity"]))],
+                                                       qeFrom = [TRSimple "lineitem"],
+                                                       qeWhere =
+                                                         Just
+                                                           (BinOp
+                                                              (BinOp
+                                                                 (BinOp
+                                                                    (BinOp (Iden "l_partkey") "="
+                                                                       (Iden "ps_partkey"))
+                                                                    "and"
+                                                                    (BinOp (Iden "l_suppkey") "="
+                                                                       (Iden "ps_suppkey")))
+                                                                 "and"
+                                                                 (BinOp (Iden "l_shipdate") ">="
+                                                                    (CastOp (TypeName "date")
+                                                                       "1994-01-01")))
+                                                              "and"
+                                                              (BinOp (Iden "l_shipdate") "<"
+                                                                 (BinOp
+                                                                    (CastOp (TypeName "date")
+                                                                       "1994-01-01")
+                                                                    "+"
+                                                                    (IntervalLit "1" "year"
+                                                                       Nothing)))),
+                                                       qeGroupBy = [], qeHaving = Nothing,
+                                                       qeOrderBy = [], qeLimit = Nothing,
+                                                       qeOffset = Nothing})))),
+                                  qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
+                                  qeLimit = Nothing, qeOffset = Nothing})))
+                    "and"
+                    (BinOp (Iden "s_nationkey") "=" (Iden "n_nationkey")))
+                 "and"
+                 (BinOp (Iden "n_name") "=" (StringLit "VIETNAM"))),
+          qeGroupBy = [], qeHaving = Nothing,
+          qeOrderBy = [(Iden "s_name", Asc)], qeLimit = Nothing,
+          qeOffset = Nothing})
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+
+ select
+         s_name,
+         count(*) as numwait
+ from
+         supplier,
+         lineitem l1,
+         orders,
+         nation
+ where
+         s_suppkey = l1.l_suppkey
+         and o_orderkey = l1.l_orderkey
+         and o_orderstatus = 'F'
+         and l1.l_receiptdate > l1.l_commitdate
+         and exists (
+                 select
+                         *
+                 from
+                         lineitem l2
+                 where
+                         l2.l_orderkey = l1.l_orderkey
+                         and l2.l_suppkey <> l1.l_suppkey
+         )
+         and not exists (
+                 select
+                         *
+                 from
+                         lineitem l3
+                 where
+                         l3.l_orderkey = l1.l_orderkey
+                         and l3.l_suppkey <> l1.l_suppkey
+                         and l3.l_receiptdate > l3.l_commitdate
+         )
+         and s_nationkey = n_nationkey
+         and n_name = 'INDIA'
+ group by
+         s_name
+ order by
+         numwait desc,
+         s_name
+ limit 100
+~~~~
+</td><td>
+~~~~{.haskell}
+Right
+  (Select{qeDuplicates = All,
+          qeSelectList =
+            [(Nothing, Iden "s_name"), (Just "numwait", App "count" [Star])],
+          qeFrom =
+            [TRSimple "supplier", TRAlias (TRSimple "lineitem") "l1" Nothing,
+             TRSimple "orders", TRSimple "nation"],
+          qeWhere =
+            Just
+              (BinOp
+                 (BinOp
+                    (BinOp
+                       (BinOp
+                          (BinOp (BinOp (Iden "s_suppkey") "=" (Iden2 "l1" "l_suppkey"))
+                             "and"
+                             (BinOp (Iden "o_orderkey") "=" (Iden2 "l1" "l_orderkey")))
+                          "and"
+                          (BinOp (Iden "o_orderstatus") "=" (StringLit "F")))
+                       "and"
+                       (BinOp (Iden2 "l1" "l_receiptdate") ">"
+                          (Iden2 "l1" "l_commitdate")))
+                    "and"
+                    (SubQueryExpr SqExists
+                       (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+                               qeFrom = [TRAlias (TRSimple "lineitem") "l2" Nothing],
+                               qeWhere =
+                                 Just
+                                   (BinOp
+                                      (BinOp (Iden2 "l2" "l_orderkey") "="
+                                         (Iden2 "l1" "l_orderkey"))
+                                      "and"
+                                      (BinOp (Iden2 "l2" "l_suppkey") "<>"
+                                         (Iden2 "l1" "l_suppkey"))),
+                               qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
+                               qeLimit = Nothing, qeOffset = Nothing})))
+                 "and"
+                 (PrefixOp "not"
+                    (BinOp
+                       (BinOp
+                          (SubQueryExpr SqExists
+                             (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+                                     qeFrom = [TRAlias (TRSimple "lineitem") "l3" Nothing],
+                                     qeWhere =
+                                       Just
+                                         (BinOp
+                                            (BinOp
+                                               (BinOp (Iden2 "l3" "l_orderkey") "="
+                                                  (Iden2 "l1" "l_orderkey"))
+                                               "and"
+                                               (BinOp (Iden2 "l3" "l_suppkey") "<>"
+                                                  (Iden2 "l1" "l_suppkey")))
+                                            "and"
+                                            (BinOp (Iden2 "l3" "l_receiptdate") ">"
+                                               (Iden2 "l3" "l_commitdate"))),
+                                     qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
+                                     qeLimit = Nothing, qeOffset = Nothing}))
+                          "and"
+                          (BinOp (Iden "s_nationkey") "=" (Iden "n_nationkey")))
+                       "and"
+                       (BinOp (Iden "n_name") "=" (StringLit "INDIA"))))),
+          qeGroupBy = [Iden "s_name"], qeHaving = Nothing,
+          qeOrderBy = [(Iden "numwait", Desc), (Iden "s_name", Asc)],
+          qeLimit = Just (NumLit "100"), qeOffset = Nothing})
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+
+ select
+         cntrycode,
+         count(*) as numcust,
+         sum(c_acctbal) as totacctbal
+ from
+         (
+                 select
+                         substring(c_phone from 1 for 2) as cntrycode,
+                         c_acctbal
+                 from
+                         customer
+                 where
+                         substring(c_phone from 1 for 2) in
+                                 ('41', '28', '39', '21', '24', '29', '44')
+                         and c_acctbal > (
+                                 select
+                                         avg(c_acctbal)
+                                 from
+                                         customer
+                                 where
+                                         c_acctbal > 0.00
+                                         and substring(c_phone from 1 for 2) in
+                                                 ('41', '28', '39', '21', '24', '29', '44')
+                         )
+                         and not exists (
+                                 select
+                                         *
+                                 from
+                                         orders
+                                 where
+                                         o_custkey = c_custkey
+                         )
+         ) as custsale
+ group by
+         cntrycode
+ order by
+         cntrycode
+~~~~
+</td><td>
+~~~~{.haskell}
+Right
+  (Select{qeDuplicates = All,
+          qeSelectList =
+            [(Nothing, Iden "cntrycode"), (Just "numcust", App "count" [Star]),
+             (Just "totacctbal", App "sum" [Iden "c_acctbal"])],
+          qeFrom =
+            [TRAlias
+               (TRQueryExpr
+                  (Select{qeDuplicates = All,
+                          qeSelectList =
+                            [(Just "cntrycode",
+                              SpecialOp "substring" [Iden "c_phone", NumLit "1", NumLit "2"]),
+                             (Nothing, Iden "c_acctbal")],
+                          qeFrom = [TRSimple "customer"],
+                          qeWhere =
+                            Just
+                              (BinOp
+                                 (BinOp
+                                    (In True
+                                       (SpecialOp "substring"
+                                          [Iden "c_phone", NumLit "1", NumLit "2"])
+                                       (InList
+                                          [StringLit "41", StringLit "28", StringLit "39",
+                                           StringLit "21", StringLit "24", StringLit "29",
+                                           StringLit "44"]))
+                                    "and"
+                                    (BinOp (Iden "c_acctbal") ">"
+                                       (SubQueryExpr SqSq
+                                          (Select{qeDuplicates = All,
+                                                  qeSelectList =
+                                                    [(Nothing, App "avg" [Iden "c_acctbal"])],
+                                                  qeFrom = [TRSimple "customer"],
+                                                  qeWhere =
+                                                    Just
+                                                      (In True
+                                                         (BinOp
+                                                            (BinOp (Iden "c_acctbal") ">"
+                                                               (NumLit "0.00"))
+                                                            "and"
+                                                            (SpecialOp "substring"
+                                                               [Iden "c_phone", NumLit "1",
+                                                                NumLit "2"]))
+                                                         (InList
+                                                            [StringLit "41", StringLit "28",
+                                                             StringLit "39", StringLit "21",
+                                                             StringLit "24", StringLit "29",
+                                                             StringLit "44"])),
+                                                  qeGroupBy = [], qeHaving = Nothing,
+                                                  qeOrderBy = [], qeLimit = Nothing,
+                                                  qeOffset = Nothing}))))
+                                 "and"
+                                 (PrefixOp "not"
+                                    (SubQueryExpr SqExists
+                                       (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+                                               qeFrom = [TRSimple "orders"],
+                                               qeWhere =
+                                                 Just
+                                                   (BinOp (Iden "o_custkey") "="
+                                                      (Iden "c_custkey")),
+                                               qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
+                                               qeLimit = Nothing, qeOffset = Nothing})))),
+                          qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
+                          qeLimit = Nothing, qeOffset = Nothing}))
+               "custsale"
+               Nothing],
+          qeWhere = Nothing, qeGroupBy = [Iden "cntrycode"],
+          qeHaving = Nothing, qeOrderBy = [(Iden "cntrycode", Asc)],
+          qeLimit = Nothing, qeOffset = Nothing})
+~~~~
+</td></tr>
+</table>

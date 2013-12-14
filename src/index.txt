@@ -1,0 +1,148 @@
+# simple-sql-parser
+
+A parser for SQL queries in Haskell. Also includes a pretty printer
+which formats output nicely. The goal is to parse most of SQL:2003
+queries, and possibly some other SQL dialects also.
+
+Status: Alpha
+
+# Feature support
+
+Here is a document with all the [simple-sql-parser test
+cases](test_cases.html) rendered so you can get an idea of what it
+supports. It also parses all the [TPC-H queries](tpch.sql.html).
+
+## overview:
+
+* distinct
+* select lists
+* from
+* where
+* group by
+* having
+* order by
+* limit
+* offset
+* set operators
+* common table expressions
+
+## select lists
+
+full support (I think!)
+
+## from
+
+* aliases
+* subqueries
+* joins
+    - natural
+    - inner
+    - left/right/full outer
+    - cross
+    - on expressions
+    - using lists
+
+## group by
+
+supports lists of scalar expressions
+
+group by (), cube, rollup, grouping sets coming soon.
+
+## order by
+
+supports scalar expressions and directions
+
+Support for nulls first/last coming soon.
+
+## limit, offset
+
+supports scalar expressions
+
+Support for standard ansi syntax, plus other variations coming soon.
+
+## set operators
+
+union, except, intersect + all/distinct and corresponding
+
+## scalar expressions
+
+* basic string literals (escapes and other string literal syntaxes
+  coming soon)
+* number literals: digits.digitse+-exp
+* binary operators:
+    - comparisons: = != <> <= >= < >
+    - arithmetic: + - / *
+    - logic: and, or
+    - string: ||, like, not like
+    - other: overlaps, is similar to, is not similar too, is distinct
+    from, is not distinct from
+* prefix unary operators
+    - +, -
+    - not
+* postfix unary
+    - is null, is not null
+    - is true, is not true, is false, is not false, is unknown, is not unknown
+
+* other operators
+    - substring (substring(x from 2 for 4)
+    - cast (cast(a as int))
+    - 'typed literal' (int '3')
+    - between
+    - in list
+    -  extract
+* subqueries
+    - in subquery
+    - any/some/all
+    - exists
+* case expressions
+* parenthesis(!)
+
+more operators coming soon.
+
+* unquoted identifiers only (quoted identifiers coming soon)
+* a.b qualified identifiers (more dots coming soon)
+* \*, a.\*
+* functions: f(a,b)
+* aggregates: agg(distinct a order by b)
+* window functions: sum(x) over (partition by y order by z)
+  (explicit frames and named windows coming soon)
+
+## features todo
+
+* all the coming soons from above
+* placeholders (?, $1, :field, etc.)
+* row constructors e.g. where (a,b) = any (select a,b from t)
+* extend case to support multiple test expressions for a branch
+* lateral
+* table t
+* values expressions
+* apply, pivot
+* collate
+* more, pending review of SQL:2003, I just can't wait to get stuck into
+the SQL Standard documentation
+
+# Installation
+
+~~~~
+git clone https://github.com/JakeWheat/simple_sql_parser.git
+cd simple_sql_parser
+cabal install
+~~~~
+
+hackage coming soon
+
+# Documentation
+
+* see the [simple-sql-parser test cases](test_cases.html) and the
+  [TPC-H queries](tpch.sql.html) for examples.
+* [simple-sql-parser Haddock](haddock/index.html)
+
+# Links
+
+* homepage: <http://jakewheat.github.io/simple_sql_parser>
+* repository: <https://github.com/JakeWheat/simple_sql_parser>
+* bug tracker: <https://github.com/JakeWheat/simple_sql_parser/issues>
+
+# Contact
+
+jakewheatmail@gmail.com
