@@ -707,15 +707,13 @@ make this choice.
 >   where
 >     int = many1 digit
 >     fract p = dot p >>= fracts
->     -- todo: use some helper functions to improve the
->     -- unclear pointfree code here
->     dot p = ((p++) . (:[])) <$> char '.'
+>     dot p = (p++) <$> string "."
 >     fracts p = (p++) <$> int
->     expon p = do
->         void $ char 'e'
->         s <- option "" ((:[]) <$> (char '+' <|> char '-'))
->         i <- int
->         return (p ++ "e" ++ s ++ i)
+>     expon p = concat <$> sequence
+>               [return p
+>               ,string "e"
+>               ,option "" (string "+" <|> string "-")
+>               ,int]
 
 lexer for integer literals which appear in some places in sql
 
