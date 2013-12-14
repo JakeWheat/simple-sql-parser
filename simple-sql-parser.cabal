@@ -15,8 +15,8 @@ cabal-version:       >=1.10
 bug-reports:         https://github.com/JakeWheat/simple_sql_parser/issues
 
 source-repository head
-  type:     git
-  location: https://github.com/JakeWheat/simple_sql_parser.git
+  type:                git
+  location:            https://github.com/JakeWheat/simple_sql_parser.git
 
 library
   exposed-modules:     Language.SQL.SimpleSQL.Pretty,
@@ -51,7 +51,8 @@ Test-Suite Tests
                        Language.SQL.SimpleSQL.Parser,
                        Language.SQL.SimpleSQL.Syntax,
                        Language.SQL.SimpleSQL.Fixity,
-                       Language.SQL.SimpleSQL.Tests
+                       Language.SQL.SimpleSQL.Tests,
+                       Tpch
   other-extensions:    TupleSections
   default-language:    Haskell2010
   ghc-options:         -Wall
