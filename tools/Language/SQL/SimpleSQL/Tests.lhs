@@ -1,12 +1,17 @@
 
-> module Tests (testData, TestItem(..), runTests) where
+> module Language.SQL.SimpleSQL.Tests
+>     (testData
+>     ,tests
+>     ,TestItem(..)
+>     ) where
 
 > import Language.SQL.SimpleSQL.Syntax
 > import Language.SQL.SimpleSQL.Pretty
 > import Language.SQL.SimpleSQL.Parser
 > import qualified Test.HUnit as H
-> import Control.Monad
 > import Tpch
+> import Test.Framework
+> import Test.Framework.Providers.HUnit
 
 > data TestItem = Group String [TestItem]
 >               | TestScalarExpr String ScalarExpr
@@ -476,13 +481,15 @@
 >     ,tpchTests
 >     ]
 
+> tests :: Test.Framework.Test
+> tests = itemToTest testData
 
-> runTests :: IO ()
-> runTests = void $ H.runTestTT $ itemToTest testData
+> --runTests :: IO ()
+> --runTests = void $ H.runTestTT $ itemToTest testData
 
-> itemToTest :: TestItem -> H.Test
+> itemToTest :: TestItem -> Test.Framework.Test
 > itemToTest (Group nm ts) =
->     H.TestLabel nm $ H.TestList $ map itemToTest ts
+>     testGroup nm $ map itemToTest ts
 > itemToTest (TestScalarExpr str expected) =
 >     toTest parseScalarExpr prettyScalarExpr str expected
 > itemToTest (TestQueryExpr str expected) =
@@ -497,8 +504,8 @@
 >        -> (a -> String)
 >        -> String
 >        -> a
->        -> H.Test
-> toTest parser pp str expected = H.TestLabel str $ H.TestCase $ do
+>        -> Test.Framework.Test
+> toTest parser pp str expected = testCase str $ do
 >         let egot = parser "" Nothing str
 >         case egot of
 >             Left e -> H.assertFailure $ peFormattedError e
@@ -514,8 +521,8 @@
 >           (String -> Maybe (Int,Int) -> String -> Either ParseError a)
 >        -> (a -> String)
 >        -> String
->        -> H.Test
-> toPTest parser pp str = H.TestLabel str $ H.TestCase $ do
+>        -> Test.Framework.Test
+> toPTest parser pp str = testCase str $ do
 >         let egot = parser "" Nothing str
 >         case egot of
 >             Left e -> H.assertFailure $ peFormattedError e

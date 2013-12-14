@@ -23,12 +23,35 @@ library
                        Language.SQL.SimpleSQL.Parser,
                        Language.SQL.SimpleSQL.Syntax
   other-modules:       Language.SQL.SimpleSQL.Fixity
-  -- other-extensions:
+  other-extensions:    TupleSections
   build-depends:       base >=4.6 && <4.7,
                        parsec >=3.1 && <3.2,
                        mtl >=2.1 && <2.2,
                        pretty >= 1.1 && < 1.2,
                        haskell-src-exts >= 1.14 && < 1.15
   -- hs-source-dirs:
+  default-language:    Haskell2010
+  ghc-options:         -Wall
+
+Test-Suite Tests
+  type:                exitcode-stdio-1.0
+  main-is:             RunTests.lhs
+  hs-source-dirs:      .,tools
+  Build-Depends:       base >=4.6 && <4.7,
+                       parsec >=3.1 && <3.2,
+                       mtl >=2.1 && <2.2,
+                       pretty >= 1.1 && < 1.2,
+                       haskell-src-exts >= 1.14 && < 1.15,
+
+                       HUnit >= 1.2 && < 1.3,
+                       test-framework >= 0.8 && < 0.9,
+                       test-framework-hunit >= 0.3 && < 0.4
+
+  Other-Modules:       Language.SQL.SimpleSQL.Pretty,
+                       Language.SQL.SimpleSQL.Parser,
+                       Language.SQL.SimpleSQL.Syntax,
+                       Language.SQL.SimpleSQL.Fixity,
+                       Language.SQL.SimpleSQL.Tests
+  other-extensions:    TupleSections
   default-language:    Haskell2010
   ghc-options:         -Wall
