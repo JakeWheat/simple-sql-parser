@@ -123,13 +123,13 @@ the SQL Standard documentation
 
 # Installation
 
-from hackage
+latest release from hackage
 
 ~~~~
 cabal update && cabal install simple-sql-parser
 ~~~~
 
-latest devopment
+latest development version
 
 ~~~~
 git clone https://github.com/JakeWheat/simple_sql_parser.git
