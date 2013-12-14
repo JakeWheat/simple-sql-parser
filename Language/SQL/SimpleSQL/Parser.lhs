@@ -125,18 +125,16 @@ The parsing for the aggregate extensions is here as well:
 aggregate([all|distinct] args [order by orderitems])
 
 > aggOrApp :: P ScalarExpr
-> aggOrApp = do
->       i <- identifierString
->       _ <- symbol "("
->       d <- try duplicates
->       es <- choice [(:[]) <$> try star
->                    ,commaSep scalarExpr']
->       od <- try $ optionMaybe orderBy
->       _ <- symbol ")"
->       case (d,od) of
->           (Nothing,Nothing) ->
->               return $ App i es
->           _ -> return $ AggregateApp i d es (fromMaybe [] od)
+> aggOrApp =
+>     makeApp
+>     <$> identifierString
+>     <*> parens ((,,) <$> try duplicates
+>                      <*> choice [(:[]) <$> try star
+>                                 ,commaSep scalarExpr']
+>                      <*> try (optionMaybe orderBy))
+>   where
+>     makeApp i (Nothing,es,Nothing) = App i es
+>     makeApp i (d,es,od) = AggregateApp i d es (fromMaybe [] od)
 
 > duplicates :: P (Maybe Duplicates)
 > duplicates = optionMaybe $ try $
@@ -161,8 +159,7 @@ always used with the optionSuffix combinator.
 >                <*> option [] orderBy)
 >   where
 >     partitionBy = try (keyword_ "partition") >>
->         keyword_ "by" >>
->         commaSep1 scalarExpr'
+>         keyword_ "by" >> commaSep1 scalarExpr'
 > windowSuffix _ = fail ""
 
 > app :: P ScalarExpr
@@ -351,7 +348,7 @@ The parsers:
 >     PrefixOp <$> opSymbol <*> scalarExpr'
 >   where
 >     opSymbol = choice (map (try . symbol) prefixUnOpSymbolNames
->                       ++ map (try . keyword) prefixUnOpKeywordNames)
+>                        ++ map (try . keyword) prefixUnOpKeywordNames)
 
 > postfixOpSuffix :: ScalarExpr -> P ScalarExpr
 > postfixOpSuffix e =
@@ -473,60 +470,48 @@ optional or use try itself. The caller could do this.
 
 == from
 
-this parser should be refactored, it is very unclear. Here is the
-rough grammar
+Here is the rough grammar for joins
 
 tref
-(cross | [natural]
-         ([inner]
-          | left [outer]
-          | right [outer]
-          | full [outer]
-         )
-join tref
+(cross | [natural] ([inner] | (left | right | full) [outer])) join
+tref
 [on expr | using (...)]
-
 
 > from :: P [TableRef]
 > from = try (keyword_ "from") *> commaSep1 tref
 >   where
->     tref = choice [try (JoinQueryExpr <$> parens queryExpr)
->                   ,JoinParens <$> parens tref
->                   ,SimpleTableRef <$> identifierString]
->            >>= optionSuffix pjoin
->            >>= optionSuffix alias
->     pjoin tref0 =
->         choice
->         [try (keyword_ "natural") *> keyword_ "inner"
->          *> conditionlessSuffix tref0 Inner (Just JoinNatural)
->         ,try (keyword_ "join")
->          *> (JoinTableRef Inner tref0 <$> tref <*> joinExpr)
->         ,try (keyword_ "inner")
->          *> conditionSuffix tref0 Inner
->         ,try (choice [JLeft <$ keyword_ "left"
->                      ,JRight <$ keyword_ "right"
->                      ,Full <$ keyword_ "full"])
->          >>= outerJoinSuffix tref0
->         ,try (keyword_ "cross")
->          *> conditionlessSuffix tref0 Cross Nothing
->         ]
->         >>= optionSuffix pjoin
->     outerJoinSuffix tref0 jt =
->         optional (keyword_ "outer") *> conditionSuffix tref0 jt
->     conditionSuffix tref0 jt =
->         keyword_ "join" *> (JoinTableRef jt tref0 <$> tref <*> joinExpr)
->     conditionlessSuffix tref0 jt jc =
->         keyword_ "join" *> (JoinTableRef jt tref0 <$> tref <*> return jc)
->     joinExpr = choice
->                [(Just . JoinUsing)
->                  <$> (try (keyword_ "using")
->                       *> parens (commaSep1 identifierString))
->                ,(Just . JoinOn) <$> (try (keyword_ "on") *> scalarExpr)
->                ,return Nothing
+>     tref = nonJoinTref >>= optionSuffix joinTrefSuffix
+>     nonJoinTref = choice [try (JoinQueryExpr <$> parens queryExpr)
+>                          ,JoinParens <$> parens tref
+>                          ,SimpleTableRef <$> identifierString]
+>                   >>= optionSuffix aliasSuffix
+>     aliasSuffix j =
+>         let tableAlias = optional (try $ keyword_ "as") *> identifierString
+>             columnAliases = optionMaybe $ try $ parens
+>                             $ commaSep1 identifierString
+>         in option j (JoinAlias j <$> try tableAlias <*> try columnAliases)
+>     joinTrefSuffix t = (do
+>          nat <- option False $ try (True <$ (try $ keyword_ "natural"))
+>          JoinTableRef <$> joinType
+>                       <*> return t
+>                       <*> nonJoinTref
+>                       <*> optionMaybe (joinCondition nat))
+>         >>= optionSuffix joinTrefSuffix
+>     joinType = choice
+>                [Cross <$ try (keyword_ "cross")
+>                ,Inner <$ try (keyword_ "inner")
+>                ,choice [JLeft <$ try (keyword_ "left")
+>                        ,JRight <$ try (keyword_ "right")
+>                        ,Full <$ try (keyword_ "full")]
+>                 <* optional (try $ keyword_ "outer")]
+>                <* keyword "join"
+>     joinCondition nat =
+>         choice [guard nat >> return JoinNatural
+>                ,try (keyword_ "on") >>
+>                 JoinOn <$> scalarExpr
+>                ,try (keyword_ "using") >>
+>                 JoinUsing <$> parens (commaSep1 identifierString)
 >                ]
->     alias j = let a1 = optional (try (keyword_ "as")) *> identifierString
->                   a2 = optionMaybe (try $ parens (commaSep1 identifierString))
->               in option j (JoinAlias j <$> try a1 <*> try a2)
 
 == simple other parts
 
@@ -666,11 +651,13 @@ blacklist of keywords which aren't supported as identifiers.
 >     letterDigitOrUnderscore = char '_' <|> alphaNum
 
 > blacklist :: [String]
-> blacklist = ["as", "from", "where", "having", "group", "order"
->             ,"inner", "left", "right", "full", "natural", "join"
->             ,"on", "using", "when", "then", "case", "end", "order"
->             ,"limit", "offset", "in"
->             ,"except", "intersect", "union"]
+> blacklist =
+>     ["select", "as", "from", "where", "having", "group", "order"
+>     ,"limit", "offset"
+>     ,"inner", "left", "right", "full", "natural", "join"
+>     ,"cross", "on", "using"
+>     ,"when", "then", "case", "end", "in"
+>     ,"except", "intersect", "union"]
 
 TODO: talk about what must be in the blacklist, and what doesn't need
 to be.
@@ -737,6 +724,11 @@ whitespace parser which skips comments also
 >     simpleWhiteSpace = void $ many1 (oneOf " \t\n")
 
 = generic parser helpers
+
+a possible issue with the option suffix is that it enforces left
+associativity when chaining it recursively. Have to review
+all these uses and figure out if any should be right associative
+instead, and create an alternative suffix parser
 
 > optionSuffix :: (a -> P a) -> a -> P a
 > optionSuffix p a = option a (p a)

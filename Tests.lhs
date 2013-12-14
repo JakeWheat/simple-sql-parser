@@ -299,6 +299,14 @@
 >     ,("select a from (t cross join u) as u"
 >      ,ms [JoinAlias (JoinParens $ JoinTableRef Cross (SimpleTableRef "t")
 >                             (SimpleTableRef "u") Nothing) "u" Nothing])
+>      -- todo: not sure if the associativity is correct
+>     ,("select a from t cross join u cross join v",
+>        ms [JoinTableRef Cross
+>            (JoinTableRef Cross (SimpleTableRef "t")
+>                                (SimpleTableRef "u")
+>                                Nothing)
+>            (SimpleTableRef "v")
+>            Nothing])
 >     ]
 >   where
 >     ms f = makeSelect {qeSelectList = [(Nothing,Iden "a")]
