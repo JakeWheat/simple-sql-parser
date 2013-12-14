@@ -78,8 +78,8 @@
 >      ,Case (Just $ Iden "a") [(NumLit "1", NumLit "2")
 >                                    ,(NumLit "3", NumLit "4")] (Just $ NumLit "5"))
 >     ,("case when a=1 then 2 when a=3 then 4 else 5 end"
->      ,Case Nothing [(BinOp "=" (Iden "a") (NumLit "1"), NumLit "2")
->                    ,(BinOp "=" (Iden "a") (NumLit "3"), NumLit "4")]
+>      ,Case Nothing [(BinOp (Iden "a") "=" (NumLit "1"), NumLit "2")
+>                    ,(BinOp (Iden "a") "=" (NumLit "3"), NumLit "4")]
 >                    (Just $ NumLit "5"))
 >     ]
 
@@ -92,7 +92,7 @@
 
 > binaryOperators :: TestItem
 > binaryOperators = Group "binaryOperators" $ map (uncurry TestScalarExpr)
->     [("a + b", BinOp "+" (Iden "a") (Iden "b"))
+>     [("a + b", BinOp (Iden "a") "+" (Iden "b"))
 >      -- sanity check fixities
 >      -- todo: add more fixity checking
 >     {-,("a + b * c"
@@ -134,11 +134,11 @@
 >     ,("a not in (select a from t)"
 >      ,In False (Iden "a") (InQueryExpr ms))
 >     ,("a > all (select a from t)"
->      ,BinOp ">" (Iden "a") (SubQueryExpr SqAll ms))
+>      ,BinOp (Iden "a") ">" (SubQueryExpr SqAll ms))
 >     ,("a = some (select a from t)"
->      ,BinOp "=" (Iden "a") (SubQueryExpr SqSome ms))
+>      ,BinOp (Iden "a") "=" (SubQueryExpr SqSome ms))
 >     ,("a <= any (select a from t)"
->      ,BinOp "<=" (Iden "a") (SubQueryExpr SqAny ms))
+>      ,BinOp (Iden "a") "<=" (SubQueryExpr SqAny ms))
 >     ]
 >   where
 >     ms = makeSelect
@@ -164,13 +164,15 @@
 >     ,("a is not false", PostfixOp "is not false" (Iden "a"))
 >     ,("a is unknown", PostfixOp "is unknown" (Iden "a"))
 >     ,("a is not unknown", PostfixOp "is not unknown" (Iden "a"))
->     ,("a is distinct from b", BinOp "is distinct from" (Iden "a") (Iden "b"))
->     ,("a is not distinct from b", BinOp "is not distinct from" (Iden "a") (Iden "b"))
->     ,("a like b", BinOp "like" (Iden "a") (Iden "b"))
->     ,("a not like b", BinOp "not like" (Iden "a") (Iden "b"))
->     ,("a is similar to b", BinOp "is similar to" (Iden "a") (Iden "b"))
->     ,("a is not similar to b", BinOp "is not similar to" (Iden "a") (Iden "b"))
->     ,("a overlaps b", BinOp "overlaps" (Iden "a") (Iden "b"))
+>     ,("a is distinct from b", BinOp (Iden "a") "is distinct from"(Iden "b"))
+>     ,("a is not distinct from b"
+>      ,BinOp (Iden "a") "is not distinct from" (Iden "b"))
+>     ,("a like b", BinOp (Iden "a") "like" (Iden "b"))
+>     ,("a not like b", BinOp (Iden "a") "not like" (Iden "b"))
+>     ,("a is similar to b", BinOp (Iden "a") "is similar to" (Iden "b"))
+>     ,("a is not similar to b"
+>      ,BinOp (Iden "a") "is not similar to" (Iden "b"))
+>     ,("a overlaps b", BinOp (Iden "a") "overlaps" (Iden "b"))
 >     ,("extract(day from t)", SpecialOp "extract" [Iden "day", Iden "t"])
 >     ,("substring(x from 1 for 2)"
 >      ,SpecialOp "substring" [Iden "x", NumLit "1", NumLit "2"])
@@ -208,7 +210,7 @@
 > parens :: TestItem
 > parens = Group "parens" $ map (uncurry TestScalarExpr)
 >     [("(a)", Parens (Iden "a"))
->     ,("(a + b)", Parens (BinOp "+" (Iden "a") (Iden "b")))
+>     ,("(a + b)", Parens (BinOp (Iden "a") "+" (Iden "b")))
 >     ]
 
 > queryExprParserTests :: TestItem
@@ -251,8 +253,8 @@
 >                                  ,(Nothing,Iden "b")]})
 >     ,("select 1+2,3+4"
 >      ,makeSelect {qeSelectList =
->                      [(Nothing,BinOp "+" (NumLit "1") (NumLit "2"))
->                      ,(Nothing,BinOp "+" (NumLit "3") (NumLit "4"))]})
+>                      [(Nothing,BinOp (NumLit "1") "+" (NumLit "2"))
+>                      ,(Nothing,BinOp (NumLit "3") "+" (NumLit "4"))]})
 >     ,("select a as a, /*comment*/ b as b"
 >      ,makeSelect {qeSelectList = [(Just "a", Iden "a")
 >                                  ,(Just "b", Iden "b")]})
@@ -268,25 +270,25 @@
 >     ,("select a from t,u"
 >      ,ms [SimpleTableRef "t", SimpleTableRef "u"])
 >     ,("select a from t inner join u on expr"
->      ,ms [JoinTableRef Inner (SimpleTableRef "t") (SimpleTableRef "u")
+>      ,ms [JoinTableRef (SimpleTableRef "t") JInner (SimpleTableRef "u")
 >                        (Just $ JoinOn $ Iden "expr")])
 >     ,("select a from t left join u on expr"
->      ,ms [JoinTableRef JLeft (SimpleTableRef "t") (SimpleTableRef "u")
+>      ,ms [JoinTableRef (SimpleTableRef "t") JLeft (SimpleTableRef "u")
 >                        (Just $ JoinOn $ Iden "expr")])
 >     ,("select a from t right join u on expr"
->      ,ms [JoinTableRef JRight (SimpleTableRef "t") (SimpleTableRef "u")
+>      ,ms [JoinTableRef (SimpleTableRef "t") JRight (SimpleTableRef "u")
 >                        (Just $ JoinOn $ Iden "expr")])
 >     ,("select a from t full join u on expr"
->      ,ms [JoinTableRef Full (SimpleTableRef "t") (SimpleTableRef "u")
+>      ,ms [JoinTableRef (SimpleTableRef "t") JFull (SimpleTableRef "u")
 >                        (Just $ JoinOn $ Iden "expr")])
 >     ,("select a from t cross join u"
->      ,ms [JoinTableRef Cross (SimpleTableRef "t")
->                             (SimpleTableRef "u") Nothing])
+>      ,ms [JoinTableRef (SimpleTableRef "t")
+>                        JCross (SimpleTableRef "u") Nothing])
 >     ,("select a from t natural inner join u"
->      ,ms [JoinTableRef Inner (SimpleTableRef "t") (SimpleTableRef "u")
+>      ,ms [JoinTableRef (SimpleTableRef "t") JInner (SimpleTableRef "u")
 >                        (Just JoinNatural)])
 >     ,("select a from t inner join u using(a,b)"
->      ,ms [JoinTableRef Inner (SimpleTableRef "t") (SimpleTableRef "u")
+>      ,ms [JoinTableRef (SimpleTableRef "t") JInner (SimpleTableRef "u")
 >                        (Just $ JoinUsing ["a", "b"])])
 >     ,("select a from (select a from t)"
 >      ,ms [JoinQueryExpr $ ms [SimpleTableRef "t"]])
@@ -297,16 +299,17 @@
 >     ,("select a from t u(b)"
 >      ,ms [JoinAlias (SimpleTableRef "t") "u" $ Just ["b"]])
 >     ,("select a from (t cross join u) as u"
->      ,ms [JoinAlias (JoinParens $ JoinTableRef Cross (SimpleTableRef "t")
->                             (SimpleTableRef "u") Nothing) "u" Nothing])
+>      ,ms [JoinAlias (JoinParens $
+>                      JoinTableRef (SimpleTableRef "t")
+>                                   JCross
+>                                   (SimpleTableRef "u") Nothing)
+>                     "u" Nothing])
 >      -- todo: not sure if the associativity is correct
 >     ,("select a from t cross join u cross join v",
->        ms [JoinTableRef Cross
->            (JoinTableRef Cross (SimpleTableRef "t")
->                                (SimpleTableRef "u")
->                                Nothing)
->            (SimpleTableRef "v")
->            Nothing])
+>        ms [JoinTableRef
+>            (JoinTableRef (SimpleTableRef "t")
+>                          JCross (SimpleTableRef "u") Nothing)
+>            JCross (SimpleTableRef "v") Nothing])
 >     ]
 >   where
 >     ms f = makeSelect {qeSelectList = [(Nothing,Iden "a")]
@@ -317,7 +320,7 @@
 >     [("select a from t where a = 5"
 >      ,makeSelect {qeSelectList = [(Nothing,Iden "a")]
 >                  ,qeFrom = [SimpleTableRef "t"]
->                  ,qeWhere = Just $ BinOp "=" (Iden "a") (NumLit "5")})
+>                  ,qeWhere = Just $ BinOp (Iden "a") "=" (NumLit "5")})
 >     ]
 
 > groupByClause :: TestItem
@@ -344,7 +347,8 @@
 >                                  ,(Nothing, App "sum" [Iden "b"])]
 >                  ,qeFrom = [SimpleTableRef "t"]
 >                  ,qeGroupBy = [Iden "a"]
->                  ,qeHaving = Just $ BinOp ">" (App "sum" [Iden "b"]) (NumLit "5")
+>                  ,qeHaving = Just $ BinOp (App "sum" [Iden "b"])
+>                                           ">" (NumLit "5")
 >                  })
 >     ]
 
@@ -437,13 +441,14 @@
 >       \  order by s"
 >      ,makeSelect
 >       {qeSelectList = [(Nothing, Iden "a")
->                       ,(Just "s", App "sum" [BinOp "+" (Iden "c")
->                                                        (Iden "d")])]
+>                       ,(Just "s"
+>                        ,App "sum" [BinOp (Iden "c")
+>                                          "+" (Iden "d")])]
 >       ,qeFrom = [SimpleTableRef "t", SimpleTableRef "u"]
->       ,qeWhere = Just $ BinOp ">" (Iden "a") (NumLit "5")
+>       ,qeWhere = Just $ BinOp (Iden "a") ">" (NumLit "5")
 >       ,qeGroupBy = [Iden "a"]
->       ,qeHaving = Just $ BinOp ">" (App "count" [NumLit "1"])
->                                    (NumLit "5")
+>       ,qeHaving = Just $ BinOp (App "count" [NumLit "1"])
+>                                ">" (NumLit "5")
 >       ,qeOrderBy = [(Iden "s", Asc)]
 >       }
 >      )

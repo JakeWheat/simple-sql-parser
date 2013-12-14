@@ -2,6 +2,7 @@
 This is the pretty printer code which takes AST values and turns them
 back into SQL source text. It attempts to format the output nicely.
 
+> -- | These is the pretty printing functions, which produce SQL source from ASTs. The code attempts to format the output in a readable way.
 > module Language.SQL.SimpleSQL.Pretty
 >     (prettyQueryExpr
 >     ,prettyScalarExpr
@@ -12,14 +13,17 @@ back into SQL source text. It attempts to format the output nicely.
 > import Text.PrettyPrint
 > import Data.Maybe
 
+> -- | Convert a query expr ast to concrete syntax.
 > prettyQueryExpr :: QueryExpr -> String
 > prettyQueryExpr = render . queryExpr
 
+> -- | Convert a scalar expr ast to concrete syntax.
 > prettyScalarExpr :: ScalarExpr -> String
 > prettyScalarExpr = render . scalarExpr
 
+> -- | Convert a list of query exprs to concrete syntax. A semi colon is inserted following each query expr.
 > prettyQueryExprs :: [QueryExpr] -> String
-> prettyQueryExprs = render . vcat . map ((<> text ";") . queryExpr)
+> prettyQueryExprs = render . vcat . map ((<> text ";\n") . queryExpr)
 
 = scalar expressions
 
@@ -75,9 +79,9 @@ back into SQL source text. It attempts to format the output nicely.
 
 > scalarExpr (PrefixOp f e) = text f <+> scalarExpr e
 > scalarExpr (PostfixOp f e) = scalarExpr e <+> text f
-> scalarExpr (BinOp "and" e0 e1) =
+> scalarExpr (BinOp e0 "and" e1) =
 >     sep [scalarExpr e0, text "and" <+> scalarExpr e1]
-> scalarExpr (BinOp f e0 e1) =
+> scalarExpr (BinOp e0 f e1) =
 >     scalarExpr e0 <+> text f <+> scalarExpr e1
 
 > scalarExpr (Case t ws els) =
@@ -171,7 +175,7 @@ back into SQL source text. It attempts to format the output nicely.
 >         <+> maybe empty (parens . commaSep . map text) cs
 >     tr (JoinParens t) = parens $ tr t
 >     tr (JoinQueryExpr q) = parens $ queryExpr q
->     tr (JoinTableRef jt t0 t1 jc) =
+>     tr (JoinTableRef t0 jt t1 jc) =
 >        sep [tr t0
 >            ,joinText jt jc
 >            ,tr t1
@@ -181,11 +185,11 @@ back into SQL source text. It attempts to format the output nicely.
 >               Just JoinNatural -> text "natural"
 >               _ -> empty
 >           ,case jt of
->               Inner -> text "inner"
+>               JInner -> text "inner"
 >               JLeft -> text "left"
 >               JRight -> text "right"
->               Full -> text "full"
->               Cross -> text "cross"
+>               JFull -> text "full"
+>               JCross -> text "cross"
 >           ,text "join"]
 >     joinCond (Just (JoinOn e)) = text "on" <+> scalarExpr e
 >     joinCond (Just (JoinUsing es)) = text "using" <+> parens (commaSep $ map text es)

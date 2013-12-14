@@ -1,6 +1,5 @@
 
-The parser code
-
+> -- | This is the module with the parser functions.
 > module Language.SQL.SimpleSQL.Parser
 >     (parseQueryExpr
 >     ,parseScalarExpr
@@ -363,7 +362,7 @@ associativity.
 
 > binaryOperatorSuffix :: Bool -> ScalarExpr -> P ScalarExpr
 > binaryOperatorSuffix bExpr e0 =
->     BinOp <$> opSymbol <*> return e0 <*> factor
+>     BinOp e0 <$> opSymbol <*> factor
 >   where
 >     opSymbol = choice
 >         (map (try . symbol) binOpSymbolNames
@@ -492,17 +491,16 @@ tref
 >         in option j (JoinAlias j <$> try tableAlias <*> try columnAliases)
 >     joinTrefSuffix t = (do
 >          nat <- option False $ try (True <$ (try $ keyword_ "natural"))
->          JoinTableRef <$> joinType
->                       <*> return t
->                       <*> nonJoinTref
->                       <*> optionMaybe (joinCondition nat))
+>          JoinTableRef t <$> joinType
+>                         <*> nonJoinTref
+>                         <*> optionMaybe (joinCondition nat))
 >         >>= optionSuffix joinTrefSuffix
 >     joinType = choice
->                [Cross <$ try (keyword_ "cross")
->                ,Inner <$ try (keyword_ "inner")
+>                [JCross <$ try (keyword_ "cross")
+>                ,JInner <$ try (keyword_ "inner")
 >                ,choice [JLeft <$ try (keyword_ "left")
 >                        ,JRight <$ try (keyword_ "right")
->                        ,Full <$ try (keyword_ "full")]
+>                        ,JFull <$ try (keyword_ "full")]
 >                 <* optional (try $ keyword_ "outer")]
 >                <* keyword "join"
 >     joinCondition nat =

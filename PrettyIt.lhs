@@ -12,6 +12,6 @@
 >       [f] -> do
 >              src <- readFile f
 >              either (error . peFormattedError)
->                     (putStrLn . intercalate "\n" . map prettyQueryExpr)
+>                     (putStrLn . prettyQueryExprs)
 >                     $ parseQueryExprs f Nothing src
 >       _ -> error "please pass filename to prettify"

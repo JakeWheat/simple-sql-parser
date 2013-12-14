@@ -2,13 +2,12 @@
 
 first release:
 
-tests for the queryexprs parser
 check the pretty printer on the tpch queries
 fix the fixity issue
 add automated tests to cabal
 do code documentation and haddock
   check the order of exports, imports and functions/cases in the files
-fix up the import namespaces/explicit names nicelyx
+fix up the import namespaces/explicit names nicely
 do some tests for parse errors?
 website with haddock and table of parsing tests
 

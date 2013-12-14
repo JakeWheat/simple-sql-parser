@@ -1,21 +1,25 @@
 
+> -- | The AST for SQL queries
 > module Language.SQL.SimpleSQL.Syntax
->     (ScalarExpr(..)
+>     (-- * Scalar expressions
+>      ScalarExpr(..)
 >     ,TypeName(..)
->     ,SubQueryExprType(..)
->     ,InThing(..)
->     ,QueryExpr(..)
->     ,makeSelect
 >     ,Duplicates(..)
 >     ,Direction(..)
+>     ,InThing(..)
+>     ,SubQueryExprType(..)
+>      -- * Query expressions
+>     ,QueryExpr(..)
+>     ,makeSelect
 >     ,CombineOp(..)
 >     ,Corresponding(..)
+>      -- ** From
 >     ,TableRef(..)
 >     ,JoinType(..)
 >     ,JoinCondition(..)
 >     ) where
 
-
+> -- | Represents a scalar expression
 > data ScalarExpr = NumLit String
 >                 | StringLit String
 >                 | IntervalLit String -- text of interval
@@ -34,7 +38,7 @@
 >                   -- are used for symbol and keyword operators
 >                   -- these are used even for the multiple keyword
 >                   -- operators
->                 | BinOp String ScalarExpr ScalarExpr
+>                 | BinOp ScalarExpr String ScalarExpr
 >                 | PrefixOp String ScalarExpr
 >                 | PostfixOp String ScalarExpr
 >                   -- the special op is used for ternary, mixfix and other non orthodox operators
@@ -51,13 +55,23 @@
 >                   deriving (Eq,Show)
 
 > data TypeName = TypeName String deriving (Eq,Show)
+
+
+> -- Represents 'expr in (scalar expression list)', and 'expr in
+> -- (subquery)' syntax
 > data InThing = InList [ScalarExpr]
 >              | InQueryExpr QueryExpr
 >              deriving (Eq,Show)
 
+> -- | A subquery in a scalar expression
 > data SubQueryExprType = SqExists | SqSq | SqAll | SqSome | SqAny
 >                         deriving (Eq,Show)
 
+> -- | Represents a query expression, which can be a select, a 'set
+> -- operator' (union/except/intersect), a common table expression
+> -- (with), a values expression (not yet supported) or the table
+> -- syntax - 'table t', shorthand for 'select * from t' (not yet
+> -- supported).
 > data QueryExpr
 >     = Select
 >       {qeDuplicates :: Duplicates
@@ -84,11 +98,20 @@ TODO: add queryexpr parens to deal with e.g.
 (select 1 union select 2) union select 3
 I'm not sure if this is valid syntax or not
 
+
+> -- | represents the Distinct or All keywords, which can be used
+> -- before a select list, in an aggregate/window function
+> -- application, or in a query expression 'set operator'
 > data Duplicates = Distinct | All deriving (Eq,Show)
+
+> -- | The direction for a column in order by.
 > data Direction = Asc | Desc deriving (Eq,Show)
+> -- | Query expression 'set operators'
 > data CombineOp = Union | Except | Intersect deriving (Eq,Show)
+> -- | Corresponding, an option for the 'set operators'
 > data Corresponding = Corresponding | Respectively deriving (Eq,Show)
 
+> -- | helper/'default' value for query exprs to make creating query expr values a little easier
 > makeSelect :: QueryExpr
 > makeSelect = Select {qeDuplicates = All
 >                     ,qeSelectList = []
@@ -100,21 +123,22 @@ I'm not sure if this is valid syntax or not
 >                     ,qeLimit = Nothing
 >                     ,qeOffset = Nothing}
 
-
-> data TableRef = SimpleTableRef String
->               | JoinTableRef JoinType TableRef TableRef (Maybe JoinCondition)
->               | JoinParens TableRef
->               | JoinAlias TableRef String (Maybe [String])
->               | JoinQueryExpr QueryExpr
+> -- | Represents a entry in the csv of tables in the from clause.
+> data TableRef = SimpleTableRef String -- from t
+>               | JoinTableRef TableRef JoinType TableRef (Maybe JoinCondition) -- from a join b
+>               | JoinParens TableRef -- from (a)
+>               | JoinAlias TableRef String (Maybe [String]) -- from a as b(c,d)
+>               | JoinQueryExpr QueryExpr -- from (query expr)
 >                 deriving (Eq,Show)
 
 TODO: add function table ref
 
-
-> data JoinType = Inner | JLeft | JRight | Full | Cross
+> -- | The type of a join
+> data JoinType = JInner | JLeft | JRight | JFull | JCross
 >                 deriving (Eq,Show)
 
-> data JoinCondition = JoinOn ScalarExpr
->                    | JoinUsing [String]
->                    | JoinNatural
+> -- | The join condition.
+> data JoinCondition = JoinOn ScalarExpr -- ^ on expr
+>                    | JoinUsing [String] -- ^ using (column list)
+>                    | JoinNatural -- ^ natural join was specified
 >                      deriving (Eq,Show)
