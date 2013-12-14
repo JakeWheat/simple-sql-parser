@@ -1,7 +1,7 @@
 
 Converts the test data to markdown
 
-> import Tests
+> import Language.SQL.SimpleSQL.Tests
 > import Text.Groom
 > import Control.Monad.State
 > import Language.SQL.SimpleSQL.Parser

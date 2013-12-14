@@ -7,7 +7,7 @@ pandoc --from=markdown --to=html src/index.txt -o index.html -c main.css --title
 # tpch sql file
 pandoc src/tpch.sql -s --highlight-style kate -o tpch.sql.html
 # rendered test cases
-runhaskell -i../trunk:../trunk/src src/RenderTestCases > src/test_cases.txt
+runhaskell -i../trunk:../trunk/tools src/RenderTestCases > src/test_cases.txt
 pandoc --from=markdown --to=html src/test_cases.txt -o test_cases.html -c main.css --title=simple-sql-parser
 # haddock
 cd ../trunk
