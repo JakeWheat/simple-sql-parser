@@ -75,17 +75,21 @@
 > caseexp = Group "caseexp" $ map (uncurry TestScalarExpr)
 >     [("case a when 1 then 2 end"
 >      ,Case (Just $ Iden "a") [(NumLit "1"
->                                     ,NumLit "2")] Nothing)
+>                               ,NumLit "2")] Nothing)
+
 >     ,("case a when 1 then 2 when 3 then 4 end"
 >      ,Case (Just $ Iden "a") [(NumLit "1", NumLit "2")
->                                    ,(NumLit "3", NumLit "4")] Nothing)
+>                              ,(NumLit "3", NumLit "4")] Nothing)
+
 >     ,("case a when 1 then 2 when 3 then 4 else 5 end"
 >      ,Case (Just $ Iden "a") [(NumLit "1", NumLit "2")
->                                    ,(NumLit "3", NumLit "4")] (Just $ NumLit "5"))
+>                              ,(NumLit "3", NumLit "4")] (Just $ NumLit "5"))
+
 >     ,("case when a=1 then 2 when a=3 then 4 else 5 end"
 >      ,Case Nothing [(BinOp (Iden "a") "=" (NumLit "1"), NumLit "2")
 >                    ,(BinOp (Iden "a") "=" (NumLit "3"), NumLit "4")]
 >                    (Just $ NumLit "5"))
+
 >     ]
 
 > operators :: TestItem
@@ -100,9 +104,11 @@
 >     [("a + b", BinOp (Iden "a") "+" (Iden "b"))
 >      -- sanity check fixities
 >      -- todo: add more fixity checking
+
 >     ,("a + b * c"
 >      ,BinOp  (Iden "a") "+"
 >              (BinOp (Iden "b") "*" (Iden "c")))
+
 >     ,("a * b + c"
 >      ,BinOp (BinOp (Iden "a") "*" (Iden "b"))
 >             "+" (Iden "c"))
@@ -121,10 +127,13 @@
 > casts = Group "operators" $ map (uncurry TestScalarExpr)
 >     [("cast('1' as int)"
 >      ,Cast (StringLit "1") $ TypeName "int")
+
 >     ,("int '3'"
 >      ,CastOp (TypeName "int") "3")
+
 >     ,("cast('1' as double precision)"
 >      ,Cast (StringLit "1") $ TypeName "double precision")
+
 >     ,("double precision '3'"
 >      ,CastOp (TypeName "double precision") "3")
 >     ]
@@ -133,14 +142,19 @@
 > subqueries = Group "unaryOperators" $ map (uncurry TestScalarExpr)
 >     [("exists (select a from t)", SubQueryExpr SqExists ms)
 >     ,("(select a from t)", SubQueryExpr SqSq ms)
+
 >     ,("a in (select a from t)"
 >      ,In True (Iden "a") (InQueryExpr ms))
+
 >     ,("a not in (select a from t)"
 >      ,In False (Iden "a") (InQueryExpr ms))
+
 >     ,("a > all (select a from t)"
 >      ,BinOp (Iden "a") ">" (SubQueryExpr SqAll ms))
+
 >     ,("a = some (select a from t)"
 >      ,BinOp (Iden "a") "=" (SubQueryExpr SqSome ms))
+
 >     ,("a <= any (select a from t)"
 >      ,BinOp (Iden "a") "<=" (SubQueryExpr SqAny ms))
 >     ]
@@ -154,12 +168,15 @@
 > miscOps = Group "unaryOperators" $ map (uncurry TestScalarExpr)
 >     [("a in (1,2,3)"
 >      ,In True (Iden "a") $ InList $ map NumLit ["1","2","3"])
+
 >     ,("a between b and c", SpecialOp "between" [Iden "a"
 >                                                ,Iden "b"
 >                                                ,Iden "c"])
+
 >     ,("a not between b and c", SpecialOp "not between" [Iden "a"
 >                                                        ,Iden "b"
 >                                                        ,Iden "c"])
+
 >     ,("a is null", PostfixOp "is null" (Iden "a"))
 >     ,("a is not null", PostfixOp "is not null" (Iden "a"))
 >     ,("a is true", PostfixOp "is true" (Iden "a"))
@@ -169,26 +186,35 @@
 >     ,("a is unknown", PostfixOp "is unknown" (Iden "a"))
 >     ,("a is not unknown", PostfixOp "is not unknown" (Iden "a"))
 >     ,("a is distinct from b", BinOp (Iden "a") "is distinct from"(Iden "b"))
+
 >     ,("a is not distinct from b"
 >      ,BinOp (Iden "a") "is not distinct from" (Iden "b"))
+
 >     ,("a like b", BinOp (Iden "a") "like" (Iden "b"))
 >     ,("a not like b", BinOp (Iden "a") "not like" (Iden "b"))
 >     ,("a is similar to b", BinOp (Iden "a") "is similar to" (Iden "b"))
+
 >     ,("a is not similar to b"
 >      ,BinOp (Iden "a") "is not similar to" (Iden "b"))
+
 >     ,("a overlaps b", BinOp (Iden "a") "overlaps" (Iden "b"))
 >     ,("extract(day from t)", SpecialOp "extract" [Iden "day", Iden "t"])
+
 >     ,("substring(x from 1 for 2)"
 >      ,SpecialOp "substring" [Iden "x", NumLit "1", NumLit "2"])
+
 >     ]
 
 > aggregates :: TestItem
 > aggregates = Group "aggregates" $ map (uncurry TestScalarExpr)
 >     [("count(*)",App "count" [Star])
+
 >     ,("sum(a order by a)"
 >     ,AggregateApp "sum" Nothing [Iden "a"] [(Iden "a", Asc)])
+
 >     ,("sum(all a)"
 >     ,AggregateApp "sum" (Just All) [Iden "a"] [])
+
 >     ,("count(distinct a)"
 >     ,AggregateApp "count" (Just Distinct) [Iden "a"] [])
 >     ]
@@ -197,15 +223,20 @@
 > windowFunctions = Group "windowFunctions" $ map (uncurry TestScalarExpr)
 >     [("max(a) over ()", WindowApp "max" [Iden "a"] [] [])
 >     ,("count(*) over ()", WindowApp "count" [Star] [] [])
+
 >     ,("max(a) over (partition by b)"
 >      ,WindowApp "max" [Iden "a"] [Iden "b"] [])
+
 >     ,("max(a) over (partition by b,c)"
 >      ,WindowApp "max" [Iden "a"] [Iden "b",Iden "c"] [])
+
 >     ,("sum(a) over (order by b)"
 >      ,WindowApp "sum" [Iden "a"] [] [(Iden "b", Asc)])
+
 >     ,("sum(a) over (order by b desc,c)"
 >      ,WindowApp "sum" [Iden "a"] [] [(Iden "b", Desc)
 >                                     ,(Iden "c", Asc)])
+
 >     ,("sum(a) over (partition by b order by c)"
 >      ,WindowApp "sum" [Iden "a"] [Iden "b"] [(Iden "c", Asc)])
 >      -- todo: check order by options, add frames
@@ -250,18 +281,23 @@
 > selectLists = Group "selectLists" $ map (uncurry TestQueryExpr)
 >     [("select 1",
 >       makeSelect {qeSelectList = [(Nothing,NumLit "1")]})
+
 >     ,("select a"
 >      ,makeSelect {qeSelectList = [(Nothing,Iden "a")]})
+
 >     ,("select a,b"
 >      ,makeSelect {qeSelectList = [(Nothing,Iden "a")
 >                                  ,(Nothing,Iden "b")]})
+
 >     ,("select 1+2,3+4"
 >      ,makeSelect {qeSelectList =
 >                      [(Nothing,BinOp (NumLit "1") "+" (NumLit "2"))
 >                      ,(Nothing,BinOp (NumLit "3") "+" (NumLit "4"))]})
+
 >     ,("select a as a, /*comment*/ b as b"
 >      ,makeSelect {qeSelectList = [(Just "a", Iden "a")
 >                                  ,(Just "b", Iden "b")]})
+
 >     ,("select a a, b b"
 >      ,makeSelect {qeSelectList = [(Just "a", Iden "a")
 >                                  ,(Just "b", Iden "b")]})
@@ -271,42 +307,56 @@
 > from = Group "from" $ map (uncurry TestQueryExpr)
 >     [("select a from t"
 >      ,ms [TRSimple "t"])
+
 >     ,("select a from t,u"
 >      ,ms [TRSimple "t", TRSimple "u"])
+
 >     ,("select a from t inner join u on expr"
 >      ,ms [TRJoin (TRSimple "t") JInner (TRSimple "u")
 >                        (Just $ JoinOn $ Iden "expr")])
+
 >     ,("select a from t left join u on expr"
 >      ,ms [TRJoin (TRSimple "t") JLeft (TRSimple "u")
 >                        (Just $ JoinOn $ Iden "expr")])
+
 >     ,("select a from t right join u on expr"
 >      ,ms [TRJoin (TRSimple "t") JRight (TRSimple "u")
 >                        (Just $ JoinOn $ Iden "expr")])
+
 >     ,("select a from t full join u on expr"
 >      ,ms [TRJoin (TRSimple "t") JFull (TRSimple "u")
 >                        (Just $ JoinOn $ Iden "expr")])
+
 >     ,("select a from t cross join u"
 >      ,ms [TRJoin (TRSimple "t")
 >                        JCross (TRSimple "u") Nothing])
+
 >     ,("select a from t natural inner join u"
 >      ,ms [TRJoin (TRSimple "t") JInner (TRSimple "u")
 >                        (Just JoinNatural)])
+
 >     ,("select a from t inner join u using(a,b)"
 >      ,ms [TRJoin (TRSimple "t") JInner (TRSimple "u")
 >                        (Just $ JoinUsing ["a", "b"])])
+
 >     ,("select a from (select a from t)"
 >      ,ms [TRQueryExpr $ ms [TRSimple "t"]])
+
 >     ,("select a from t as u"
 >      ,ms [TRAlias (TRSimple "t") "u" Nothing])
+
 >     ,("select a from t u"
 >      ,ms [TRAlias (TRSimple "t") "u" Nothing])
+
 >     ,("select a from t u(b)"
 >      ,ms [TRAlias (TRSimple "t") "u" $ Just ["b"]])
+
 >     ,("select a from (t cross join u) as u"
 >      ,ms [TRAlias (TRParens $
 >                    TRJoin (TRSimple "t") JCross (TRSimple "u") Nothing)
 >                           "u" Nothing])
 >      -- todo: not sure if the associativity is correct
+
 >     ,("select a from t cross join u cross join v",
 >        ms [TRJoin
 >            (TRJoin (TRSimple "t")
@@ -333,6 +383,7 @@
 >                  ,qeFrom = [TRSimple "t"]
 >                  ,qeGroupBy = [Iden "a"]
 >                  })
+
 >     ,("select a,b,sum(c) from t group by a,b"
 >      ,makeSelect {qeSelectList = [(Nothing, Iden "a")
 >                                  ,(Nothing, Iden "b")
@@ -358,10 +409,13 @@
 > orderBy = Group "orderBy" $ map (uncurry TestQueryExpr)
 >     [("select a from t order by a"
 >      ,ms [(Iden "a", Asc)])
+
 >     ,("select a from t order by a, b"
 >      ,ms [(Iden "a", Asc), (Iden "b", Asc)])
+
 >     ,("select a from t order by a asc"
 >      ,ms [(Iden "a", Asc)])
+
 >     ,("select a from t order by a desc, b desc"
 >      ,ms [(Iden "a", Desc), (Iden "b", Desc)])
 >     ]
@@ -374,6 +428,7 @@
 > limit = Group "limit" $ map (uncurry TestQueryExpr)
 >     [("select a from t limit 10"
 >      ,ms (Just $ NumLit "10") Nothing)
+
 >     ,("select a from t limit 10 offset 10"
 >      ,ms (Just $ NumLit "10") (Just $ NumLit "10"))
 >     ]
@@ -388,15 +443,19 @@
 > combos = Group "combos" $ map (uncurry TestQueryExpr)
 >     [("select a from t union select b from u"
 >      ,CombineQueryExpr ms1 Union All Respectively ms2)
+
 >     ,("select a from t intersect select b from u"
 >      ,CombineQueryExpr ms1 Intersect All Respectively ms2)
+
 >     ,("select a from t except all select b from u"
 >      ,CombineQueryExpr ms1 Except All Respectively ms2)
+
 >     ,("select a from t union distinct corresponding \
 >       \select b from u"
 >      ,CombineQueryExpr ms1 Union Distinct Corresponding ms2)
+
 >     ,("select a from t union select a from t union select a from t"
->      -- is this the correct associativity? 
+>      -- is this the correct associativity?
 >      ,CombineQueryExpr ms1 Union All Respectively
 >        (CombineQueryExpr ms1 Union All Respectively ms1))
 >     ]
@@ -413,6 +472,7 @@
 > withQueries = Group "with queries" $ map (uncurry TestQueryExpr)
 >     [("with u as (select a from t) select a from u"
 >      ,With [("u", ms1)] ms2)
+
 >     ,("with x as (select a from t),\n\
 >       \     u as (select a from x)\n\
 >       \select a from u"
@@ -435,6 +495,7 @@
 >       ,qeFrom = [TRSimple "t"]
 >       }
 >      )
+
 >     ,("select a, sum(c+d) as s\n\
 >       \  from t,u\n\
 >       \  where a > 5\n\
@@ -461,7 +522,6 @@
 >     [("select 1",[ms])
 >     ,("select 1;",[ms])
 >     ,("select 1;select 1",[ms,ms])
->     ,("select 1;select 1;",[ms,ms])
 >     ,(" select 1;select 1; ",[ms,ms])
 >     ]
 >   where
@@ -514,7 +574,8 @@
 >                 let str' = pp got
 >                 let egot' = parser "" Nothing str'
 >                 case egot' of
->                     Left e' -> H.assertFailure $ "pp roundtrip " ++ peFormattedError e'
+>                     Left e' -> H.assertFailure $ "pp roundtrip "
+>                                                  ++ peFormattedError e'
 >                     Right got' -> H.assertEqual "pp roundtrip" expected got'
 
 > toPTest :: (Eq a, Show a) =>
@@ -530,5 +591,6 @@
 >                 let str' = pp got
 >                 let egot' = parser "" Nothing str'
 >                 case egot' of
->                     Left e' -> H.assertFailure $ "pp roundtrip " ++ peFormattedError e'
+>                     Left e' -> H.assertFailure $ "pp roundtrip "
+>                                                  ++ peFormattedError e'
 >                     Right _got' -> return ()

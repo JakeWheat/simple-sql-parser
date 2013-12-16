@@ -19,23 +19,33 @@
 The public API functions.
 
 > -- | Parses a query expr, trailing semicolon optional.
-> parseQueryExpr :: FilePath -- ^ filename to use in errors
->                -> Maybe (Int,Int) -- ^ line number and column number to use in errors
->                -> String -- ^ the SQL source to parse
+> parseQueryExpr :: FilePath
+>                   -- ^ filename to use in errors
+>                -> Maybe (Int,Int)
+>                   -- ^ line number and column number to use in errors
+>                -> String
+>                   -- ^ the SQL source to parse
 >                -> Either ParseError QueryExpr
 > parseQueryExpr = wrapParse topLevelQueryExpr
 
-> -- | Parses a list of query exprs, with semi colons between them. The final semicolon is optional.
-> parseQueryExprs :: FilePath -- ^ filename to use in errors
->                 -> Maybe (Int,Int) -- ^ line number and column number to use in errors
->                 -> String -- ^ the SQL source to parse
+> -- | Parses a list of query exprs, with semi colons between
+> -- them. The final semicolon is optional.
+> parseQueryExprs :: FilePath
+>                    -- ^ filename to use in errors
+>                 -> Maybe (Int,Int)
+>                    -- ^ line number and column number to use in errors
+>                 -> String
+>                    -- ^ the SQL source to parse
 >                 -> Either ParseError [QueryExpr]
 > parseQueryExprs = wrapParse queryExprs
 
 > -- | Parses a scalar expression.
-> parseScalarExpr :: FilePath -- ^ filename to use in errors
->                 -> Maybe (Int,Int) -- ^ line number and column number to use in errors
->                 -> String -- ^ the SQL source to parse
+> parseScalarExpr :: FilePath
+>                    -- ^ filename to use in errors
+>                 -> Maybe (Int,Int)
+>                    -- ^ line number and column number to use in errors
+>                 -> String
+>                    -- ^ the SQL source to parse
 >                 -> Either ParseError ScalarExpr
 > parseScalarExpr = wrapParse scalarExpr
 
@@ -57,10 +67,15 @@ converts the error return to the nice wrapper
 
 > -- | Type to represent parse errors.
 > data ParseError = ParseError
->                   {peErrorString :: String -- ^ contains the error message
->                   ,peFilename :: FilePath -- ^ filename location for the error
->                   ,pePosition :: (Int,Int) -- ^ line number and column number location for the error
->                   ,peFormattedError :: String -- ^ formatted error with the position, error message and source context
+>                   {peErrorString :: String
+>                    -- ^ contains the error message
+>                   ,peFilename :: FilePath
+>                    -- ^ filename location for the error
+>                   ,pePosition :: (Int,Int)
+>                    -- ^ line number and column number location for the error
+>                   ,peFormattedError :: String
+>                    -- ^ formatted error with the position, error
+>                    -- message and source context
 >                   } deriving (Eq,Show)
 
 ------------------------------------------------
@@ -96,7 +111,8 @@ interval '5' month
 
 == identifiers
 
-Uses the identifierString 'lexer'. See this function for notes on identifiers.
+Uses the identifierString 'lexer'. See this function for notes on
+identifiers.
 
 > identifier :: P ScalarExpr
 > identifier = Iden <$> identifierString
