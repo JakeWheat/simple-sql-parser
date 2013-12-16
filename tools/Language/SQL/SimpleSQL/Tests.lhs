@@ -1,4 +1,39 @@
 
+TODO:
+
+split into multiple files:
+scalar expressions
+tablerefs
+other queryexpr parts: not enough to split into multiple files
+full queries
+tpch tests
+
+postgres queries - take all the examples from the postgres docs which
+aren't too postgres specific and create tests from them
+
+postgres queries:
+SELECT 'foo'
+'bar'; -> if there is a newline, this parses to select 'foobar'
+
+SELECT name, (SELECT max(pop) FROM cities WHERE cities.state = states.name)
+    FROM states;
+
+SELECT ROW(1,2.5,'this is a test');
+
+SELECT ROW(t.*, 42) FROM t;
+SELECT ROW(t.f1, t.f2, 42) FROM t;
+Note: Before PostgreSQL 8.2, the .* syntax was not expanded
+SELECT getf1(CAST(ROW(11,'this is a test',2.5) AS myrowtype));
+
+SELECT ROW(1,2.5,'this is a test') = ROW(1, 3, 'not the same');
+
+SELECT ROW(table.*) IS NULL FROM table;
+
+SELECT true OR somefunc();
+
+SELECT somefunc() OR true;
+
+
 > module Language.SQL.SimpleSQL.Tests
 >     (testData
 >     ,tests

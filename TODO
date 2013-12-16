@@ -1,7 +1,35 @@
 
-first release:
-
-add automated tests to cabal
+next release:
+quoted identifiers: implement as a dot operator
+review tests to copy from hssqlppp
+window frames and named windows
+dialect framework
+try to implement fixity without the hse hack
+position annotation?
+row ctor
+more symbolic operators, array access a[5]?
+review abstract syntax (e.g. combine App with SpecialOp?)
+more dots
+order by nulls first/last
+extend case
+group by extensions
+table, values
+collate? -> postfix operator which binds very  tightly:
+a < 'foo' collate 'C'
+->
+Op "<" [Iden "a", SpecialOp "collate" [StringLit 'foo', StringLit
+   'C']]
+  also postfix in order by:
+select a from t order by a collate 'C': add to order by syntax
+function table reference
+much more table reference tests
+ansi standard versions of limit and offset
+sql server top
+add to website: pretty printed tpch, maybe other queries as
+   demonstration
+demo: convert tpch to sql server syntax
+review internal sql collection for more syntax/tests
+run through postgres docs and add example sql as tests
 
 ----
 
@@ -19,6 +47,8 @@ left factor parsing code in remaining places
 reimplement the fixity thing natively
 
 position annotation?
+
+quasi quotes?
 
 = sql support
 

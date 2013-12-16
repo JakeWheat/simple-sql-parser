@@ -649,10 +649,14 @@ access them via these functions, if you follow?
 > symbol_ :: String -> P ()
 > symbol_ s = symbol s *> return ()
 
+TODO: now that keyword has try in it, a lot of the trys above can be
+removed
+
 > keyword :: String -> P String
-> keyword s = (map toLower <$> string s)
->             <* notFollowedBy (char '_' <|> alphaNum)
->             <* whiteSpace
+> keyword s = try $ do
+>     i <- identifierRaw
+>     guard (map toLower i == map toLower s)
+>     return i
 
 > keyword_ :: String -> P ()
 > keyword_ s = keyword s *> return ()
@@ -662,15 +666,21 @@ underscore, and continue with letter, underscore or digit. It doesn't
 support quoting other other sorts of identifiers yet. There is a
 blacklist of keywords which aren't supported as identifiers.
 
-> identifierString :: P String
-> identifierString = do
->     s <- (:) <$> letterOrUnderscore
->              <*> many letterDigitOrUnderscore <* whiteSpace
->     guard (s `notElem` blacklist)
->     return s
+the identifier raw doesn't check the blacklist since it is used by the
+keyword parser also
+
+> identifierRaw :: P String
+> identifierRaw = (:) <$> letterOrUnderscore
+>                     <*> many letterDigitOrUnderscore <* whiteSpace
 >   where
 >     letterOrUnderscore = char '_' <|> letter
 >     letterDigitOrUnderscore = char '_' <|> alphaNum
+
+> identifierString :: P String
+> identifierString = do
+>     s <- identifierRaw
+>     guard (map toLower s `notElem` blacklist)
+>     return s
 
 > blacklist :: [String]
 > blacklist =
