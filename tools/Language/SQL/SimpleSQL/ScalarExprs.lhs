@@ -12,6 +12,7 @@ Tests for parsing scalar expressions
 >     [literals
 >     ,identifiers
 >     ,star
+>     ,dots
 >     ,app
 >     ,caseexp
 >     ,operators
@@ -44,15 +45,23 @@ Tests for parsing scalar expressions
 > identifiers :: TestItem
 > identifiers = Group "identifiers" $ map (uncurry TestScalarExpr)
 >     [("iden1", Iden "iden1")
->     ,("t.a", Iden2 "t" "a")
+>     --,("t.a", Iden2 "t" "a")
 >     ,("\"quoted identifier\"", Iden $ QName "quoted identifier")
 >     ]
 
 > star :: TestItem
 > star = Group "star" $ map (uncurry TestScalarExpr)
 >     [("*", Star)
->     ,("t.*", Star2 "t")
->     ,("ROW(t.*,42)", App "ROW" [Star2 "t", NumLit "42"])
+>     --,("t.*", Star2 "t")
+>     --,("ROW(t.*,42)", App "ROW" [Star2 "t", NumLit "42"])
+>     ]
+
+> dots :: TestItem
+> dots = Group "dot" $ map (uncurry TestScalarExpr)
+>     [("t.a", BinOp (Iden "t") "." (Iden "a"))
+>     ,("t.*", BinOp (Iden "t") "." Star)
+>     ,("a.b.c", BinOp (BinOp (Iden "a") "." (Iden "b")) "." (Iden "c"))
+>     ,("ROW(t.*,42)", App "ROW" [BinOp (Iden "t") "." Star, NumLit "42"])
 >     ]
 
 > app :: TestItem

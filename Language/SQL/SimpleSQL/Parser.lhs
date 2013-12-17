@@ -125,20 +125,15 @@ identifiers.
 > identifier :: P ScalarExpr
 > identifier = Iden <$> name
 
-Identifier with one dot in it. This should be extended to any amount
-of dots.
-
-> dottedIden :: P ScalarExpr
-> dottedIden = Iden2 <$> name <*> (symbol "." *> name)
-
 == star
 
 used in select *, select x.*, and agg(*) variations, and some other
-places as well.
+places as well. Because it is quite general, the parser doesn't
+attempt to check that the star is in a valid context, it parses it ok
+in any scalar expression context.
 
 > star :: P ScalarExpr
-> star = choice [Star <$ symbol "*"
->               ,Star2 <$> (name <* symbol "." <* symbol "*")]
+> star = Star <$ symbol "*"
 
 == function application, aggregates and windows
 
@@ -327,7 +322,7 @@ keyword.
 > binOpSymbolNames =
 >     ["=", "<=", ">=", "!=", "<>", "<", ">"
 >     ,"*", "/", "+", "-"
->     ,"||"]
+>     ,"||", "."]
 
 > binOpKeywordNames :: [String]
 > binOpKeywordNames = ["and", "or", "like", "overlaps"]
@@ -411,7 +406,8 @@ associativity. This is fixed with a separate pass over the AST.
 >              ++ prefixUnOpKeywordNames ++ prefixUnOpSymbolNames
 >              ++ postfixOpKeywords
 >     -- these are the ops with the highest precedence in order
->     highPrec = [infixl_ ["*","/"]
+>     highPrec = [infixl_ ["."]
+>                ,infixl_ ["*","/"]
 >                ,infixl_ ["+", "-"]
 >                ,infixl_ ["<=",">=","!=","<>","||","like"]
 >                ]
@@ -451,7 +447,6 @@ could at least do with some heavy explanation.
 >                 ,subquery
 >                 ,prefixUnaryOp
 >                 ,try app
->                 ,try dottedIden
 >                 ,try star
 >                 ,identifier
 >                 ,sparens]

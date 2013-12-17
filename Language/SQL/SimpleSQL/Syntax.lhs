@@ -47,12 +47,8 @@
 >     | IntervalLit String String (Maybe Int)
 >       -- | identifier without dots
 >     | Iden Name
->       -- | identifier with one dot
->     | Iden2 Name Name
->       -- | star
+>       -- | star, as in select *, t.*, count(*)
 >     | Star
->       -- | star with qualifier, e.g t.*
->     | Star2 Name
 >       -- | function application (anything that looks like c style
 >       -- function application syntactically)
 >     | App Name [ScalarExpr]

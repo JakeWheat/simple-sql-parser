@@ -1,8 +1,6 @@
 
 next release:
 
-escapes in string literals
-
 ansi standard versions of limit and offset
 
 OFFSET start { ROW | ROWS }
@@ -75,6 +73,9 @@ review abstract syntax (e.g. combine App with SpecialOp?)
 ----
 
 Later general tasks:
+
+extended string literals, escapes and other flavours (like pg and
+   oracle custom delimiters)
 
 run through other manuals for example queries and features: sql in a
    nutshell, sql guide, sql reference guide, sql standard, sql server

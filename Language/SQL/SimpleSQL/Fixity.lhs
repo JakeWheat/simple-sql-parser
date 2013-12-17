@@ -81,9 +81,7 @@ the fixity code.
 >     App n es -> HSE.App (var ('f':name n)) $ ltoh es
 >     Parens e0 -> HSE.Paren $ toHaskell e0
 >     IntervalLit {} -> str ('v':show e)
->     Iden2 {} -> str ('v':show e)
 >     Star -> str ('v':show e)
->     Star2 {} -> str ('v':show e)
 >     AggregateApp nm d es od ->
 >         HSE.App (var ('a':name nm))
 >         $ HSE.List [str $ show (d,map snd od)

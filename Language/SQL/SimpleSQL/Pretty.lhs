@@ -39,9 +39,7 @@
 >     <+> text u
 >     <+> maybe empty (parens . text . show ) p
 > scalarExpr (Iden i) = name i
-> scalarExpr (Iden2 q i) = name q <> text "." <> name i
 > scalarExpr Star = text "*"
-> scalarExpr (Star2 q) = name q <> text "." <> text "*"
 
 > scalarExpr (App f es) = name f <> parens (commaSep (map scalarExpr es))
 
@@ -97,6 +95,9 @@
 >   where
 >     ands (BinOp a op' b) | op == op' = ands a ++ ands b
 >     ands x = [x]
+> -- special case for . we don't use whitespace
+> scalarExpr (BinOp e0 (Name ".") e1) =
+>     scalarExpr e0 <> text "." <> scalarExpr e1
 > scalarExpr (BinOp e0 f e1) =
 >     scalarExpr e0 <+> name f <+> scalarExpr e1
 
