@@ -1,10 +1,5 @@
 next release:
 
-
-----
-
-next release after that:
-
 add to website: pretty printed tpch, maybe other queries as
    demonstration
 
@@ -96,3 +91,4 @@ db2?
 
 maybe later: other dml
   insert, update, delete, truncate, merge + set, show?
+  copy, execute?, explain?, begin/end/rollback?
