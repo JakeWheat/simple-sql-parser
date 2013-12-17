@@ -18,7 +18,8 @@ TODO: get all the commented out tests working
 >     [-- "SELECT 'foo'\n\
 >     -- \'bar';" -- this should parse as select 'foobar'
 >     -- ,
->      "SELECT name, (SELECT max(pop) FROM cities WHERE cities.state = states.name)\n\
+>      "SELECT name, (SELECT max(pop) FROM cities\n\
+>      \ WHERE cities.state = states.name)\n\
 >      \    FROM states;"
 >     ,"SELECT ROW(1,2.5,'this is a test');"
 
@@ -47,8 +48,10 @@ queries section
 >     ,"SELECT * FROM t1 LEFT JOIN t2 ON t1.num = t2.num AND t2.value = 'xxx';"
 >     ,"SELECT * FROM t1 LEFT JOIN t2 ON t1.num = t2.num WHERE t2.value = 'xxx';"
 
->     ,"SELECT * FROM some_very_long_table_name s JOIN another_fairly_long_name a ON s.id = a.num;"
->     ,"SELECT * FROM people AS mother JOIN people AS child ON mother.id = child.mother_id;"
+>     ,"SELECT * FROM some_very_long_table_name s\n\
+>      \JOIN another_fairly_long_name a ON s.id = a.num;"
+>     ,"SELECT * FROM people AS mother JOIN people AS child\n\
+>      \ ON mother.id = child.mother_id;"
 >     ,"SELECT * FROM my_table AS a CROSS JOIN my_table AS b;"
 >     ,"SELECT * FROM (my_table AS a CROSS JOIN my_table) AS b;"
 >     ,"SELECT * FROM getfoo(1) AS t1;"
@@ -63,7 +66,7 @@ queries section
 >      \      AS t1(proname name, prosrc text)\n\
 >      \    WHERE proname LIKE 'bytea%';"-} -- types in the alias??
 
->     ,"SELECT * FROM foo, LATERAL (SELECT * FROM bar WHERE bar.id = foo.bar_id) ss;" -- lateral
+>     ,"SELECT * FROM foo, LATERAL (SELECT * FROM bar WHERE bar.id = foo.bar_id) ss;"
 >     ,"SELECT * FROM foo, bar WHERE bar.id = foo.bar_id;"
 
 >     {-,"SELECT p1.id, p2.id, v1, v2\n\
@@ -90,7 +93,8 @@ queries section
 
 >     ,"SELECT * FROM fdt WHERE c1 IN (SELECT c3 FROM t2 WHERE c2 = fdt.c1 + 10)"
 
->     ,"SELECT * FROM fdt WHERE c1 BETWEEN (SELECT c3 FROM t2 WHERE c2 = fdt.c1 + 10) AND 100"
+>     ,"SELECT * FROM fdt WHERE c1 BETWEEN \n\
+>      \    (SELECT c3 FROM t2 WHERE c2 = fdt.c1 + 10) AND 100"
 
 >     ,"SELECT * FROM fdt WHERE EXISTS (SELECT c1 FROM t2 WHERE c2 > fdt.c1)"
 

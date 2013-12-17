@@ -83,7 +83,8 @@ Tests for parsing scalar expressions
 
 >     ,("case a when 1 then 2 when 3 then 4 else 5 end"
 >      ,Case (Just $ Iden "a") [([NumLit "1"], NumLit "2")
->                              ,([NumLit "3"], NumLit "4")] (Just $ NumLit "5"))
+>                              ,([NumLit "3"], NumLit "4")]
+>                              (Just $ NumLit "5"))
 
 >     ,("case when a=1 then 2 when a=3 then 4 else 5 end"
 >      ,Case Nothing [([BinOp (Iden "a") "=" (NumLit "1")], NumLit "2")
@@ -249,38 +250,50 @@ Tests for parsing scalar expressions
 >      ,WindowApp "max" [Iden "a"] [Iden "b",Iden "c"] [] Nothing)
 
 >     ,("sum(a) over (order by b)"
->      ,WindowApp "sum" [Iden "a"] [] [OrderField (Iden "b") Asc NullsOrderDefault] Nothing)
+>      ,WindowApp "sum" [Iden "a"] []
+>           [OrderField (Iden "b") Asc NullsOrderDefault] Nothing)
 
 >     ,("sum(a) over (order by b desc,c)"
->      ,WindowApp "sum" [Iden "a"] [] [OrderField (Iden "b") Desc NullsOrderDefault
->                                     ,OrderField (Iden "c") Asc NullsOrderDefault] Nothing)
+>      ,WindowApp "sum" [Iden "a"] []
+>           [OrderField (Iden "b") Desc NullsOrderDefault
+>           ,OrderField (Iden "c") Asc NullsOrderDefault] Nothing)
 
 >     ,("sum(a) over (partition by b order by c)"
->      ,WindowApp "sum" [Iden "a"] [Iden "b"] [OrderField (Iden "c") Asc NullsOrderDefault] Nothing)
+>      ,WindowApp "sum" [Iden "a"] [Iden "b"]
+>           [OrderField (Iden "c") Asc NullsOrderDefault] Nothing)
 
 >     ,("sum(a) over (partition by b order by c range unbounded preceding)"
->      ,WindowApp "sum" [Iden "a"] [Iden "b"] [OrderField (Iden "c") Asc NullsOrderDefault]
+>      ,WindowApp "sum" [Iden "a"] [Iden "b"]
+>       [OrderField (Iden "c") Asc NullsOrderDefault]
 >       $ Just $ FrameFrom FrameRange UnboundedPreceding)
 
 >     ,("sum(a) over (partition by b order by c range 5 preceding)"
->      ,WindowApp "sum" [Iden "a"] [Iden "b"] [OrderField (Iden "c") Asc NullsOrderDefault]
+>      ,WindowApp "sum" [Iden "a"] [Iden "b"]
+>       [OrderField (Iden "c") Asc NullsOrderDefault]
 >       $ Just $ FrameFrom FrameRange $ Preceding (NumLit "5"))
 
 >     ,("sum(a) over (partition by b order by c range current row)"
->      ,WindowApp "sum" [Iden "a"] [Iden "b"] [OrderField (Iden "c") Asc NullsOrderDefault]
+>      ,WindowApp "sum" [Iden "a"] [Iden "b"]
+>       [OrderField (Iden "c") Asc NullsOrderDefault]
 >       $ Just $ FrameFrom FrameRange Current)
 
 >     ,("sum(a) over (partition by b order by c rows 5 following)"
->      ,WindowApp "sum" [Iden "a"] [Iden "b"] [OrderField (Iden "c") Asc NullsOrderDefault]
+>      ,WindowApp "sum" [Iden "a"] [Iden "b"]
+>       [OrderField (Iden "c") Asc NullsOrderDefault]
 >       $ Just $ FrameFrom FrameRows $ Following (NumLit "5"))
 
 >     ,("sum(a) over (partition by b order by c range unbounded following)"
->      ,WindowApp "sum" [Iden "a"] [Iden "b"] [OrderField (Iden "c") Asc NullsOrderDefault]
+>      ,WindowApp "sum" [Iden "a"] [Iden "b"]
+>       [OrderField (Iden "c") Asc NullsOrderDefault]
 >       $ Just $ FrameFrom FrameRange UnboundedFollowing)
 
->     ,("sum(a) over (partition by b order by c range between 5 preceding and 5 following)"
->      ,WindowApp "sum" [Iden "a"] [Iden "b"] [OrderField (Iden "c") Asc NullsOrderDefault]
->       $ Just $ FrameBetween FrameRange (Preceding (NumLit "5")) (Following (NumLit "5")))
+>     ,("sum(a) over (partition by b order by c \n\
+>       \range between 5 preceding and 5 following)"
+>      ,WindowApp "sum" [Iden "a"] [Iden "b"]
+>       [OrderField (Iden "c") Asc NullsOrderDefault]
+>       $ Just $ FrameBetween FrameRange
+>                             (Preceding (NumLit "5"))
+>                             (Following (NumLit "5")))
 
 >     ]
 

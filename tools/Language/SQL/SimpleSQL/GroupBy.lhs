@@ -218,7 +218,8 @@ sure which sql version they were introduced, 1999 or 2003 I think).
 >      \GROUP BY GROUPING SETS ((R1, ROLLUP(WEEK(SALES_DATE),\n\
 >      \DAYOFWEEK(SALES_DATE))),\n\
 >      \(R2,ROLLUP( MONTH(SALES_DATE), REGION ) ))\n\
->      \ORDER BY GROUP, WEEK, DAY_WEEK, MONTH, REGION"-} -- as group - needs more subtle keyword blacklisting
+>      \ORDER BY GROUP, WEEK, DAY_WEEK, MONTH, REGION"-}
+>      -- as group - needs more subtle keyword blacklisting
 
 >     ,"SELECT MONTH(SALES_DATE) AS MONTH,\n\
 >      \REGION,\n\
