@@ -159,6 +159,8 @@
 >       ,qe2 :: QueryExpr
 >       }
 >     | With [(Name,QueryExpr)] QueryExpr
+>     | Values [[ScalarExpr]]
+
 >       deriving (Eq,Show,Read)
 
 TODO: add queryexpr parens to deal with e.g.

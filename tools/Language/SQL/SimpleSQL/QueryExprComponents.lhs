@@ -23,6 +23,7 @@ These are a few misc tests which don't fit anywhere else.
 >     ,limit
 >     ,combos
 >     ,withQueries
+>     ,values
 >     ]
 
 
@@ -185,3 +186,10 @@ These are a few misc tests which don't fit anywhere else.
 >    ms1 = ms "a" "t"
 >    ms2 = ms "a" "u"
 >    ms3 = ms "a" "x"
+
+> values :: TestItem
+> values = Group "values" $ map (uncurry TestQueryExpr)
+>     [("values (1,2),(3,4)"
+>       ,Values [[NumLit "1", NumLit "2"]
+>               ,[NumLit "3", NumLit "4"]])
+>     ]

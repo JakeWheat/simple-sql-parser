@@ -177,6 +177,9 @@
 >             (vcat $ punctuate comma $ flip map withs $ \(n,q) ->
 >              name n <+> text "as" <+> parens (queryExpr q))
 >            ,queryExpr qe]
+> queryExpr (Values vs) =
+>     text "values"
+>     <+> nest 7 (commaSep (map (parens . commaSep . map scalarExpr) vs))
 
 > selectList :: [(Maybe Name, ScalarExpr)] -> Doc
 > selectList is = commaSep $ map si is

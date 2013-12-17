@@ -122,7 +122,7 @@ queries section
 
 >     ,"SELECT DISTINCT select_list t"
 
->     --,"VALUES (1, 'one'), (2, 'two'), (3, 'three');" -- values list
+>     ,"VALUES (1, 'one'), (2, 'two'), (3, 'three');"
 
 >     ,"SELECT 1 AS column1, 'one' AS column2\n\
 >      \UNION ALL\n\
@@ -130,8 +130,7 @@ queries section
 >      \UNION ALL\n\
 >      \SELECT 3, 'three';"
 
->     --,"SELECT * FROM (VALUES (1, 'one'), (2, 'two'), (3, 'three')) AS t (num,letter);"
->     -- values list
+>     ,"SELECT * FROM (VALUES (1, 'one'), (2, 'two'), (3, 'three')) AS t (num,letter);"
 
 >     ,"WITH regional_sales AS (\n\
 >      \        SELECT region, SUM(amount) AS total_sales\n\
