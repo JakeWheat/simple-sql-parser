@@ -145,7 +145,7 @@ Tests for parsing scalar expressions
 >      ,Cast (StringLit "1") $ PrecTypeName "float" 8)
 
 >     ,("cast('1' as decimal(15,2))"
->      ,Cast (StringLit "1") $ Prec2TypeName "decimal" 15 2)
+>      ,Cast (StringLit "1") $ PrecScaleTypeName "decimal" 15 2)
 
 
 >     ,("double precision '3'"

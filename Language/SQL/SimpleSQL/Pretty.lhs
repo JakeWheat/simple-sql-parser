@@ -165,7 +165,7 @@
 > typeName :: TypeName -> Doc
 > typeName (TypeName t) = text t
 > typeName (PrecTypeName t a) = text t <+> parens (text $ show a)
-> typeName (Prec2TypeName t a b) =
+> typeName (PrecScaleTypeName t a b) =
 >     text t <+> parens (text (show a) <+> comma <+> text (show b))
 
 

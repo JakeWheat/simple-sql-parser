@@ -45,8 +45,7 @@
 >       -- * 12.34e-6
 >       NumLit String
 >       -- | string literal, currently only basic strings between
->       -- single quotes without escapes (no single quotes in strings
->       -- then)
+>       -- single quotes with a single quote escaped using ''
 >     | StringLit String
 >       -- | text of interval literal, units of interval precision,
 >       -- e.g. interval 3 days (3)
@@ -95,9 +94,7 @@
 >       -- keywords instead of commas to separate the arguments,
 >       -- e.g. substring(t from 1 to 5)
 >     | SpecialOp Name [ScalarExpr]
->       -- | case expression. both flavours supported. Multiple
->       -- condition when branches not currently supported (case when
->       -- a=4,b=5 then x end)
+>       -- | case expression. both flavours supported
 >     | Case
 >       {caseTest :: Maybe ScalarExpr -- ^ test value
 >       ,caseWhens :: [([ScalarExpr],ScalarExpr)] -- ^ when branches
@@ -123,7 +120,7 @@
 > -- | Represents a type name, used in casts.
 > data TypeName = TypeName String
 >               | PrecTypeName String Int
->               | Prec2TypeName String Int Int
+>               | PrecScaleTypeName String Int Int
 >                 deriving (Eq,Show,Read)
 
 
@@ -147,15 +144,17 @@
 >     | SqAny
 >       deriving (Eq,Show,Read)
 
+> -- | Represents one field in an order by list
 > data OrderField = OrderField ScalarExpr Direction NullsOrder
 >                   deriving (Eq,Show,Read)
 
+> -- | Represents 'nulls first' or 'nulls last' in an order by clause
 > data NullsOrder = NullsOrderDefault
 >                 | NullsFirst
 >                 | NullsLast
 >                   deriving (Eq,Show,Read)
 
-> -- | Represents the frame clause of a window
+> -- | Represents theq frame clause of a window
 > -- this can be [range | rows] frame_start
 > -- or [range | rows] between frame_start and frame_end
 > data Frame = FrameFrom FrameRows FramePos
@@ -182,10 +181,10 @@
 > --
 > -- * a common table expression (with);
 > --
-> -- * a values expression (not yet supported);
+> -- * a values expression;
 > --
 > -- * or the table syntax - 'table t', shorthand for 'select * from
-> --    t' (not yet supported).
+> --    t'.
 > data QueryExpr
 >     = Select
 >       {qeDuplicates :: Duplicates
@@ -244,6 +243,7 @@ I'm not sure if this is valid syntax or not.
 > -- | Corresponding, an option for the set operators
 > data Corresponding = Corresponding | Respectively deriving (Eq,Show,Read)
 
+> -- | Represents an item in a group by clause
 > data GroupingExpr
 >     = GroupingParens [GroupingExpr]
 >     | Cube [GroupingExpr]

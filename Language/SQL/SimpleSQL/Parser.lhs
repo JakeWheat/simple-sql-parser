@@ -331,7 +331,7 @@ that SQL supports.
 >   where
 >     precision t = try (parens (commaSep integerLiteral)) >>= makeWrap t
 >     makeWrap (TypeName t) [a] = return $ PrecTypeName t a
->     makeWrap (TypeName t) [a,b] = return $ Prec2TypeName t a b
+>     makeWrap (TypeName t) [a,b] = return $ PrecScaleTypeName t a b
 >     makeWrap _ _ = fail "there must be one or two precision components"
 
 
