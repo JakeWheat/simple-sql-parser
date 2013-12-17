@@ -1,24 +1,11 @@
 
 next release:
 
-more symbolic operators, array access a[5]? don't think this is
-   standard sql, if not, leave for now. There is something about
-   arrays in sql:2008
-
-row ctor: row(a,b) is fine, but also when there is 2 or more elements,
-   the word row can be omitted: (a,b)
-
-fix lateral binding issue
-
-window frames
-
 review tests to copy from hssqlppp
 
-order by nulls first/last
-extend case
 group by extensions. Question: some of the syntax can be represented
    by app and row ctor, should this be reused or new syntax created
-   (the standard has special syntax for cube and rollup).
+   (the standard has special grammar for cube and rollup).
 
 collate? -> postfix operator which binds very tightly:
 a < 'foo' collate 'C'
@@ -28,12 +15,10 @@ Op "<" [Iden "a", SpecialOp "collate" [StringLit 'foo', StringLit
   also postfix in order by:
 select a from t order by a collate 'C': add to order by syntax, one
    collation per column
+
 much more table reference tests, for joins and aliases etc.
 
-proper character sets for identifiers
-
 review internal sql collection for more syntax/tests
-all ansi sql operators
 
 review syntax to replace maybe and bool with better ctors
 
@@ -54,6 +39,8 @@ review abstract syntax (e.g. combine App with SpecialOp?)
 ----
 
 Later general tasks:
+
+more operators
 
 sql server top syntax
 
@@ -78,6 +65,8 @@ left factor parsing code in remaining places
 quasi quotes?
 
 = sql support
+
+proper character sets for identifiers, escapes, etc.
 
 placeholder/positional arg
 

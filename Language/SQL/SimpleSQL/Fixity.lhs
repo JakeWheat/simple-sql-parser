@@ -102,7 +102,7 @@ the fixity code.
 >     -- map the two maybes to lists with either 0 or 1 element
 >     Case v ts el -> HSE.App (var "$case")
 >                     (HSE.List [ltoh $ maybeToList v
->                               ,HSE.List $ map (ltoh . (\(a,b) -> [a,b])) ts
+>                               ,HSE.List $ map (ltoh . (\(a,b) -> b:a)) ts
 >                               ,ltoh $ maybeToList el])
 >     Cast e0 tn -> HSE.App (str ('c':show tn)) $ toHaskell e0
 >     TypedLit {} -> str ('v':show e)
@@ -158,7 +158,7 @@ the fixity code.
 >         SpecialOp (unname nm) $ map toSql es
 >     HSE.App (HSE.Var (HSE.UnQual (HSE.Ident "$case")))
 >             (HSE.List [v,ts,el]) ->
->         Case (ltom v) (pairs ts) (ltom el)
+>         Case (ltom v) (whens ts) (ltom el)
 >     HSE.App (HSE.Lit (HSE.String ('c':nm))) e0 ->
 >         Cast (toSql e0) (read nm)
 >     HSE.App (HSE.Lit (HSE.String ('i':nm)))
@@ -173,8 +173,8 @@ the fixity code.
 >     ltom (HSE.List []) = Nothing
 >     ltom (HSE.List [ex]) = Just $ toSql ex
 >     ltom ex = err ex
->     pairs (HSE.List l) = map (\(HSE.List [a,b]) -> (toSql a, toSql b)) l
->     pairs ex = err ex
+>     whens (HSE.List l) = map (\(HSE.List (t:ws)) -> (map toSql ws, toSql t)) l
+>     whens ex = err ex
 >     err :: Show a => a -> e
 >     err a = error $ "simple-sql-parser: internal fixity error " ++ show a
 >     unname ('"':nm) = QName nm

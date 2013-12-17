@@ -99,7 +99,7 @@
 >       -- a=4,b=5 then x end)
 >     | Case
 >       {caseTest :: Maybe ScalarExpr -- ^ test value
->       ,caseWhens :: [(ScalarExpr,ScalarExpr)] -- ^ when branches
+>       ,caseWhens :: [([ScalarExpr],ScalarExpr)] -- ^ when branches
 >       ,caseElse :: Maybe ScalarExpr -- ^ else value
 >       }
 >     | Parens ScalarExpr

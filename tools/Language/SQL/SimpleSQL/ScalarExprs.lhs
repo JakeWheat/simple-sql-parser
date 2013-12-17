@@ -74,21 +74,28 @@ Tests for parsing scalar expressions
 > caseexp :: TestItem
 > caseexp = Group "caseexp" $ map (uncurry TestScalarExpr)
 >     [("case a when 1 then 2 end"
->      ,Case (Just $ Iden "a") [(NumLit "1"
+>      ,Case (Just $ Iden "a") [([NumLit "1"]
 >                               ,NumLit "2")] Nothing)
 
 >     ,("case a when 1 then 2 when 3 then 4 end"
->      ,Case (Just $ Iden "a") [(NumLit "1", NumLit "2")
->                              ,(NumLit "3", NumLit "4")] Nothing)
+>      ,Case (Just $ Iden "a") [([NumLit "1"], NumLit "2")
+>                              ,([NumLit "3"], NumLit "4")] Nothing)
 
 >     ,("case a when 1 then 2 when 3 then 4 else 5 end"
->      ,Case (Just $ Iden "a") [(NumLit "1", NumLit "2")
->                              ,(NumLit "3", NumLit "4")] (Just $ NumLit "5"))
+>      ,Case (Just $ Iden "a") [([NumLit "1"], NumLit "2")
+>                              ,([NumLit "3"], NumLit "4")] (Just $ NumLit "5"))
 
 >     ,("case when a=1 then 2 when a=3 then 4 else 5 end"
->      ,Case Nothing [(BinOp (Iden "a") "=" (NumLit "1"), NumLit "2")
->                    ,(BinOp (Iden "a") "=" (NumLit "3"), NumLit "4")]
+>      ,Case Nothing [([BinOp (Iden "a") "=" (NumLit "1")], NumLit "2")
+>                    ,([BinOp (Iden "a") "=" (NumLit "3")], NumLit "4")]
 >                    (Just $ NumLit "5"))
+
+>     ,("case a when 1,2 then 10 when 3,4 then 20 end"
+>      ,Case (Just $ Iden "a") [([NumLit "1",NumLit "2"]
+>                                ,NumLit "10")
+>                              ,([NumLit "3",NumLit "4"]
+>                                ,NumLit "20")]
+>                              Nothing)
 
 >     ]
 

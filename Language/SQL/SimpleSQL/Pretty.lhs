@@ -124,7 +124,7 @@
 >           ++ [text "end"]
 >   where
 >     w (t0,t1) =
->       text "when" <+> nest 5 (scalarExpr t0)
+>       text "when" <+> nest 5 (commaSep $ map scalarExpr t0)
 >       <+> text "then" <+> nest 5 (scalarExpr t1)
 >     e el = text "else" <+> nest 5 (scalarExpr el)
 > scalarExpr (Parens e) = parens $ scalarExpr e

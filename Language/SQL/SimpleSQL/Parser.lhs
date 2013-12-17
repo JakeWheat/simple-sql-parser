@@ -222,7 +222,8 @@ always used with the optionSuffix combinator.
 >          <* keyword_ "end"
 >   where
 >     swhen = keyword_ "when" *>
->             ((,) <$> scalarExpr' <*> (keyword_ "then" *> scalarExpr'))
+>             ((,) <$> commaSep1 scalarExpr'
+>                  <*> (keyword_ "then" *> scalarExpr'))
 
 == miscellaneous keyword operators
 
