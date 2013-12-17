@@ -605,12 +605,17 @@ where, having, limit, offset).
 > having :: P ScalarExpr
 > having = keywordScalarExpr "having"
 
-> orderBy :: P [(ScalarExpr,Direction)]
+> orderBy :: P [OrderField]
 > orderBy = try (keyword_ "order") *> keyword_ "by" *> commaSep1 ob
 >   where
->     ob = (,) <$> scalarExpr
->              <*> option Asc (choice [Asc <$ keyword_ "asc"
->                                     ,Desc <$ keyword_ "desc"])
+>     ob = OrderField
+>          <$> scalarExpr
+>          <*> option Asc (choice [Asc <$ keyword_ "asc"
+>                                 ,Desc <$ keyword_ "desc"])
+>          <*> option NullsOrderDefault
+>              (try (keyword_ "nulls" >>
+>                     choice [NullsFirst <$ keyword "first"
+>                            ,NullsLast <$ keyword "last"]))
 
 allows offset and fetch in either order
 + postgresql offset without row(s) and limit instead of fetch also

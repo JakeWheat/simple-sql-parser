@@ -108,16 +108,23 @@ These are a few misc tests which don't fit anywhere else.
 > orderBy :: TestItem
 > orderBy = Group "orderBy" $ map (uncurry TestQueryExpr)
 >     [("select a from t order by a"
->      ,ms [(Iden "a", Asc)])
+>      ,ms [OrderField (Iden "a") Asc NullsOrderDefault])
 
 >     ,("select a from t order by a, b"
->      ,ms [(Iden "a", Asc), (Iden "b", Asc)])
+>      ,ms [OrderField (Iden "a") Asc NullsOrderDefault
+>          ,OrderField (Iden "b") Asc NullsOrderDefault])
 
 >     ,("select a from t order by a asc"
->      ,ms [(Iden "a", Asc)])
+>      ,ms [OrderField (Iden "a") Asc NullsOrderDefault])
 
 >     ,("select a from t order by a desc, b desc"
->      ,ms [(Iden "a", Desc), (Iden "b", Desc)])
+>      ,ms [OrderField (Iden "a") Desc NullsOrderDefault
+>          ,OrderField (Iden "b") Desc NullsOrderDefault])
+
+>     ,("select a from t order by a desc nulls first, b desc nulls last"
+>      ,ms [OrderField (Iden "a") Desc NullsFirst
+>          ,OrderField (Iden "b") Desc NullsLast])
+
 >     ]
 >   where
 >     ms o = makeSelect {qeSelectList = [(Nothing,Iden "a")]

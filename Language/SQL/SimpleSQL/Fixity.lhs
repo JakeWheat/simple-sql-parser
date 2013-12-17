@@ -84,15 +84,15 @@ the fixity code.
 >     Star -> str ('v':show e)
 >     AggregateApp nm d es od ->
 >         HSE.App (var ('a':name nm))
->         $ HSE.List [str $ show (d,map snd od)
+>         $ HSE.List [str $ show (d,orderInf od)
 >                    ,HSE.List $ map toHaskell es
->                    ,HSE.List $ map (toHaskell . fst) od]
+>                    ,HSE.List $ orderExps od]
 >     WindowApp nm es pb od r ->
 >         HSE.App (var ('w':name nm))
->         $ HSE.List [str $ show (map snd od, r)
+>         $ HSE.List [str $ show (orderInf od, r)
 >                    ,HSE.List $ map toHaskell es
 >                    ,HSE.List $ map toHaskell pb
->                    ,HSE.List $ map (toHaskell . fst) od]
+>                    ,HSE.List $ orderExps od]
 >     PrefixOp nm e0 ->
 >         HSE.App (HSE.Var $ sym $ name nm) (toHaskell e0)
 >     PostfixOp nm e0 ->
@@ -119,6 +119,10 @@ the fixity code.
 >     name n = case n of
 >        QName q -> "\"" ++ q
 >        Name m -> m
+>     orderExps = map (toHaskell . (\(OrderField a _ _) -> a))
+>     orderInf = map (\(OrderField _ b c) -> (b,c))
+
+
 
 
 > toSql :: HSE.Exp -> ScalarExpr
@@ -135,17 +139,17 @@ the fixity code.
 >             (HSE.List [HSE.Lit (HSE.String vs)
 >                       ,HSE.List es
 >                       ,HSE.List od]) ->
->         let (d,dir) = read vs
+>         let (d,oinf) = read vs
 >         in AggregateApp (unname i) d (map toSql es)
->                         $ zip (map toSql od) dir
+>                         $ sord oinf od
 >     HSE.App (HSE.Var (HSE.UnQual (HSE.Ident ('w':i))))
 >             (HSE.List [HSE.Lit (HSE.String vs)
 >                       ,HSE.List es
 >                       ,HSE.List pb
 >                       ,HSE.List od]) ->
->         let (dir,r) = read vs
+>         let (oinf,r) = read vs
 >         in WindowApp (unname i) (map toSql es) (map toSql pb)
->                        (zip (map toSql od) dir) r
+>                        (sord oinf od) r
 >     HSE.App (HSE.Var (HSE.UnQual (HSE.Symbol ('p':nm)))) e0 ->
 >         PostfixOp (unname nm) $ toSql e0
 >     HSE.App (HSE.Var (HSE.UnQual (HSE.Symbol nm))) e0 ->
@@ -165,6 +169,7 @@ the fixity code.
 >         in In b (toSql e0) sq
 >     _ -> err e
 >   where
+>     sord = zipWith (\(i0,i1) ce -> OrderField (toSql ce) i0 i1)
 >     ltom (HSE.List []) = Nothing
 >     ltom (HSE.List [ex]) = Just $ toSql ex
 >     ltom ex = err ex

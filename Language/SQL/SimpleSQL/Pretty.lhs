@@ -260,13 +260,18 @@
 > grpBy gs = sep [text "group by"
 >                ,nest 9 $ commaSep $ map scalarExpr gs]
 
-> orderBy :: [(ScalarExpr,Direction)] -> Doc
+> orderBy :: [OrderField] -> Doc
 > orderBy [] = empty
 > orderBy os = sep [text "order by"
 >                  ,nest 9 $ commaSep $ map f os]
 >   where
->     f (e,Asc) = scalarExpr e
->     f (e,Desc) = scalarExpr e <+> text "desc"
+>     f (OrderField e d n) =
+>         scalarExpr e
+>         <+> (if d == Asc then empty else text "desc")
+>         <+> (case n of
+>                 NullsOrderDefault -> empty
+>                 NullsFirst -> text "nulls" <+> text "first"
+>                 NullsLast -> text "nulls" <+> text "last")
 
 = utils
 

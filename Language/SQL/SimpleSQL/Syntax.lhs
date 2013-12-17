@@ -6,7 +6,9 @@
 >     ,Name(..)
 >     ,TypeName(..)
 >     ,Duplicates(..)
+>     ,OrderField(..)
 >     ,Direction(..)
+>     ,NullsOrder(..)
 >     ,InThing(..)
 >     ,SubQueryExprType(..)
 >     ,Frame(..)
@@ -65,7 +67,7 @@
 >       {aggName :: Name -- ^ aggregate function name
 >       ,aggDistinct :: (Maybe Duplicates)-- ^ distinct
 >       ,aggArgs :: [ScalarExpr]-- ^ args
->       ,aggOrderBy :: [(ScalarExpr,Direction)] -- ^ order by
+>       ,aggOrderBy :: [OrderField] -- ^ order by
 >       }
 >       -- | window application, which adds over (partition by a order
 >       -- by b) to regular function application. Explicit frames are
@@ -74,7 +76,7 @@
 >       {wnName :: Name -- ^ window function name
 >       ,wnArgs :: [ScalarExpr] -- ^ args
 >       ,wnPartition :: [ScalarExpr] -- ^ partition by
->       ,wnOrderBy :: [(ScalarExpr,Direction)] -- ^ order by
+>       ,wnOrderBy :: [OrderField] -- ^ order by
 >       ,wnFrame :: Maybe Frame -- ^ frame clause
 >       }
 >       -- | Infix binary operators. This is used for symbol operators
@@ -141,6 +143,14 @@
 >     | SqAny
 >       deriving (Eq,Show,Read)
 
+> data OrderField = OrderField ScalarExpr Direction NullsOrder
+>                   deriving (Eq,Show,Read)
+
+> data NullsOrder = NullsOrderDefault
+>                 | NullsFirst
+>                 | NullsLast
+>                   deriving (Eq,Show,Read)
+
 > -- | Represents the frame clause of a window
 > -- this can be [range | rows] frame_start
 > -- or [range | rows] between frame_start and frame_end
@@ -181,7 +191,7 @@
 >       ,qeWhere :: Maybe ScalarExpr
 >       ,qeGroupBy :: [ScalarExpr]
 >       ,qeHaving :: Maybe ScalarExpr
->       ,qeOrderBy :: [(ScalarExpr,Direction)]
+>       ,qeOrderBy :: [OrderField]
 >       ,qeOffset :: Maybe ScalarExpr
 >       ,qeFetch :: Maybe ScalarExpr
 >       }
