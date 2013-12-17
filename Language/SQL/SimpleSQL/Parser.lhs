@@ -322,8 +322,10 @@ keyword.
 > binOpSymbolNames :: [String]
 > binOpSymbolNames =
 >     ["=", "<=", ">=", "!=", "<>", "<", ">"
->     ,"*", "/", "+", "-"
->     ,"||", "."]
+>     ,"*", "/", "+", "-", "%"
+>     ,"||", "."
+>     ,"^", "|", "&"
+>     ]
 
 > binOpKeywordNames :: [String]
 > binOpKeywordNames = ["and", "or", "like", "overlaps"]
@@ -347,7 +349,7 @@ There aren't any multi keyword prefix operators currently supported.
 > prefixUnOpKeywordNames = ["not"]
 
 > prefixUnOpSymbolNames :: [String]
-> prefixUnOpSymbolNames = ["+", "-"]
+> prefixUnOpSymbolNames = ["+", "-", "~"]
 
 There aren't any single keyword postfix operators currently
 supported. Maybe all these 'is's can be left factored?
@@ -408,7 +410,7 @@ associativity. This is fixed with a separate pass over the AST.
 >              ++ postfixOpKeywords
 >     -- these are the ops with the highest precedence in order
 >     highPrec = [infixl_ ["."]
->                ,infixl_ ["*","/"]
+>                ,infixl_ ["*","/", "%"]
 >                ,infixl_ ["+", "-"]
 >                ,infixl_ ["<=",">=","!=","<>","||","like"]
 >                ]

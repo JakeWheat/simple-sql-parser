@@ -1,7 +1,6 @@
 
 next release:
 
-
 more symbolic operators, array access a[5]? don't think this is
    standard sql, if not, leave for now. There is something about
    arrays in sql:2008
@@ -9,11 +8,9 @@ more symbolic operators, array access a[5]? don't think this is
 row ctor: row(a,b) is fine, but also when there is 2 or more elements,
    the word row can be omitted: (a,b)
 
-
 fix lateral binding issue
 
-
-window frames and named windows
+window frames
 
 review tests to copy from hssqlppp
 
@@ -59,6 +56,8 @@ review abstract syntax (e.g. combine App with SpecialOp?)
 Later general tasks:
 
 sql server top syntax
+
+named windows
 
 extended string literals, escapes and other flavours (like pg and
    oracle custom delimiters)
