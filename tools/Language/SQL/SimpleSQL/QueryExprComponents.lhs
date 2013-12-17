@@ -172,12 +172,18 @@ These are a few misc tests which don't fit anywhere else.
 > withQueries :: TestItem
 > withQueries = Group "with queries" $ map (uncurry TestQueryExpr)
 >     [("with u as (select a from t) select a from u"
->      ,With [("u", ms1)] ms2)
+>      ,With False [(Alias "u" Nothing, ms1)] ms2)
+
+>     ,("with u(b) as (select a from t) select a from u"
+>      ,With False [(Alias "u" (Just ["b"]), ms1)] ms2)
 
 >     ,("with x as (select a from t),\n\
 >       \     u as (select a from x)\n\
 >       \select a from u"
->      ,With [("x", ms1), ("u",ms3)] ms2)
+>      ,With False [(Alias "x" Nothing, ms1), (Alias "u" Nothing,ms3)] ms2)
+
+>     ,("with recursive u as (select a from t) select a from u"
+>      ,With True [(Alias "u" Nothing, ms1)] ms2)
 >     ]
 >  where
 >    ms c t = makeSelect

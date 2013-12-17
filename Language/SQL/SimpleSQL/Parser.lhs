@@ -491,8 +491,8 @@ expression tree (for efficiency and code clarity).
 == select lists
 
 > selectItem :: P (Maybe Name, ScalarExpr)
-> selectItem = flip (,) <$> scalarExpr <*> optionMaybe (try alias)
->   where alias = optional (try (keyword_ "as")) *> name
+> selectItem = flip (,) <$> scalarExpr <*> optionMaybe (try als)
+>   where als = optional (try (keyword_ "as")) *> name
 
 > selectList :: P [(Maybe Name,ScalarExpr)]
 > selectList = commaSep1 selectItem
@@ -517,11 +517,7 @@ tref
 >                                           <*> parens (commaSep scalarExpr))
 >                          ,TRSimple <$> name]
 >                   >>= optionSuffix aliasSuffix
->     aliasSuffix j =
->         let tableAlias = optional (try $ keyword_ "as") *> name
->             columnAliases = optionMaybe $ try $ parens
->                             $ commaSep1 name
->         in option j (TRAlias j <$> try tableAlias <*> try columnAliases)
+>     aliasSuffix j = option j (TRAlias j <$> alias)
 >     joinTrefSuffix t = (do
 >          nat <- option False $ try (True <$ try (keyword_ "natural"))
 >          TRJoin t <$> joinType
@@ -545,6 +541,12 @@ tref
 >                ,try (keyword_ "using") >>
 >                 JoinUsing <$> parens (commaSep1 name)
 >                ]
+
+> alias :: P Alias
+> alias = Alias <$> try tableAlias <*> try columnAliases
+>   where
+>     tableAlias = optional (try $ keyword_ "as") *> name
+>     columnAliases = optionMaybe $ try $ parens $ commaSep1 name
 
 == simple other parts
 
@@ -585,10 +587,11 @@ where, having, limit, offset).
 
 > with :: P QueryExpr
 > with = try (keyword_ "with") >>
->     With <$> commaSep1 withQuery <*> queryExpr
+>     With <$> option False (try (True <$ keyword_ "recursive"))
+>          <*> commaSep1 withQuery <*> queryExpr
 >   where
 >     withQuery =
->         (,) <$> (name <* optional (try $ keyword_ "as"))
+>         (,) <$> (alias <* optional (try $ keyword_ "as"))
 >             <*> parens queryExpr
 
 == query expression

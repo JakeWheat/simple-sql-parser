@@ -149,14 +149,14 @@ queries section
 >      \WHERE region IN (SELECT region FROM top_regions)\n\
 >      \GROUP BY region, product;"
 
->     {-,"WITH RECURSIVE t(n) AS (\n\
+>     ,"WITH RECURSIVE t(n) AS (\n\
 >      \    VALUES (1)\n\
 >      \  UNION ALL\n\
 >      \    SELECT n+1 FROM t WHERE n < 100\n\
 >      \)\n\
->      \SELECT sum(n) FROM t"-} -- full alias in cte
+>      \SELECT sum(n) FROM t"
 
->     {-,"WITH RECURSIVE included_parts(sub_part, part, quantity) AS (\n\
+>     ,"WITH RECURSIVE included_parts(sub_part, part, quantity) AS (\n\
 >      \    SELECT sub_part, part, quantity FROM parts WHERE part = 'our_product'\n\
 >      \  UNION ALL\n\
 >      \    SELECT p.sub_part, p.part, p.quantity\n\
@@ -177,7 +177,7 @@ queries section
 >      \)\n\
 >      \SELECT * FROM search_graph;"
 
->     ,"WITH RECURSIVE search_graph(id, link, data, depth, path, cycle) AS (\n\
+>     {-,"WITH RECURSIVE search_graph(id, link, data, depth, path, cycle) AS (\n\
 >      \        SELECT g.id, g.link, g.data, 1,\n\
 >      \          ARRAY[g.id],\n\
 >      \          false\n\
@@ -189,9 +189,9 @@ queries section
 >      \        FROM graph g, search_graph sg\n\
 >      \        WHERE g.id = sg.link AND NOT cycle\n\
 >      \)\n\
->      \SELECT * FROM search_graph;"
+>      \SELECT * FROM search_graph;"-} -- ARRAY
 
->     ,"WITH RECURSIVE search_graph(id, link, data, depth, path, cycle) AS (\n\
+>     {-,"WITH RECURSIVE search_graph(id, link, data, depth, path, cycle) AS (\n\
 >      \        SELECT g.id, g.link, g.data, 1,\n\
 >      \          ARRAY[ROW(g.f1, g.f2)],\n\
 >      \          false\n\
@@ -203,14 +203,14 @@ queries section
 >      \        FROM graph g, search_graph sg\n\
 >      \        WHERE g.id = sg.link AND NOT cycle\n\
 >      \)\n\
->      \SELECT * FROM search_graph;"
+>      \SELECT * FROM search_graph;"-} -- ARRAY
 
 >     ,"WITH RECURSIVE t(n) AS (\n\
 >      \    SELECT 1\n\
 >      \  UNION ALL\n\
 >      \    SELECT n+1 FROM t\n\
 >      \)\n\
->      \SELECT n FROM t LIMIT 100;"-}
+>      \SELECT n FROM t LIMIT 100;"
 
 select page reference
 
@@ -241,7 +241,7 @@ select page reference
 >      \UNION ALL\n\
 >      \SELECT * FROM t"
 
->     {-,"WITH RECURSIVE employee_recursive(distance, employee_name, manager_name) AS (\n\
+>     ,"WITH RECURSIVE employee_recursive(distance, employee_name, manager_name) AS (\n\
 >      \    SELECT 1, employee_name, manager_name\n\
 >      \    FROM employee\n\
 >      \    WHERE manager_name = 'Mary'\n\
@@ -250,7 +250,7 @@ select page reference
 >      \    FROM employee_recursive er, employee e\n\
 >      \    WHERE er.employee_name = e.manager_name\n\
 >      \  )\n\
->      \SELECT distance, employee_name FROM employee_recursive;"-} -- with recursive, full cte alias
+>      \SELECT distance, employee_name FROM employee_recursive;"
 
 >     ,"SELECT m.name AS mname, pname\n\
 >      \FROM manufacturers m, LATERAL get_product_names(m.id) pname;"

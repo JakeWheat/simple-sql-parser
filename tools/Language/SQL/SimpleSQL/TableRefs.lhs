@@ -80,18 +80,18 @@ these lateral queries make no sense but the syntax is valid
 >      ,ms [TRQueryExpr $ ms [TRSimple "t"]])
 
 >     ,("select a from t as u"
->      ,ms [TRAlias (TRSimple "t") "u" Nothing])
+>      ,ms [TRAlias (TRSimple "t") (Alias "u" Nothing)])
 
 >     ,("select a from t u"
->      ,ms [TRAlias (TRSimple "t") "u" Nothing])
+>      ,ms [TRAlias (TRSimple "t") (Alias "u" Nothing)])
 
 >     ,("select a from t u(b)"
->      ,ms [TRAlias (TRSimple "t") "u" $ Just ["b"]])
+>      ,ms [TRAlias (TRSimple "t") (Alias "u" $ Just ["b"])])
 
 >     ,("select a from (t cross join u) as u"
 >      ,ms [TRAlias (TRParens $
 >                    TRJoin (TRSimple "t") JCross (TRSimple "u") Nothing)
->                           "u" Nothing])
+>                           (Alias "u" Nothing)])
 >      -- todo: not sure if the associativity is correct
 
 >     ,("select a from t cross join u cross join v",

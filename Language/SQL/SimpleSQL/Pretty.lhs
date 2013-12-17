@@ -171,21 +171,26 @@
 >                Corresponding -> text "corresponding"
 >                Respectively -> empty
 >       ,queryExpr q2]
-> queryExpr (With withs qe) =
->   text "with"
+> queryExpr (With rc withs qe) =
+>   text "with" <+> (if rc then text "recursive" else empty)
 >   <+> vcat [nest 5
 >             (vcat $ punctuate comma $ flip map withs $ \(n,q) ->
->              name n <+> text "as" <+> parens (queryExpr q))
+>              alias n <+> text "as" <+> parens (queryExpr q))
 >            ,queryExpr qe]
 > queryExpr (Values vs) =
 >     text "values"
 >     <+> nest 7 (commaSep (map (parens . commaSep . map scalarExpr) vs))
 
+> alias :: Alias -> Doc
+> alias (Alias nm cols) =
+>     text "as" <+> name nm
+>     <+> maybe empty (parens . commaSep . map name) cols
+
 > selectList :: [(Maybe Name, ScalarExpr)] -> Doc
 > selectList is = commaSep $ map si is
 >   where
->     si (al,e) = scalarExpr e <+> maybe empty alias al
->     alias al = text "as" <+> name al
+>     si (al,e) = scalarExpr e <+> maybe empty als al
+>     als al = text "as" <+> name al
 
 > from :: [TableRef] -> Doc
 > from [] = empty
@@ -197,10 +202,7 @@
 >     tr (TRLateral t) = text "lateral" <+> tr t
 >     tr (TRFunction f as) =
 >         name f <> parens (commaSep $ map scalarExpr as)
->     tr (TRAlias t a cs) =
->         sep [tr t
->             ,text "as" <+> name a
->              <+> maybe empty (parens . commaSep . map name) cs]
+>     tr (TRAlias t a) = sep [tr t, alias a]
 >     tr (TRParens t) = parens $ tr t
 >     tr (TRQueryExpr q) = parens $ queryExpr q
 >     tr (TRJoin t0 jt t1 jc) =

@@ -53,6 +53,7 @@ all ansi sql operators
 
 escapes in string literals
 
+review syntax to replace maybe and bool with better ctors
 
 ----
 

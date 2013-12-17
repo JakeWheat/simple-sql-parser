@@ -14,6 +14,7 @@
 >     ,makeSelect
 >     ,CombineOp(..)
 >     ,Corresponding(..)
+>     ,Alias(..)
 >      -- ** From
 >     ,TableRef(..)
 >     ,JoinType(..)
@@ -152,13 +153,16 @@
 >       ,qeOffset :: Maybe ScalarExpr
 >       }
 >     | CombineQueryExpr
->       {qe1 :: QueryExpr
+>       {qe0 :: QueryExpr
 >       ,qeCombOp :: CombineOp
 >       ,qeDuplicates :: Duplicates
 >       ,qeCorresponding :: Corresponding
->       ,qe2 :: QueryExpr
+>       ,qe1 :: QueryExpr
 >       }
->     | With [(Name,QueryExpr)] QueryExpr
+>     | With
+>       {qeWithRecursive :: Bool
+>       ,qeViews :: [(Alias,QueryExpr)]
+>       ,qeQueryExpression :: QueryExpr}
 >     | Values [[ScalarExpr]]
 
 >       deriving (Eq,Show,Read)
@@ -200,7 +204,7 @@ I'm not sure if this is valid syntax or not.
 >                 -- | from (a)
 >               | TRParens TableRef
 >                 -- | from a as b(c,d)
->               | TRAlias TableRef Name (Maybe [Name])
+>               | TRAlias TableRef Alias
 >                 -- | from (query expr)
 >               | TRQueryExpr QueryExpr
 >                 -- | from function(args)
@@ -208,6 +212,9 @@ I'm not sure if this is valid syntax or not.
 >                 -- | from lateral t
 >               | TRLateral TableRef
 >                 deriving (Eq,Show,Read)
+
+> data Alias = Alias Name (Maybe [Name])
+>              deriving (Eq,Show,Read)
 
 TODO: add function table ref
 
