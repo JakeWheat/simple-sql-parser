@@ -51,17 +51,17 @@ queries section
 >     ,"SELECT * FROM people AS mother JOIN people AS child ON mother.id = child.mother_id;"
 >     ,"SELECT * FROM my_table AS a CROSS JOIN my_table AS b;"
 >     ,"SELECT * FROM (my_table AS a CROSS JOIN my_table) AS b;"
->     --,"SELECT * FROM getfoo(1) AS t1;" -- function tableref
->     {-,"SELECT * FROM foo\n\
+>     ,"SELECT * FROM getfoo(1) AS t1;" -- function tableref
+>     ,"SELECT * FROM foo\n\
 >      \    WHERE foosubid IN (\n\
 >      \                        SELECT foosubid\n\
 >      \                        FROM getfoo(foo.fooid) z\n\
 >      \                        WHERE z.fooid = foo.fooid\n\
->      \                      );"-} -- function tableref
+>      \                      );"
 >     {-,"SELECT *\n\
 >      \    FROM dblink('dbname=mydb', 'SELECT proname, prosrc FROM pg_proc')\n\
 >      \      AS t1(proname name, prosrc text)\n\
->      \    WHERE proname LIKE 'bytea%';"-} -- function tableref
+>      \    WHERE proname LIKE 'bytea%';"-} -- types in the alias??
 
 >     --,"SELECT * FROM foo, LATERAL (SELECT * FROM bar WHERE bar.id = foo.bar_id) ss;" -- lateral
 >     ,"SELECT * FROM foo, bar WHERE bar.id = foo.bar_id;"
@@ -235,12 +235,12 @@ select page reference
 >      \    FROM actors\n\
 >      \    WHERE actors.name LIKE 'W%';"
 
->     {-,"WITH t AS (\n\
+>     ,"WITH t AS (\n\
 >      \    SELECT random() as x FROM generate_series(1, 3)\n\
 >      \  )\n\
 >      \SELECT * FROM t\n\
 >      \UNION ALL\n\
->      \SELECT * FROM t"-} -- function tref
+>      \SELECT * FROM t"
 
 >     {-,"WITH RECURSIVE employee_recursive(distance, employee_name, manager_name) AS (\n\
 >      \    SELECT 1, employee_name, manager_name\n\

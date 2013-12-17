@@ -13,6 +13,9 @@ expression
 >     [("select a from t"
 >      ,ms [TRSimple "t"])
 
+>      ,("select a from f(a)"
+>       ,ms [TRFunction "f" [Iden "a"]])
+
 >     ,("select a from t,u"
 >      ,ms [TRSimple "t", TRSimple "u"])
 

@@ -505,6 +505,8 @@ tref
 >     tref = nonJoinTref >>= optionSuffix joinTrefSuffix
 >     nonJoinTref = choice [try (TRQueryExpr <$> parens queryExpr)
 >                          ,TRParens <$> parens tref
+>                          ,try (TRFunction <$> identifierString
+>                                           <*> parens (commaSep scalarExpr))
 >                          ,TRSimple <$> identifierString]
 >                   >>= optionSuffix aliasSuffix
 >     aliasSuffix j =

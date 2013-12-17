@@ -195,6 +195,8 @@ I'm not sure if this is valid syntax or not.
 >               | TRAlias TableRef String (Maybe [String])
 >                 -- | from (query expr)
 >               | TRQueryExpr QueryExpr
+>                 -- | from function(args)
+>               | TRFunction String [ScalarExpr]
 >                 deriving (Eq,Show,Read)
 
 TODO: add function table ref

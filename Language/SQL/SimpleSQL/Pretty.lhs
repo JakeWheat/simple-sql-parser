@@ -182,6 +182,8 @@
 >         ,nest 5 $ vcat $ punctuate comma $ map tr ts]
 >   where
 >     tr (TRSimple t) = text t
+>     tr (TRFunction f as) =
+>         text f <> parens (commaSep $ map scalarExpr as)
 >     tr (TRAlias t a cs) =
 >         sep [tr t
 >             ,text "as" <+> text a
