@@ -19,7 +19,7 @@ These are a few misc tests which don't fit anywhere else.
 >     ,whereClause
 >     ,having
 >     ,orderBy
->     ,limit
+>     ,offsetFetch
 >     ,combos
 >     ,withQueries
 >     ,values
@@ -112,8 +112,8 @@ These are a few misc tests which don't fit anywhere else.
 >                       ,qeFrom = [TRSimple "t"]
 >                       ,qeOrderBy = o}
 
-> limit :: TestItem
-> limit = Group "limit" $ map (uncurry TestQueryExpr)
+> offsetFetch :: TestItem
+> offsetFetch = Group "offsetFetch" $ map (uncurry TestQueryExpr)
 >     [-- ansi standard
 >      ("select a from t offset 5 rows fetch next 10 rows only"
 >      ,ms (Just $ NumLit "5") (Just $ NumLit "10"))
@@ -122,6 +122,9 @@ These are a few misc tests which don't fit anywhere else.
 >     ,("select a from t fetch next 10 row only;"
 >      ,ms Nothing (Just $ NumLit "10"))
 >     ,("select a from t offset 5 row fetch first 10 row only"
+>      ,ms (Just $ NumLit "5") (Just $ NumLit "10"))
+>      -- postgres
+>     ,("select a from t limit 10 offset 5"
 >      ,ms (Just $ NumLit "5") (Just $ NumLit "10"))
 >     ]
 >   where

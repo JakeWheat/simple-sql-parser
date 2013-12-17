@@ -1,6 +1,10 @@
 
 Some tests for parsing the tpch queries
 
+The changes made to the official syntax are:
+1. replace the set rowcount with ansi standard fetch first n rows only
+2. replace the create view, query, drop view sequence with a query
+   using a common table expression
 
 > module Language.SQL.SimpleSQL.Tpch (tpchTests,tpchQueries) where
 
@@ -79,7 +83,7 @@ Some tests for parsing the tpch queries
 >          \        n_name,\n\
 >          \        s_name,\n\
 >          \        p_partkey\n\
->          \limit 100")
+>          \fetch first 100 rows only")
 >   ,("Q3","\n\
 >          \ select\n\
 >          \         l_orderkey,\n\
@@ -103,7 +107,7 @@ Some tests for parsing the tpch queries
 >          \ order by\n\
 >          \         revenue desc,\n\
 >          \         o_orderdate\n\
->          \ limit 10")
+>          \ fetch first 10 rows only")
 >   ,("Q4","\n\
 >          \ select\n\
 >          \         o_orderpriority,\n\
@@ -304,7 +308,7 @@ Some tests for parsing the tpch queries
 >          \         c_comment\n\
 >          \ order by\n\
 >          \         revenue desc\n\
->          \ limit 20")
+>          \ fetch first 20 rows only")
 >    ,("Q11","\n\
 >          \ select\n\
 >          \         ps_partkey,\n\
@@ -522,7 +526,7 @@ Some tests for parsing the tpch queries
 >          \ order by\n\
 >          \         o_totalprice desc,\n\
 >          \         o_orderdate\n\
->          \ limit 100")
+>          \ fetch first 100 rows only")
 >    ,("Q19","\n\
 >          \ select\n\
 >          \         sum(l_extendedprice* (1 - l_discount)) as revenue\n\
@@ -637,7 +641,7 @@ Some tests for parsing the tpch queries
 >          \ order by\n\
 >          \         numwait desc,\n\
 >          \         s_name\n\
->          \ limit 100")
+>          \ fetch first 100 rows only")
 >    ,("Q22","\n\
 >          \ select\n\
 >          \         cntrycode,\n\

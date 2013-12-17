@@ -3,23 +3,6 @@ next release:
 
 review tests to copy from hssqlppp
 
-group by extensions. Question: some of the syntax can be represented
-   by app and row ctor, should this be reused or new syntax created
-   (the standard has special grammar for cube and rollup).
-
-SELECT EmpId, Yr, SUM(Sales) AS Sales
-FROM Sales
-GROUP BY GROUPING SETS((EmpId, Yr), (EmpId), ())
-
-SELECT EmpId, Yr, SUM(Sales) AS Sales
-FROM Sales
-GROUP BY GROUPING SETS((EmpId, Yr), (EmpId))
-
-{ (grouping_column[, ...]) | ROLLUP (grouping_column[, ...]) |
-CUBE (grouping_column[, ...]) | GROUPING SETS (grouping_set_list) |
-( ) | grouping_set, grouping_set_list }
-
-
 collate? -> postfix operator which binds very tightly:
 a < 'foo' collate 'C'
 ->
