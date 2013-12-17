@@ -1,0 +1,97 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title>simple-sql-parser supported SQL - </title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <link rel="stylesheet" href="main.css" type="text/css" />
+</head>
+<body>
+<p><a href="simple-sql-parser%20home">index.html</a></p>
+<p>This page has more details on the supported SQL in simple-sql-parser.</p>
+<h1 id="select-lists">Select lists</h1>
+<p>Full support, plus 'select distinct' and explicit 'select all'.</p>
+<h1 id="from-clause">From clause</h1>
+<ul>
+<li>aliases</li>
+<li>subqueries</li>
+<li>functions</li>
+<li>joins
+<ul>
+<li>natural</li>
+<li>inner</li>
+<li>left/right/full outer</li>
+<li>cross</li>
+<li>on expressions</li>
+<li>using lists</li>
+<li>lateral</li>
+</ul></li>
+</ul>
+<h1 id="group-by-clause">Group by clause</h1>
+<p>Supports scalar expressions, group by (), cube, rollup, grouping parentheses and grouping sets with nested grouping expressions.</p>
+<h1 id="order-by-clause">Order by clause</h1>
+<p>Supports scalar expressions, asc/desc and nulls first/last.</p>
+<h1 id="offset-and-fetch">Offset and fetch</h1>
+<p>Supports ANSI standard offset n rows and fetch first n rows only.</p>
+<h1 id="set-operators">Set operators</h1>
+<p>Union, except, intersect + all/distinct and corresponding.</p>
+<h1 id="values-expression">Values expression</h1>
+<p>For example: values (1,2),(3,4).</p>
+<h1 id="table-expression">Table expression</h1>
+<p>For example: 'table t', which is shorthand for 'select * from t'.</p>
+<h1 id="scalar-expressions">Scalar expressions</h1>
+<ul>
+<li>basic string literals in single quotes (escapes and other string literal syntaxes coming soon)</li>
+<li>number literals: digits.digitse+-exp</li>
+<li>binary operators:
+<ul>
+<li>comparisons: = != &lt;&gt; &lt;= &gt;= &lt; &gt;</li>
+<li>arithmetic: + - / * %</li>
+<li>logic: and, or</li>
+<li>bitwise: ^ &amp; |</li>
+<li>string: ||, like, not like</li>
+<li>other: overlaps, is similar to, is not similar too, is distinct from, is not distinct from</li>
+</ul></li>
+<li>prefix unary operators
+<ul>
+<li>+, -</li>
+<li>not</li>
+<li>~</li>
+</ul></li>
+<li>postfix unary
+<ul>
+<li>is null, is not null</li>
+<li>is true, is not true, is false, is not false, is unknown, is not unknown</li>
+</ul></li>
+</ul>
+<p>Some of the precedence and associativity parsing of operators isn't completely correct at the moment. This mainly affects unary prefix and postfix operator precedence.</p>
+<ul>
+<li>other operators
+<ul>
+<li>substring (substring(x from 2 for 4))</li>
+<li>cast (cast(a as int))</li>
+<li>'typed literal' (int '3')</li>
+<li>between</li>
+<li>in list</li>
+<li>extract</li>
+</ul></li>
+<li>subqueries
+<ul>
+<li>in subquery</li>
+<li>any/some/all</li>
+<li>exists</li>
+</ul></li>
+<li>case expressions</li>
+<li>parentheses</li>
+<li>quoted and unquoted identifiers</li>
+<li>a.b qualified identifiers</li>
+<li>*, a.*</li>
+<li>functions: f(a,b)</li>
+<li>aggregates: agg(distinct a order by b)</li>
+<li>window functions: sum(x) over (partition by y order by z) plus some explicit frame support (same as in postgres 9.3)</li>
+<li>row constructors, e.g. where (a,b) = any (select a,b from t)</li>
+</ul>
+</body>
+</html>

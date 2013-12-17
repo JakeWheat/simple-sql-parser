@@ -1,0 +1,94 @@
+
+[index.html](simple-sql-parser home)
+
+This page has more details on the supported SQL in simple-sql-parser.
+
+# Select lists
+
+Full support, plus 'select distinct' and explicit 'select all'.
+
+# From clause
+
+* aliases
+* subqueries
+* functions
+* joins
+    - natural
+    - inner
+    - left/right/full outer
+    - cross
+    - on expressions
+    - using lists
+    - lateral
+
+# Group by clause
+
+Supports scalar expressions, group by (), cube, rollup, grouping
+parentheses and grouping sets with nested grouping expressions.
+
+# Order by clause
+
+Supports scalar expressions, asc/desc and nulls first/last.
+
+# Offset and fetch
+
+Supports ANSI standard offset n rows and fetch first n rows only.
+
+# Set operators
+
+Union, except, intersect + all/distinct and corresponding.
+
+# Values expression
+
+For example: values (1,2),(3,4).
+
+# Table expression
+
+For example: 'table t', which is shorthand for 'select * from t'.
+
+# Scalar expressions
+
+* basic string literals in single quotes (escapes and other string
+  literal syntaxes coming soon)
+* number literals: digits.digitse+-exp
+* binary operators:
+    - comparisons: = != <> <= >= < >
+    - arithmetic: + - / * %
+    - logic: and, or
+    - bitwise: ^ & |
+    - string: ||, like, not like
+    - other: overlaps, is similar to, is not similar too, is distinct
+    from, is not distinct from
+* prefix unary operators
+    - +, -
+    - not
+    - ~
+* postfix unary
+    - is null, is not null
+    - is true, is not true, is false, is not false, is unknown, is not unknown
+
+Some of the precedence and associativity parsing of operators isn't
+completely correct at the moment. This mainly affects unary prefix and
+postfix operator precedence.
+
+* other operators
+    - substring (substring(x from 2 for 4))
+    - cast (cast(a as int))
+    - 'typed literal' (int '3')
+    - between
+    - in list
+    -  extract
+* subqueries
+    - in subquery
+    - any/some/all
+    - exists
+* case expressions
+* parentheses
+* quoted and unquoted identifiers
+* a.b qualified identifiers
+* \*, a.\*
+* functions: f(a,b)
+* aggregates: agg(distinct a order by b)
+* window functions: sum(x) over (partition by y order by z)
+  plus some explicit frame support (same as in postgres 9.3)
+* row constructors, e.g. where (a,b) = any (select a,b from t)

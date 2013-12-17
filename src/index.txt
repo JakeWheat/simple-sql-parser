@@ -1,140 +1,48 @@
 # simple-sql-parser
 
 A parser for SQL queries in Haskell. Also includes a pretty printer
-which formats output nicely. The goal is to parse most of SQL:2003
-queries, and possibly some other SQL dialects also.
+which formats output nicely. The first goal is to parse most of
+SQL:2003 queries, and also some other SQL dialects.
 
 This is the documentation for version 0.2.0.
 
 Status: Covers a lot of queries already and is mostly stable. There is
 a small showstopper in the precedence and associativity handling of
-operators, which has some minor issues but mostly works fine.
+operators, which has some minor issues but mostly works fine. This bug
+doesn't affect regular binary symbol operators such as comparison
+operators (==, <=, etc,) and arithmetic operators (+,-, etc.).
 
 Tested with GHC 7.6.3.
 
 # Feature support
 
-Here is a document with all the [simple-sql-parser test
-cases](test_cases.html) rendered so you can get an idea of what it
-supports.
-
-## overview:
-
-* distinct
 * select lists
-* from
-* where
-* group by
-* having
-* order by
+* from clause
+* where clause
+* group by clause
+* having clause
+* order by clause
 * offset and fetch
 * set operators
 * common table expressions
-* values expression (values (1,2),(3,4))
-* table expression (table t)
+* wide range of scalar expressions
 
-## select lists
+See the [supported_sql.html](supported_sql.html) page for details on
+the supported SQL.
 
-full support
-
-## from
-
-* aliases
-* subqueries
-* functions
-* joins
-    - natural
-    - inner
-    - left/right/full outer
-    - cross
-    - on expressions
-    - using lists
-    - lateral
-
-## group by
-
-supports scalar expressions, group by (), cube, rollup and grouping
-sets with nested grouping expressions
-
-## order by
-
-supports scalar expressions, directions and nulls first/last.
-
-## offset and fetch
-
-ansi standard plus postgresql variation (limit n offset n)
-
-## set operators
-
-union, except, intersect + all/distinct and corresponding
-
-## scalar expressions
-
-* basic string literals in single quotes (escapes and other string
-  literal syntaxes coming soon)
-* number literals: digits.digitse+-exp
-* binary operators:
-    - comparisons: = != <> <= >= < >
-    - arithmetic: + - / * %
-    - logic: and, or
-    - bitwise: ^ & |
-    - string: ||, like, not like
-    - other: overlaps, is similar to, is not similar too, is distinct
-    from, is not distinct from
-* prefix unary operators
-    - +, -
-    - not
-    - ~
-* postfix unary
-    - is null, is not null
-    - is true, is not true, is false, is not false, is unknown, is not unknown
-
-some of the precendence and associativity parsing of operators isn't
-completely correct at the moment.
-
-* other operators
-    - substring (substring(x from 2 for 4))
-    - cast (cast(a as int))
-    - 'typed literal' (int '3')
-    - between
-    - in list
-    -  extract
-* subqueries
-    - in subquery
-    - any/some/all
-    - exists
-* case expressions
-* parentheses
-* quoted and unquoted identifiers
-* a.b qualified identifiers
-* \*, a.\*
-* functions: f(a,b)
-* aggregates: agg(distinct a order by b)
-* window functions: sum(x) over (partition by y order by z)
-  plus some explicit frame support (same as in postgres 9.3)
-* row constructors, e.g. where (a,b) = any (select a,b from t)
-
-## features todo
-
-* fix the precendence and associativity handling
-* collate
-* more complete frame clause and named window support
-* placeholders (?, $1, :field, etc.)
-* apply, pivot
-* explicit SQL dialects support (targeting ANSI 2003/2008, Oracle, SQL
-  Server, Teradata and PostgreSQL)
-* more, pending review of SQL:2003, I just can't wait to get stuck into
-  the SQL Standard documentation
+Here is a document with all the [simple-sql-parser test
+cases](test_cases.html) rendered in a webpage so you can get an idea
+of what it supports.
 
 # Installation
 
-latest release from hackage
+Installing the latest release from Hackage.
 
 ~~~~
 cabal update && cabal install simple-sql-parser
 ~~~~
 
-latest development version
+Installing the latest development version.
 
 ~~~~
 git clone https://github.com/JakeWheat/simple_sql_parser.git
@@ -146,14 +54,15 @@ cabal install
 
 * see the [simple-sql-parser test cases](test_cases.html) for
   examples.
-* [simple-sql-parser Haddock](haddock/index.html)
+* [simple-sql-parser haddock](haddock/index.html) (the haddock on
+  Hackage has source links)
 
 # Links
 
-* homepage: <http://jakewheat.github.io/simple_sql_parser>
-* hackage: <http://hackage.haskell.org/package/simple-sql-parser>
-* repository: <https://github.com/JakeWheat/simple_sql_parser>
-* bug tracker: <https://github.com/JakeWheat/simple_sql_parser/issues>
+* Homepage: <http://jakewheat.github.io/simple_sql_parser>
+* Hackage: <http://hackage.haskell.org/package/simple-sql-parser>
+* Repository: <https://github.com/JakeWheat/simple_sql_parser>
+* Bug tracker: <https://github.com/JakeWheat/simple_sql_parser/issues>
 
 # Contact
 

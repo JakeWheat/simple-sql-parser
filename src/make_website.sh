@@ -4,6 +4,7 @@ set -x
 cd ..
 # index
 pandoc --from=markdown --to=html src/index.txt -o index.html -c main.css --title=simple-sql-parser
+pandoc --from=markdown --to=html src/supported_sql.txt -o supported_sql.html -c main.css '--title=simple-sql-parser supported SQL'
 # tpch sql file
 # pandoc src/tpch.sql -s --highlight-style kate -o tpch.sql.html
 # rendered test cases
