@@ -1,5 +1,5 @@
 
-[index.html](simple-sql-parser home)
+[simple-sql-parser home](index.html)
 
 This page has more details on the supported SQL in simple-sql-parser.
 
