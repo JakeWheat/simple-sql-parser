@@ -9,6 +9,9 @@
 >     ,Direction(..)
 >     ,InThing(..)
 >     ,SubQueryExprType(..)
+>     ,Frame(..)
+>     ,FrameRows(..)
+>     ,FramePos(..)
 >      -- * Query expressions
 >     ,QueryExpr(..)
 >     ,makeSelect
@@ -44,7 +47,11 @@
 >     | StringLit String
 >       -- | text of interval literal, units of interval precision,
 >       -- e.g. interval 3 days (3)
->     | IntervalLit String String (Maybe Int)
+>     | IntervalLit
+>       {ilLiteral :: String -- ^ literal text
+>       ,ilUnits :: String -- ^ units
+>       ,ilPrecision :: Maybe Int -- ^ precision
+>       }
 >       -- | identifier without dots
 >     | Iden Name
 >       -- | star, as in select *, t.*, count(*)
@@ -54,13 +61,22 @@
 >     | App Name [ScalarExpr]
 >       -- | aggregate application, which adds distinct or all, and
 >       -- order by, to regular function application
->     | AggregateApp Name (Maybe Duplicates)
->                    [ScalarExpr]
->                    [(ScalarExpr,Direction)]
+>     | AggregateApp
+>       {aggName :: Name -- ^ aggregate function name
+>       ,aggDistinct :: (Maybe Duplicates)-- ^ distinct
+>       ,aggArgs :: [ScalarExpr]-- ^ args
+>       ,aggOrderBy :: [(ScalarExpr,Direction)] -- ^ order by
+>       }
 >       -- | window application, which adds over (partition by a order
 >       -- by b) to regular function application. Explicit frames are
 >       -- not currently supported
->     | WindowApp Name [ScalarExpr] [ScalarExpr] [(ScalarExpr,Direction)]
+>     | WindowApp
+>       {wnName :: Name -- ^ window function name
+>       ,wnArgs :: [ScalarExpr] -- ^ args
+>       ,wnPartition :: [ScalarExpr] -- ^ partition by
+>       ,wnOrderBy :: [(ScalarExpr,Direction)] -- ^ order by
+>       ,wnFrame :: Maybe Frame -- ^ frame clause
+>       }
 >       -- | Infix binary operators. This is used for symbol operators
 >       -- (a + b), keyword operators (a and b) and multiple keyword
 >       -- operators (a is similar to b)
@@ -79,9 +95,11 @@
 >       -- | case expression. both flavours supported. Multiple
 >       -- condition when branches not currently supported (case when
 >       -- a=4,b=5 then x end)
->     | Case (Maybe ScalarExpr) -- test value
->            [(ScalarExpr,ScalarExpr)] -- when branches
->            (Maybe ScalarExpr) -- else value
+>     | Case
+>       {caseTest :: Maybe ScalarExpr -- ^ test value
+>       ,caseWhens :: [(ScalarExpr,ScalarExpr)] -- ^ when branches
+>       ,caseElse :: Maybe ScalarExpr -- ^ else value
+>       }
 >     | Parens ScalarExpr
 >       -- | cast(a as typename)
 >     | Cast ScalarExpr TypeName
@@ -122,6 +140,25 @@
 >       -- | any (query expr)
 >     | SqAny
 >       deriving (Eq,Show,Read)
+
+> -- | Represents the frame clause of a window
+> -- this can be [range | rows] frame_start
+> -- or [range | rows] between frame_start and frame_end
+> data Frame = FrameFrom FrameRows FramePos
+>            | FrameBetween FrameRows FramePos FramePos
+>              deriving (Eq,Show,Read)
+
+> -- | Represents whether a window frame clause is over rows or ranges
+> data FrameRows = FrameRows | FrameRange
+>                  deriving (Eq,Show,Read)
+
+> -- | represents the start or end of a frame
+> data FramePos = UnboundedPreceding
+>               | Preceding ScalarExpr
+>               | Current
+>               | Following ScalarExpr
+>               | UnboundedFollowing
+>                 deriving (Eq,Show,Read)
 
 > -- | Represents a query expression, which can be:
 > --

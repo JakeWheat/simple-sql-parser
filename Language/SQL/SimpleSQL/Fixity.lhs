@@ -87,9 +87,9 @@ the fixity code.
 >         $ HSE.List [str $ show (d,map snd od)
 >                    ,HSE.List $ map toHaskell es
 >                    ,HSE.List $ map (toHaskell . fst) od]
->     WindowApp nm es pb od ->
+>     WindowApp nm es pb od r ->
 >         HSE.App (var ('w':name nm))
->         $ HSE.List [str $ show (map snd od)
+>         $ HSE.List [str $ show (map snd od, r)
 >                    ,HSE.List $ map toHaskell es
 >                    ,HSE.List $ map toHaskell pb
 >                    ,HSE.List $ map (toHaskell . fst) od]
@@ -143,9 +143,9 @@ the fixity code.
 >                       ,HSE.List es
 >                       ,HSE.List pb
 >                       ,HSE.List od]) ->
->         let dir = read vs
+>         let (dir,r) = read vs
 >         in WindowApp (unname i) (map toSql es) (map toSql pb)
->                        $ zip (map toSql od) dir
+>                        (zip (map toSql od) dir) r
 >     HSE.App (HSE.Var (HSE.UnQual (HSE.Symbol ('p':nm)))) e0 ->
 >         PostfixOp (unname nm) $ toSql e0
 >     HSE.App (HSE.Var (HSE.UnQual (HSE.Symbol nm))) e0 ->

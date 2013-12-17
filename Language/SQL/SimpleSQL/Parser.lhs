@@ -177,10 +177,36 @@ always used with the optionSuffix combinator.
 >     try (keyword_ "over")
 >     *> parens (WindowApp f es
 >                <$> option [] partitionBy
->                <*> option [] orderBy)
+>                <*> option [] orderBy
+>                <*> optionMaybe frameClause)
 >   where
 >     partitionBy = try (keyword_ "partition") >>
 >         keyword_ "by" >> commaSep1 scalarExpr'
+>     frameClause =
+>         mkFrame <$> (choice [FrameRows <$ keyword_ "rows"
+>                             ,FrameRange <$ keyword_ "range"])
+>                 <*> frameStartEnd
+>     frameStartEnd =
+>         choice
+>         [try (keyword_ "between") >>
+>          mkFrameBetween <$> frameLimit True
+>                         <*> (keyword_ "and" *> frameLimit True)
+>         ,mkFrameFrom <$> frameLimit False]
+>     -- use the bexpression style from the between parsing for frame between
+>     frameLimit useB =
+>         choice
+>         [Current <$ try (keyword_ "current") <* keyword_ "row"
+>         ,try (keyword_ "unbounded") >>
+>          choice [UnboundedPreceding <$ keyword_ "preceding"
+>                 ,UnboundedFollowing <$ keyword_ "following"]
+>         ,do
+>          e <- if useB then scalarExprB else scalarExpr
+>          choice [Preceding e <$ keyword_ "preceding"
+>                 ,Following e <$ keyword_ "following"]
+>         ]
+>     mkFrameBetween s e rs = FrameBetween rs s e
+>     mkFrameFrom s rs = FrameFrom rs s
+>     mkFrame rs c = c rs
 > windowSuffix _ = fail ""
 
 > app :: P ScalarExpr
@@ -485,6 +511,12 @@ expression tree (for efficiency and code clarity).
 
 > scalarExpr :: P ScalarExpr
 > scalarExpr = fixFixities sqlFixities <$> scalarExpr'
+
+expose the b expression for window frame clause range between
+
+> scalarExprB :: P ScalarExpr
+> scalarExprB = fixFixities sqlFixities <$> scalarExpr'' True
+
 
 -------------------------------------------------
 

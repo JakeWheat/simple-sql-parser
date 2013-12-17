@@ -224,25 +224,49 @@ Tests for parsing scalar expressions
 
 > windowFunctions :: TestItem
 > windowFunctions = Group "windowFunctions" $ map (uncurry TestScalarExpr)
->     [("max(a) over ()", WindowApp "max" [Iden "a"] [] [])
->     ,("count(*) over ()", WindowApp "count" [Star] [] [])
+>     [("max(a) over ()", WindowApp "max" [Iden "a"] [] [] Nothing)
+>     ,("count(*) over ()", WindowApp "count" [Star] [] [] Nothing)
 
 >     ,("max(a) over (partition by b)"
->      ,WindowApp "max" [Iden "a"] [Iden "b"] [])
+>      ,WindowApp "max" [Iden "a"] [Iden "b"] [] Nothing)
 
 >     ,("max(a) over (partition by b,c)"
->      ,WindowApp "max" [Iden "a"] [Iden "b",Iden "c"] [])
+>      ,WindowApp "max" [Iden "a"] [Iden "b",Iden "c"] [] Nothing)
 
 >     ,("sum(a) over (order by b)"
->      ,WindowApp "sum" [Iden "a"] [] [(Iden "b", Asc)])
+>      ,WindowApp "sum" [Iden "a"] [] [(Iden "b", Asc)] Nothing)
 
 >     ,("sum(a) over (order by b desc,c)"
 >      ,WindowApp "sum" [Iden "a"] [] [(Iden "b", Desc)
->                                     ,(Iden "c", Asc)])
+>                                     ,(Iden "c", Asc)] Nothing)
 
 >     ,("sum(a) over (partition by b order by c)"
->      ,WindowApp "sum" [Iden "a"] [Iden "b"] [(Iden "c", Asc)])
->      -- todo: check order by options, add frames
+>      ,WindowApp "sum" [Iden "a"] [Iden "b"] [(Iden "c", Asc)] Nothing)
+
+>     ,("sum(a) over (partition by b order by c range unbounded preceding)"
+>      ,WindowApp "sum" [Iden "a"] [Iden "b"] [(Iden "c", Asc)]
+>       $ Just $ FrameFrom FrameRange UnboundedPreceding)
+
+>     ,("sum(a) over (partition by b order by c range 5 preceding)"
+>      ,WindowApp "sum" [Iden "a"] [Iden "b"] [(Iden "c", Asc)]
+>       $ Just $ FrameFrom FrameRange $ Preceding (NumLit "5"))
+
+>     ,("sum(a) over (partition by b order by c range current row)"
+>      ,WindowApp "sum" [Iden "a"] [Iden "b"] [(Iden "c", Asc)]
+>       $ Just $ FrameFrom FrameRange Current)
+
+>     ,("sum(a) over (partition by b order by c rows 5 following)"
+>      ,WindowApp "sum" [Iden "a"] [Iden "b"] [(Iden "c", Asc)]
+>       $ Just $ FrameFrom FrameRows $ Following (NumLit "5"))
+
+>     ,("sum(a) over (partition by b order by c range unbounded following)"
+>      ,WindowApp "sum" [Iden "a"] [Iden "b"] [(Iden "c", Asc)]
+>       $ Just $ FrameFrom FrameRange UnboundedFollowing)
+
+>     ,("sum(a) over (partition by b order by c range between 5 preceding and 5 following)"
+>      ,WindowApp "sum" [Iden "a"] [Iden "b"] [(Iden "c", Asc)]
+>       $ Just $ FrameBetween FrameRange (Preceding (NumLit "5")) (Following (NumLit "5")))
+
 >     ]
 
 > parens :: TestItem

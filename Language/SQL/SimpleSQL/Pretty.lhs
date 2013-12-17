@@ -52,21 +52,34 @@
 >                <+> commaSep (map scalarExpr es)
 >                <+> orderBy od)
 
-> scalarExpr (WindowApp f es pb od) =
+> scalarExpr (WindowApp f es pb od fr) =
 >     name f <> parens (commaSep $ map scalarExpr es)
 >     <+> text "over"
 >     <+> parens ((case pb of
 >                     [] -> empty
 >                     _ -> text "partition by"
 >                           <+> nest 13 (commaSep $ map scalarExpr pb))
->                 <+> orderBy od)
+>                 <+> orderBy od
+>     <+> maybe empty frd fr)
+>   where
+>     frd (FrameFrom rs fp) = rsd rs <+> fpd fp
+>     frd (FrameBetween rs fps fpe) =
+>         rsd rs <+> text "between" <+> fpd fps
+>         <+> text "and" <+> fpd fpe
+>     rsd rs = case rs of
+>                  FrameRows -> text "rows"
+>                  FrameRange -> text "range"
+>     fpd UnboundedPreceding = text "unbounded preceding"
+>     fpd UnboundedFollowing = text "unbounded following"
+>     fpd Current = text "current row"
+>     fpd (Preceding e) = scalarExpr e <+> text "preceding"
+>     fpd (Following e) = scalarExpr e <+> text "following"
 
 > scalarExpr (SpecialOp nm [a,b,c]) | nm `elem` [Name "between"
 >                                               ,Name "not between"] =
 >   sep [scalarExpr a
 >       ,name nm <+> scalarExpr b
->       ,nest (length (unname nm) + 1)
->        $ text "and" <+> scalarExpr c]
+>       ,nest (length (unname nm) + 1) $ text "and" <+> scalarExpr c]
 
 > scalarExpr (SpecialOp (Name "extract") [a,n]) =
 >   text "extract" <> parens (scalarExpr a
