@@ -12,6 +12,7 @@ Here are the tests for the group by component of query exprs
 > groupByTests = Group "groupByTests"
 >     [simpleGroupBy
 >     ,newGroupBy
+>     ,randomGroupBy
 >     ]
 
 > simpleGroupBy :: TestItem
@@ -46,190 +47,186 @@ sure which sql version they were introduced, 1999 or 2003 I think).
 >      ,ms [Cube [SimpleGroup $ Iden "a", SimpleGroup $ Iden "b"]])
 >     ,("select * from t group by rollup(a,b)"
 >      ,ms [Rollup [SimpleGroup $ Iden "a", SimpleGroup $ Iden "b"]])
-
-
-GROUP BY a
-GROUP BY GROUPING SETS((a))
-GROUP BY a,b,c
-GROUP BY GROUPING SETS((a,b,c))
-GROUP BY ROLLUP(a,b)
-GROUP BY GROUPING SETS((a,b)
-(a)
-() )
-GROUP BY ROLLUP(b,a)
-GROUP BY GROUPING SETS((b,a)
-(b)
-() )
-GROUP BY CUBE(a,b,c)
-GROUP BY GROUPING SETS((a,b,c)
-(a,b)
-(a,c)
-(b,c)
-(a)
-(b)
-(c)
-() )
-GROUP BY ROLLUP(Province, County, City)
-GROUP BY ROLLUP(Province, (County, City))
-GROUP BY ROLLUP(Province, (County, City))
-GROUP BY GROUPING SETS((Province, County, City)
-(Province)
-() )
-GROUP BY GROUPING SETS((Province, County, City)
-(Province, County)
-(Province)
-() )
-GROUP BY a, ROLLUP(b,c)
-GROUP BY GROUPING SETS((a,b,c)
-(a,b)
-(a) )
-GROUP BY a, b, ROLLUP(c,d)
-GROUP BY GROUPING SETS((a,b,c,d)
-(a,b,c)
-(a,b) )
-GROUP BY ROLLUP(a), ROLLUP(b,c)
-GROUP BY GROUPING SETS((a,b,c)
-(a,b)
-(a)
-(b,c)
-(b)
-() )
-GROUP BY ROLLUP(a), CUBE(b,c)
-GROUP BY GROUPING SETS((a,b,c)
-(a,b)
-(a,c)
-(a)
-(b,c)
-(b)
-(c)
-() )
-GROUP BY CUBE(a,b), ROLLUP(c,d)
-GROUP BY GROUPING SETS((a,b,c,d)
-(a,b,c)
-(a,b)
-(a,c,d)
-(a,c)
-(a)
-(b,c,d)
-(b,c)
-(b)
-(c,d)
-(c)
-() )
-GROUP BY a, ROLLUP(a,b)
-GROUP BY GROUPING SETS((a,b)
-(a) )
-GROUP BY Region,
-ROLLUP(Sales_Person, WEEK(Sales_Date)),
-CUBE(YEAR(Sales_Date), MONTH (Sales_Date))
-GROUP BY ROLLUP (Region, Sales_Person, WEEK(Sales_Date),
-YEAR(Sales_Date), MONTH(Sales_Date) )
-
-
-SELECT WEEK(SALES_DATE) AS WEEK,
-DAYOFWEEK(SALES_DATE) AS DAY_WEEK,
-SALES_PERSON, SUM(SALES) AS UNITS_SOLD
-FROM SALES
-WHERE WEEK(SALES_DATE) = 13
-GROUP BY WEEK(SALES_DATE), DAYOFWEEK(SALES_DATE), SALES_PERSON
-ORDER BY WEEK, DAY_WEEK, SALES_PERSON
-
-SELECT WEEK(SALES_DATE) AS WEEK,
-DAYOFWEEK(SALES_DATE) AS DAY_WEEK,
-SALES_PERSON, SUM(SALES) AS UNITS_SOLD
-FROM SALES
-WHERE WEEK(SALES_DATE) = 13
-GROUP BY GROUPING SETS ( (WEEK(SALES_DATE), SALES_PERSON),
-(DAYOFWEEK(SALES_DATE), SALES_PERSON))
-ORDER BY WEEK, DAY_WEEK, SALES_PERSON
-
-SELECT WEEK(SALES_DATE) AS WEEK,
-DAYOFWEEK(SALES_DATE) AS DAY_WEEK,
-SALES_PERSON, SUM(SALES) AS UNITS_SOLD
-FROM SALES
-WHERE WEEK(SALES_DATE) = 13
-GROUP BY ROLLUP ( WEEK(SALES_DATE), DAYOFWEEK(SALES_DATE), SALES_PERSON )
-ORDER BY WEEK, DAY_WEEK, SALES_PERSON
-
-SELECT WEEK(SALES_DATE) AS WEEK,
-DAYOFWEEK(SALES_DATE) AS DAY_WEEK,
-SALES_PERSON, SUM(SALES) AS UNITS_SOLD
-FROM SALES
-WHERE WEEK(SALES_DATE) = 13
-GROUP BY CUBE ( WEEK(SALES_DATE), DAYOFWEEK(SALES_DATE), SALES_PERSON )
-ORDER BY WEEK, DAY_WEEK, SALES_PERSON
-
-SELECT SALES_PERSON,
-MONTH(SALES_DATE) AS MONTH,
-SUM(SALES) AS UNITS_SOLD
-FROM SALES
-GROUP BY GROUPING SETS ( (SALES_PERSON, MONTH(SALES_DATE)),
-()
-)
-ORDER BY SALES_PERSON, MONTH
-
-SELECT WEEK(SALES_DATE) AS WEEK,
-DAYOFWEEK(SALES_DATE) AS DAY_WEEK,
-SUM(SALES) AS UNITS_SOLD
-FROM SALES
-GROUP BY ROLLUP ( WEEK(SALES_DATE), DAYOFWEEK(SALES_DATE) )
-ORDER BY WEEK, DAY_WEEK
-
-SELECT MONTH(SALES_DATE) AS MONTH,
-REGION,
-SUM(SALES) AS UNITS_SOLD
-FROM SALES
-GROUP BY ROLLUP ( MONTH(SALES_DATE), REGION );
-ORDER BY MONTH, REGION
-
-SELECT WEEK(SALES_DATE) AS WEEK,
-DAYOFWEEK(SALES_DATE) AS DAY_WEEK,
-MONTH(SALES_DATE) AS MONTH,
-REGION,
-SUM(SALES) AS UNITS_SOLD
-FROM SALES
-GROUP BY GROUPING SETS ( ROLLUP( WEEK(SALES_DATE), DAYOFWEEK(SALES_DATE) ),
-ROLLUP( MONTH(SALES_DATE), REGION ) )
-ORDER BY WEEK, DAY_WEEK, MONTH, REGION
-
-SELECT R1, R2,
-WEEK(SALES_DATE) AS WEEK,
-DAYOFWEEK(SALES_DATE) AS DAY_WEEK,
-MONTH(SALES_DATE) AS MONTH,
-REGION, SUM(SALES) AS UNITS_SOLD
-FROM SALES,(VALUES(’GROUP 1’,’GROUP 2’)) AS X(R1,R2)
-GROUP BY GROUPING SETS ((R1, ROLLUP(WEEK(SALES_DATE),
-DAYOFWEEK(SALES_DATE))),
-(R2,ROLLUP( MONTH(SALES_DATE), REGION ) )
-ORDER BY WEEK, DAY_WEEK, MONTH, REGION
-)
-
-SELECT COALESCE(R1,R2) AS GROUP,
-WEEK(SALES_DATE) AS WEEK,
-DAYOFWEEK(SALES_DATE) AS DAY_WEEK,
-MONTH(SALES_DATE) AS MONTH,
-REGION, SUM(SALES) AS UNITS_SOLD
-FROM SALES,(VALUES(’GROUP 1’,’GROUP 2’)) AS X(R1,R2)
-GROUP BY GROUPING SETS ((R1, ROLLUP(WEEK(SALES_DATE),
-DAYOFWEEK(SALES_DATE))),
-(R2,ROLLUP( MONTH(SALES_DATE), REGION ) )
-ORDER BY GROUP, WEEK, DAY_WEEK, MONTH, REGION;
-)
-
-SELECT MONTH(SALES_DATE) AS MONTH,
-REGION,
-SUM(SALES) AS UNITS_SOLD,
-MAX(SALES) AS BEST_SALE,
-824
-SQL Reference Volume 1
-Examples of grouping sets, cube, and rollup queries
-CAST(ROUND(AVG(DECIMAL(SALES)),2) AS DECIMAL(5,2)) AS AVG_UNITS_SOLD
-FROM SALES
-GROUP BY CUBE(MONTH(SALES_DATE),REGION)
-ORDER BY MONTH, REGION
-
 >     ]
 >   where
 >     ms g = makeSelect {qeSelectList = [(Nothing,Star)]
 >                       ,qeFrom = [TRSimple "t"]
 >                       ,qeGroupBy = g}
+
+> randomGroupBy :: TestItem
+> randomGroupBy = Group "randomGroupBy" $ map ParseQueryExpr
+>     ["select * from t GROUP BY a"
+>     ,"select * from t GROUP BY GROUPING SETS((a))"
+>     ,"select * from t GROUP BY a,b,c"
+>     ,"select * from t GROUP BY GROUPING SETS((a,b,c))"
+>     ,"select * from t GROUP BY ROLLUP(a,b)"
+>     ,"select * from t GROUP BY GROUPING SETS((a,b),\n\
+>      \(a),\n\
+>      \() )"
+>     ,"select * from t GROUP BY ROLLUP(b,a)"
+>     ,"select * from t GROUP BY GROUPING SETS((b,a),\n\
+>      \(b),\n\
+>      \() )"
+>     ,"select * from t GROUP BY CUBE(a,b,c)"
+>     ,"select * from t GROUP BY GROUPING SETS((a,b,c),\n\
+>      \(a,b),\n\
+>      \(a,c),\n\
+>      \(b,c),\n\
+>      \(a),\n\
+>      \(b),\n\
+>      \(c),\n\
+>      \() )"
+>     ,"select * from t GROUP BY ROLLUP(Province, County, City)"
+>     ,"select * from t GROUP BY ROLLUP(Province, (County, City))"
+>     ,"select * from t GROUP BY ROLLUP(Province, (County, City))"
+>     ,"select * from t GROUP BY GROUPING SETS((Province, County, City),\n\
+>      \(Province),\n\
+>      \() )"
+>     ,"select * from t GROUP BY GROUPING SETS((Province, County, City),\n\
+>      \(Province, County),\n\
+>      \(Province),\n\
+>      \() )"
+>     ,"select * from t GROUP BY a, ROLLUP(b,c)"
+>     ,"select * from t GROUP BY GROUPING SETS((a,b,c),\n\
+>      \(a,b),\n\
+>      \(a) )"
+>     ,"select * from t GROUP BY a, b, ROLLUP(c,d)"
+>     ,"select * from t GROUP BY GROUPING SETS((a,b,c,d),\n\
+>      \(a,b,c),\n\
+>      \(a,b) )"
+>     ,"select * from t GROUP BY ROLLUP(a), ROLLUP(b,c)"
+>     ,"select * from t GROUP BY GROUPING SETS((a,b,c),\n\
+>      \(a,b),\n\
+>      \(a),\n\
+>      \(b,c),\n\
+>      \(b),\n\
+>      \() )"
+>     ,"select * from t GROUP BY ROLLUP(a), CUBE(b,c)"
+>     ,"select * from t GROUP BY GROUPING SETS((a,b,c),\n\
+>      \(a,b),\n\
+>      \(a,c),\n\
+>      \(a),\n\
+>      \(b,c),\n\
+>      \(b),\n\
+>      \(c),\n\
+>      \() )"
+>     ,"select * from t GROUP BY CUBE(a,b), ROLLUP(c,d)"
+>     ,"select * from t GROUP BY GROUPING SETS((a,b,c,d),\n\
+>      \(a,b,c),\n\
+>      \(a,b),\n\
+>      \(a,c,d),\n\
+>      \(a,c),\n\
+>      \(a),\n\
+>      \(b,c,d),\n\
+>      \(b,c),\n\
+>      \(b),\n\
+>      \(c,d),\n\
+>      \(c),\n\
+>      \() )"
+>     ,"select * from t GROUP BY a, ROLLUP(a,b)"
+>     ,"select * from t GROUP BY GROUPING SETS((a,b),\n\
+>      \(a) )"
+>     ,"select * from t GROUP BY Region,\n\
+>      \ROLLUP(Sales_Person, WEEK(Sales_Date)),\n\
+>      \CUBE(YEAR(Sales_Date), MONTH (Sales_Date))"
+>     ,"select * from t GROUP BY ROLLUP (Region, Sales_Person, WEEK(Sales_Date),\n\
+>      \YEAR(Sales_Date), MONTH(Sales_Date) )"
+
+>     ,"SELECT WEEK(SALES_DATE) AS WEEK,\n\
+>      \DAYOFWEEK(SALES_DATE) AS DAY_WEEK,\n\
+>      \SALES_PERSON, SUM(SALES) AS UNITS_SOLD\n\
+>      \FROM SALES\n\
+>      \WHERE WEEK(SALES_DATE) = 13\n\
+>      \GROUP BY WEEK(SALES_DATE), DAYOFWEEK(SALES_DATE), SALES_PERSON\n\
+>      \ORDER BY WEEK, DAY_WEEK, SALES_PERSON"
+
+>     ,"SELECT WEEK(SALES_DATE) AS WEEK,\n\
+>      \DAYOFWEEK(SALES_DATE) AS DAY_WEEK,\n\
+>      \SALES_PERSON, SUM(SALES) AS UNITS_SOLD\n\
+>      \FROM SALES\n\
+>      \WHERE WEEK(SALES_DATE) = 13\n\
+>      \GROUP BY GROUPING SETS ( (WEEK(SALES_DATE), SALES_PERSON),\n\
+>      \(DAYOFWEEK(SALES_DATE), SALES_PERSON))\n\
+>      \ORDER BY WEEK, DAY_WEEK, SALES_PERSON"
+
+>     ,"SELECT WEEK(SALES_DATE) AS WEEK,\n\
+>      \DAYOFWEEK(SALES_DATE) AS DAY_WEEK,\n\
+>      \SALES_PERSON, SUM(SALES) AS UNITS_SOLD\n\
+>      \FROM SALES\n\
+>      \WHERE WEEK(SALES_DATE) = 13\n\
+>      \GROUP BY ROLLUP ( WEEK(SALES_DATE), DAYOFWEEK(SALES_DATE), SALES_PERSON )\n\
+>      \ORDER BY WEEK, DAY_WEEK, SALES_PERSON"
+
+>     ,"SELECT WEEK(SALES_DATE) AS WEEK,\n\
+>      \DAYOFWEEK(SALES_DATE) AS DAY_WEEK,\n\
+>      \SALES_PERSON, SUM(SALES) AS UNITS_SOLD\n\
+>      \FROM SALES\n\
+>      \WHERE WEEK(SALES_DATE) = 13\n\
+>      \GROUP BY CUBE ( WEEK(SALES_DATE), DAYOFWEEK(SALES_DATE), SALES_PERSON )\n\
+>      \ORDER BY WEEK, DAY_WEEK, SALES_PERSON"
+
+>     ,"SELECT SALES_PERSON,\n\
+>      \MONTH(SALES_DATE) AS MONTH,\n\
+>      \SUM(SALES) AS UNITS_SOLD\n\
+>      \FROM SALES\n\
+>      \GROUP BY GROUPING SETS ( (SALES_PERSON, MONTH(SALES_DATE)),\n\
+>      \()\n\
+>      \)\n\
+>      \ORDER BY SALES_PERSON, MONTH"
+
+>     ,"SELECT WEEK(SALES_DATE) AS WEEK,\n\
+>      \DAYOFWEEK(SALES_DATE) AS DAY_WEEK,\n\
+>      \SUM(SALES) AS UNITS_SOLD\n\
+>      \FROM SALES\n\
+>      \GROUP BY ROLLUP ( WEEK(SALES_DATE), DAYOFWEEK(SALES_DATE) )\n\
+>      \ORDER BY WEEK, DAY_WEEK"
+
+>     ,"SELECT MONTH(SALES_DATE) AS MONTH,\n\
+>      \REGION,\n\
+>      \SUM(SALES) AS UNITS_SOLD\n\
+>      \FROM SALES\n\
+>      \GROUP BY ROLLUP ( MONTH(SALES_DATE), REGION )\n\
+>      \ORDER BY MONTH, REGION"
+
+>     ,"SELECT WEEK(SALES_DATE) AS WEEK,\n\
+>      \DAYOFWEEK(SALES_DATE) AS DAY_WEEK,\n\
+>      \MONTH(SALES_DATE) AS MONTH,\n\
+>      \REGION,\n\
+>      \SUM(SALES) AS UNITS_SOLD\n\
+>      \FROM SALES\n\
+>      \GROUP BY GROUPING SETS ( ROLLUP( WEEK(SALES_DATE), DAYOFWEEK(SALES_DATE) ),\n\
+>      \ROLLUP( MONTH(SALES_DATE), REGION ) )\n\
+>      \ORDER BY WEEK, DAY_WEEK, MONTH, REGION"
+
+>     ,"SELECT R1, R2,\n\
+>      \WEEK(SALES_DATE) AS WEEK,\n\
+>      \DAYOFWEEK(SALES_DATE) AS DAY_WEEK,\n\
+>      \MONTH(SALES_DATE) AS MONTH,\n\
+>      \REGION, SUM(SALES) AS UNITS_SOLD\n\
+>      \FROM SALES,(VALUES('GROUP 1','GROUP 2')) AS X(R1,R2)\n\
+>      \GROUP BY GROUPING SETS ((R1, ROLLUP(WEEK(SALES_DATE),\n\
+>      \DAYOFWEEK(SALES_DATE))),\n\
+>      \(R2,ROLLUP( MONTH(SALES_DATE), REGION ) ))\n\
+>      \ORDER BY WEEK, DAY_WEEK, MONTH, REGION"
+
+>     {-,"SELECT COALESCE(R1,R2) AS GROUP,\n\
+>      \WEEK(SALES_DATE) AS WEEK,\n\
+>      \DAYOFWEEK(SALES_DATE) AS DAY_WEEK,\n\
+>      \MONTH(SALES_DATE) AS MONTH,\n\
+>      \REGION, SUM(SALES) AS UNITS_SOLD\n\
+>      \FROM SALES,(VALUES('GROUP 1','GROUP 2')) AS X(R1,R2)\n\
+>      \GROUP BY GROUPING SETS ((R1, ROLLUP(WEEK(SALES_DATE),\n\
+>      \DAYOFWEEK(SALES_DATE))),\n\
+>      \(R2,ROLLUP( MONTH(SALES_DATE), REGION ) ))\n\
+>      \ORDER BY GROUP, WEEK, DAY_WEEK, MONTH, REGION"-} -- as group - needs more subtle keyword blacklisting
+
+>     {-,"SELECT MONTH(SALES_DATE) AS MONTH,\n\
+>      \REGION,\n\
+>      \SUM(SALES) AS UNITS_SOLD,\n\
+>      \MAX(SALES) AS BEST_SALE,\n\
+>      \CAST(ROUND(AVG(DECIMAL(SALES)),2) AS DECIMAL(5,2)) AS AVG_UNITS_SOLD\n\
+>      \FROM SALES\n\
+>      \GROUP BY CUBE(MONTH(SALES_DATE),REGION)\n\
+>      \ORDER BY MONTH, REGION" -} -- needs typenames with precision
+
+>     ]
