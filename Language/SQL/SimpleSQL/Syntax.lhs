@@ -145,8 +145,8 @@
 >       ,qeGroupBy :: [ScalarExpr]
 >       ,qeHaving :: Maybe ScalarExpr
 >       ,qeOrderBy :: [(ScalarExpr,Direction)]
->       ,qeLimit :: Maybe ScalarExpr
 >       ,qeOffset :: Maybe ScalarExpr
+>       ,qeFetch :: Maybe ScalarExpr
 >       }
 >     | CombineQueryExpr
 >       {qe0 :: QueryExpr
@@ -177,8 +177,8 @@ I'm not sure if this is valid syntax or not.
 >                     ,qeGroupBy = []
 >                     ,qeHaving = Nothing
 >                     ,qeOrderBy = []
->                     ,qeLimit = Nothing
->                     ,qeOffset = Nothing}
+>                     ,qeOffset = Nothing
+>                     ,qeFetch = Nothing}
 
 
 > -- | represents the Distinct or All keywords, which can be used

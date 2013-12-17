@@ -149,7 +149,7 @@
 = query expressions
 
 > queryExpr :: QueryExpr -> Doc
-> queryExpr (Select d sl fr wh gb hv od lm off) =
+> queryExpr (Select d sl fr wh gb hv od off fe) =
 >   sep [text "select"
 >       ,case d of
 >           All -> empty
@@ -160,8 +160,9 @@
 >       ,grpBy gb
 >       ,maybeScalarExpr "having" hv
 >       ,orderBy od
->       ,maybeScalarExpr "limit" lm
->       ,maybeScalarExpr "offset" off
+>       ,maybe empty (\e -> text "offset" <+> scalarExpr e <+> text "rows") off
+>       ,maybe empty (\e -> text "fetch next" <+> scalarExpr e
+>                           <+> text "rows only") fe
 >       ]
 > queryExpr (CombineQueryExpr q1 ct d c q2) =
 >   sep [queryExpr q1

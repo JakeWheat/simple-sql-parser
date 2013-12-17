@@ -126,18 +126,22 @@ These are a few misc tests which don't fit anywhere else.
 
 > limit :: TestItem
 > limit = Group "limit" $ map (uncurry TestQueryExpr)
->     [("select a from t limit 10"
->      ,ms (Just $ NumLit "10") Nothing)
-
->     ,("select a from t limit 10 offset 10"
->      ,ms (Just $ NumLit "10") (Just $ NumLit "10"))
+>     [-- ansi standard
+>      ("select a from t offset 5 rows fetch next 10 rows only"
+>      ,ms (Just $ NumLit "5") (Just $ NumLit "10"))
+>     ,("select a from t offset 5 rows;"
+>      ,ms (Just $ NumLit "5") Nothing)
+>     ,("select a from t fetch next 10 row only;"
+>      ,ms Nothing (Just $ NumLit "10"))
+>     ,("select a from t offset 5 row fetch first 10 row only"
+>      ,ms (Just $ NumLit "5") (Just $ NumLit "10"))
 >     ]
 >   where
->     ms l o = makeSelect
+>     ms o l = makeSelect
 >              {qeSelectList = [(Nothing,Iden "a")]
 >              ,qeFrom = [TRSimple "t"]
->              ,qeLimit = l
->              ,qeOffset = o}
+>              ,qeOffset = o
+>              ,qeFetch = l}
 
 > combos :: TestItem
 > combos = Group "combos" $ map (uncurry TestQueryExpr)

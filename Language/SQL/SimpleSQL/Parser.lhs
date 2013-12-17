@@ -12,6 +12,7 @@
 > import Data.Char
 > import Text.Parsec hiding (ParseError)
 > import qualified Text.Parsec as P
+> import Text.Parsec.Perm
 
 > import Language.SQL.SimpleSQL.Syntax
 > import Language.SQL.SimpleSQL.Fixity
@@ -572,11 +573,26 @@ where, having, limit, offset).
 >              <*> option Asc (choice [Asc <$ keyword_ "asc"
 >                                     ,Desc <$ keyword_ "desc"])
 
-> limit :: P ScalarExpr
-> limit = keywordScalarExpr "limit"
+allows offset and fetch in either order
++ postgresql offset without row(s) and limit instead of fetch also
+
+> offsetFetch :: P (Maybe ScalarExpr, Maybe ScalarExpr)
+> offsetFetch = permute ((,) <$?> (Nothing, Just <$> offset)
+>                            <|?> (Nothing, Just <$> fetch))
 
 > offset :: P ScalarExpr
-> offset = keywordScalarExpr "offset"
+> offset = try (keyword_ "offset") *> scalarExpr
+>          <* option () (try $ choice [try (keyword_ "rows"),keyword_ "row"])
+
+> fetch :: P ScalarExpr
+> fetch = choice [ansiFetch, limit]
+>   where
+>     ansiFetch = try (keyword_ "fetch") >>
+>         choice [keyword_ "first",keyword_ "next"]
+>         *> scalarExpr
+>         <* choice [keyword_ "rows",keyword_ "row"]
+>         <* keyword_ "only"
+>     limit = try (keyword_ "limit") *> scalarExpr
 
 == common table expressions
 
@@ -601,7 +617,7 @@ and union, etc..
 >           >>= optionSuffix queryExprSuffix]
 >   where
 >     select = try (keyword_ "select") >>
->         Select
+>         mkSelect
 >         <$> (fromMaybe All <$> duplicates)
 >         <*> selectList
 >         <*> option [] from
@@ -609,8 +625,9 @@ and union, etc..
 >         <*> option [] sgroupBy
 >         <*> optionMaybe having
 >         <*> option [] orderBy
->         <*> optionMaybe limit
->         <*> optionMaybe offset
+>         <*> offsetFetch
+>     mkSelect d sl f w g h od (ofs,fe) =
+>         Select d sl f w g h od ofs fe
 >     values = try (keyword_ "values")
 >              >> Values <$> commaSep (parens (commaSep scalarExpr))
 >     table = try (keyword_ "table") >> Table <$> name
@@ -698,7 +715,7 @@ keyword parser also
 > blacklist :: [String]
 > blacklist =
 >     ["select", "as", "from", "where", "having", "group", "order"
->     ,"limit", "offset"
+>     ,"limit", "offset", "fetch"
 >     ,"inner", "left", "right", "full", "natural", "join"
 >     ,"cross", "on", "using", "lateral"
 >     ,"when", "then", "case", "end", "in"

@@ -1,33 +1,17 @@
 
 next release:
 
-ansi standard versions of limit and offset
-
-OFFSET start { ROW | ROWS }
-FETCH { FIRST | NEXT } [ count ] { ROW | ROWS } ONLY
--> + fix the abstract syntax to match this instead of postgres
-(keep the postgres syntax version parser)
-in the postgresql docs, the start and count must be in parens unless
-   they are a single integer
-
-select * from generate_series(0,99) offset 5 fetch next 5 row only;
-select * from generate_series(0,99) offset 5;
-select * from generate_series(0,99) fetch next 5 row only;
-
-+ sql server top syntax
-
-more dots: implement as dot operator
 
 more symbolic operators, array access a[5]? don't think this is
    standard sql, if not, leave for now. There is something about
    arrays in sql:2008
 
+row ctor: row(a,b) is fine, but also when there is 2 or more elements,
+   the word row can be omitted: (a,b)
 
 
 fix lateral binding issue
 
-row ctor: row(a,b) is fine, but also when there is 2 or more elements,
-   the word row can be omitted: (a,b)
 
 window frames and named windows
 
@@ -73,6 +57,8 @@ review abstract syntax (e.g. combine App with SpecialOp?)
 ----
 
 Later general tasks:
+
+sql server top syntax
 
 extended string literals, escapes and other flavours (like pg and
    oracle custom delimiters)
