@@ -601,7 +601,19 @@ where, having, limit, offset).
 > sgroupBy :: P [GroupingExpr]
 > sgroupBy = try (keyword_ "group")
 >            *> keyword_ "by"
->            *> commaSep1 (SimpleGroup <$> scalarExpr)
+>            *> commaSep1 groupingExpression
+>   where
+>     groupingExpression =
+>       choice
+>       [try (keyword_ "cube") >>
+>        Cube <$> parens (commaSep groupingExpression)
+>       ,try (keyword_ "rollup") >>
+>        Rollup <$> parens (commaSep groupingExpression)
+>       ,GroupingParens <$> parens (commaSep groupingExpression)
+>       ,try (keyword_ "grouping") >> keyword_ "sets" >>
+>        GroupingSets <$> parens (commaSep groupingExpression)
+>       ,SimpleGroup <$> scalarExpr
+>       ]
 
 > having :: P ScalarExpr
 > having = keywordScalarExpr "having"

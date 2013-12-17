@@ -38,9 +38,14 @@ sure which sql version they were introduced, 1999 or 2003 I think).
 
 > newGroupBy :: TestItem
 > newGroupBy = Group "newGroupBy" $ map (uncurry TestQueryExpr)
->     [
-
-group by ()
+>     [("select * from t group by ()", ms [GroupingParens []])
+>     ,("select * from t group by grouping sets ((), (a))"
+>      ,ms [GroupingSets [GroupingParens []
+>                        ,GroupingParens [SimpleGroup $ Iden "a"]]])
+>     ,("select * from t group by cube(a,b)"
+>      ,ms [Cube [SimpleGroup $ Iden "a", SimpleGroup $ Iden "b"]])
+>     ,("select * from t group by rollup(a,b)"
+>      ,ms [Rollup [SimpleGroup $ Iden "a", SimpleGroup $ Iden "b"]])
 
 
 GROUP BY a
@@ -224,3 +229,7 @@ GROUP BY CUBE(MONTH(SALES_DATE),REGION)
 ORDER BY MONTH, REGION
 
 >     ]
+>   where
+>     ms g = makeSelect {qeSelectList = [(Nothing,Star)]
+>                       ,qeFrom = [TRSimple "t"]
+>                       ,qeGroupBy = g}
