@@ -302,10 +302,14 @@ that SQL supports.
 >      <$ try (keyword_ "character" <* keyword_ "varying")
 >     ,TypeName <$> identifierString]
 
-== scalar parens
+== scalar parens and row ctor
 
 > sparens :: P ScalarExpr
-> sparens = Parens <$> parens scalarExpr'
+> sparens =
+>     ctor <$> parens (commaSep1 scalarExpr')
+>   where
+>     ctor [a] = Parens a
+>     ctor as = SpecialOp (Name "rowctor") as
 
 
 == operator parsing

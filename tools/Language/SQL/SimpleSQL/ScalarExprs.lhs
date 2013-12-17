@@ -203,6 +203,9 @@ Tests for parsing scalar expressions
 >     ,("substring(x from 1 for 2)"
 >      ,SpecialOp "substring" [Iden "x", NumLit "1", NumLit "2"])
 
+>     ,("(1,2)"
+>      ,SpecialOp "rowctor" [NumLit "1", NumLit "2"])
+
 >     ]
 
 > aggregates :: TestItem

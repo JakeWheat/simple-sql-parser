@@ -80,6 +80,9 @@
 >                             <+> text "for"
 >                             <+> scalarExpr e)
 
+> scalarExpr (SpecialOp (Name "rowctor") as) =
+>     parens $ commaSep $ map scalarExpr as
+
 > scalarExpr (SpecialOp nm es) =
 >   name nm <+> parens (commaSep $ map scalarExpr es)
 
