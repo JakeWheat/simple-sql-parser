@@ -275,8 +275,6 @@ I'm not sure if this is valid syntax or not.
 > data Alias = Alias Name (Maybe [Name])
 >              deriving (Eq,Show,Read)
 
-TODO: add function table ref
-
 > -- | The type of a join.
 > data JoinType = JInner | JLeft | JRight | JFull | JCross
 >                 deriving (Eq,Show,Read)
