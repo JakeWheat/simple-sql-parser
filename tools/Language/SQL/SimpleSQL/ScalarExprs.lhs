@@ -36,6 +36,7 @@ Tests for parsing scalar expressions
 >      ,("'1'", StringLit "1")
 >      ,("interval '3' day", IntervalLit "3" "day" Nothing)
 >      ,("interval '3' day (3)", IntervalLit "3" "day" $ Just 3)
+>      ,("interval '3 weeks'", TypedLit (TypeName "interval") "3 weeks")
 >     ]
 
 > identifiers :: TestItem
@@ -116,13 +117,13 @@ Tests for parsing scalar expressions
 >      ,Cast (StringLit "1") $ TypeName "int")
 
 >     ,("int '3'"
->      ,CastOp (TypeName "int") "3")
+>      ,TypedLit (TypeName "int") "3")
 
 >     ,("cast('1' as double precision)"
 >      ,Cast (StringLit "1") $ TypeName "double precision")
 
 >     ,("double precision '3'"
->      ,CastOp (TypeName "double precision") "3")
+>      ,TypedLit (TypeName "double precision") "3")
 >     ]
 
 > subqueries :: TestItem

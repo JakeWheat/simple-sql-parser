@@ -107,7 +107,7 @@ the fixity code.
 >                               ,HSE.List $ map (ltoh . (\(a,b) -> [a,b])) ts
 >                               ,ltoh $ maybeToList el])
 >     Cast e0 tn -> HSE.App (str ('c':show tn)) $ toHaskell e0
->     CastOp {} -> str ('v':show e)
+>     TypedLit {} -> str ('v':show e)
 >     SubQueryExpr {} -> str ('v': show e)
 >     In b e0 (InList l) ->
 >         HSE.App (str ('i':show b))

@@ -99,12 +99,16 @@ interval '5' day (3)
 or
 interval '5' month
 
+wrap the whole lot in try, in case we get something like this:
+interval '3 days'
+which parses as a typed literal
+
 > interval :: P ScalarExpr
-> interval = try (keyword_ "interval") >>
+> interval = try (keyword_ "interval" >>
 >     IntervalLit
 >     <$> stringLiteral
 >     <*> identifierString
->     <*> optionMaybe (try $ parens integerLiteral)
+>     <*> optionMaybe (try $ parens integerLiteral))
 
 > literal :: P ScalarExpr
 > literal = number <|> estring <|> interval
@@ -210,7 +214,7 @@ cast: cast(expr as type)
 >     parensCast = try (keyword_ "cast") >>
 >                  parens (Cast <$> scalarExpr'
 >                          <*> (keyword_ "as" *> typeName))
->     prefixCast = try (CastOp <$> typeName
+>     prefixCast = try (TypedLit <$> typeName
 >                              <*> stringLiteral)
 
 extract(id from expr)

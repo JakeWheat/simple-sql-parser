@@ -111,7 +111,7 @@
 >                                ,text "as"
 >                                ,text tn])
 
-> scalarExpr (CastOp (TypeName tn) s) =
+> scalarExpr (TypedLit (TypeName tn) s) =
 >     text tn <+> quotes (text s)
 
 > scalarExpr (SubQueryExpr ty qe) =

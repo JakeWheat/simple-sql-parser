@@ -104,11 +104,11 @@ queries section
 
 >     ,"SELECT x, sum(y) FROM test1 GROUP BY x HAVING sum(y) > 3;"
 >     ,"SELECT x, sum(y) FROM test1 GROUP BY x HAVING x < 'c';"
->     {-,"SELECT product_id, p.name, (sum(s.units) * (p.price - p.cost)) AS profit\n\
+>     ,"SELECT product_id, p.name, (sum(s.units) * (p.price - p.cost)) AS profit\n\
 >      \    FROM products p LEFT JOIN sales s USING (product_id)\n\
 >      \    WHERE s.date > CURRENT_DATE - INTERVAL '4 weeks'\n\
 >      \    GROUP BY product_id, p.name, p.price, p.cost\n\
->      \    HAVING sum(p.price * s.units) > 5000;"-} -- interval syntax?
+>      \    HAVING sum(p.price * s.units) > 5000;"
 
 >     ,"SELECT a, b, c FROM t"
 
@@ -219,10 +219,10 @@ select page reference
 >      \    FROM distributors d, films f\n\
 >      \    WHERE f.did = d.did"
 
->     {-,"SELECT kind, sum(len) AS total\n\
+>     ,"SELECT kind, sum(len) AS total\n\
 >      \    FROM films\n\
 >      \    GROUP BY kind\n\
->      \    HAVING sum(len) < interval '5 hours';"-} -- interval syntax?
+>      \    HAVING sum(len) < interval '5 hours';"
 
 >     ,"SELECT * FROM distributors ORDER BY name;"
 >     ,"SELECT * FROM distributors ORDER BY 2;"

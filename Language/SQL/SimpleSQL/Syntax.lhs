@@ -88,7 +88,7 @@
 >       -- | cast(a as typename)
 >     | Cast ScalarExpr TypeName
 >       -- | prefix 'typed literal', e.g. int '42'
->     | CastOp TypeName String
+>     | TypedLit TypeName String
 >       -- | exists, all, any, some subqueries
 >     | SubQueryExpr SubQueryExprType QueryExpr
 >       -- | in list literal and in subquery, if the bool is false it
