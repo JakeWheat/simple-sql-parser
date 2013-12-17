@@ -1,17 +1,18 @@
 
-These is the tests for all the bits which aren't in the other files,
-mainly query exprs except the tablerefs. These tests focus on one part
-of the query expression. The FullQueries tests focus on parsing more
-complex query expressions.
+These are the tests for the query expression components apart from the
+table refs which are in a separate file.
 
-> module Language.SQL.SimpleSQL.Misc (miscTests) where
+
+These are a few misc tests which don't fit anywhere else.
+
+> module Language.SQL.SimpleSQL.QueryExprComponents (queryExprComponentTests) where
 
 > import Language.SQL.SimpleSQL.TestTypes
 > import Language.SQL.SimpleSQL.Syntax
 
 
-> miscTests :: TestItem
-> miscTests = Group "miscTests"
+> queryExprComponentTests :: TestItem
+> queryExprComponentTests = Group "queryExprComponentTests"
 >     [duplicates
 >     ,selectLists
 >     ,whereClause
@@ -21,7 +22,6 @@ complex query expressions.
 >     ,limit
 >     ,combos
 >     ,withQueries
->     ,queryExprsTests
 >     ]
 
 
@@ -184,13 +184,3 @@ complex query expressions.
 >    ms1 = ms "a" "t"
 >    ms2 = ms "a" "u"
 >    ms3 = ms "a" "x"
-
-> queryExprsTests :: TestItem
-> queryExprsTests = Group "query exprs" $ map (uncurry TestQueryExprs)
->     [("select 1",[ms])
->     ,("select 1;",[ms])
->     ,("select 1;select 1",[ms,ms])
->     ,(" select 1;select 1; ",[ms,ms])
->     ]
->   where
->     ms = makeSelect {qeSelectList = [(Nothing,NumLit "1")]}

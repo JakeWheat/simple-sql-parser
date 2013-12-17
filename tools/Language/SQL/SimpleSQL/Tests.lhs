@@ -26,24 +26,28 @@ tpch tests
 > import Language.SQL.SimpleSQL.TestTypes
 
 > import Language.SQL.SimpleSQL.FullQueries
-> import Language.SQL.SimpleSQL.Misc
 > import Language.SQL.SimpleSQL.Postgres
+> import Language.SQL.SimpleSQL.QueryExprComponents
+> import Language.SQL.SimpleSQL.QueryExprs
+
 > import Language.SQL.SimpleSQL.TableRefs
 > import Language.SQL.SimpleSQL.ScalarExprs
 > import Language.SQL.SimpleSQL.Tpch
 
 
 
-
+Order the tests to start from the simplest first. This is also the
+order on the generated documentation.
 
 > testData :: TestItem
 > testData =
 >     Group "parserTest"
->     [fullQueriesTests
->     ,miscTests
->     ,postgresTests
+>     [scalarExprTests
+>     ,queryExprComponentTests
 >     ,tableRefTests
->     ,scalarExprTests
+>     ,queryExprsTests
+>     ,fullQueriesTests
+>     ,postgresTests
 >     ,tpchTests
 >     ]
 
