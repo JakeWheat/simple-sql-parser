@@ -52,7 +52,14 @@ Test-Suite Tests
                        Language.SQL.SimpleSQL.Parser,
                        Language.SQL.SimpleSQL.Syntax,
                        Language.SQL.SimpleSQL.Fixity,
+                       Language.SQL.SimpleSQL.FullQueries,
+                       Language.SQL.SimpleSQL.Misc,
+                       Language.SQL.SimpleSQL.Postgres,
+                       Language.SQL.SimpleSQL.ScalarExprs,
+                       Language.SQL.SimpleSQL.TableRefs,
+                       Language.SQL.SimpleSQL.TestTypes,
                        Language.SQL.SimpleSQL.Tests,
+                       Language.SQL.SimpleSQL.Tpch,
                        Tpch
   other-extensions:    TupleSections
   default-language:    Haskell2010
