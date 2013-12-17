@@ -11,9 +11,10 @@
 <body>
 <h1 id="simple-sql-parser">simple-sql-parser</h1>
 <p>A parser for SQL queries in Haskell. Also includes a pretty printer which formats output nicely. The goal is to parse most of SQL:2003 queries, and possibly some other SQL dialects also.</p>
+<p>This is the documentation for version 0.2.0.</p>
 <p>Status: Alpha</p>
 <h1 id="feature-support">Feature support</h1>
-<p>Here is a document with all the <a href="test_cases.html">simple-sql-parser test cases</a> rendered so you can get an idea of what it supports. It also parses all the <a href="tpch.sql.html">TPC-H queries</a>.</p>
+<p>Here is a document with all the <a href="test_cases.html">simple-sql-parser test cases</a> rendered so you can get an idea of what it supports.</p>
 <h2 id="overview">overview:</h2>
 <ul>
 <li>distinct</li>
@@ -23,17 +24,19 @@
 <li>group by</li>
 <li>having</li>
 <li>order by</li>
-<li>limit</li>
-<li>offset</li>
+<li>offset and fetch</li>
 <li>set operators</li>
 <li>common table expressions</li>
+<li>values expression (values (1,2),(3,4))</li>
+<li>table expression (table t)</li>
 </ul>
 <h2 id="select-lists">select lists</h2>
-<p>full support (I think)</p>
+<p>full support</p>
 <h2 id="from">from</h2>
 <ul>
 <li>aliases</li>
 <li>subqueries</li>
+<li>functions</li>
 <li>joins
 <ul>
 <li>natural</li>
@@ -42,28 +45,27 @@
 <li>cross</li>
 <li>on expressions</li>
 <li>using lists</li>
+<li>lateral</li>
 </ul></li>
 </ul>
 <h2 id="group-by">group by</h2>
-<p>supports lists of scalar expressions</p>
-<p>group by (), cube, rollup, grouping sets coming soon.</p>
+<p>supports scalar expressions, group by (), cube, rollup and grouping sets with nested grouping expressions</p>
 <h2 id="order-by">order by</h2>
-<p>supports scalar expressions and directions</p>
-<p>Support for nulls first/last coming soon.</p>
-<h2 id="limit-offset">limit, offset</h2>
-<p>supports scalar expressions</p>
-<p>Support for standard ANSI syntax, plus other variations coming soon.</p>
+<p>supports scalar expressions, directions and nulls first/last.</p>
+<h2 id="offset-and-fetch">offset and fetch</h2>
+<p>ansi standard plus postgresql variation (limit n offset n)</p>
 <h2 id="set-operators">set operators</h2>
 <p>union, except, intersect + all/distinct and corresponding</p>
 <h2 id="scalar-expressions">scalar expressions</h2>
 <ul>
-<li>basic string literals (escapes and other string literal syntaxes coming soon)</li>
+<li>basic string literals in single quotes (escapes and other string literal syntaxes coming soon)</li>
 <li>number literals: digits.digitse+-exp</li>
 <li>binary operators:
 <ul>
 <li>comparisons: = != &lt;&gt; &lt;= &gt;= &lt; &gt;</li>
-<li>arithmetic: + - / *</li>
+<li>arithmetic: + - / * %</li>
 <li>logic: and, or</li>
+<li>bitwise: ^ &amp; |</li>
 <li>string: ||, like, not like</li>
 <li>other: overlaps, is similar to, is not similar too, is distinct from, is not distinct from</li>
 </ul></li>
@@ -71,12 +73,16 @@
 <ul>
 <li>+, -</li>
 <li>not</li>
+<li>~</li>
 </ul></li>
 <li>postfix unary
 <ul>
 <li>is null, is not null</li>
 <li>is true, is not true, is false, is not false, is unknown, is not unknown</li>
 </ul></li>
+</ul>
+<p>some of the precendence and associativity of operators isn't completely correct at the moment.</p>
+<ul>
 <li>other operators
 <ul>
 <li>substring (substring(x from 2 for 4)</li>
@@ -94,27 +100,21 @@
 </ul></li>
 <li>case expressions</li>
 <li>parenthesis</li>
-</ul>
-<p>more operators coming soon.</p>
-<ul>
-<li>unquoted identifiers only (quoted identifiers coming soon)</li>
-<li>a.b qualified identifiers (more dots coming soon)</li>
+<li>quoted and unquoted identifiers</li>
+<li>a.b qualified identifiers</li>
 <li>*, a.*</li>
 <li>functions: f(a,b)</li>
 <li>aggregates: agg(distinct a order by b)</li>
-<li>window functions: sum(x) over (partition by y order by z) (explicit frames and named windows coming soon)</li>
+<li>window functions: sum(x) over (partition by y order by z) plus some explicit frame support (same as in postgres 9.3)</li>
 </ul>
 <h2 id="features-todo">features todo</h2>
 <ul>
 <li>all the coming soons from above</li>
 <li>placeholders (?, $1, :field, etc.)</li>
 <li>row constructors e.g. where (a,b) = any (select a,b from t)</li>
-<li>extend case to support multiple test expressions for a branch</li>
-<li>lateral</li>
-<li>table t</li>
-<li>values expressions</li>
 <li>apply, pivot</li>
 <li>collate</li>
+<li>more complete frame clause and named window support</li>
 <li>more, pending review of SQL:2003, I just can't wait to get stuck into the SQL Standard documentation</li>
 </ul>
 <h1 id="installation">Installation</h1>
@@ -126,7 +126,7 @@ cd simple_sql_parser
 cabal install</code></pre>
 <h1 id="documentation">Documentation</h1>
 <ul>
-<li>see the <a href="test_cases.html">simple-sql-parser test cases</a> and the <a href="tpch.sql.html">TPC-H queries</a> for examples.</li>
+<li>see the <a href="test_cases.html">simple-sql-parser test cases</a> for examples.</li>
 <li><a href="haddock/index.html">simple-sql-parser Haddock</a></li>
 </ul>
 <h1 id="links">Links</h1>

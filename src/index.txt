@@ -4,13 +4,15 @@ A parser for SQL queries in Haskell. Also includes a pretty printer
 which formats output nicely. The goal is to parse most of SQL:2003
 queries, and possibly some other SQL dialects also.
 
+This is the documentation for version 0.2.0.
+
 Status: Alpha
 
 # Feature support
 
 Here is a document with all the [simple-sql-parser test
 cases](test_cases.html) rendered so you can get an idea of what it
-supports. It also parses all the [TPC-H queries](tpch.sql.html).
+supports.
 
 ## overview:
 
@@ -21,19 +23,21 @@ supports. It also parses all the [TPC-H queries](tpch.sql.html).
 * group by
 * having
 * order by
-* limit
-* offset
+* offset and fetch
 * set operators
 * common table expressions
+* values expression (values (1,2),(3,4))
+* table expression (table t)
 
 ## select lists
 
-full support (I think)
+full support
 
 ## from
 
 * aliases
 * subqueries
+* functions
 * joins
     - natural
     - inner
@@ -41,24 +45,20 @@ full support (I think)
     - cross
     - on expressions
     - using lists
+    - lateral
 
 ## group by
 
-supports lists of scalar expressions
-
-group by (), cube, rollup, grouping sets coming soon.
+supports scalar expressions, group by (), cube, rollup and grouping
+sets with nested grouping expressions
 
 ## order by
 
-supports scalar expressions and directions
+supports scalar expressions, directions and nulls first/last.
 
-Support for nulls first/last coming soon.
+## offset and fetch
 
-## limit, offset
-
-supports scalar expressions
-
-Support for standard ANSI syntax, plus other variations coming soon.
+ansi standard plus postgresql variation (limit n offset n)
 
 ## set operators
 
@@ -66,22 +66,27 @@ union, except, intersect + all/distinct and corresponding
 
 ## scalar expressions
 
-* basic string literals (escapes and other string literal syntaxes
-  coming soon)
+* basic string literals in single quotes (escapes and other string
+  literal syntaxes coming soon)
 * number literals: digits.digitse+-exp
 * binary operators:
     - comparisons: = != <> <= >= < >
-    - arithmetic: + - / *
+    - arithmetic: + - / * %
     - logic: and, or
+    - bitwise: ^ & |
     - string: ||, like, not like
     - other: overlaps, is similar to, is not similar too, is distinct
     from, is not distinct from
 * prefix unary operators
     - +, -
     - not
+    - ~
 * postfix unary
     - is null, is not null
     - is true, is not true, is false, is not false, is unknown, is not unknown
+
+some of the precendence and associativity of operators isn't
+completely correct at the moment.
 
 * other operators
     - substring (substring(x from 2 for 4)
@@ -96,30 +101,24 @@ union, except, intersect + all/distinct and corresponding
     - exists
 * case expressions
 * parenthesis
-
-more operators coming soon.
-
-* unquoted identifiers only (quoted identifiers coming soon)
-* a.b qualified identifiers (more dots coming soon)
+* quoted and unquoted identifiers
+* a.b qualified identifiers
 * \*, a.\*
 * functions: f(a,b)
 * aggregates: agg(distinct a order by b)
 * window functions: sum(x) over (partition by y order by z)
-  (explicit frames and named windows coming soon)
+  plus some explicit frame support (same as in postgres 9.3)
 
 ## features todo
 
 * all the coming soons from above
 * placeholders (?, $1, :field, etc.)
 * row constructors e.g. where (a,b) = any (select a,b from t)
-* extend case to support multiple test expressions for a branch
-* lateral
-* table t
-* values expressions
 * apply, pivot
 * collate
+* more complete frame clause and named window support
 * more, pending review of SQL:2003, I just can't wait to get stuck into
-the SQL Standard documentation
+  the SQL Standard documentation
 
 # Installation
 
@@ -139,8 +138,8 @@ cabal install
 
 # Documentation
 
-* see the [simple-sql-parser test cases](test_cases.html) and the
-  [TPC-H queries](tpch.sql.html) for examples.
+* see the [simple-sql-parser test cases](test_cases.html) for
+  examples.
 * [simple-sql-parser Haddock](haddock/index.html)
 
 # Links
