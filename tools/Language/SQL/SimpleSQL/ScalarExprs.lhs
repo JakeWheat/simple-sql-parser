@@ -1,6 +1,7 @@
 
 Tests for parsing scalar expressions
 
+> {-# LANGUAGE OverloadedStrings #-}
 > module Language.SQL.SimpleSQL.ScalarExprs (scalarExprTests) where
 
 > import Language.SQL.SimpleSQL.TestTypes
@@ -43,6 +44,7 @@ Tests for parsing scalar expressions
 > identifiers = Group "identifiers" $ map (uncurry TestScalarExpr)
 >     [("iden1", Iden "iden1")
 >     ,("t.a", Iden2 "t" "a")
+>     ,("\"quoted identifier\"", Iden $ QName "quoted identifier")
 >     ]
 
 > star :: TestItem

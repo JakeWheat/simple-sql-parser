@@ -6,6 +6,8 @@ Tests.lhs module for the 'interpreter'.
 
 > import Language.SQL.SimpleSQL.Syntax
 
+> import Data.String
+
 > data TestItem = Group String [TestItem]
 >               | TestScalarExpr String ScalarExpr
 >               | TestQueryExpr String QueryExpr
@@ -18,3 +20,7 @@ should all be TODO to convert to a testqueryexpr test.
 >               | ParseQueryExpr String
 >                 deriving (Eq,Show)
 
+hack to make the tests a bit simpler
+
+> instance IsString Name where
+>    fromString = Name

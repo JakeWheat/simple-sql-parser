@@ -34,15 +34,15 @@
 >     text "interval" <+> quotes (text v)
 >     <+> text u
 >     <+> maybe empty (parens . text . show ) p
-> scalarExpr (Iden i) = text i
-> scalarExpr (Iden2 q i) = text q <> text "." <> text i
+> scalarExpr (Iden i) = name i
+> scalarExpr (Iden2 q i) = name q <> text "." <> name i
 > scalarExpr Star = text "*"
-> scalarExpr (Star2 q) = text q <> text "." <> text "*"
+> scalarExpr (Star2 q) = name q <> text "." <> text "*"
 
-> scalarExpr (App f es) = text f <> parens (commaSep (map scalarExpr es))
+> scalarExpr (App f es) = name f <> parens (commaSep (map scalarExpr es))
 
 > scalarExpr (AggregateApp f d es od) =
->     text f
+>     name f
 >     <> parens ((case d of
 >                   Just Distinct -> text "distinct"
 >                   Just All -> text "all"
@@ -51,7 +51,7 @@
 >                <+> orderBy od)
 
 > scalarExpr (WindowApp f es pb od) =
->     text f <> parens (commaSep $ map scalarExpr es)
+>     name f <> parens (commaSep $ map scalarExpr es)
 >     <+> text "over"
 >     <+> parens ((case pb of
 >                     [] -> empty
@@ -59,18 +59,19 @@
 >                           <+> nest 13 (commaSep $ map scalarExpr pb))
 >                 <+> orderBy od)
 
-> scalarExpr (SpecialOp nm [a,b,c]) | nm `elem` ["between", "not between"] =
+> scalarExpr (SpecialOp nm [a,b,c]) | nm `elem` [Name "between"
+>                                               ,Name "not between"] =
 >   sep [scalarExpr a
->       ,text nm <+> scalarExpr b
->       ,nest (length nm + 1)
+>       ,name nm <+> scalarExpr b
+>       ,nest (length (unname nm) + 1)
 >        $ text "and" <+> scalarExpr c]
 
-> scalarExpr (SpecialOp "extract" [a,n]) =
+> scalarExpr (SpecialOp (Name "extract") [a,n]) =
 >   text "extract" <> parens (scalarExpr a
 >                             <+> text "from"
 >                             <+> scalarExpr n)
 
-> scalarExpr (SpecialOp "substring" [a,s,e]) =
+> scalarExpr (SpecialOp (Name "substring") [a,s,e]) =
 >   text "substring" <> parens (scalarExpr a
 >                             <+> text "from"
 >                             <+> scalarExpr s
@@ -78,22 +79,22 @@
 >                             <+> scalarExpr e)
 
 > scalarExpr (SpecialOp nm es) =
->   text nm <+> parens (commaSep $ map scalarExpr es)
+>   name nm <+> parens (commaSep $ map scalarExpr es)
 
-> scalarExpr (PrefixOp f e) = text f <+> scalarExpr e
-> scalarExpr (PostfixOp f e) = scalarExpr e <+> text f
-> scalarExpr e@(BinOp _ op _) | op `elem` ["and", "or"] =
+> scalarExpr (PrefixOp f e) = name f <+> scalarExpr e
+> scalarExpr (PostfixOp f e) = scalarExpr e <+> name f
+> scalarExpr e@(BinOp _ op _) | op `elem` [(Name "and"), (Name "or")] =
 >     -- special case for and, or, get all the ands so we can vcat them
 >     -- nicely
 >     case ands e of
 >       (e':es) -> vcat (scalarExpr e'
->                        : map ((text op <+>) . scalarExpr) es)
+>                        : map ((name op <+>) . scalarExpr) es)
 >       [] -> empty -- shouldn't be possible
 >   where
 >     ands (BinOp a op' b) | op == op' = ands a ++ ands b
 >     ands x = [x]
 > scalarExpr (BinOp e0 f e1) =
->     scalarExpr e0 <+> text f <+> scalarExpr e1
+>     scalarExpr e0 <+> name f <+> scalarExpr e1
 
 > scalarExpr (Case t ws els) =
 >     sep $ [text "case" <+> maybe empty scalarExpr t]
@@ -132,6 +133,14 @@
 >                      InList es -> commaSep $ map scalarExpr es
 >                      InQueryExpr qe -> queryExpr qe)
 
+> unname :: Name -> String
+> unname (QName n) = "\"" ++ n ++ "\""
+> unname (Name n) = n
+
+> name :: Name -> Doc
+> name (QName n) = doubleQuotes $ text n
+> name (Name n) = text n
+
 = query expressions
 
 > queryExpr :: QueryExpr -> Doc
@@ -166,14 +175,14 @@
 >   text "with"
 >   <+> vcat [nest 5
 >             (vcat $ punctuate comma $ flip map withs $ \(n,q) ->
->              text n <+> text "as" <+> parens (queryExpr q))
+>              name n <+> text "as" <+> parens (queryExpr q))
 >            ,queryExpr qe]
 
-> selectList :: [(Maybe String, ScalarExpr)] -> Doc
+> selectList :: [(Maybe Name, ScalarExpr)] -> Doc
 > selectList is = commaSep $ map si is
 >   where
 >     si (al,e) = scalarExpr e <+> maybe empty alias al
->     alias al = text "as" <+> text al
+>     alias al = text "as" <+> name al
 
 > from :: [TableRef] -> Doc
 > from [] = empty
@@ -181,14 +190,14 @@
 >     sep [text "from"
 >         ,nest 5 $ vcat $ punctuate comma $ map tr ts]
 >   where
->     tr (TRSimple t) = text t
+>     tr (TRSimple t) = name t
 >     tr (TRLateral t) = text "lateral" <+> tr t
 >     tr (TRFunction f as) =
->         text f <> parens (commaSep $ map scalarExpr as)
+>         name f <> parens (commaSep $ map scalarExpr as)
 >     tr (TRAlias t a cs) =
 >         sep [tr t
->             ,text "as" <+> text a
->              <+> maybe empty (parens . commaSep . map text) cs]
+>             ,text "as" <+> name a
+>              <+> maybe empty (parens . commaSep . map name) cs]
 >     tr (TRParens t) = parens $ tr t
 >     tr (TRQueryExpr q) = parens $ queryExpr q
 >     tr (TRJoin t0 jt t1 jc) =
@@ -208,7 +217,7 @@
 >           ,text "join"]
 >     joinCond (Just (JoinOn e)) = text "on" <+> scalarExpr e
 >     joinCond (Just (JoinUsing es)) =
->         text "using" <+> parens (commaSep $ map text es)
+>         text "using" <+> parens (commaSep $ map name es)
 >     joinCond Nothing = empty
 >     joinCond (Just JoinNatural) = empty
 

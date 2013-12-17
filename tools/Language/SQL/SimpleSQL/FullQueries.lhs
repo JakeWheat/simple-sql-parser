@@ -1,6 +1,7 @@
 
 Some tests for parsing full queries.
 
+> {-# LANGUAGE OverloadedStrings #-}
 > module Language.SQL.SimpleSQL.FullQueries (fullQueriesTests) where
 
 > import Language.SQL.SimpleSQL.TestTypes

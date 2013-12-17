@@ -73,34 +73,34 @@ the fixity code.
 > toHaskell e = case e of
 >     BinOp e0 op e1 -> HSE.InfixApp
 >                       (toHaskell e0)
->                       (HSE.QVarOp $ sym op)
+>                       (HSE.QVarOp $ sym $ name op)
 >                       (toHaskell e1)
 >     Iden {} -> str ('v':show e)
 >     StringLit {} -> str ('v':show e)
 >     NumLit {} -> str ('v':show e)
->     App n es -> HSE.App (var ('f':n)) $ ltoh es
+>     App n es -> HSE.App (var ('f':name n)) $ ltoh es
 >     Parens e0 -> HSE.Paren $ toHaskell e0
 >     IntervalLit {} -> str ('v':show e)
 >     Iden2 {} -> str ('v':show e)
 >     Star -> str ('v':show e)
 >     Star2 {} -> str ('v':show e)
 >     AggregateApp nm d es od ->
->         HSE.App (var ('a':nm))
+>         HSE.App (var ('a':name nm))
 >         $ HSE.List [str $ show (d,map snd od)
 >                    ,HSE.List $ map toHaskell es
 >                    ,HSE.List $ map (toHaskell . fst) od]
 >     WindowApp nm es pb od ->
->         HSE.App (var ('w':nm))
+>         HSE.App (var ('w':name nm))
 >         $ HSE.List [str $ show (map snd od)
 >                    ,HSE.List $ map toHaskell es
 >                    ,HSE.List $ map toHaskell pb
 >                    ,HSE.List $ map (toHaskell . fst) od]
 >     PrefixOp nm e0 ->
->         HSE.App (HSE.Var $ sym nm) (toHaskell e0)
+>         HSE.App (HSE.Var $ sym $ name nm) (toHaskell e0)
 >     PostfixOp nm e0 ->
->         HSE.App (HSE.Var $ sym ('p':nm)) (toHaskell e0)
+>         HSE.App (HSE.Var $ sym ('p':name nm)) (toHaskell e0)
 >     SpecialOp nm es ->
->         HSE.App (var ('s':nm)) $ HSE.List $ map toHaskell es
+>         HSE.App (var ('s':name nm)) $ HSE.List $ map toHaskell es
 >     -- map the two maybes to lists with either 0 or 1 element
 >     Case v ts el -> HSE.App (var "$case")
 >                     (HSE.List [ltoh $ maybeToList v
@@ -118,6 +118,9 @@ the fixity code.
 >     str = HSE.Lit . HSE.String
 >     var = HSE.Var . HSE.UnQual . HSE.Ident
 >     sym = HSE.UnQual . HSE.Symbol
+>     name n = case n of
+>        QName q -> "\"" ++ q
+>        Name m -> m
 
 
 > toSql :: HSE.Exp -> ScalarExpr
@@ -125,17 +128,17 @@ the fixity code.
 
 
 >     HSE.InfixApp e0 (HSE.QVarOp (HSE.UnQual (HSE.Symbol n))) e1 ->
->         BinOp (toSql e0) n (toSql e1)
+>         BinOp (toSql e0) (unname n) (toSql e1)
 >     HSE.Lit (HSE.String ('v':l)) -> read l
 >     HSE.App (HSE.Var (HSE.UnQual (HSE.Ident ('f':i))))
->             (HSE.List es) -> App i $ map toSql es
+>             (HSE.List es) -> App (unname i) $ map toSql es
 >     HSE.Paren e0 -> Parens $ toSql e0
 >     HSE.App (HSE.Var (HSE.UnQual (HSE.Ident ('a':i))))
 >             (HSE.List [HSE.Lit (HSE.String vs)
 >                       ,HSE.List es
 >                       ,HSE.List od]) ->
 >         let (d,dir) = read vs
->         in AggregateApp i d (map toSql es)
+>         in AggregateApp (unname i) d (map toSql es)
 >                         $ zip (map toSql od) dir
 >     HSE.App (HSE.Var (HSE.UnQual (HSE.Ident ('w':i))))
 >             (HSE.List [HSE.Lit (HSE.String vs)
@@ -143,15 +146,14 @@ the fixity code.
 >                       ,HSE.List pb
 >                       ,HSE.List od]) ->
 >         let dir = read vs
->         in WindowApp i (map toSql es)
->                        (map toSql pb)
+>         in WindowApp (unname i) (map toSql es) (map toSql pb)
 >                        $ zip (map toSql od) dir
 >     HSE.App (HSE.Var (HSE.UnQual (HSE.Symbol ('p':nm)))) e0 ->
->         PostfixOp nm $ toSql e0
+>         PostfixOp (unname nm) $ toSql e0
 >     HSE.App (HSE.Var (HSE.UnQual (HSE.Symbol nm))) e0 ->
->         PrefixOp nm $ toSql e0
+>         PrefixOp (unname nm) $ toSql e0
 >     HSE.App (HSE.Var (HSE.UnQual (HSE.Ident ('s':nm)))) (HSE.List es) ->
->         SpecialOp nm $ map toSql es
+>         SpecialOp (unname nm) $ map toSql es
 >     HSE.App (HSE.Var (HSE.UnQual (HSE.Ident "$case")))
 >             (HSE.List [v,ts,el]) ->
 >         Case (ltom v) (pairs ts) (ltom el)
@@ -172,3 +174,5 @@ the fixity code.
 >     pairs ex = err ex
 >     err :: Show a => a -> e
 >     err a = error $ "simple-sql-parser: internal fixity error " ++ show a
+>     unname ('"':nm) = QName nm
+>     unname n = Name n

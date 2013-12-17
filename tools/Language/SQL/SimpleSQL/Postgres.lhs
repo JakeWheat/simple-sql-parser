@@ -118,7 +118,7 @@ queries section
 
 >     ,"SELECT a AS value, b + c AS sum FROM t"
 
->     --,"SELECT a \"value\", b + c AS sum FROM t" -- quoted identifier
+>     ,"SELECT a \"value\", b + c AS sum FROM t"
 
 >     ,"SELECT DISTINCT select_list t"
 

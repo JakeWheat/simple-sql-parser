@@ -118,15 +118,18 @@ which parses as a typed literal
 Uses the identifierString 'lexer'. See this function for notes on
 identifiers.
 
+> name :: P Name
+> name = choice [QName <$> quotedIdentifier
+>               ,Name <$> identifierString]
+
 > identifier :: P ScalarExpr
-> identifier = Iden <$> identifierString
+> identifier = Iden <$> name
 
 Identifier with one dot in it. This should be extended to any amount
 of dots.
 
 > dottedIden :: P ScalarExpr
-> dottedIden = Iden2 <$> identifierString
->                    <*> (symbol "." *> identifierString)
+> dottedIden = Iden2 <$> name <*> (symbol "." *> name)
 
 == star
 
@@ -135,7 +138,7 @@ places as well.
 
 > star :: P ScalarExpr
 > star = choice [Star <$ symbol "*"
->               ,Star2 <$> (identifierString <* symbol "." <* symbol "*")]
+>               ,Star2 <$> (name <* symbol "." <* symbol "*")]
 
 == function application, aggregates and windows
 
@@ -150,7 +153,7 @@ aggregate([all|distinct] args [order by orderitems])
 > aggOrApp :: P ScalarExpr
 > aggOrApp =
 >     makeApp
->     <$> identifierString
+>     <$> name
 >     <*> parens ((,,) <$> try duplicates
 >                      <*> choice [commaSep scalarExpr']
 >                      <*> try (optionMaybe orderBy))
@@ -221,9 +224,9 @@ extract(id from expr)
 
 > extract :: P ScalarExpr
 > extract = try (keyword_ "extract") >>
->     parens (makeOp <$> identifierString
+>     parens (makeOp <$> name
 >                    <*> (keyword_ "from" *> scalarExpr'))
->   where makeOp n e = SpecialOp "extract" [Iden n, e]
+>   where makeOp n e = SpecialOp (Name "extract") [Iden n, e]
 
 substring(x from expr to expr)
 
@@ -235,7 +238,7 @@ todo: also support substring(x from expr)
 >                    <*> (keyword_ "from" *> scalarExpr')
 >                    <*> (keyword_ "for" *> scalarExpr')
 >                    )
->   where makeOp a b c = SpecialOp "substring" [a,b,c]
+>   where makeOp a b c = SpecialOp (Name "substring") [a,b,c]
 
 in: two variations:
 a in (expr0, expr1, ...)
@@ -267,7 +270,7 @@ and operator. This is the call to scalarExpr'' True.
 
 > betweenSuffix :: ScalarExpr -> P ScalarExpr
 > betweenSuffix e =
->     makeOp <$> opName
+>     makeOp <$> (Name <$> opName)
 >            <*> return e
 >            <*> scalarExpr'' True
 >            <*> (keyword_ "and" *> scalarExpr'' True)
@@ -367,7 +370,7 @@ The parsers:
 
 > prefixUnaryOp :: P ScalarExpr
 > prefixUnaryOp =
->     PrefixOp <$> opSymbol <*> scalarExpr'
+>     PrefixOp <$> (Name <$> opSymbol) <*> scalarExpr'
 >   where
 >     opSymbol = choice (map (try . symbol) prefixUnOpSymbolNames
 >                        ++ map (try . keyword) prefixUnOpKeywordNames)
@@ -381,7 +384,7 @@ both cases
 >     try $ choice $ map makeOp opPairs
 >   where
 >     opPairs = flip map postfixOpKeywords $ \o -> (o, words o)
->     makeOp (o,ws) = try $ PostfixOp o e <$ keywords_ ws
+>     makeOp (o,ws) = try $ PostfixOp (Name o) e <$ keywords_ ws
 >     keywords_ = try . mapM_ keyword_
 
 All the binary operators are parsed as same precedence and left
@@ -389,7 +392,7 @@ associativity. This is fixed with a separate pass over the AST.
 
 > binaryOperatorSuffix :: Bool -> ScalarExpr -> P ScalarExpr
 > binaryOperatorSuffix bExpr e0 =
->     BinOp e0 <$> opSymbol <*> factor
+>     BinOp e0 <$> (Name <$> opSymbol) <*> factor
 >   where
 >     opSymbol = choice
 >         (map (try . symbol) binOpSymbolNames
@@ -487,11 +490,11 @@ expression tree (for efficiency and code clarity).
 
 == select lists
 
-> selectItem :: P (Maybe String, ScalarExpr)
+> selectItem :: P (Maybe Name, ScalarExpr)
 > selectItem = flip (,) <$> scalarExpr <*> optionMaybe (try alias)
->   where alias = optional (try (keyword_ "as")) *> identifierString
+>   where alias = optional (try (keyword_ "as")) *> name
 
-> selectList :: P [(Maybe String,ScalarExpr)]
+> selectList :: P [(Maybe Name,ScalarExpr)]
 > selectList = commaSep1 selectItem
 
 == from
@@ -510,14 +513,14 @@ tref
 >     nonJoinTref = choice [try (TRQueryExpr <$> parens queryExpr)
 >                          ,TRParens <$> parens tref
 >                          ,TRLateral <$> (try (keyword_ "lateral") *> tref)
->                          ,try (TRFunction <$> identifierString
+>                          ,try (TRFunction <$> name
 >                                           <*> parens (commaSep scalarExpr))
->                          ,TRSimple <$> identifierString]
+>                          ,TRSimple <$> name]
 >                   >>= optionSuffix aliasSuffix
 >     aliasSuffix j =
->         let tableAlias = optional (try $ keyword_ "as") *> identifierString
+>         let tableAlias = optional (try $ keyword_ "as") *> name
 >             columnAliases = optionMaybe $ try $ parens
->                             $ commaSep1 identifierString
+>                             $ commaSep1 name
 >         in option j (TRAlias j <$> try tableAlias <*> try columnAliases)
 >     joinTrefSuffix t = (do
 >          nat <- option False $ try (True <$ try (keyword_ "natural"))
@@ -540,7 +543,7 @@ tref
 >                ,try (keyword_ "on") >>
 >                 JoinOn <$> scalarExpr
 >                ,try (keyword_ "using") >>
->                 JoinUsing <$> parens (commaSep1 identifierString)
+>                 JoinUsing <$> parens (commaSep1 name)
 >                ]
 
 == simple other parts
@@ -585,7 +588,7 @@ where, having, limit, offset).
 >     With <$> commaSep1 withQuery <*> queryExpr
 >   where
 >     withQuery =
->         (,) <$> (identifierString <* optional (try $ keyword_ "as"))
+>         (,) <$> (name <* optional (try $ keyword_ "as"))
 >             <*> parens queryExpr
 
 == query expression
@@ -705,6 +708,10 @@ t, we have to make sure the from isn't parsed as an alias. I'm not
 sure what other places strictly need the blacklist, and in theory it
 could be tuned differently for each place the identifierString/
 identifier parsers are used to only blacklist the bare minimum.
+
+> quotedIdentifier :: P String
+> quotedIdentifier = char '"' *> manyTill anyChar (symbol_ "\"")
+
 
 String literals: limited at the moment, no escaping \' or other
 variations.

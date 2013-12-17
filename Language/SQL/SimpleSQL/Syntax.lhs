@@ -3,6 +3,7 @@
 > module Language.SQL.SimpleSQL.Syntax
 >     (-- * Scalar expressions
 >      ScalarExpr(..)
+>     ,Name(..)
 >     ,TypeName(..)
 >     ,Duplicates(..)
 >     ,Direction(..)
@@ -44,40 +45,40 @@
 >       -- e.g. interval 3 days (3)
 >     | IntervalLit String String (Maybe Int)
 >       -- | identifier without dots
->     | Iden String
+>     | Iden Name
 >       -- | identifier with one dot
->     | Iden2 String String
+>     | Iden2 Name Name
 >       -- | star
 >     | Star
 >       -- | star with qualifier, e.g t.*
->     | Star2 String
+>     | Star2 Name
 >       -- | function application (anything that looks like c style
 >       -- function application syntactically)
->     | App String [ScalarExpr]
+>     | App Name [ScalarExpr]
 >       -- | aggregate application, which adds distinct or all, and
 >       -- order by, to regular function application
->     | AggregateApp String (Maybe Duplicates)
+>     | AggregateApp Name (Maybe Duplicates)
 >                    [ScalarExpr]
 >                    [(ScalarExpr,Direction)]
 >       -- | window application, which adds over (partition by a order
 >       -- by b) to regular function application. Explicit frames are
 >       -- not currently supported
->     | WindowApp String [ScalarExpr] [ScalarExpr] [(ScalarExpr,Direction)]
+>     | WindowApp Name [ScalarExpr] [ScalarExpr] [(ScalarExpr,Direction)]
 >       -- | Infix binary operators. This is used for symbol operators
 >       -- (a + b), keyword operators (a and b) and multiple keyword
 >       -- operators (a is similar to b)
->     | BinOp ScalarExpr String ScalarExpr
+>     | BinOp ScalarExpr Name ScalarExpr
 >       -- | Prefix unary operators. This is used for symbol
 >       -- operators, keyword operators and multiple keyword operators
->     | PrefixOp String ScalarExpr
+>     | PrefixOp Name ScalarExpr
 >       -- | Postfix unary operators. This is used for symbol
 >       -- operators, keyword operators and multiple keyword operators
->     | PostfixOp String ScalarExpr
+>     | PostfixOp Name ScalarExpr
 >       -- | Used for ternary, mixfix and other non orthodox
 >       -- operators, including the function looking calls which use
 >       -- keywords instead of commas to separate the arguments,
 >       -- e.g. substring(t from 1 to 5)
->     | SpecialOp String [ScalarExpr]
+>     | SpecialOp Name [ScalarExpr]
 >       -- | case expression. both flavours supported. Multiple
 >       -- condition when branches not currently supported (case when
 >       -- a=4,b=5 then x end)
@@ -95,6 +96,11 @@
 >       -- means not in was used ('a not in (1,2)')
 >     | In Bool ScalarExpr InThing
 >       deriving (Eq,Show,Read)
+
+> -- | Represents an identifier name, which can be quoted or unquoted
+> data Name = Name String
+>           | QName String
+>           deriving (Eq,Show,Read)
 
 > -- | Represents a type name, used in casts.
 > data TypeName = TypeName String deriving (Eq,Show,Read)
@@ -135,7 +141,7 @@
 > data QueryExpr
 >     = Select
 >       {qeDuplicates :: Duplicates
->       ,qeSelectList :: [(Maybe String,ScalarExpr)]
+>       ,qeSelectList :: [(Maybe Name,ScalarExpr)]
 >        -- ^ the column aliases and the expressions
 >       ,qeFrom :: [TableRef]
 >       ,qeWhere :: Maybe ScalarExpr
@@ -152,7 +158,7 @@
 >       ,qeCorresponding :: Corresponding
 >       ,qe2 :: QueryExpr
 >       }
->     | With [(String,QueryExpr)] QueryExpr
+>     | With [(Name,QueryExpr)] QueryExpr
 >       deriving (Eq,Show,Read)
 
 TODO: add queryexpr parens to deal with e.g.
@@ -186,17 +192,17 @@ I'm not sure if this is valid syntax or not.
 
 > -- | Represents a entry in the csv of tables in the from clause.
 > data TableRef = -- | from t
->                 TRSimple String
+>                 TRSimple Name
 >                 -- | from a join b
 >               | TRJoin TableRef JoinType TableRef (Maybe JoinCondition)
 >                 -- | from (a)
 >               | TRParens TableRef
 >                 -- | from a as b(c,d)
->               | TRAlias TableRef String (Maybe [String])
+>               | TRAlias TableRef Name (Maybe [Name])
 >                 -- | from (query expr)
 >               | TRQueryExpr QueryExpr
 >                 -- | from function(args)
->               | TRFunction String [ScalarExpr]
+>               | TRFunction Name [ScalarExpr]
 >                 -- | from lateral t
 >               | TRLateral TableRef
 >                 deriving (Eq,Show,Read)
@@ -209,6 +215,6 @@ TODO: add function table ref
 
 > -- | The join condition.
 > data JoinCondition = JoinOn ScalarExpr -- ^ on expr
->                    | JoinUsing [String] -- ^ using (column list)
+>                    | JoinUsing [Name] -- ^ using (column list)
 >                    | JoinNatural -- ^ natural join was used
 >                      deriving (Eq,Show,Read)
