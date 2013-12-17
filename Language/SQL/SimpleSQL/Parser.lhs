@@ -126,7 +126,8 @@ of dots.
 
 == star
 
-used in select *, select x.*, and agg(*) variations.
+used in select *, select x.*, and agg(*) variations, and some other
+places as well.
 
 > star :: P ScalarExpr
 > star = choice [Star <$ symbol "*"
@@ -147,8 +148,7 @@ aggregate([all|distinct] args [order by orderitems])
 >     makeApp
 >     <$> identifierString
 >     <*> parens ((,,) <$> try duplicates
->                      <*> choice [(:[]) <$> try star
->                                 ,commaSep scalarExpr']
+>                      <*> choice [commaSep scalarExpr']
 >                      <*> try (optionMaybe orderBy))
 >   where
 >     makeApp i (Nothing,es,Nothing) = App i es
@@ -445,6 +445,7 @@ could at least do with some heavy explanation.
 >                 ,prefixUnaryOp
 >                 ,try app
 >                 ,try dottedIden
+>                 ,try star
 >                 ,identifier
 >                 ,sparens]
 
@@ -474,9 +475,7 @@ easy to ensure that this fix is only applied once to each scalar
 expression tree (for efficiency and code clarity).
 
 > scalarExpr :: P ScalarExpr
-> scalarExpr =
->     choice [try star
->            ,fixFixities sqlFixities <$> scalarExpr']
+> scalarExpr = fixFixities sqlFixities <$> scalarExpr'
 
 -------------------------------------------------
 

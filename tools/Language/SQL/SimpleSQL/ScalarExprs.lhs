@@ -48,6 +48,7 @@ Tests for parsing scalar expressions
 > star = Group "star" $ map (uncurry TestScalarExpr)
 >     [("*", Star)
 >     ,("t.*", Star2 "t")
+>     ,("ROW(t.*,42)", App "ROW" [Star2 "t", NumLit "42"])
 >     ]
 
 > app :: TestItem

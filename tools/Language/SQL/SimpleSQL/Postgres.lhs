@@ -22,7 +22,7 @@ TODO: get all the commented out tests working
 >      \    FROM states;"
 >     ,"SELECT ROW(1,2.5,'this is a test');"
 
->     --,"SELECT ROW(t.*, 42) FROM t;" -- needs the .* parsing to be enabled in more contexts
+>     ,"SELECT ROW(t.*, 42) FROM t;"
 >     ,"SELECT ROW(t.f1, t.f2, 42) FROM t;"
 >     ,"SELECT getf1(CAST(ROW(11,'this is a test',2.5) AS myrowtype));"
 
