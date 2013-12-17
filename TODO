@@ -1,6 +1,16 @@
-next release:
 
-rename the github project to use - instead of underscores
+update changelog
+
+rename the github project to use - instead of underscores, update
+   docs, etc., update website and upload new hackage version close
+   together
+check new website
+do release
+change old simple_sql_parser project to just point to new location
+  + web site point to new
+
+
+next release:
 
 add to website: pretty printed tpch, maybe other queries as
    demonstration

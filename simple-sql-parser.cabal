@@ -1,9 +1,9 @@
 name:                simple-sql-parser
 version:             0.2.0
 synopsis:            A parser for SQL queries
-description:         A parser for SQL queries. Please see the homepage for more information <http://jakewheat.github.io/simple_sql_parser/>.
+description:         A parser for SQL queries. Please see the homepage for more information <http://jakewheat.github.io/simple-sql-parser/>.
 
-homepage:            http://jakewheat.github.io/simple_sql_parser/
+homepage:            http://jakewheat.github.io/simple-sql-parser/
 license:             BSD3
 license-file:        LICENSE
 author:              Jake Wheat
@@ -13,11 +13,11 @@ category:            Database,Language
 build-type:          Simple
 extra-source-files:  README,LICENSE,changelog
 cabal-version:       >=1.10
-bug-reports:         https://github.com/JakeWheat/simple_sql_parser/issues
+bug-reports:         https://github.com/JakeWheat/simple-sql-parser/issues
 
 source-repository head
   type:                git
-  location:            https://github.com/JakeWheat/simple_sql_parser.git
+  location:            https://github.com/JakeWheat/simple-sql-parser.git
 
 library
   exposed-modules:     Language.SQL.SimpleSQL.Pretty,
