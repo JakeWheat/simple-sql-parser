@@ -183,8 +183,8 @@ always used with the optionSuffix combinator.
 >     partitionBy = try (keyword_ "partition") >>
 >         keyword_ "by" >> commaSep1 scalarExpr'
 >     frameClause =
->         mkFrame <$> (choice [FrameRows <$ keyword_ "rows"
->                             ,FrameRange <$ keyword_ "range"])
+>         mkFrame <$> choice [FrameRows <$ keyword_ "rows"
+>                            ,FrameRange <$ keyword_ "range"]
 >                 <*> frameStartEnd
 >     frameStartEnd =
 >         choice

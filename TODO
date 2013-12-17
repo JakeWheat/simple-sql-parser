@@ -1,5 +1,14 @@
-
 next release:
+
+add to website: pretty printed tpch, maybe other queries as
+   demonstration
+
+check haddock
+reformat the source for some of the tests
+
+----
+
+next release after that:
 
 review tests to copy from hssqlppp
 
@@ -21,8 +30,6 @@ review syntax to replace maybe and bool with better ctors
 
 ----
 
-add to website: pretty printed tpch, maybe other queries as
-   demonstration
 demo: convert tpch to sql server syntax exe processor
 
 ----
@@ -60,6 +67,11 @@ do some tests for parse errors?
 left factor parsing code in remaining places
 
 quasi quotes?
+
+ast checker: checks the ast represents valid syntax, the parser
+   doesn't check as much as it could, and this can also be used to
+   check generated trees. Maybe this doesn't belong in this package
+   though?
 
 = sql support
 

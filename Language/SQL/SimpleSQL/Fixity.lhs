@@ -117,7 +117,7 @@ the fixity code.
 >     var = HSE.Var . HSE.UnQual . HSE.Ident
 >     sym = HSE.UnQual . HSE.Symbol
 >     name n = case n of
->        QName q -> "\"" ++ q
+>        QName q -> '"' ++ q
 >        Name m -> m
 >     orderExps = map (toHaskell . (\(OrderField a _ _) -> a))
 >     orderInf = map (\(OrderField _ b c) -> (b,c))

@@ -9,7 +9,7 @@ revisited when the dialect support is added.
 > --import Language.SQL.SimpleSQL.Syntax
 
 > postgresTests :: TestItem
-> postgresTests = Group "postgresTests" $ map ParseQueryExpr $
+> postgresTests = Group "postgresTests" $ map ParseQueryExpr
 
 lexical syntax section
 

@@ -66,7 +66,7 @@
 >       -- order by, to regular function application
 >     | AggregateApp
 >       {aggName :: Name -- ^ aggregate function name
->       ,aggDistinct :: (Maybe Duplicates)-- ^ distinct
+>       ,aggDistinct :: Maybe Duplicates -- ^ distinct
 >       ,aggArgs :: [ScalarExpr]-- ^ args
 >       ,aggOrderBy :: [OrderField] -- ^ order by
 >       }

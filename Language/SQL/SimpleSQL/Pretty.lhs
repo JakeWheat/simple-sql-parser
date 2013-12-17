@@ -101,7 +101,7 @@
 
 > scalarExpr (PrefixOp f e) = name f <+> scalarExpr e
 > scalarExpr (PostfixOp f e) = scalarExpr e <+> name f
-> scalarExpr e@(BinOp _ op _) | op `elem` [(Name "and"), (Name "or")] =
+> scalarExpr e@(BinOp _ op _) | op `elem` [Name "and", Name "or"] =
 >     -- special case for and, or, get all the ands so we can vcat them
 >     -- nicely
 >     case ands e of
