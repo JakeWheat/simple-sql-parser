@@ -130,7 +130,7 @@ identifiers.
 
 used in select *, select x.*, and agg(*) variations, and some other
 places as well. Because it is quite general, the parser doesn't
-attempt to check that the star is in a valid context, it parses it ok
+attempt to check that the star is in a valid context, it parses it OK
 in any scalar expression context.
 
 > star :: P ScalarExpr

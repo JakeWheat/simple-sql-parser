@@ -1,5 +1,5 @@
 
-> -- | The AST for SQL queries
+> -- | The AST for SQL queries.
 > module Language.SQL.SimpleSQL.Syntax
 >     (-- * Scalar expressions
 >      ScalarExpr(..)
@@ -27,7 +27,7 @@
 >     ,JoinCondition(..)
 >     ) where
 
-> -- | Represents a scalar expression
+> -- | Represents a scalar expression.
 > data ScalarExpr
 >     = -- | a numeric literal optional decimal point, e+-
 >       -- integral exponent, e.g
@@ -112,7 +112,7 @@
 >     | In Bool ScalarExpr InThing
 >       deriving (Eq,Show,Read)
 
-> -- | Represents an identifier name, which can be quoted or unquoted
+> -- | Represents an identifier name, which can be quoted or unquoted.
 > data Name = Name String
 >           | QName String
 >           deriving (Eq,Show,Read)
@@ -125,12 +125,12 @@
 
 
 > -- | Used for 'expr in (scalar expression list)', and 'expr in
-> -- (subquery)' syntax
+> -- (subquery)' syntax.
 > data InThing = InList [ScalarExpr]
 >              | InQueryExpr QueryExpr
 >              deriving (Eq,Show,Read)
 
-> -- | A subquery in a scalar expression
+> -- | A subquery in a scalar expression.
 > data SubQueryExprType
 >     = -- | exists (query expr)
 >       SqExists
@@ -144,24 +144,24 @@
 >     | SqAny
 >       deriving (Eq,Show,Read)
 
-> -- | Represents one field in an order by list
+> -- | Represents one field in an order by list.
 > data OrderField = OrderField ScalarExpr Direction NullsOrder
 >                   deriving (Eq,Show,Read)
 
-> -- | Represents 'nulls first' or 'nulls last' in an order by clause
+> -- | Represents 'nulls first' or 'nulls last' in an order by clause.
 > data NullsOrder = NullsOrderDefault
 >                 | NullsFirst
 >                 | NullsLast
 >                   deriving (Eq,Show,Read)
 
-> -- | Represents theq frame clause of a window
+> -- | Represents the frame clause of a window
 > -- this can be [range | rows] frame_start
 > -- or [range | rows] between frame_start and frame_end
 > data Frame = FrameFrom FrameRows FramePos
 >            | FrameBetween FrameRows FramePos FramePos
 >              deriving (Eq,Show,Read)
 
-> -- | Represents whether a window frame clause is over rows or ranges
+> -- | Represents whether a window frame clause is over rows or ranges.
 > data FrameRows = FrameRows | FrameRange
 >                  deriving (Eq,Show,Read)
 
@@ -217,8 +217,8 @@ TODO: add queryexpr parens to deal with e.g.
 (select 1 union select 2) union select 3
 I'm not sure if this is valid syntax or not.
 
-> -- | helper/'default' value for query exprs to make creating query
-> -- expr values a little easier
+> -- | Helper/'default' value for query exprs to make creating query
+> -- expr values a little easier.
 > makeSelect :: QueryExpr
 > makeSelect = Select {qeDuplicates = All
 >                     ,qeSelectList = []
@@ -231,19 +231,19 @@ I'm not sure if this is valid syntax or not.
 >                     ,qeFetch = Nothing}
 
 
-> -- | represents the Distinct or All keywords, which can be used
+> -- | Represents the Distinct or All keywords, which can be used
 > -- before a select list, in an aggregate/window function
-> -- application, or in a query expression set operator
+> -- application, or in a query expression set operator.
 > data Duplicates = Distinct | All deriving (Eq,Show,Read)
 
 > -- | The direction for a column in order by.
 > data Direction = Asc | Desc deriving (Eq,Show,Read)
-> -- | Query expression set operators
+> -- | Query expression set operators.
 > data CombineOp = Union | Except | Intersect deriving (Eq,Show,Read)
-> -- | Corresponding, an option for the set operators
+> -- | Corresponding, an option for the set operators.
 > data Corresponding = Corresponding | Respectively deriving (Eq,Show,Read)
 
-> -- | Represents an item in a group by clause
+> -- | Represents an item in a group by clause.
 > data GroupingExpr
 >     = GroupingParens [GroupingExpr]
 >     | Cube [GroupingExpr]
@@ -271,13 +271,13 @@ I'm not sure if this is valid syntax or not.
 
 > -- | Represents an alias for a table valued expression, used in with
 > -- queries and in from alias, e.g. select a from t u, select a from t u(b),
-> -- with a(c) as select 1, select * from a;
+> -- with a(c) as select 1, select * from a.
 > data Alias = Alias Name (Maybe [Name])
 >              deriving (Eq,Show,Read)
 
 TODO: add function table ref
 
-> -- | The type of a join
+> -- | The type of a join.
 > data JoinType = JInner | JLeft | JRight | JFull | JCross
 >                 deriving (Eq,Show,Read)
 

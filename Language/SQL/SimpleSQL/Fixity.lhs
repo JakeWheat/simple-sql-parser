@@ -64,7 +64,7 @@ it should work on some of the other syntax (such as in).
 > fixFixities fs se =
 >   runIdentity $ toSql <$> HSE.applyFixities (toHSEFixity fs) (toHaskell se)
 
-Now have to convert all our scalar exprs to haskell and back again.
+Now have to convert all our scalar exprs to Haskell and back again.
 Have to come up with a recipe for each ctor. Only continue if you have
 a strong stomach. Probably would have been less effort to just write
 the fixity code.
