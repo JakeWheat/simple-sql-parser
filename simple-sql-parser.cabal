@@ -11,7 +11,7 @@ maintainer:          jakewheatmail@gmail.com
 copyright:           Copyright Jake Wheat 2013
 category:            Database,Language
 build-type:          Simple
-extra-source-files:  README,LICENSE
+extra-source-files:  README,LICENSE,changelog
 cabal-version:       >=1.10
 bug-reports:         https://github.com/JakeWheat/simple_sql_parser/issues
 

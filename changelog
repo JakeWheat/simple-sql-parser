@@ -1,0 +1,29 @@
+0.2.0.0
+	last update on commit a53578c6c27d94a33d104d404547cc02b4ad36c3
+	'' quotes in string literal
+	parse simple interval literal e.g. "interval '1 week'"
+	support . in identifiers as a dot operator
+	support quoted identifiers
+	partial support for explicit window frames
+	support multiple test expressions in when branches in case expressions
+	rename CastOp to TypedLit
+	support typenames with precision and scale in casts
+	support nulls first and nulls last in order by
+	support grouping expressions: group by (), grouping sets, cube,
+	  rollup and parens
+	support with recursive
+	support values table literal
+	support 'table t' syntax
+	rename fields qe1 and qe1 in combinequeryexpr to qe0 and qe1
+	add support for functions in from clause
+	add support for lateral in from clause
+	support column aliases in common table expressions
+	refactor the tests and add lots more
+	parse * in any scalar context instead of trying to restrict it
+	support row ctor without 'row' e.g. (a,b) = (c,d)
+	add % ^ | & ~ operators
+	support ansi standard syntax for offset n rows and fetch first n
+	  rows only
+	fix keyword parsing to be case insensitive
+0.1.0.0
+	initial version

@@ -1,14 +1,12 @@
 next release:
 
-add to website: pretty printed tpch, maybe other queries as
-   demonstration
-
-check haddock
-reformat the source for some of the tests
 
 ----
 
 next release after that:
+
+add to website: pretty printed tpch, maybe other queries as
+   demonstration
 
 review tests to copy from hssqlppp
 
