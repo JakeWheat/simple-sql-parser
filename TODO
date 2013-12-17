@@ -1,7 +1,11 @@
 next release:
 
+rename the github project to use - instead of underscores
+
 add to website: pretty printed tpch, maybe other queries as
    demonstration
+
+add preamble to the rendered test page
 
 review tests to copy from hssqlppp
 
@@ -15,11 +19,23 @@ select a from t order by a collate 'C': add to order by syntax, one
    collation per column
 have to do fixity for this to work
 
+all ansi string literal syntax?
+
+check ansi standard for operators
+
 much more table reference tests, for joins and aliases etc.
 
 review internal sql collection for more syntax/tests
 
 review syntax to replace maybe and bool with better ctors
+
+----
+
+add toc to rendered test page
+move supported sql summary to separate page
+add some examples to home page
+add links from the supported sql page to the rendered test page for
+   each section
 
 ----
 
