@@ -45,8 +45,8 @@ cabal update && cabal install simple-sql-parser
 Installing the latest development version.
 
 ~~~~
-git clone https://github.com/JakeWheat/simple_sql_parser.git
-cd simple_sql_parser
+git clone https://github.com/JakeWheat/simple-sql-parser.git
+cd simple-sql-parser
 cabal install
 ~~~~
 
@@ -59,10 +59,10 @@ cabal install
 
 # Links
 
-* Homepage: <http://jakewheat.github.io/simple_sql_parser>
+* Homepage: <http://jakewheat.github.io/simple-sql-parser>
 * Hackage: <http://hackage.haskell.org/package/simple-sql-parser>
-* Repository: <https://github.com/JakeWheat/simple_sql_parser>
-* Bug tracker: <https://github.com/JakeWheat/simple_sql_parser/issues>
+* Repository: <https://github.com/JakeWheat/simple-sql-parser>
+* Bug tracker: <https://github.com/JakeWheat/simple-sql-parser/issues>
 
 # Contact
 

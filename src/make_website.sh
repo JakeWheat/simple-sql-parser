@@ -12,7 +12,7 @@ runhaskell -i../trunk:../trunk/tools src/RenderTestCases > src/test_cases.txt
 pandoc --from=markdown --to=html src/test_cases.txt -o test_cases.html -c main.css --title=simple-sql-parser
 # haddock
 cd ../trunk
-cabal haddock
+cabal configure && cabal haddock
 rm -Rf ../gh-pages/haddock/
 mkdir ../gh-pages/haddock/
 cp -R dist/doc/html/simple-sql-parser/* ../gh-pages/haddock/
