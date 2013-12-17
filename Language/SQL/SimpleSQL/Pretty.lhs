@@ -255,10 +255,16 @@
 >       (\e -> sep [text k
 >                  ,nest (length k + 1) $ scalarExpr e])
 
-> grpBy :: [ScalarExpr] -> Doc
+> grpBy :: [GroupingExpr] -> Doc
 > grpBy [] = empty
 > grpBy gs = sep [text "group by"
->                ,nest 9 $ commaSep $ map scalarExpr gs]
+>                ,nest 9 $ commaSep $ map ge gs]
+>   where
+>     ge (SimpleGroup e) = scalarExpr e
+>     ge (GroupingParens g) = parens (commaSep $ map ge g)
+>     ge (Cube es) = text "cube" <> parens (commaSep $ map ge es)
+>     ge (Rollup es) = text "rollup" <> parens (commaSep $ map ge es)
+>     ge (GroupingSets es) = text "grouping sets" <> parens (commaSep $ map ge es)
 
 > orderBy :: [OrderField] -> Doc
 > orderBy [] = empty

@@ -17,7 +17,6 @@ These are a few misc tests which don't fit anywhere else.
 >     [duplicates
 >     ,selectLists
 >     ,whereClause
->     ,groupByClause
 >     ,having
 >     ,orderBy
 >     ,limit
@@ -75,31 +74,13 @@ These are a few misc tests which don't fit anywhere else.
 >                  ,qeWhere = Just $ BinOp (Iden "a") "=" (NumLit "5")})
 >     ]
 
-> groupByClause :: TestItem
-> groupByClause = Group "groupByClause" $ map (uncurry TestQueryExpr)
->     [("select a,sum(b) from t group by a"
->      ,makeSelect {qeSelectList = [(Nothing, Iden "a")
->                                  ,(Nothing, App "sum" [Iden "b"])]
->                  ,qeFrom = [TRSimple "t"]
->                  ,qeGroupBy = [Iden "a"]
->                  })
-
->     ,("select a,b,sum(c) from t group by a,b"
->      ,makeSelect {qeSelectList = [(Nothing, Iden "a")
->                                  ,(Nothing, Iden "b")
->                                  ,(Nothing, App "sum" [Iden "c"])]
->                  ,qeFrom = [TRSimple "t"]
->                  ,qeGroupBy = [Iden "a",Iden "b"]
->                  })
->     ]
-
 > having :: TestItem
 > having = Group "having" $ map (uncurry TestQueryExpr)
 >     [("select a,sum(b) from t group by a having sum(b) > 5"
 >      ,makeSelect {qeSelectList = [(Nothing, Iden "a")
 >                                  ,(Nothing, App "sum" [Iden "b"])]
 >                  ,qeFrom = [TRSimple "t"]
->                  ,qeGroupBy = [Iden "a"]
+>                  ,qeGroupBy = [SimpleGroup $ Iden "a"]
 >                  ,qeHaving = Just $ BinOp (App "sum" [Iden "b"])
 >                                           ">" (NumLit "5")
 >                  })

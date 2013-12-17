@@ -20,6 +20,7 @@
 >     ,CombineOp(..)
 >     ,Corresponding(..)
 >     ,Alias(..)
+>     ,GroupingExpr(..)
 >      -- ** From
 >     ,TableRef(..)
 >     ,JoinType(..)
@@ -189,7 +190,7 @@
 >        -- ^ the column aliases and the expressions
 >       ,qeFrom :: [TableRef]
 >       ,qeWhere :: Maybe ScalarExpr
->       ,qeGroupBy :: [ScalarExpr]
+>       ,qeGroupBy :: [GroupingExpr]
 >       ,qeHaving :: Maybe ScalarExpr
 >       ,qeOrderBy :: [OrderField]
 >       ,qeOffset :: Maybe ScalarExpr
@@ -239,6 +240,14 @@ I'm not sure if this is valid syntax or not.
 > data CombineOp = Union | Except | Intersect deriving (Eq,Show,Read)
 > -- | Corresponding, an option for the set operators
 > data Corresponding = Corresponding | Respectively deriving (Eq,Show,Read)
+
+> data GroupingExpr
+>     = GroupingParens [GroupingExpr]
+>     | Cube [GroupingExpr]
+>     | Rollup [GroupingExpr]
+>     | GroupingSets [GroupingExpr]
+>     | SimpleGroup ScalarExpr
+>       deriving (Eq,Show,Read)
 
 > -- | Represents a entry in the csv of tables in the from clause.
 > data TableRef = -- | from t

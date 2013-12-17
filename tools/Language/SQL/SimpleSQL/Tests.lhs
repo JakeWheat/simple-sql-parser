@@ -26,10 +26,10 @@ tpch tests
 > import Language.SQL.SimpleSQL.TestTypes
 
 > import Language.SQL.SimpleSQL.FullQueries
+> import Language.SQL.SimpleSQL.GroupBy
 > import Language.SQL.SimpleSQL.Postgres
 > import Language.SQL.SimpleSQL.QueryExprComponents
 > import Language.SQL.SimpleSQL.QueryExprs
-
 > import Language.SQL.SimpleSQL.TableRefs
 > import Language.SQL.SimpleSQL.ScalarExprs
 > import Language.SQL.SimpleSQL.Tpch
@@ -44,8 +44,9 @@ order on the generated documentation.
 >     Group "parserTest"
 >     [scalarExprTests
 >     ,queryExprComponentTests
->     ,tableRefTests
 >     ,queryExprsTests
+>     ,tableRefTests
+>     ,groupByTests
 >     ,fullQueriesTests
 >     ,postgresTests
 >     ,tpchTests

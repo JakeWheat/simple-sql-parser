@@ -598,10 +598,10 @@ where, having, limit, offset).
 > swhere :: P ScalarExpr
 > swhere = keywordScalarExpr "where"
 
-> sgroupBy :: P [ScalarExpr]
+> sgroupBy :: P [GroupingExpr]
 > sgroupBy = try (keyword_ "group")
 >            *> keyword_ "by"
->            *> commaSep1 scalarExpr
+>            *> commaSep1 (SimpleGroup <$> scalarExpr)
 
 > having :: P ScalarExpr
 > having = keywordScalarExpr "having"

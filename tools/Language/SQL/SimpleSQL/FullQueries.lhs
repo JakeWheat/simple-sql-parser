@@ -30,7 +30,7 @@ Some tests for parsing full queries.
 >                                          "+" (Iden "d")])]
 >       ,qeFrom = [TRSimple "t", TRSimple "u"]
 >       ,qeWhere = Just $ BinOp (Iden "a") ">" (NumLit "5")
->       ,qeGroupBy = [Iden "a"]
+>       ,qeGroupBy = [SimpleGroup $ Iden "a"]
 >       ,qeHaving = Just $ BinOp (App "count" [NumLit "1"])
 >                                ">" (NumLit "5")
 >       ,qeOrderBy = [OrderField (Iden "s") Asc NullsOrderDefault]
