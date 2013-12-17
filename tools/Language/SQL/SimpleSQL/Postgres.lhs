@@ -263,17 +263,3 @@ select page reference
 >     ,"SELECT distributors.* WHERE distributors.name = 'Westward';"
 
 >     ]
-
-
-> {-f = mapM_ (putStrLn . either peFormattedError show . parseQueryExpr "" Nothing)
->       ["SELECT * FROM t1 CROSS JOIN t2;"
->       ,"SELECT * FROM t1 INNER JOIN t2 ON t1.num = t2.num;"
->       ,"SELECT * FROM t1 INNER JOIN t2 USING (num);"
->       ,"SELECT * FROM t1 NATURAL INNER JOIN t2;"
->       ,"SELECT * FROM t1 LEFT JOIN t2 ON t1.num = t2.num;"
->       ,"SELECT * FROM t1 LEFT JOIN t2 USING (num);"
->       ,"SELECT * FROM t1 RIGHT JOIN t2 ON t1.num = t2.num;"
->       ,"SELECT * FROM t1 FULL JOIN t2 ON t1.num = t2.num;"
->       ,"SELECT * FROM t1 LEFT JOIN t2 ON t1.num = t2.num AND t2.value = 'xxx';"
->   -    ,"SELECT * FROM t1 LEFT JOIN t2 ON t1.num = t2.num WHERE t2.value = 'xxx';"]-}
-

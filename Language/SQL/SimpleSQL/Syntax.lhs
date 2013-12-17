@@ -164,24 +164,12 @@
 >       ,qeViews :: [(Alias,QueryExpr)]
 >       ,qeQueryExpression :: QueryExpr}
 >     | Values [[ScalarExpr]]
-
+>     | Table Name
 >       deriving (Eq,Show,Read)
 
 TODO: add queryexpr parens to deal with e.g.
 (select 1 union select 2) union select 3
 I'm not sure if this is valid syntax or not.
-
-> -- | represents the Distinct or All keywords, which can be used
-> -- before a select list, in an aggregate/window function
-> -- application, or in a query expression set operator
-> data Duplicates = Distinct | All deriving (Eq,Show,Read)
-
-> -- | The direction for a column in order by.
-> data Direction = Asc | Desc deriving (Eq,Show,Read)
-> -- | Query expression set operators
-> data CombineOp = Union | Except | Intersect deriving (Eq,Show,Read)
-> -- | Corresponding, an option for the set operators
-> data Corresponding = Corresponding | Respectively deriving (Eq,Show,Read)
 
 > -- | helper/'default' value for query exprs to make creating query
 > -- expr values a little easier
@@ -195,6 +183,19 @@ I'm not sure if this is valid syntax or not.
 >                     ,qeOrderBy = []
 >                     ,qeLimit = Nothing
 >                     ,qeOffset = Nothing}
+
+
+> -- | represents the Distinct or All keywords, which can be used
+> -- before a select list, in an aggregate/window function
+> -- application, or in a query expression set operator
+> data Duplicates = Distinct | All deriving (Eq,Show,Read)
+
+> -- | The direction for a column in order by.
+> data Direction = Asc | Desc deriving (Eq,Show,Read)
+> -- | Query expression set operators
+> data CombineOp = Union | Except | Intersect deriving (Eq,Show,Read)
+> -- | Corresponding, an option for the set operators
+> data Corresponding = Corresponding | Respectively deriving (Eq,Show,Read)
 
 > -- | Represents a entry in the csv of tables in the from clause.
 > data TableRef = -- | from t
@@ -213,6 +214,9 @@ I'm not sure if this is valid syntax or not.
 >               | TRLateral TableRef
 >                 deriving (Eq,Show,Read)
 
+> -- | Represents an alias for a table valued expression, used in with
+> -- queries and in from alias, e.g. select a from t u, select a from t u(b),
+> -- with a(c) as select 1, select * from a;
 > data Alias = Alias Name (Maybe [Name])
 >              deriving (Eq,Show,Read)
 

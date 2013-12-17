@@ -1,39 +1,8 @@
 
 next release:
-lateral since it is easy. I think it is effectively just a prefix
-   operator on tablerefs (can appear like this from lateral a, from
-   lateral a,b, from a, lateral b, from a natural join lateral b
-   (although all of these are sematically garbage, this is the
-   valid syntax)
-more dots: implement as dot operator
 
-row ctor: row(a,b) is fine, but also when there is 2 or more elements,
-   the word row can be omitted: (a,b)
-more symbolic operators, array access a[5]? don't think this is
-   standard sql, if not, leave for now. There is something about
-   arrays in sql:2008
+escapes in string literals
 
-window frames and named windows
-
-
-review tests to copy from hssqlppp
-
-order by nulls first/last
-extend case
-group by extensions. Question: some of the syntax can be represented
-   by app and row ctor, should this be reused or new syntax created
-   (the standard has special syntax for cube and rollup).
-table, values
-collate? -> postfix operator which binds very tightly:
-a < 'foo' collate 'C'
-->
-Op "<" [Iden "a", SpecialOp "collate" [StringLit 'foo', StringLit
-   'C']]
-  also postfix in order by:
-select a from t order by a collate 'C': add to order by syntax, one
-   collation per column
-function table reference
-much more table reference tests, for joins and aliases etc.
 ansi standard versions of limit and offset
 
 OFFSET start { ROW | ROWS }
@@ -45,13 +14,43 @@ in the postgresql docs, the start and count must be in parens unless
 
 + sql server top syntax
 
-quoted identifiers and proper character sets for identifiers
+more dots: implement as dot operator
 
-run through postgres docs and add example sql as tests
+more symbolic operators, array access a[5]? don't think this is
+   standard sql, if not, leave for now. There is something about
+   arrays in sql:2008
+
+
+
+fix lateral binding issue
+
+row ctor: row(a,b) is fine, but also when there is 2 or more elements,
+   the word row can be omitted: (a,b)
+
+window frames and named windows
+
+review tests to copy from hssqlppp
+
+order by nulls first/last
+extend case
+group by extensions. Question: some of the syntax can be represented
+   by app and row ctor, should this be reused or new syntax created
+   (the standard has special syntax for cube and rollup).
+
+collate? -> postfix operator which binds very tightly:
+a < 'foo' collate 'C'
+->
+Op "<" [Iden "a", SpecialOp "collate" [StringLit 'foo', StringLit
+   'C']]
+  also postfix in order by:
+select a from t order by a collate 'C': add to order by syntax, one
+   collation per column
+much more table reference tests, for joins and aliases etc.
+
+proper character sets for identifiers
+
 review internal sql collection for more syntax/tests
 all ansi sql operators
-
-escapes in string literals
 
 review syntax to replace maybe and bool with better ctors
 

@@ -602,7 +602,8 @@ and union, etc..
 > queryExpr :: P QueryExpr
 > queryExpr =
 >   choice [with
->          ,choice [values,select] >>= optionSuffix queryExprSuffix]
+>          ,choice [values,table, select]
+>           >>= optionSuffix queryExprSuffix]
 >   where
 >     select = try (keyword_ "select") >>
 >         Select
@@ -617,6 +618,7 @@ and union, etc..
 >         <*> optionMaybe offset
 >     values = try (keyword_ "values")
 >              >> Values <$> commaSep (parens (commaSep scalarExpr))
+>     table = try (keyword_ "table") >> Table <$> name
 
 > queryExprSuffix :: QueryExpr -> P QueryExpr
 > queryExprSuffix qe =

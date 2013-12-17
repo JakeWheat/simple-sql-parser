@@ -24,6 +24,7 @@ These are a few misc tests which don't fit anywhere else.
 >     ,combos
 >     ,withQueries
 >     ,values
+>     ,tables
 >     ]
 
 
@@ -198,4 +199,9 @@ These are a few misc tests which don't fit anywhere else.
 >     [("values (1,2),(3,4)"
 >       ,Values [[NumLit "1", NumLit "2"]
 >               ,[NumLit "3", NumLit "4"]])
+>     ]
+
+> tables :: TestItem
+> tables = Group "tables" $ map (uncurry TestQueryExpr)
+>     [("table tbl", Table "tbl")
 >     ]

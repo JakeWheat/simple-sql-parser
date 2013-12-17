@@ -180,6 +180,8 @@
 > queryExpr (Values vs) =
 >     text "values"
 >     <+> nest 7 (commaSep (map (parens . commaSep . map scalarExpr) vs))
+> queryExpr (Table t) = text "table" <+> name t
+
 
 > alias :: Alias -> Doc
 > alias (Alias nm cols) =
