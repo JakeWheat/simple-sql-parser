@@ -51,7 +51,7 @@ queries section
 >     ,"SELECT * FROM people AS mother JOIN people AS child ON mother.id = child.mother_id;"
 >     ,"SELECT * FROM my_table AS a CROSS JOIN my_table AS b;"
 >     ,"SELECT * FROM (my_table AS a CROSS JOIN my_table) AS b;"
->     ,"SELECT * FROM getfoo(1) AS t1;" -- function tableref
+>     ,"SELECT * FROM getfoo(1) AS t1;"
 >     ,"SELECT * FROM foo\n\
 >      \    WHERE foosubid IN (\n\
 >      \                        SELECT foosubid\n\
@@ -63,23 +63,23 @@ queries section
 >      \      AS t1(proname name, prosrc text)\n\
 >      \    WHERE proname LIKE 'bytea%';"-} -- types in the alias??
 
->     --,"SELECT * FROM foo, LATERAL (SELECT * FROM bar WHERE bar.id = foo.bar_id) ss;" -- lateral
+>     ,"SELECT * FROM foo, LATERAL (SELECT * FROM bar WHERE bar.id = foo.bar_id) ss;" -- lateral
 >     ,"SELECT * FROM foo, bar WHERE bar.id = foo.bar_id;"
 
 >     {-,"SELECT p1.id, p2.id, v1, v2\n\
 >      \FROM polygons p1, polygons p2,\n\
 >      \     LATERAL vertices(p1.poly) v1,\n\
 >      \     LATERAL vertices(p2.poly) v2\n\
->      \WHERE (v1 <-> v2) < 10 AND p1.id != p2.id;"-} -- <-> operator?, lateral
+>      \WHERE (v1 <-> v2) < 10 AND p1.id != p2.id;"-} -- <-> operator?
 
 >     {-,"SELECT p1.id, p2.id, v1, v2\n\
 >      \FROM polygons p1 CROSS JOIN LATERAL vertices(p1.poly) v1,\n\
 >      \     polygons p2 CROSS JOIN LATERAL vertices(p2.poly) v2\n\
 >      \WHERE (v1 <-> v2) < 10 AND p1.id != p2.id;"-}
 
->     {-,"SELECT m.name\n\
+>     ,"SELECT m.name\n\
 >      \FROM manufacturers m LEFT JOIN LATERAL get_product_names(m.id) pname ON true\n\
->      \WHERE pname IS NULL;"-} -- lateral, function ref
+>      \WHERE pname IS NULL;"
 
 
 >     ,"SELECT * FROM fdt WHERE c1 > 5"
@@ -253,11 +253,11 @@ select page reference
 >      \  )\n\
 >      \SELECT distance, employee_name FROM employee_recursive;"-} -- with recursive, full cte alias
 
->     {-,"SELECT m.name AS mname, pname\n\
+>     ,"SELECT m.name AS mname, pname\n\
 >      \FROM manufacturers m, LATERAL get_product_names(m.id) pname;"
 
 >     ,"SELECT m.name AS mname, pname\n\
->      \FROM manufacturers m LEFT JOIN LATERAL get_product_names(m.id) pname ON true;"-} -- lateral
+>      \FROM manufacturers m LEFT JOIN LATERAL get_product_names(m.id) pname ON true;"
 
 >     ,"SELECT 2+2;"
 

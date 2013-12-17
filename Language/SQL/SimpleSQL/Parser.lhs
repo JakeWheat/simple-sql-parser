@@ -505,6 +505,7 @@ tref
 >     tref = nonJoinTref >>= optionSuffix joinTrefSuffix
 >     nonJoinTref = choice [try (TRQueryExpr <$> parens queryExpr)
 >                          ,TRParens <$> parens tref
+>                          ,TRLateral <$> (try (keyword_ "lateral") *> tref)
 >                          ,try (TRFunction <$> identifierString
 >                                           <*> parens (commaSep scalarExpr))
 >                          ,TRSimple <$> identifierString]
@@ -690,7 +691,7 @@ keyword parser also
 >     ["select", "as", "from", "where", "having", "group", "order"
 >     ,"limit", "offset"
 >     ,"inner", "left", "right", "full", "natural", "join"
->     ,"cross", "on", "using"
+>     ,"cross", "on", "using", "lateral"
 >     ,"when", "then", "case", "end", "in"
 >     ,"except", "intersect", "union"]
 

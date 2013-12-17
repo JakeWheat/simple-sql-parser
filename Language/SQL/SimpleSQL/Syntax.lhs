@@ -197,6 +197,8 @@ I'm not sure if this is valid syntax or not.
 >               | TRQueryExpr QueryExpr
 >                 -- | from function(args)
 >               | TRFunction String [ScalarExpr]
+>                 -- | from lateral t
+>               | TRLateral TableRef
 >                 deriving (Eq,Show,Read)
 
 TODO: add function table ref
