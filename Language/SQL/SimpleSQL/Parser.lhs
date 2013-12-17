@@ -724,7 +724,13 @@ String literals: limited at the moment, no escaping \' or other
 variations.
 
 > stringLiteral :: P String
-> stringLiteral = char '\'' *> manyTill anyChar (symbol_ "'")
+> stringLiteral = (char '\'' *> manyTill anyChar (char '\'')
+>                  >>= optionSuffix moreString) <* whiteSpace
+>   where
+>     moreString s0 = try $ do
+>         void $ char '\''
+>         s <- manyTill anyChar (char '\'')
+>         optionSuffix moreString (s0 ++ "'" ++ s)
 
 number literals
 

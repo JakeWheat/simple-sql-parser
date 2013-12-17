@@ -12,6 +12,10 @@ FETCH { FIRST | NEXT } [ count ] { ROW | ROWS } ONLY
 in the postgresql docs, the start and count must be in parens unless
    they are a single integer
 
+select * from generate_series(0,99) offset 5 fetch next 5 row only;
+select * from generate_series(0,99) offset 5;
+select * from generate_series(0,99) fetch next 5 row only;
+
 + sql server top syntax
 
 more dots: implement as dot operator

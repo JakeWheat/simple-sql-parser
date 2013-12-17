@@ -28,7 +28,11 @@
 = scalar expressions
 
 > scalarExpr :: ScalarExpr -> Doc
-> scalarExpr (StringLit s) = quotes $ text s
+> scalarExpr (StringLit s) = quotes $ text $ doubleUpQuotes s
+>   where doubleUpQuotes [] = []
+>         doubleUpQuotes ('\'':cs) = '\'':'\'':doubleUpQuotes cs
+>         doubleUpQuotes (c:cs) = c:doubleUpQuotes cs
+
 > scalarExpr (NumLit s) = text s
 > scalarExpr (IntervalLit v u p) =
 >     text "interval" <+> quotes (text v)
