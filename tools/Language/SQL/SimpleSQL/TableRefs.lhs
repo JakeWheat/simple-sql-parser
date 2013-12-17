@@ -20,6 +20,10 @@ expression
 >      ,ms [TRJoin (TRSimple "t") JInner (TRSimple "u")
 >                        (Just $ JoinOn $ Iden "expr")])
 
+>     ,("select a from t join u on expr"
+>      ,ms [TRJoin (TRSimple "t") JInner (TRSimple "u")
+>                        (Just $ JoinOn $ Iden "expr")])
+
 >     ,("select a from t left join u on expr"
 >      ,ms [TRJoin (TRSimple "t") JLeft (TRSimple "u")
 >                        (Just $ JoinOn $ Iden "expr")])

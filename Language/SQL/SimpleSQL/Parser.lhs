@@ -518,14 +518,16 @@ tref
 >                   <*> nonJoinTref
 >                   <*> optionMaybe (joinCondition nat))
 >         >>= optionSuffix joinTrefSuffix
->     joinType = choice
->                [JCross <$ try (keyword_ "cross")
->                ,JInner <$ try (keyword_ "inner")
->                ,choice [JLeft <$ try (keyword_ "left")
->                        ,JRight <$ try (keyword_ "right")
->                        ,JFull <$ try (keyword_ "full")]
->                 <* optional (try $ keyword_ "outer")]
->                <* keyword "join"
+>     joinType =
+>         choice [choice
+>                 [JCross <$ try (keyword_ "cross")
+>                 ,JInner <$ try (keyword_ "inner")
+>                 ,choice [JLeft <$ try (keyword_ "left")
+>                         ,JRight <$ try (keyword_ "right")
+>                         ,JFull <$ try (keyword_ "full")]
+>                  <* optional (try $ keyword_ "outer")]
+>                 <* keyword "join"
+>                ,JInner <$ keyword_ "join"]
 >     joinCondition nat =
 >         choice [guard nat >> return JoinNatural
 >                ,try (keyword_ "on") >>

@@ -47,9 +47,8 @@ queries section
 >     ,"SELECT * FROM t1 LEFT JOIN t2 ON t1.num = t2.num AND t2.value = 'xxx';"
 >     ,"SELECT * FROM t1 LEFT JOIN t2 ON t1.num = t2.num WHERE t2.value = 'xxx';"
 
->     --,"SELECT * FROM some_very_long_table_name s JOIN another_fairly_long_name a ON s.id = a.num;"
->     -- issue with join keyword on its own?
->     --,"SELECT * FROM people AS mother JOIN people AS child ON mother.id = child.mother_id;"
+>     ,"SELECT * FROM some_very_long_table_name s JOIN another_fairly_long_name a ON s.id = a.num;"
+>     ,"SELECT * FROM people AS mother JOIN people AS child ON mother.id = child.mother_id;"
 >     ,"SELECT * FROM my_table AS a CROSS JOIN my_table AS b;"
 >     ,"SELECT * FROM (my_table AS a CROSS JOIN my_table) AS b;"
 >     --,"SELECT * FROM getfoo(1) AS t1;" -- function tableref
