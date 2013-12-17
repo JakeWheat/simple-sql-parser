@@ -220,13 +220,13 @@ sure which sql version they were introduced, 1999 or 2003 I think).
 >      \(R2,ROLLUP( MONTH(SALES_DATE), REGION ) ))\n\
 >      \ORDER BY GROUP, WEEK, DAY_WEEK, MONTH, REGION"-} -- as group - needs more subtle keyword blacklisting
 
->     {-,"SELECT MONTH(SALES_DATE) AS MONTH,\n\
+>     ,"SELECT MONTH(SALES_DATE) AS MONTH,\n\
 >      \REGION,\n\
 >      \SUM(SALES) AS UNITS_SOLD,\n\
 >      \MAX(SALES) AS BEST_SALE,\n\
 >      \CAST(ROUND(AVG(DECIMAL(SALES)),2) AS DECIMAL(5,2)) AS AVG_UNITS_SOLD\n\
 >      \FROM SALES\n\
 >      \GROUP BY CUBE(MONTH(SALES_DATE),REGION)\n\
->      \ORDER BY MONTH, REGION" -} -- needs typenames with precision
+>      \ORDER BY MONTH, REGION"
 
 >     ]

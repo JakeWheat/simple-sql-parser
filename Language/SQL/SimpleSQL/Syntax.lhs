@@ -121,7 +121,10 @@
 >           deriving (Eq,Show,Read)
 
 > -- | Represents a type name, used in casts.
-> data TypeName = TypeName String deriving (Eq,Show,Read)
+> data TypeName = TypeName String
+>               | PrecTypeName String Int
+>               | Prec2TypeName String Int Int
+>                 deriving (Eq,Show,Read)
 
 
 > -- | Used for 'expr in (scalar expression list)', and 'expr in

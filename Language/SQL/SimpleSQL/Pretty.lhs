@@ -128,13 +128,13 @@
 >       <+> text "then" <+> nest 5 (scalarExpr t1)
 >     e el = text "else" <+> nest 5 (scalarExpr el)
 > scalarExpr (Parens e) = parens $ scalarExpr e
-> scalarExpr (Cast e (TypeName tn)) =
+> scalarExpr (Cast e tn) =
 >     text "cast" <> parens (sep [scalarExpr e
 >                                ,text "as"
->                                ,text tn])
+>                                ,typeName tn])
 
-> scalarExpr (TypedLit (TypeName tn) s) =
->     text tn <+> quotes (text s)
+> scalarExpr (TypedLit tn s) =
+>     typeName tn <+> quotes (text s)
 
 > scalarExpr (SubQueryExpr ty qe) =
 >     (case ty of
@@ -161,6 +161,13 @@
 > name :: Name -> Doc
 > name (QName n) = doubleQuotes $ text n
 > name (Name n) = text n
+
+> typeName :: TypeName -> Doc
+> typeName (TypeName t) = text t
+> typeName (PrecTypeName t a) = text t <+> parens (text $ show a)
+> typeName (Prec2TypeName t a b) =
+>     text t <+> parens (text (show a) <+> comma <+> text (show b))
+
 
 = query expressions
 

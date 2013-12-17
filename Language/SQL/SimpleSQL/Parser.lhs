@@ -327,7 +327,13 @@ that SQL supports.
 >      <$ try (keyword_ "double" <* keyword_ "precision")
 >     ,TypeName "character varying"
 >      <$ try (keyword_ "character" <* keyword_ "varying")
->     ,TypeName <$> identifierString]
+>     ,TypeName <$> identifierString] >>= optionSuffix precision
+>   where
+>     precision t = try (parens (commaSep integerLiteral)) >>= makeWrap t
+>     makeWrap (TypeName t) [a] = return $ PrecTypeName t a
+>     makeWrap (TypeName t) [a,b] = return $ Prec2TypeName t a b
+>     makeWrap _ _ = fail "there must be one or two precision components"
+
 
 == scalar parens and row ctor
 

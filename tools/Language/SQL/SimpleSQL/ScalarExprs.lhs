@@ -141,6 +141,13 @@ Tests for parsing scalar expressions
 >     ,("cast('1' as double precision)"
 >      ,Cast (StringLit "1") $ TypeName "double precision")
 
+>     ,("cast('1' as float(8))"
+>      ,Cast (StringLit "1") $ PrecTypeName "float" 8)
+
+>     ,("cast('1' as decimal(15,2))"
+>      ,Cast (StringLit "1") $ Prec2TypeName "decimal" 15 2)
+
+
 >     ,("double precision '3'"
 >      ,TypedLit (TypeName "double precision") "3")
 >     ]
