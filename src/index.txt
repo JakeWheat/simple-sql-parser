@@ -6,7 +6,11 @@ queries, and possibly some other SQL dialects also.
 
 This is the documentation for version 0.2.0.
 
-Status: Alpha
+Status: Covers a lot of queries already and is mostly stable. There is
+a small showstopper in the precedence and associativity handling of
+operators, which has some minor issues but mostly works fine.
+
+Tested with GHC 7.6.3.
 
 # Feature support
 
@@ -85,11 +89,11 @@ union, except, intersect + all/distinct and corresponding
     - is null, is not null
     - is true, is not true, is false, is not false, is unknown, is not unknown
 
-some of the precendence and associativity of operators isn't
+some of the precendence and associativity parsing of operators isn't
 completely correct at the moment.
 
 * other operators
-    - substring (substring(x from 2 for 4)
+    - substring (substring(x from 2 for 4))
     - cast (cast(a as int))
     - 'typed literal' (int '3')
     - between
@@ -100,7 +104,7 @@ completely correct at the moment.
     - any/some/all
     - exists
 * case expressions
-* parenthesis
+* parentheses
 * quoted and unquoted identifiers
 * a.b qualified identifiers
 * \*, a.\*
@@ -108,15 +112,17 @@ completely correct at the moment.
 * aggregates: agg(distinct a order by b)
 * window functions: sum(x) over (partition by y order by z)
   plus some explicit frame support (same as in postgres 9.3)
+* row constructors, e.g. where (a,b) = any (select a,b from t)
 
 ## features todo
 
-* all the coming soons from above
-* placeholders (?, $1, :field, etc.)
-* row constructors e.g. where (a,b) = any (select a,b from t)
-* apply, pivot
+* fix the precendence and associativity handling
 * collate
 * more complete frame clause and named window support
+* placeholders (?, $1, :field, etc.)
+* apply, pivot
+* explicit SQL dialects support (targeting ANSI 2003/2008, Oracle, SQL
+  Server, Teradata and PostgreSQL)
 * more, pending review of SQL:2003, I just can't wait to get stuck into
   the SQL Standard documentation
 

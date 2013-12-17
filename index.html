@@ -12,7 +12,8 @@
 <h1 id="simple-sql-parser">simple-sql-parser</h1>
 <p>A parser for SQL queries in Haskell. Also includes a pretty printer which formats output nicely. The goal is to parse most of SQL:2003 queries, and possibly some other SQL dialects also.</p>
 <p>This is the documentation for version 0.2.0.</p>
-<p>Status: Alpha</p>
+<p>Status: Covers a lot of queries already and is mostly stable. There is a small showstopper in the precedence and associativity handling of operators, which has some minor issues but mostly works fine.</p>
+<p>Tested with GHC 7.6.3.</p>
 <h1 id="feature-support">Feature support</h1>
 <p>Here is a document with all the <a href="test_cases.html">simple-sql-parser test cases</a> rendered so you can get an idea of what it supports.</p>
 <h2 id="overview">overview:</h2>
@@ -81,11 +82,11 @@
 <li>is true, is not true, is false, is not false, is unknown, is not unknown</li>
 </ul></li>
 </ul>
-<p>some of the precendence and associativity of operators isn't completely correct at the moment.</p>
+<p>some of the precendence and associativity parsing of operators isn't completely correct at the moment.</p>
 <ul>
 <li>other operators
 <ul>
-<li>substring (substring(x from 2 for 4)</li>
+<li>substring (substring(x from 2 for 4))</li>
 <li>cast (cast(a as int))</li>
 <li>'typed literal' (int '3')</li>
 <li>between</li>
@@ -99,22 +100,23 @@
 <li>exists</li>
 </ul></li>
 <li>case expressions</li>
-<li>parenthesis</li>
+<li>parentheses</li>
 <li>quoted and unquoted identifiers</li>
 <li>a.b qualified identifiers</li>
 <li>*, a.*</li>
 <li>functions: f(a,b)</li>
 <li>aggregates: agg(distinct a order by b)</li>
 <li>window functions: sum(x) over (partition by y order by z) plus some explicit frame support (same as in postgres 9.3)</li>
+<li>row constructors, e.g. where (a,b) = any (select a,b from t)</li>
 </ul>
 <h2 id="features-todo">features todo</h2>
 <ul>
-<li>all the coming soons from above</li>
-<li>placeholders (?, $1, :field, etc.)</li>
-<li>row constructors e.g. where (a,b) = any (select a,b from t)</li>
-<li>apply, pivot</li>
+<li>fix the precendence and associativity handling</li>
 <li>collate</li>
 <li>more complete frame clause and named window support</li>
+<li>placeholders (?, $1, :field, etc.)</li>
+<li>apply, pivot</li>
+<li>explicit SQL dialects support (targeting ANSI 2003/2008, Oracle, SQL Server, Teradata and PostgreSQL)</li>
 <li>more, pending review of SQL:2003, I just can't wait to get stuck into the SQL Standard documentation</li>
 </ul>
 <h1 id="installation">Installation</h1>

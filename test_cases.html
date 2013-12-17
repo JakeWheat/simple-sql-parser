@@ -292,7 +292,7 @@ code > span.er { color: #ff0000; font-weight: bold; }
 <tr><td>
 <pre class="sourceCode sql"><code class="sourceCode sql"><span class="fu">cast</span>(<span class="st">&#39;1&#39;</span> <span class="kw">as</span> <span class="dt">decimal</span>(<span class="dv">15</span>,<span class="dv">2</span>))</code></pre>
 </td><td>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="dt">Cast</span> (<span class="dt">StringLit</span> <span class="st">&quot;1&quot;</span>) (<span class="dt">Prec2TypeName</span> <span class="st">&quot;decimal&quot;</span> <span class="dv">15</span> <span class="dv">2</span>)</code></pre>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="dt">Cast</span> (<span class="dt">StringLit</span> <span class="st">&quot;1&quot;</span>) (<span class="dt">PrecScaleTypeName</span> <span class="st">&quot;decimal&quot;</span> <span class="dv">15</span> <span class="dv">2</span>)</code></pre>
 </td></tr>
 <tr><td>
 <pre class="sourceCode sql"><code class="sourceCode sql"><span class="dt">double</span> <span class="dt">precision</span> <span class="st">&#39;3&#39;</span></code></pre>
@@ -626,7 +626,8 @@ code > span.er { color: #ff0000; font-weight: bold; }
           wnFrame <span class="fu">=</span> <span class="kw">Just</span> (<span class="dt">FrameFrom</span> <span class="dt">FrameRange</span> <span class="dt">UnboundedFollowing</span>)}</code></pre>
 </td></tr>
 <tr><td>
-<pre class="sourceCode sql"><code class="sourceCode sql"><span class="fu">sum</span>(a) <span class="kw">over</span> (<span class="kw">partition</span> <span class="kw">by</span> b <span class="kw">order</span> <span class="kw">by</span> c <span class="kw">range</span> <span class="kw">between</span> <span class="dv">5</span> <span class="kw">preceding</span> <span class="kw">and</span> <span class="dv">5</span> <span class="kw">following</span>)</code></pre>
+<pre class="sourceCode sql"><code class="sourceCode sql"><span class="fu">sum</span>(a) <span class="kw">over</span> (<span class="kw">partition</span> <span class="kw">by</span> b <span class="kw">order</span> <span class="kw">by</span> c 
+<span class="kw">range</span> <span class="kw">between</span> <span class="dv">5</span> <span class="kw">preceding</span> <span class="kw">and</span> <span class="dv">5</span> <span class="kw">following</span>)</code></pre>
 </td><td>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="dt">WindowApp</span>{wnName <span class="fu">=</span> <span class="dt">Name</span> <span class="st">&quot;sum&quot;</span>, wnArgs <span class="fu">=</span> [<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;a&quot;</span>)],
           wnPartition <span class="fu">=</span> [<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;b&quot;</span>)],
@@ -2272,7 +2273,7 @@ REGION,
                 (<span class="dt">App</span> (<span class="dt">Name</span> <span class="st">&quot;ROUND&quot;</span>)
                    [<span class="dt">App</span> (<span class="dt">Name</span> <span class="st">&quot;AVG&quot;</span>) [<span class="dt">App</span> (<span class="dt">Name</span> <span class="st">&quot;DECIMAL&quot;</span>) [<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;SALES&quot;</span>)]],
                     <span class="dt">NumLit</span> <span class="st">&quot;2&quot;</span>])
-                (<span class="dt">Prec2TypeName</span> <span class="st">&quot;DECIMAL&quot;</span> <span class="dv">5</span> <span class="dv">2</span>))],
+                (<span class="dt">PrecScaleTypeName</span> <span class="st">&quot;DECIMAL&quot;</span> <span class="dv">5</span> <span class="dv">2</span>))],
           qeFrom <span class="fu">=</span> [<span class="dt">TRSimple</span> (<span class="dt">Name</span> <span class="st">&quot;SALES&quot;</span>)], qeWhere <span class="fu">=</span> <span class="kw">Nothing</span>,
           qeGroupBy <span class="fu">=</span>
             [<span class="dt">Cube</span>
@@ -2323,7 +2324,8 @@ REGION,
 <h2 id="postgrestests">postgresTests</h2>
 <table>
 <tr><td>
-<pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">SELECT</span> name, (<span class="kw">SELECT</span> <span class="fu">max</span>(pop) <span class="kw">FROM</span> cities <span class="kw">WHERE</span> cities.state = states.name)
+<pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">SELECT</span> name, (<span class="kw">SELECT</span> <span class="fu">max</span>(pop) <span class="kw">FROM</span> cities
+ <span class="kw">WHERE</span> cities.state = states.name)
     <span class="kw">FROM</span> states;</code></pre>
 </td><td>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">Right</span>
@@ -2603,7 +2605,8 @@ REGION,
           qeOffset <span class="fu">=</span> <span class="kw">Nothing</span>, qeFetch <span class="fu">=</span> <span class="kw">Nothing</span>})</code></pre>
 </td></tr>
 <tr><td>
-<pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">SELECT</span> * <span class="kw">FROM</span> some_very_long_table_name s <span class="kw">JOIN</span> another_fairly_long_name a <span class="kw">ON</span> s.id = a.num;</code></pre>
+<pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">SELECT</span> * <span class="kw">FROM</span> some_very_long_table_name s
+<span class="kw">JOIN</span> another_fairly_long_name a <span class="kw">ON</span> s.id = a.num;</code></pre>
 </td><td>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">Right</span>
   (<span class="dt">Select</span>{qeDuplicates <span class="fu">=</span> <span class="dt">All</span>, qeSelectList <span class="fu">=</span> [(<span class="kw">Nothing</span>, <span class="dt">Star</span>)],
@@ -2623,7 +2626,8 @@ REGION,
           qeOrderBy <span class="fu">=</span> [], qeOffset <span class="fu">=</span> <span class="kw">Nothing</span>, qeFetch <span class="fu">=</span> <span class="kw">Nothing</span>})</code></pre>
 </td></tr>
 <tr><td>
-<pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">SELECT</span> * <span class="kw">FROM</span> people <span class="kw">AS</span> mother <span class="kw">JOIN</span> people <span class="kw">AS</span> <span class="kw">child</span> <span class="kw">ON</span> mother.id = child.mother_id;</code></pre>
+<pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">SELECT</span> * <span class="kw">FROM</span> people <span class="kw">AS</span> mother <span class="kw">JOIN</span> people <span class="kw">AS</span> <span class="kw">child</span>
+ <span class="kw">ON</span> mother.id = child.mother_id;</code></pre>
 </td><td>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">Right</span>
   (<span class="dt">Select</span>{qeDuplicates <span class="fu">=</span> <span class="dt">All</span>, qeSelectList <span class="fu">=</span> [(<span class="kw">Nothing</span>, <span class="dt">Star</span>)],
@@ -2844,7 +2848,8 @@ REGION,
           qeOffset <span class="fu">=</span> <span class="kw">Nothing</span>, qeFetch <span class="fu">=</span> <span class="kw">Nothing</span>})</code></pre>
 </td></tr>
 <tr><td>
-<pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">SELECT</span> * <span class="kw">FROM</span> fdt <span class="kw">WHERE</span> c1 <span class="kw">BETWEEN</span> (<span class="kw">SELECT</span> c3 <span class="kw">FROM</span> t2 <span class="kw">WHERE</span> c2 = fdt.c1 + <span class="dv">10</span>) <span class="kw">AND</span> <span class="dv">100</span></code></pre>
+<pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">SELECT</span> * <span class="kw">FROM</span> fdt <span class="kw">WHERE</span> c1 <span class="kw">BETWEEN</span> 
+    (<span class="kw">SELECT</span> c3 <span class="kw">FROM</span> t2 <span class="kw">WHERE</span> c2 = fdt.c1 + <span class="dv">10</span>) <span class="kw">AND</span> <span class="dv">100</span></code></pre>
 </td><td>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">Right</span>
   (<span class="dt">Select</span>{qeDuplicates <span class="fu">=</span> <span class="dt">All</span>, qeSelectList <span class="fu">=</span> [(<span class="kw">Nothing</span>, <span class="dt">Star</span>)],

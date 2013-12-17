@@ -433,7 +433,7 @@ cast('1' as decimal(15,2))
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Cast (StringLit "1") (Prec2TypeName "decimal" 15 2)
+Cast (StringLit "1") (PrecScaleTypeName "decimal" 15 2)
 ~~~~
 </td></tr>
 <tr><td>
@@ -957,7 +957,8 @@ WindowApp{wnName = Name "sum", wnArgs = [Iden (Name "a")],
 </td></tr>
 <tr><td>
 ~~~~{.sql}
-sum(a) over (partition by b order by c range between 5 preceding and 5 following)
+sum(a) over (partition by b order by c 
+range between 5 preceding and 5 following)
 ~~~~
 </td><td>
 ~~~~{.haskell}
@@ -3017,7 +3018,7 @@ Right
                 (App (Name "ROUND")
                    [App (Name "AVG") [App (Name "DECIMAL") [Iden (Name "SALES")]],
                     NumLit "2"])
-                (Prec2TypeName "DECIMAL" 5 2))],
+                (PrecScaleTypeName "DECIMAL" 5 2))],
           qeFrom = [TRSimple (Name "SALES")], qeWhere = Nothing,
           qeGroupBy =
             [Cube
@@ -3078,7 +3079,8 @@ Select{qeDuplicates = All,
 <table>
 <tr><td>
 ~~~~{.sql}
-SELECT name, (SELECT max(pop) FROM cities WHERE cities.state = states.name)
+SELECT name, (SELECT max(pop) FROM cities
+ WHERE cities.state = states.name)
     FROM states;
 ~~~~
 </td><td>
@@ -3434,7 +3436,8 @@ Right
 </td></tr>
 <tr><td>
 ~~~~{.sql}
-SELECT * FROM some_very_long_table_name s JOIN another_fairly_long_name a ON s.id = a.num;
+SELECT * FROM some_very_long_table_name s
+JOIN another_fairly_long_name a ON s.id = a.num;
 ~~~~
 </td><td>
 ~~~~{.haskell}
@@ -3458,7 +3461,8 @@ Right
 </td></tr>
 <tr><td>
 ~~~~{.sql}
-SELECT * FROM people AS mother JOIN people AS child ON mother.id = child.mother_id;
+SELECT * FROM people AS mother JOIN people AS child
+ ON mother.id = child.mother_id;
 ~~~~
 </td><td>
 ~~~~{.haskell}
@@ -3727,7 +3731,8 @@ Right
 </td></tr>
 <tr><td>
 ~~~~{.sql}
-SELECT * FROM fdt WHERE c1 BETWEEN (SELECT c3 FROM t2 WHERE c2 = fdt.c1 + 10) AND 100
+SELECT * FROM fdt WHERE c1 BETWEEN 
+    (SELECT c3 FROM t2 WHERE c2 = fdt.c1 + 10) AND 100
 ~~~~
 </td><td>
 ~~~~{.haskell}
