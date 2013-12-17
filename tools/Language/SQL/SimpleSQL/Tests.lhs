@@ -19,7 +19,7 @@ tpch tests
 > import Test.Framework.Providers.HUnit
 > import qualified Test.HUnit as H
 
-> import Language.SQL.SimpleSQL.Syntax
+> --import Language.SQL.SimpleSQL.Syntax
 > import Language.SQL.SimpleSQL.Pretty
 > import Language.SQL.SimpleSQL.Parser
 
