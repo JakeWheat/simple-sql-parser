@@ -514,7 +514,8 @@ tref
 >     tref = nonJoinTref >>= optionSuffix joinTrefSuffix
 >     nonJoinTref = choice [try (TRQueryExpr <$> parens queryExpr)
 >                          ,TRParens <$> parens tref
->                          ,TRLateral <$> (try (keyword_ "lateral") *> tref)
+>                          ,TRLateral <$> (try (keyword_ "lateral")
+>                                          *> nonJoinTref)
 >                          ,try (TRFunction <$> name
 >                                           <*> parens (commaSep scalarExpr))
 >                          ,TRSimple <$> name]

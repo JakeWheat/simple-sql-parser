@@ -28,9 +28,8 @@ these lateral queries make no sense but the syntax is valid
 >     ,("select a from lateral a,b"
 >      ,ms [TRLateral $ TRSimple "a", TRSimple "b"])
 
->     -- not sure what the problem is
->     --,("select from a, lateral b"
->     -- ,ms [TRSimple "a", TRLateral $ TRSimple "b"])
+>     ,("select a from a, lateral b"
+>      ,ms [TRSimple "a", TRLateral $ TRSimple "b"])
 
 >     ,("select a from a natural join lateral b"
 >      ,ms [TRJoin (TRSimple "a") JInner
@@ -38,10 +37,10 @@ these lateral queries make no sense but the syntax is valid
 >                  (Just JoinNatural)])
 
 >     -- the lateral binds on the outside of the join which is incorrect
->     --,("select a from lateral a natural join lateral b"
->     -- ,ms [TRJoin (TRLateral $ TRSimple "a") JInner
->     --             (TRLateral $ TRSimple "b")
->     --             (Just JoinNatural)])
+>     ,("select a from lateral a natural join lateral b"
+>      ,ms [TRJoin (TRLateral $ TRSimple "a") JInner
+>                  (TRLateral $ TRSimple "b")
+>                  (Just JoinNatural)])
 
 
 >     ,("select a from t inner join u on expr"
