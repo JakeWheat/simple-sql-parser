@@ -84,16 +84,21 @@
 >       -- operators (a is similar to b)
 >     | BinOp ScalarExpr Name ScalarExpr
 >       -- | Prefix unary operators. This is used for symbol
->       -- operators, keyword operators and multiple keyword operators
+>       -- operators, keyword operators and multiple keyword operators.
 >     | PrefixOp Name ScalarExpr
 >       -- | Postfix unary operators. This is used for symbol
->       -- operators, keyword operators and multiple keyword operators
+>       -- operators, keyword operators and multiple keyword operators.
 >     | PostfixOp Name ScalarExpr
 >       -- | Used for ternary, mixfix and other non orthodox
->       -- operators, including the function looking calls which use
->       -- keywords instead of commas to separate the arguments,
->       -- e.g. substring(t from 1 to 5)
+>       -- operators. Currently used for row constructors, and for
+>       -- between.
 >     | SpecialOp Name [ScalarExpr]
+>       -- | Used for the operators which look like functions
+>       -- except the arguments are separated by keywords instead
+>       -- of commas. The maybe is for the first unnamed argument
+>       -- if it is present, and the list is for the keyword argument
+>       -- pairs.
+>     | SpecialOpK Name (Maybe ScalarExpr) [(String,ScalarExpr)]
 >       -- | case expression. both flavours supported
 >     | Case
 >       {caseTest :: Maybe ScalarExpr -- ^ test value

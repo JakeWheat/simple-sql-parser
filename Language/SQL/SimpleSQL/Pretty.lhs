@@ -81,23 +81,16 @@
 >       ,name nm <+> scalarExpr b
 >       ,nest (length (unname nm) + 1) $ text "and" <+> scalarExpr c]
 
-> scalarExpr (SpecialOp (Name "extract") [a,n]) =
->   text "extract" <> parens (scalarExpr a
->                             <+> text "from"
->                             <+> scalarExpr n)
-
-> scalarExpr (SpecialOp (Name "substring") [a,s,e]) =
->   text "substring" <> parens (scalarExpr a
->                             <+> text "from"
->                             <+> scalarExpr s
->                             <+> text "for"
->                             <+> scalarExpr e)
-
 > scalarExpr (SpecialOp (Name "rowctor") as) =
 >     parens $ commaSep $ map scalarExpr as
 
 > scalarExpr (SpecialOp nm es) =
 >   name nm <+> parens (commaSep $ map scalarExpr es)
+
+> scalarExpr (SpecialOpK (Name nm) fs as) =
+>     text nm <> parens (sep $ catMaybes
+>         ((fmap scalarExpr fs)
+>          : map (\(n,e) -> Just (text n <+> scalarExpr e)) as))
 
 > scalarExpr (PrefixOp f e) = name f <+> scalarExpr e
 > scalarExpr (PostfixOp f e) = scalarExpr e <+> name f

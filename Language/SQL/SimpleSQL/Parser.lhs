@@ -1,4 +1,5 @@
 
+> {-# LANGUAGE TupleSections #-}
 > -- | This is the module with the parser functions.
 > module Language.SQL.SimpleSQL.Parser
 >     (parseQueryExpr
@@ -243,25 +244,113 @@ cast: cast(expr as type)
 >     prefixCast = try (TypedLit <$> typeName
 >                              <*> stringLiteral)
 
-extract(id from expr)
+the special op keywords
+parse an operator which is
+operatorname(firstArg keyword0 arg0 keyword1 arg1 etc.)
+
+> data SpecialOpKFirstArg = SOKNone
+>                         | SOKOptional
+>                         | SOKMandatory
+
+> specialOpK :: String -- name of the operator
+>            -> SpecialOpKFirstArg -- has a first arg without a keyword
+>            -> [(String,Bool)] -- the other args with their keywords
+>                               -- and whether they are optional
+>            -> P ScalarExpr
+> specialOpK opName firstArg kws =
+>     keyword_ opName >> do
+>     void $ symbol  "("
+>     let pfa = do
+>               e <- scalarExpr'
+>               -- check we haven't parsed the first
+>               -- keyword as an identifier
+>               guard (case (e,kws) of
+>                   (Iden (Name i), ((k,_):_)) | map toLower i == k -> False
+>                   _ -> True)
+>               return e
+>     fa <- case firstArg of
+>          SOKNone -> return Nothing
+>          SOKOptional -> optionMaybe (try pfa)
+>          SOKMandatory -> Just <$> pfa
+>     as <- mapM parseArg kws
+>     void $ symbol ")"
+>     return $ SpecialOpK (Name opName) fa $ catMaybes as
+>   where
+>     parseArg (nm,mand) =
+>         let p = keyword_ nm >> scalarExpr'
+>         in fmap (nm,) <$> if mand
+>                           then Just <$> p
+>                           else optionMaybe (try p)
+
+The actual operators:
+
+EXTRACT( date_part FROM expression )
+
+POSITION( string1 IN string2 )
+
+SUBSTRING(extraction_string FROM starting_position [FOR length]
+[COLLATE collation_name])
+
+CONVERT(char_value USING conversion_char_name)
+
+TRANSLATE(char_value USING translation_name)
+
+OVERLAY(string PLACING embedded_string FROM start
+[FOR length])
+
+TRIM( [ [{LEADING | TRAILING | BOTH}] [removal_char] FROM ]
+target_string
+[COLLATE collation_name] )
+
+> specialOpKs :: P ScalarExpr
+> specialOpKs = choice $ map try
+>     [extract, position, substring, convert, translate, overlay, trim]
 
 > extract :: P ScalarExpr
-> extract = try (keyword_ "extract") >>
->     parens (makeOp <$> name
->                    <*> (keyword_ "from" *> scalarExpr'))
->   where makeOp n e = SpecialOp (Name "extract") [Iden n, e]
+> extract = specialOpK "extract" SOKMandatory [("from", True)]
 
-substring(x from expr to expr)
+> position :: P ScalarExpr
+> position = specialOpK "position" SOKMandatory [("in", True)]
 
-todo: also support substring(x from expr)
+strictly speaking, the substring must have at least one of from and
+for, but the parser doens't enforce this
 
 > substring :: P ScalarExpr
-> substring = try (keyword_ "substring") >>
->     parens (makeOp <$> scalarExpr'
->                    <*> (keyword_ "from" *> scalarExpr')
->                    <*> (keyword_ "for" *> scalarExpr')
->                    )
->   where makeOp a b c = SpecialOp (Name "substring") [a,b,c]
+> substring = specialOpK "substring" SOKMandatory
+>                 [("from", False),("for", False),("collate", False)]
+
+> convert :: P ScalarExpr
+> convert = specialOpK "convert" SOKMandatory [("using", True)]
+
+
+> translate :: P ScalarExpr
+> translate = specialOpK "translate" SOKMandatory [("using", True)]
+
+> overlay :: P ScalarExpr
+> overlay = specialOpK "overlay" SOKMandatory
+>                 [("placing", True),("from", True),("for", False)]
+
+trim is too different because of the optional char, so a custom parser
+the both ' ' is filled in as the default if either parts are missing
+in the source
+
+> trim :: P ScalarExpr
+> trim =
+>     keyword "trim" >>
+>     parens (mkTrim
+>             <$> option "both" sides
+>             <*> option " " stringLiteral
+>             <*> (keyword_ "from" *> scalarExpr')
+>             <*> optionMaybe (keyword_ "collate" *> stringLiteral))
+>   where
+>     sides = choice ["leading" <$ keyword_ "leading"
+>                    ,"trailing" <$ keyword_ "trailing"
+>                    ,"both" <$ keyword_ "both"]
+>     mkTrim fa ch fr cl =
+>       SpecialOpK (Name "trim") Nothing
+>           $ catMaybes [Just (fa,StringLit ch)
+>                       ,Just ("from", fr)
+>                       ,fmap (("collate",) . StringLit) cl]
 
 in: two variations:
 a in (expr0, expr1, ...)
@@ -482,8 +571,7 @@ could at least do with some heavy explanation.
 > factor = choice [literal
 >                 ,scase
 >                 ,cast
->                 ,extract
->                 ,substring
+>                 ,try specialOpKs
 >                 ,subquery
 >                 ,prefixUnaryOp
 >                 ,try app

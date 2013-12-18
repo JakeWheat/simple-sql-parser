@@ -39,6 +39,8 @@ check ansi standard for operators
 
 == other
 
+change any/some/all to be proper infix operators like in
+
 review syntax to replace maybe and bool with better ctors
 maybe review some of the dodgy ast names like orderfield and inthing
 

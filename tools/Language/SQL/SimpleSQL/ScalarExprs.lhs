@@ -184,14 +184,6 @@ Tests for parsing scalar expressions
 >     [("a in (1,2,3)"
 >      ,In True (Iden "a") $ InList $ map NumLit ["1","2","3"])
 
->     ,("a between b and c", SpecialOp "between" [Iden "a"
->                                                ,Iden "b"
->                                                ,Iden "c"])
-
->     ,("a not between b and c", SpecialOp "not between" [Iden "a"
->                                                        ,Iden "b"
->                                                        ,Iden "c"])
-
 >     ,("a is null", PostfixOp "is null" (Iden "a"))
 >     ,("a is not null", PostfixOp "is not null" (Iden "a"))
 >     ,("a is true", PostfixOp "is true" (Iden "a"))
@@ -213,13 +205,114 @@ Tests for parsing scalar expressions
 >      ,BinOp (Iden "a") "is not similar to" (Iden "b"))
 
 >     ,("a overlaps b", BinOp (Iden "a") "overlaps" (Iden "b"))
->     ,("extract(day from t)", SpecialOp "extract" [Iden "day", Iden "t"])
 
->     ,("substring(x from 1 for 2)"
->      ,SpecialOp "substring" [Iden "x", NumLit "1", NumLit "2"])
 
+special operators
+
+>     ,("a between b and c", SpecialOp "between" [Iden "a"
+>                                                ,Iden "b"
+>                                                ,Iden "c"])
+
+>     ,("a not between b and c", SpecialOp "not between" [Iden "a"
+>                                                        ,Iden "b"
+>                                                        ,Iden "c"])
 >     ,("(1,2)"
 >      ,SpecialOp "rowctor" [NumLit "1", NumLit "2"])
+
+
+keyword special operators
+
+>     ,("extract(day from t)"
+>      , SpecialOpK "extract" (Just $ Iden "day") [("from", Iden "t")])
+
+>     ,("substring(x from 1 for 2)"
+>      ,SpecialOpK "substring" (Just $ Iden "x") [("from", NumLit "1")
+>                                                ,("for", NumLit "2")])
+
+>     ,("substring(x from 1)"
+>      ,SpecialOpK "substring" (Just $ Iden "x") [("from", NumLit "1")])
+
+>     ,("substring(x for 2)"
+>      ,SpecialOpK "substring" (Just $ Iden "x") [("for", NumLit "2")])
+
+>     ,("substring(x from 1 for 2 collate 'C')"
+>      ,SpecialOpK "substring" (Just $ Iden "x") [("from", NumLit "1")
+>                                                ,("for", NumLit "2")
+>                                                ,("collate", StringLit "C")])
+
+>     ,("POSITION( string1 IN string2 )"
+>      ,SpecialOpK "position" (Just $ Iden "string1") [("in", Iden "string2")])
+
+>     ,("CONVERT(char_value USING conversion_char_name)"
+>      ,SpecialOpK "convert" (Just $ Iden "char_value")
+>           [("using", Iden "conversion_char_name")])
+
+>     ,("TRANSLATE(char_value USING translation_name)"
+>      ,SpecialOpK "translate" (Just $ Iden "char_value")
+>           [("using", Iden "translation_name")])
+
+OVERLAY(string PLACING embedded_string FROM start
+[FOR length])
+
+>     ,("OVERLAY(string PLACING embedded_string FROM start)"
+>      ,SpecialOpK "overlay" (Just $ Iden "string")
+>           [("placing", Iden "embedded_string")
+>           ,("from", Iden "start")])
+
+>     ,("OVERLAY(string PLACING embedded_string FROM start FOR length)"
+>      ,SpecialOpK "overlay" (Just $ Iden "string")
+>           [("placing", Iden "embedded_string")
+>           ,("from", Iden "start")
+>           ,("for", Iden "length")])
+
+TRIM( [ [{LEADING | TRAILING | BOTH}] [removal_char] FROM ]
+target_string
+[COLLATE collation_name] )
+
+
+
+>     ,("trim(from target_string)"
+>      ,SpecialOpK "trim" Nothing
+>           [("both", StringLit " ")
+>           ,("from", Iden "target_string")])
+
+>     ,("trim(leading from target_string)"
+>      ,SpecialOpK "trim" Nothing
+>           [("leading", StringLit " ")
+>           ,("from", Iden "target_string")])
+
+>     ,("trim(trailing from target_string)"
+>      ,SpecialOpK "trim" Nothing
+>           [("trailing", StringLit " ")
+>           ,("from", Iden "target_string")])
+
+>     ,("trim(both from target_string)"
+>      ,SpecialOpK "trim" Nothing
+>           [("both", StringLit " ")
+>           ,("from", Iden "target_string")])
+
+
+>     ,("trim(leading 'x' from target_string)"
+>      ,SpecialOpK "trim" Nothing
+>           [("leading", StringLit "x")
+>           ,("from", Iden "target_string")])
+
+>     ,("trim(trailing 'y' from target_string)"
+>      ,SpecialOpK "trim" Nothing
+>           [("trailing", StringLit "y")
+>           ,("from", Iden "target_string")])
+
+>     ,("trim(both 'z' from target_string collate 'C')"
+>      ,SpecialOpK "trim" Nothing
+>           [("both", StringLit "z")
+>           ,("from", Iden "target_string")
+>           ,("collate", StringLit "C")])
+
+>     ,("trim(leading from target_string)"
+>      ,SpecialOpK "trim" Nothing
+>           [("leading", StringLit " ")
+>           ,("from", Iden "target_string")])
+
 
 >     ]
 

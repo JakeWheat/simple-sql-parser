@@ -75,6 +75,8 @@ the fixity code.
 >                       (toHaskell e0)
 >                       (HSE.QVarOp $ sym $ name op)
 >                       (toHaskell e1)
+>     -- TODO fix me
+>     (SpecialOpK {}) -> str ('v':show e)
 >     Iden {} -> str ('v':show e)
 >     StringLit {} -> str ('v':show e)
 >     NumLit {} -> str ('v':show e)
