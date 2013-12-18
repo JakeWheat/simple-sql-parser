@@ -1,17 +1,27 @@
+= next release
 
-do release
-change old simple_sql_parser project to just point to new location
-  + web site point to new
+Most important goal is to replace the fixity code and fix all the
+   bugs here.
 
-
-next release:
+== docs
 
 add to website: pretty printed tpch, maybe other queries as
    demonstration
 
 add preamble to the rendered test page
 
+add links from the supported sql page to the rendered test page for
+   each section
+
+== testing
+
 review tests to copy from hssqlppp
+
+much more table reference tests, for joins and aliases etc.?
+
+review internal sql collection for more syntax/tests
+
+== features
 
 collate? -> postfix operator which binds very tightly:
 a < 'foo' collate 'C'
@@ -27,35 +37,21 @@ all ansi string literal syntax?
 
 check ansi standard for operators
 
-much more table reference tests, for joins and aliases etc.
-
-review internal sql collection for more syntax/tests
+== other
 
 review syntax to replace maybe and bool with better ctors
+maybe review some of the dodgy ast names like orderfield and inthing
 
-----
 
-add toc to rendered test page
-move supported sql summary to separate page
-add some examples to home page
-add links from the supported sql page to the rendered test page for
-   each section
 
-----
+= Later general tasks:
 
-demo: convert tpch to sql server syntax exe processor
-
-----
+demo program: convert tpch to sql server syntax exe processor
 
 dialect framework
 try to implement fixity without the hse hack
-position annotation?
+source position annotation?
 review abstract syntax (e.g. combine App with SpecialOp?)
-
-
-----
-
-Later general tasks:
 
 more operators
 
