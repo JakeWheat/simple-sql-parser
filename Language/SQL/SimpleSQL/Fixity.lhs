@@ -121,8 +121,8 @@ the fixity code.
 >     name n = case n of
 >        QName q -> '"' : q
 >        Name m -> m
->     orderExps = map (toHaskell . (\(OrderField a _ _) -> a))
->     orderInf = map (\(OrderField _ b c) -> (b,c))
+>     orderExps = map (toHaskell . (\(SortSpec a _ _) -> a))
+>     orderInf = map (\(SortSpec _ b c) -> (b,c))
 
 
 
@@ -171,7 +171,7 @@ the fixity code.
 >         in In b (toSql e0) sq
 >     _ -> err e
 >   where
->     sord = zipWith (\(i0,i1) ce -> OrderField (toSql ce) i0 i1)
+>     sord = zipWith (\(i0,i1) ce -> SortSpec (toSql ce) i0 i1)
 >     ltom (HSE.List []) = Nothing
 >     ltom (HSE.List [ex]) = Just $ toSql ex
 >     ltom ex = err ex

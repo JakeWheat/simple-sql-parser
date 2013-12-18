@@ -712,10 +712,10 @@ where, having, limit, offset).
 > having :: P ScalarExpr
 > having = keywordScalarExpr "having"
 
-> orderBy :: P [OrderField]
+> orderBy :: P [SortSpec]
 > orderBy = try (keyword_ "order") *> keyword_ "by" *> commaSep1 ob
 >   where
->     ob = OrderField
+>     ob = SortSpec
 >          <$> scalarExpr
 >          <*> option Asc (choice [Asc <$ keyword_ "asc"
 >                                 ,Desc <$ keyword_ "desc"])

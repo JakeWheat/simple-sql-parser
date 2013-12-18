@@ -266,12 +266,12 @@
 >     ge (Rollup es) = text "rollup" <> parens (commaSep $ map ge es)
 >     ge (GroupingSets es) = text "grouping sets" <> parens (commaSep $ map ge es)
 
-> orderBy :: [OrderField] -> Doc
+> orderBy :: [SortSpec] -> Doc
 > orderBy [] = empty
 > orderBy os = sep [text "order by"
 >                  ,nest 9 $ commaSep $ map f os]
 >   where
->     f (OrderField e d n) =
+>     f (SortSpec e d n) =
 >         scalarExpr e
 >         <+> (if d == Asc then empty else text "desc")
 >         <+> (case n of

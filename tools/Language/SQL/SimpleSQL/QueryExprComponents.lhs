@@ -89,22 +89,22 @@ These are a few misc tests which don't fit anywhere else.
 > orderBy :: TestItem
 > orderBy = Group "orderBy" $ map (uncurry TestQueryExpr)
 >     [("select a from t order by a"
->      ,ms [OrderField (Iden "a") Asc NullsOrderDefault])
+>      ,ms [SortSpec (Iden "a") Asc NullsOrderDefault])
 
 >     ,("select a from t order by a, b"
->      ,ms [OrderField (Iden "a") Asc NullsOrderDefault
->          ,OrderField (Iden "b") Asc NullsOrderDefault])
+>      ,ms [SortSpec (Iden "a") Asc NullsOrderDefault
+>          ,SortSpec (Iden "b") Asc NullsOrderDefault])
 
 >     ,("select a from t order by a asc"
->      ,ms [OrderField (Iden "a") Asc NullsOrderDefault])
+>      ,ms [SortSpec (Iden "a") Asc NullsOrderDefault])
 
 >     ,("select a from t order by a desc, b desc"
->      ,ms [OrderField (Iden "a") Desc NullsOrderDefault
->          ,OrderField (Iden "b") Desc NullsOrderDefault])
+>      ,ms [SortSpec (Iden "a") Desc NullsOrderDefault
+>          ,SortSpec (Iden "b") Desc NullsOrderDefault])
 
 >     ,("select a from t order by a desc nulls first, b desc nulls last"
->      ,ms [OrderField (Iden "a") Desc NullsFirst
->          ,OrderField (Iden "b") Desc NullsLast])
+>      ,ms [SortSpec (Iden "a") Desc NullsFirst
+>          ,SortSpec (Iden "b") Desc NullsLast])
 
 >     ]
 >   where

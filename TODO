@@ -11,7 +11,7 @@ add to website: pretty printed tpch, maybe other queries as
 add preamble to the rendered test page
 
 add links from the supported sql page to the rendered test page for
-   each section
+   each section -> have to section up the tests some more
 
 == testing
 
@@ -35,7 +35,7 @@ have to do fixity for this to work
 
 all ansi string literal syntax?
 
-check ansi standard for operators
+check ansi standard for operators (keywords and symbols)
 
 == other
 

@@ -33,7 +33,7 @@ Some tests for parsing full queries.
 >       ,qeGroupBy = [SimpleGroup $ Iden "a"]
 >       ,qeHaving = Just $ BinOp (App "count" [NumLit "1"])
 >                                ">" (NumLit "5")
->       ,qeOrderBy = [OrderField (Iden "s") Asc NullsOrderDefault]
+>       ,qeOrderBy = [SortSpec (Iden "s") Asc NullsOrderDefault]
 >       }
 >      )
 >     ]

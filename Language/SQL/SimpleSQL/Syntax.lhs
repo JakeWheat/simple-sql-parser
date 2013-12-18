@@ -6,10 +6,10 @@
 >     ,Name(..)
 >     ,TypeName(..)
 >     ,Duplicates(..)
->     ,OrderField(..)
+>     ,SortSpec(..)
 >     ,Direction(..)
 >     ,NullsOrder(..)
->     ,InThing(..)
+>     ,InPredValue(..)
 >     ,SubQueryExprType(..)
 >     ,Frame(..)
 >     ,FrameRows(..)
@@ -67,7 +67,7 @@
 >       {aggName :: Name -- ^ aggregate function name
 >       ,aggDistinct :: Maybe Duplicates -- ^ distinct
 >       ,aggArgs :: [ScalarExpr]-- ^ args
->       ,aggOrderBy :: [OrderField] -- ^ order by
+>       ,aggOrderBy :: [SortSpec] -- ^ order by
 >       }
 >       -- | window application, which adds over (partition by a order
 >       -- by b) to regular function application. Explicit frames are
@@ -76,7 +76,7 @@
 >       {wnName :: Name -- ^ window function name
 >       ,wnArgs :: [ScalarExpr] -- ^ args
 >       ,wnPartition :: [ScalarExpr] -- ^ partition by
->       ,wnOrderBy :: [OrderField] -- ^ order by
+>       ,wnOrderBy :: [SortSpec] -- ^ order by
 >       ,wnFrame :: Maybe Frame -- ^ frame clause
 >       }
 >       -- | Infix binary operators. This is used for symbol operators
@@ -114,7 +114,7 @@
 >     | SubQueryExpr SubQueryExprType QueryExpr
 >       -- | in list literal and in subquery, if the bool is false it
 >       -- means not in was used ('a not in (1,2)')
->     | In Bool ScalarExpr InThing
+>     | In Bool ScalarExpr InPredValue
 >       deriving (Eq,Show,Read)
 
 > -- | Represents an identifier name, which can be quoted or unquoted.
@@ -131,9 +131,9 @@
 
 > -- | Used for 'expr in (scalar expression list)', and 'expr in
 > -- (subquery)' syntax.
-> data InThing = InList [ScalarExpr]
->              | InQueryExpr QueryExpr
->              deriving (Eq,Show,Read)
+> data InPredValue = InList [ScalarExpr]
+>                  | InQueryExpr QueryExpr
+>                    deriving (Eq,Show,Read)
 
 > -- | A subquery in a scalar expression.
 > data SubQueryExprType
@@ -150,8 +150,8 @@
 >       deriving (Eq,Show,Read)
 
 > -- | Represents one field in an order by list.
-> data OrderField = OrderField ScalarExpr Direction NullsOrder
->                   deriving (Eq,Show,Read)
+> data SortSpec = SortSpec ScalarExpr Direction NullsOrder
+>                 deriving (Eq,Show,Read)
 
 > -- | Represents 'nulls first' or 'nulls last' in an order by clause.
 > data NullsOrder = NullsOrderDefault
@@ -199,7 +199,7 @@
 >       ,qeWhere :: Maybe ScalarExpr
 >       ,qeGroupBy :: [GroupingExpr]
 >       ,qeHaving :: Maybe ScalarExpr
->       ,qeOrderBy :: [OrderField]
+>       ,qeOrderBy :: [SortSpec]
 >       ,qeOffset :: Maybe ScalarExpr
 >       ,qeFetch :: Maybe ScalarExpr
 >       }
