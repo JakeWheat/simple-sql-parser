@@ -178,7 +178,7 @@
 >       ,maybeValueExpr "having" hv
 >       ,orderBy od
 >       ,maybe empty (\e -> text "offset" <+> valueExpr e <+> text "rows") off
->       ,maybe empty (\e -> text "fetch next" <+> valueExpr e
+>       ,maybe empty (\e -> text "fetch first" <+> valueExpr e
 >                           <+> text "rows only") fe
 >       ]
 > queryExpr (CombineQueryExpr q1 ct d c q2) =
