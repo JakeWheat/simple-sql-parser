@@ -15,8 +15,6 @@ update website text
 
 = Later general tasks:
 
-----
-
 docs
 
 add to website: pretty printed tpch, maybe other queries as
@@ -117,8 +115,8 @@ B'
 X'
 U&' ?
 looks like two string literals separated by any whitespace are
-   merged, which isn't what the postgres manual claims is the standard
-plus something introducer, character set thing
+     merged, which isn't what the postgres manual claims is the standard
+  plus something introducer, character set thing
 union join?
 corresponding by
 from in substring is not optional in ansi
@@ -139,7 +137,6 @@ clob type: CLOB(4M) - M suffix on the precision
 array element reference a[4]
 regular expression substring function
 between symmetric
-match predicate
 unicode delimited identifier
 character set postfix type op for string types + collate on string types
 next value for
@@ -151,7 +148,7 @@ table sample
 unnest
 only
 window frame exclusion: complete window support?
-select t.* as (a,b,c) from t ??
+select t.* as (a,b,c) from t
 search or cycle clause for ctes
 normalized
 

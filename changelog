@@ -5,26 +5,28 @@
 	rename OrderField to SortSpec
 	rename InThing to InPredValue
 	add support for ? for parameterized queries
-	add new syntax for special operators whose syntax is a bit like
-	named parameters
-	add parsing for special syntax functions: position, convert,
-	translate, overlay, trim, and improve the substring parsing
+	add new abstract syntax for special operators whose concrete
+	  syntax is a kind of limited named parameters syntax
+	add more parsing for these operators: position, convert,
+	  translate, overlay, trim, and improve the substring parsing
 	add support for multi keyword type names
-	   previously double precision and character varying
+	   previously:
+	     double precision
+	     character varying
 	   now:
-	   double precision,
-	   character varying,
-	   char varying,
-	   character large object,
-	   char large object,
-	   national character,
-	   national char,
-	   national character varying,
-	   national char varying,
-	   national character large object,
-	   nchar large object,
-	   nchar varying,
-	   bit varying
+	     double precision,
+	     character varying,
+	     char varying,
+	     character large object,
+	     char large object,
+	     national character,
+	     national char,
+	     national character varying,
+	     national char varying,
+	     national character large object,
+	     nchar large object,
+	     nchar varying,
+	     bit varying
 	rename tools/PrettyIt to tools/SQLIdent and add to cabal file as
 	  optional executable (disabled by default)
 
