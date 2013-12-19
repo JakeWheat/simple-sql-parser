@@ -28,8 +28,9 @@
 >     ) where
 
 
-> -- | Represents a value expression, i.e. expressions in select
-> -- lists, where, group by, order by, etc.
+> -- | Represents a value expression. This is used for the expressions
+> -- in select lists. It is also used for expressions in where, group
+> -- by, having, order by and so on.
 > data ValueExpr
 >     = -- | a numeric literal optional decimal point, e+-
 >       -- integral exponent, e.g
@@ -189,10 +190,9 @@
 > --
 > -- * a common table expression (with);
 > --
-> -- * a values expression;
+> -- * a table value constructor (values (1,2),(3,4)); or
 > --
-> -- * or the table syntax - 'table t', shorthand for 'select * from
-> --    t'.
+> -- * an explicit table (table t).
 > data QueryExpr
 >     = Select
 >       {qeSetQuantifier :: SetQuantifier
@@ -233,7 +233,19 @@ TODO: add queryexpr parens to deal with e.g.
 I'm not sure if this is valid syntax or not.
 
 > -- | Helper/'default' value for query exprs to make creating query
-> -- expr values a little easier.
+> -- expr values a little easier. It is defined like this:
+> --
+> -- > makeSelect :: QueryExpr
+> -- > makeSelect = Select {qeSetQuantifier = All
+> -- >                     ,qeSelectList = []
+> -- >                     ,qeFrom = []
+> -- >                     ,qeWhere = Nothing
+> -- >                     ,qeGroupBy = []
+> -- >                     ,qeHaving = Nothing
+> -- >                     ,qeOrderBy = []
+> -- >                     ,qeOffset = Nothing
+> -- >                     ,qeFetch = Nothing}
+
 > makeSelect :: QueryExpr
 > makeSelect = Select {qeSetQuantifier = All
 >                     ,qeSelectList = []

@@ -4,6 +4,8 @@ New fixity code + extensive tests.
 check fixity in query expr level?
 check fixity in tablerefs
 
+try and use the proper css theme
+
 release checklist:
 hlint
 haddock review

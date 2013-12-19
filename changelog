@@ -1,4 +1,5 @@
-0.3.0-dev (commit b68c116839cf852832cef28f3cd479ac7622293c)
+0.3.0-dev (commit 3b2730fd9962b9a51ad659191ac842364dab86b4)
+	rename ScalarExpr -> ValueExpr
 	rename Duplicates to SetQuantifier
 	rename qeDuplicates to qeSetQuantifier
 	rename OrderField to SortSpec
