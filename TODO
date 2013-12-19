@@ -22,10 +22,6 @@ much more table reference tests, for joins and aliases etc.?
 
 review internal sql collection for more syntax/tests
 
-== features
-
-parse '?'
-
 == other
 
 change any/some/all to be proper infix operators like in ??

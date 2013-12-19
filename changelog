@@ -1,4 +1,33 @@
-[this file updated to commit 1ea09db9886baaa37b8795aff0f9c556c7a958e5]
+[this file updated to commit b68c116839cf852832cef28f3cd479ac7622293c]
+0.3.0 (HEAD)
+	rename Duplicates to SetQuantifier
+	rename qeDuplicates to qeSetQuantifier
+	rename OrderField to SortSpec
+	rename InThing to InPredValue
+	add support for ? for parameterized queries
+	add new syntax for special operators whose syntax is a bit like
+	named parameters
+	add parsing for special syntax functions: position, convert,
+	translate, overlay, trim, and improve the substring parsing
+	add support for multi keyword type names
+	   previously double precision and character varying
+	   now:
+	   double precision,
+	   character varying,
+	   char varying,
+	   character large object,
+	   char large object,
+	   national character,
+	   national char,
+	   national character varying,
+	   national char varying,
+	   national character large object,
+	   nchar large object,
+	   nchar varying,
+	   bit varying
+	rename tools/PrettyIt to tools/SQLIdent and add to cabal file as
+	  optional executable (disabled by default)
+
 0.2.0 (commit 9ea29c1a0ceb2c3f3157fb161d1ea819ea5d64d4)
 	'' quotes in string literal
 	parse simple interval literal e.g. "interval '1 week'"
@@ -25,5 +54,6 @@
 	support ansi standard syntax for offset n rows and fetch first n
 	  rows only
 	fix keyword parsing to be case insensitive
+
 0.1.0.0 (commit 9bf4012fc40a74ad9a039fcb936e3b9dfc3f90f0)
 	initial release
