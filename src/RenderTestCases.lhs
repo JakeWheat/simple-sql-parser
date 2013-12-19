@@ -13,7 +13,7 @@ Converts the test data to markdown
 > doc n (Group nm is) =
 >     Heading n nm
 >     : concatMap (doc (n + 1)) is
-> doc _ (TestScalarExpr str e) =
+> doc _ (TestValueExpr str e) =
 >     [Row str (groom e)]
 > doc _ (TestQueryExpr str e) =
 >     [Row str (groom e)]

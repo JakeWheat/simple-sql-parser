@@ -2,9 +2,10 @@
 
 A parser for SQL queries in Haskell. Also includes a pretty printer
 which formats output nicely. The first goal is to parse most of
-SQL:2003 queries, and also some other SQL dialects.
+SQL:2003 queries. Additional goals include supporting other SQL
+dialects.
 
-This is the documentation for version 0.2.0.
+This is the documentation for version 0.3.0.
 
 Status: Covers a lot of queries already and is mostly stable. There is
 a small showstopper in the precedence and associativity handling of
@@ -13,6 +14,202 @@ doesn't affect regular binary symbol operators such as comparison
 operators (==, <=, etc,) and arithmetic operators (+,-, etc.).
 
 Tested with GHC 7.6.3.
+
+# Examples
+
+Simple expression:
+
+~~~~{.sql}
+select a + b * c
+~~~~
+
+Parsed AST:
+
+~~~~{.haskell}
+Select{qeDuplicates = All,
+       qeSelectList =
+         [(Nothing,
+           BinOp (Iden (Name "a")) (Name "+")
+             (BinOp (Iden (Name "b")) (Name "*") (Iden (Name "c"))))],
+       qeFrom = [], qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+       qeOrderBy = [], qeOffset = Nothing, qeFetch = Nothing}
+~~~~
+
+TPC-H query 21:
+
+~~~~{.sql}
+select
+        s_name,
+        count(*) as numwait
+from
+        supplier,
+        lineitem l1,
+        orders,
+        nation
+where
+        s_suppkey = l1.l_suppkey
+        and o_orderkey = l1.l_orderkey
+        and o_orderstatus = 'F'
+        and l1.l_receiptdate > l1.l_commitdate
+        and exists (
+                select
+                        *
+                from
+                        lineitem l2
+                where
+                        l2.l_orderkey = l1.l_orderkey
+                        and l2.l_suppkey <> l1.l_suppkey
+        )
+        and not exists (
+                select
+                        *
+                from
+                        lineitem l3
+                where
+                        l3.l_orderkey = l1.l_orderkey
+                        and l3.l_suppkey <> l1.l_suppkey
+                        and l3.l_receiptdate > l3.l_commitdate
+        )
+        and s_nationkey = n_nationkey
+        and n_name = 'INDIA'
+group by
+        s_name
+order by
+        numwait desc,
+        s_name
+fetch first 100 rows only;
+~~~~
+
+Parsed:
+
+~~~~{.haskell}
+Select{qeSetQuantifier = All,
+       qeSelectList =
+         [(Nothing, Iden (Name "s_name")),
+          (Just (Name "numwait"), App (Name "count") [Star])],
+       qeFrom =
+         [TRSimple (Name "supplier"),
+          TRAlias (TRSimple (Name "lineitem")) (Alias (Name "l1") Nothing),
+          TRSimple (Name "orders"), TRSimple (Name "nation")],
+       qeWhere =
+         Just
+           (BinOp
+              (BinOp
+                 (BinOp
+                    (BinOp
+                       (BinOp
+                          (BinOp (Iden (Name "s_suppkey")) (Name "=")
+                             (BinOp (Iden (Name "l1")) (Name ".") (Iden (Name "l_suppkey"))))
+                          (Name "and")
+                          (BinOp (Iden (Name "o_orderkey")) (Name "=")
+                             (BinOp (Iden (Name "l1")) (Name ".") (Iden (Name "l_orderkey")))))
+                       (Name "and")
+                       (BinOp (Iden (Name "o_orderstatus")) (Name "=") (StringLit "F")))
+                    (Name "and")
+                    (BinOp
+                       (BinOp (Iden (Name "l1")) (Name ".") (Iden (Name "l_receiptdate")))
+                       (Name ">")
+                       (BinOp (Iden (Name "l1")) (Name ".")
+                          (Iden (Name "l_commitdate")))))
+                 (Name "and")
+                 (SubQueryExpr SqExists
+                    (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
+                            qeFrom =
+                              [TRAlias (TRSimple (Name "lineitem")) (Alias (Name "l2") Nothing)],
+                            qeWhere =
+                              Just
+                                (BinOp
+                                   (BinOp
+                                      (BinOp (Iden (Name "l2")) (Name ".")
+                                         (Iden (Name "l_orderkey")))
+                                      (Name "=")
+                                      (BinOp (Iden (Name "l1")) (Name ".")
+                                         (Iden (Name "l_orderkey"))))
+                                   (Name "and")
+                                   (BinOp
+                                      (BinOp (Iden (Name "l2")) (Name ".")
+                                         (Iden (Name "l_suppkey")))
+                                      (Name "<>")
+                                      (BinOp (Iden (Name "l1")) (Name ".")
+                                         (Iden (Name "l_suppkey"))))),
+                            qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
+                            qeOffset = Nothing, qeFetch = Nothing})))
+              (Name "and")
+              (PrefixOp (Name "not")
+                 (BinOp
+                    (BinOp
+                       (SubQueryExpr SqExists
+                          (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
+                                  qeFrom =
+                                    [TRAlias (TRSimple (Name "lineitem"))
+                                       (Alias (Name "l3") Nothing)],
+                                  qeWhere =
+                                    Just
+                                      (BinOp
+                                         (BinOp
+                                            (BinOp
+                                               (BinOp (Iden (Name "l3")) (Name ".")
+                                                  (Iden (Name "l_orderkey")))
+                                               (Name "=")
+                                               (BinOp (Iden (Name "l1")) (Name ".")
+                                                  (Iden (Name "l_orderkey"))))
+                                            (Name "and")
+                                            (BinOp
+                                               (BinOp (Iden (Name "l3")) (Name ".")
+                                                  (Iden (Name "l_suppkey")))
+                                               (Name "<>")
+                                               (BinOp (Iden (Name "l1")) (Name ".")
+                                                  (Iden (Name "l_suppkey")))))
+                                         (Name "and")
+                                         (BinOp
+                                            (BinOp (Iden (Name "l3")) (Name ".")
+                                               (Iden (Name "l_receiptdate")))
+                                            (Name ">")
+                                            (BinOp (Iden (Name "l3")) (Name ".")
+                                               (Iden (Name "l_commitdate"))))),
+                                  qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
+                                  qeOffset = Nothing, qeFetch = Nothing}))
+                       (Name "and")
+                       (BinOp (Iden (Name "s_nationkey")) (Name "=")
+                          (Iden (Name "n_nationkey"))))
+                    (Name "and")
+                    (BinOp (Iden (Name "n_name")) (Name "=") (StringLit "INDIA"))))),
+       qeGroupBy = [SimpleGroup (Iden (Name "s_name"))],
+       qeHaving = Nothing,
+       qeOrderBy =
+         [SortSpec (Iden (Name "numwait")) Desc NullsOrderDefault,
+          SortSpec (Iden (Name "s_name")) Asc NullsOrderDefault],
+       qeOffset = Nothing, qeFetch = Just (NumLit "100")}
+~~~~
+
+Output from the simple-sql-parser pretty printer:
+
+~~~~{.sql}
+select s_name, count(*) as numwait
+from supplier,
+     lineitem as l1,
+     orders,
+     nation
+where s_suppkey = l1.l_suppkey
+      and o_orderkey = l1.l_orderkey
+      and o_orderstatus = 'F'
+      and l1.l_receiptdate > l1.l_commitdate
+      and exists (select *
+                  from lineitem as l2
+                  where l2.l_orderkey = l1.l_orderkey
+                        and l2.l_suppkey <> l1.l_suppkey)
+      and not exists (select *
+                      from lineitem as l3
+                      where l3.l_orderkey = l1.l_orderkey
+                            and l3.l_suppkey <> l1.l_suppkey
+                            and l3.l_receiptdate > l3.l_commitdate)
+-- [this indentation is an issue with the not operator precedence bug]
+              and s_nationkey = n_nationkey
+              and n_name = 'INDIA'
+group by s_name
+order by numwait desc, s_name
+fetch next 100 rows only;
+~~~~
 
 # Feature support
 
@@ -25,7 +222,7 @@ Tested with GHC 7.6.3.
 * offset and fetch
 * set operators
 * common table expressions
-* wide range of scalar expressions
+* wide range of value expressions
 
 See the [supported_sql.html](supported_sql.html) page for details on
 the supported SQL.
@@ -56,6 +253,103 @@ cabal install
   examples.
 * [simple-sql-parser haddock](haddock/index.html) (the haddock on
   Hackage has source links)
+
+# Recommended reading
+
+Here is some recommended reading on understanding SQL in depth.
+\
+\
+\
+SQL: The Complete Reference, 3rd Edition, James R. Groff, Paul
+N. Weinberg, Andrew J. Oppel
+
+This is a comprehensive book which covers up to the SQL:1999 standard.
+\
+\
+\
+SQL in a Nutshell, Kevin Kline, Brand Hunt, Daniel Kline
+
+This is another good book which covers some of the SQL:2003 and
+SQL:2008 standards. This means it covers a few newer things like
+window functions which 'SQL: The Complete Reference' doesn't. It also
+compares some main SQL product dialects.
+\
+\
+\
+SQL A Comparative Survey, Hugh Darwen
+http://bookboon.com/en/sql-a-comparative-survey-ebook
+
+This is a book about SQL from a relational theory perspective.
+\
+\
+\
+SQL and Relational Theory, 2nd Edition, Chris Date
+
+This also covers SQL from a partly theoretical perspective.
+\
+\
+\
+A Guide to the SQL Standard, C. J. Date, Hugh Darwen
+
+Review: TODO. It covers up to  SQL:92.
+\
+\
+\
+There are several other good books by Chris Date, some with Hugh
+Darwen and others, for instance 'Introduction to Database Systems',
+'Temporal Data & the Relational Model, Databases', 'Types and the
+Relational Model'. Only the first one (Introduction to
+Database Systems) really relates to SQL.
+\
+\
+\
+The SQL draft standards are available to download for free (follow the
+links on the wikipedia page for SQL). They are a little tricky to
+read and understand.
+\
+\
+\
+TODO: add web links for the pdfs below
+\
+\
+\
+IBM DB2 10.5 SQL Reference Volume 1
+
+<http://public.dhe.ibm.com/ps/products/db2/info/vr105/pdf/en_US/DB2SQLRefVol1-db2s1e1050.pdf>
+\
+\
+\
+Oracle SQL Reference 12c release 1
+
+<http://docs.oracle.com/cd/E16655_01/server.121/e17209.pdf>
+\
+\
+\
+Teradata:
+
+TODO
+\
+\
+\
+Microsoft SQL Server 2012 TSQL reference online. I didn't find a PDF
+for this.
+
+<http://technet.microsoft.com/en-us/library/bb510741.aspx>
+\
+\
+\
+PostgreSQL 9.3 manual:
+
+<http://www.postgresql.org/docs/9.3/interactive/index.html>
+
+No PDF for the Postgres manual either, but the web pages are very
+readable.
+\
+\
+\
+SQL BNF Grammars
+
+http://savage.net.au/SQL/index.html
 
 # Links
 

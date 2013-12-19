@@ -6,15 +6,221 @@
   <meta name="generator" content="pandoc" />
   <title>simple-sql-parser - </title>
   <style type="text/css">code{white-space: pre;}</style>
+  <style type="text/css">
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; }
+code > span.dt { color: #902000; }
+code > span.dv { color: #40a070; }
+code > span.bn { color: #40a070; }
+code > span.fl { color: #40a070; }
+code > span.ch { color: #4070a0; }
+code > span.st { color: #4070a0; }
+code > span.co { color: #60a0b0; font-style: italic; }
+code > span.ot { color: #007020; }
+code > span.al { color: #ff0000; font-weight: bold; }
+code > span.fu { color: #06287e; }
+code > span.er { color: #ff0000; font-weight: bold; }
+  </style>
   <link rel="stylesheet" href="main.css" type="text/css" />
 </head>
 <body>
-<h1 id="simple-sql-parser">simple-sql-parser</h1>
-<p>A parser for SQL queries in Haskell. Also includes a pretty printer which formats output nicely. The first goal is to parse most of SQL:2003 queries, and also some other SQL dialects.</p>
-<p>This is the documentation for version 0.2.0.</p>
+<div id="TOC">
+<ul>
+<li><a href="#simple-sql-parser">simple-sql-parser</a></li>
+<li><a href="#examples">Examples</a></li>
+<li><a href="#feature-support">Feature support</a></li>
+<li><a href="#installation">Installation</a></li>
+<li><a href="#documentation">Documentation</a></li>
+<li><a href="#recommended-reading">Recommended reading</a></li>
+<li><a href="#links">Links</a></li>
+<li><a href="#contact">Contact</a></li>
+</ul>
+</div>
+<h1 id="simple-sql-parser"><a href="#simple-sql-parser">simple-sql-parser</a></h1>
+<p>A parser for SQL queries in Haskell. Also includes a pretty printer which formats output nicely. The first goal is to parse most of SQL:2003 queries. Additional goals include supporting other SQL dialects.</p>
+<p>This is the documentation for version 0.3.0.</p>
 <p>Status: Covers a lot of queries already and is mostly stable. There is a small showstopper in the precedence and associativity handling of operators, which has some minor issues but mostly works fine. This bug doesn't affect regular binary symbol operators such as comparison operators (==, &lt;=, etc,) and arithmetic operators (+,-, etc.).</p>
 <p>Tested with GHC 7.6.3.</p>
-<h1 id="feature-support">Feature support</h1>
+<h1 id="examples"><a href="#examples">Examples</a></h1>
+<p>Simple expression:</p>
+<pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">select</span> a + b * c</code></pre>
+<p>Parsed AST:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="dt">Select</span>{qeDuplicates <span class="fu">=</span> <span class="dt">All</span>,
+       qeSelectList <span class="fu">=</span>
+         [(<span class="kw">Nothing</span>,
+           <span class="dt">BinOp</span> (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;a&quot;</span>)) (<span class="dt">Name</span> <span class="st">&quot;+&quot;</span>)
+             (<span class="dt">BinOp</span> (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;b&quot;</span>)) (<span class="dt">Name</span> <span class="st">&quot;*&quot;</span>) (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;c&quot;</span>))))],
+       qeFrom <span class="fu">=</span> [], qeWhere <span class="fu">=</span> <span class="kw">Nothing</span>, qeGroupBy <span class="fu">=</span> [], qeHaving <span class="fu">=</span> <span class="kw">Nothing</span>,
+       qeOrderBy <span class="fu">=</span> [], qeOffset <span class="fu">=</span> <span class="kw">Nothing</span>, qeFetch <span class="fu">=</span> <span class="kw">Nothing</span>}</code></pre>
+<p>TPC-H query 21:</p>
+<pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">select</span>
+        s_name,
+        <span class="fu">count</span>(*) <span class="kw">as</span> numwait
+<span class="kw">from</span>
+        supplier,
+        lineitem l1,
+        orders,
+        nation
+<span class="kw">where</span>
+        s_suppkey = l1.l_suppkey
+        <span class="kw">and</span> o_orderkey = l1.l_orderkey
+        <span class="kw">and</span> o_orderstatus = <span class="st">&#39;F&#39;</span>
+        <span class="kw">and</span> l1.l_receiptdate &gt; l1.l_commitdate
+        <span class="kw">and</span> <span class="kw">exists</span> (
+                <span class="kw">select</span>
+                        *
+                <span class="kw">from</span>
+                        lineitem l2
+                <span class="kw">where</span>
+                        l2.l_orderkey = l1.l_orderkey
+                        <span class="kw">and</span> l2.l_suppkey &lt;&gt; l1.l_suppkey
+        )
+        <span class="kw">and</span> <span class="kw">not</span> <span class="kw">exists</span> (
+                <span class="kw">select</span>
+                        *
+                <span class="kw">from</span>
+                        lineitem l3
+                <span class="kw">where</span>
+                        l3.l_orderkey = l1.l_orderkey
+                        <span class="kw">and</span> l3.l_suppkey &lt;&gt; l1.l_suppkey
+                        <span class="kw">and</span> l3.l_receiptdate &gt; l3.l_commitdate
+        )
+        <span class="kw">and</span> s_nationkey = n_nationkey
+        <span class="kw">and</span> n_name = <span class="st">&#39;INDIA&#39;</span>
+<span class="kw">group</span> <span class="kw">by</span>
+        s_name
+<span class="kw">order</span> <span class="kw">by</span>
+        numwait <span class="kw">desc</span>,
+        s_name
+fetch <span class="fu">first</span> <span class="dv">100</span> <span class="kw">rows</span> <span class="kw">only</span>;</code></pre>
+<p>Parsed:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="dt">Select</span>{qeSetQuantifier <span class="fu">=</span> <span class="dt">All</span>,
+       qeSelectList <span class="fu">=</span>
+         [(<span class="kw">Nothing</span>, <span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;s_name&quot;</span>)),
+          (<span class="kw">Just</span> (<span class="dt">Name</span> <span class="st">&quot;numwait&quot;</span>), <span class="dt">App</span> (<span class="dt">Name</span> <span class="st">&quot;count&quot;</span>) [<span class="dt">Star</span>])],
+       qeFrom <span class="fu">=</span>
+         [<span class="dt">TRSimple</span> (<span class="dt">Name</span> <span class="st">&quot;supplier&quot;</span>),
+          <span class="dt">TRAlias</span> (<span class="dt">TRSimple</span> (<span class="dt">Name</span> <span class="st">&quot;lineitem&quot;</span>)) (<span class="dt">Alias</span> (<span class="dt">Name</span> <span class="st">&quot;l1&quot;</span>) <span class="kw">Nothing</span>),
+          <span class="dt">TRSimple</span> (<span class="dt">Name</span> <span class="st">&quot;orders&quot;</span>), <span class="dt">TRSimple</span> (<span class="dt">Name</span> <span class="st">&quot;nation&quot;</span>)],
+       qeWhere <span class="fu">=</span>
+         <span class="kw">Just</span>
+           (<span class="dt">BinOp</span>
+              (<span class="dt">BinOp</span>
+                 (<span class="dt">BinOp</span>
+                    (<span class="dt">BinOp</span>
+                       (<span class="dt">BinOp</span>
+                          (<span class="dt">BinOp</span> (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;s_suppkey&quot;</span>)) (<span class="dt">Name</span> <span class="st">&quot;=&quot;</span>)
+                             (<span class="dt">BinOp</span> (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;l1&quot;</span>)) (<span class="dt">Name</span> <span class="st">&quot;.&quot;</span>) (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;l_suppkey&quot;</span>))))
+                          (<span class="dt">Name</span> <span class="st">&quot;and&quot;</span>)
+                          (<span class="dt">BinOp</span> (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;o_orderkey&quot;</span>)) (<span class="dt">Name</span> <span class="st">&quot;=&quot;</span>)
+                             (<span class="dt">BinOp</span> (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;l1&quot;</span>)) (<span class="dt">Name</span> <span class="st">&quot;.&quot;</span>) (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;l_orderkey&quot;</span>)))))
+                       (<span class="dt">Name</span> <span class="st">&quot;and&quot;</span>)
+                       (<span class="dt">BinOp</span> (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;o_orderstatus&quot;</span>)) (<span class="dt">Name</span> <span class="st">&quot;=&quot;</span>) (<span class="dt">StringLit</span> <span class="st">&quot;F&quot;</span>)))
+                    (<span class="dt">Name</span> <span class="st">&quot;and&quot;</span>)
+                    (<span class="dt">BinOp</span>
+                       (<span class="dt">BinOp</span> (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;l1&quot;</span>)) (<span class="dt">Name</span> <span class="st">&quot;.&quot;</span>) (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;l_receiptdate&quot;</span>)))
+                       (<span class="dt">Name</span> <span class="st">&quot;&gt;&quot;</span>)
+                       (<span class="dt">BinOp</span> (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;l1&quot;</span>)) (<span class="dt">Name</span> <span class="st">&quot;.&quot;</span>)
+                          (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;l_commitdate&quot;</span>)))))
+                 (<span class="dt">Name</span> <span class="st">&quot;and&quot;</span>)
+                 (<span class="dt">SubQueryExpr</span> <span class="dt">SqExists</span>
+                    (<span class="dt">Select</span>{qeSetQuantifier <span class="fu">=</span> <span class="dt">All</span>, qeSelectList <span class="fu">=</span> [(<span class="kw">Nothing</span>, <span class="dt">Star</span>)],
+                            qeFrom <span class="fu">=</span>
+                              [<span class="dt">TRAlias</span> (<span class="dt">TRSimple</span> (<span class="dt">Name</span> <span class="st">&quot;lineitem&quot;</span>)) (<span class="dt">Alias</span> (<span class="dt">Name</span> <span class="st">&quot;l2&quot;</span>) <span class="kw">Nothing</span>)],
+                            qeWhere <span class="fu">=</span>
+                              <span class="kw">Just</span>
+                                (<span class="dt">BinOp</span>
+                                   (<span class="dt">BinOp</span>
+                                      (<span class="dt">BinOp</span> (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;l2&quot;</span>)) (<span class="dt">Name</span> <span class="st">&quot;.&quot;</span>)
+                                         (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;l_orderkey&quot;</span>)))
+                                      (<span class="dt">Name</span> <span class="st">&quot;=&quot;</span>)
+                                      (<span class="dt">BinOp</span> (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;l1&quot;</span>)) (<span class="dt">Name</span> <span class="st">&quot;.&quot;</span>)
+                                         (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;l_orderkey&quot;</span>))))
+                                   (<span class="dt">Name</span> <span class="st">&quot;and&quot;</span>)
+                                   (<span class="dt">BinOp</span>
+                                      (<span class="dt">BinOp</span> (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;l2&quot;</span>)) (<span class="dt">Name</span> <span class="st">&quot;.&quot;</span>)
+                                         (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;l_suppkey&quot;</span>)))
+                                      (<span class="dt">Name</span> <span class="st">&quot;&lt;&gt;&quot;</span>)
+                                      (<span class="dt">BinOp</span> (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;l1&quot;</span>)) (<span class="dt">Name</span> <span class="st">&quot;.&quot;</span>)
+                                         (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;l_suppkey&quot;</span>))))),
+                            qeGroupBy <span class="fu">=</span> [], qeHaving <span class="fu">=</span> <span class="kw">Nothing</span>, qeOrderBy <span class="fu">=</span> [],
+                            qeOffset <span class="fu">=</span> <span class="kw">Nothing</span>, qeFetch <span class="fu">=</span> <span class="kw">Nothing</span>})))
+              (<span class="dt">Name</span> <span class="st">&quot;and&quot;</span>)
+              (<span class="dt">PrefixOp</span> (<span class="dt">Name</span> <span class="st">&quot;not&quot;</span>)
+                 (<span class="dt">BinOp</span>
+                    (<span class="dt">BinOp</span>
+                       (<span class="dt">SubQueryExpr</span> <span class="dt">SqExists</span>
+                          (<span class="dt">Select</span>{qeSetQuantifier <span class="fu">=</span> <span class="dt">All</span>, qeSelectList <span class="fu">=</span> [(<span class="kw">Nothing</span>, <span class="dt">Star</span>)],
+                                  qeFrom <span class="fu">=</span>
+                                    [<span class="dt">TRAlias</span> (<span class="dt">TRSimple</span> (<span class="dt">Name</span> <span class="st">&quot;lineitem&quot;</span>))
+                                       (<span class="dt">Alias</span> (<span class="dt">Name</span> <span class="st">&quot;l3&quot;</span>) <span class="kw">Nothing</span>)],
+                                  qeWhere <span class="fu">=</span>
+                                    <span class="kw">Just</span>
+                                      (<span class="dt">BinOp</span>
+                                         (<span class="dt">BinOp</span>
+                                            (<span class="dt">BinOp</span>
+                                               (<span class="dt">BinOp</span> (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;l3&quot;</span>)) (<span class="dt">Name</span> <span class="st">&quot;.&quot;</span>)
+                                                  (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;l_orderkey&quot;</span>)))
+                                               (<span class="dt">Name</span> <span class="st">&quot;=&quot;</span>)
+                                               (<span class="dt">BinOp</span> (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;l1&quot;</span>)) (<span class="dt">Name</span> <span class="st">&quot;.&quot;</span>)
+                                                  (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;l_orderkey&quot;</span>))))
+                                            (<span class="dt">Name</span> <span class="st">&quot;and&quot;</span>)
+                                            (<span class="dt">BinOp</span>
+                                               (<span class="dt">BinOp</span> (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;l3&quot;</span>)) (<span class="dt">Name</span> <span class="st">&quot;.&quot;</span>)
+                                                  (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;l_suppkey&quot;</span>)))
+                                               (<span class="dt">Name</span> <span class="st">&quot;&lt;&gt;&quot;</span>)
+                                               (<span class="dt">BinOp</span> (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;l1&quot;</span>)) (<span class="dt">Name</span> <span class="st">&quot;.&quot;</span>)
+                                                  (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;l_suppkey&quot;</span>)))))
+                                         (<span class="dt">Name</span> <span class="st">&quot;and&quot;</span>)
+                                         (<span class="dt">BinOp</span>
+                                            (<span class="dt">BinOp</span> (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;l3&quot;</span>)) (<span class="dt">Name</span> <span class="st">&quot;.&quot;</span>)
+                                               (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;l_receiptdate&quot;</span>)))
+                                            (<span class="dt">Name</span> <span class="st">&quot;&gt;&quot;</span>)
+                                            (<span class="dt">BinOp</span> (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;l3&quot;</span>)) (<span class="dt">Name</span> <span class="st">&quot;.&quot;</span>)
+                                               (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;l_commitdate&quot;</span>))))),
+                                  qeGroupBy <span class="fu">=</span> [], qeHaving <span class="fu">=</span> <span class="kw">Nothing</span>, qeOrderBy <span class="fu">=</span> [],
+                                  qeOffset <span class="fu">=</span> <span class="kw">Nothing</span>, qeFetch <span class="fu">=</span> <span class="kw">Nothing</span>}))
+                       (<span class="dt">Name</span> <span class="st">&quot;and&quot;</span>)
+                       (<span class="dt">BinOp</span> (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;s_nationkey&quot;</span>)) (<span class="dt">Name</span> <span class="st">&quot;=&quot;</span>)
+                          (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;n_nationkey&quot;</span>))))
+                    (<span class="dt">Name</span> <span class="st">&quot;and&quot;</span>)
+                    (<span class="dt">BinOp</span> (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;n_name&quot;</span>)) (<span class="dt">Name</span> <span class="st">&quot;=&quot;</span>) (<span class="dt">StringLit</span> <span class="st">&quot;INDIA&quot;</span>))))),
+       qeGroupBy <span class="fu">=</span> [<span class="dt">SimpleGroup</span> (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;s_name&quot;</span>))],
+       qeHaving <span class="fu">=</span> <span class="kw">Nothing</span>,
+       qeOrderBy <span class="fu">=</span>
+         [<span class="dt">SortSpec</span> (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;numwait&quot;</span>)) <span class="dt">Desc</span> <span class="dt">NullsOrderDefault</span>,
+          <span class="dt">SortSpec</span> (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;s_name&quot;</span>)) <span class="dt">Asc</span> <span class="dt">NullsOrderDefault</span>],
+       qeOffset <span class="fu">=</span> <span class="kw">Nothing</span>, qeFetch <span class="fu">=</span> <span class="kw">Just</span> (<span class="dt">NumLit</span> <span class="st">&quot;100&quot;</span>)}</code></pre>
+<p>Output from the simple-sql-parser pretty printer:</p>
+<pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">select</span> s_name, <span class="fu">count</span>(*) <span class="kw">as</span> numwait
+<span class="kw">from</span> supplier,
+     lineitem <span class="kw">as</span> l1,
+     orders,
+     nation
+<span class="kw">where</span> s_suppkey = l1.l_suppkey
+      <span class="kw">and</span> o_orderkey = l1.l_orderkey
+      <span class="kw">and</span> o_orderstatus = <span class="st">&#39;F&#39;</span>
+      <span class="kw">and</span> l1.l_receiptdate &gt; l1.l_commitdate
+      <span class="kw">and</span> <span class="kw">exists</span> (<span class="kw">select</span> *
+                  <span class="kw">from</span> lineitem <span class="kw">as</span> l2
+                  <span class="kw">where</span> l2.l_orderkey = l1.l_orderkey
+                        <span class="kw">and</span> l2.l_suppkey &lt;&gt; l1.l_suppkey)
+      <span class="kw">and</span> <span class="kw">not</span> <span class="kw">exists</span> (<span class="kw">select</span> *
+                      <span class="kw">from</span> lineitem <span class="kw">as</span> l3
+                      <span class="kw">where</span> l3.l_orderkey = l1.l_orderkey
+                            <span class="kw">and</span> l3.l_suppkey &lt;&gt; l1.l_suppkey
+                            <span class="kw">and</span> l3.l_receiptdate &gt; l3.l_commitdate)
+<span class="co">-- [this indentation is an issue with the not operator precedence bug]</span>
+              <span class="kw">and</span> s_nationkey = n_nationkey
+              <span class="kw">and</span> n_name = <span class="st">&#39;INDIA&#39;</span>
+<span class="kw">group</span> <span class="kw">by</span> s_name
+<span class="kw">order</span> <span class="kw">by</span> numwait <span class="kw">desc</span>, s_name
+fetch <span class="kw">next</span> <span class="dv">100</span> <span class="kw">rows</span> <span class="kw">only</span>;</code></pre>
+<h1 id="feature-support"><a href="#feature-support">Feature support</a></h1>
 <ul>
 <li>select lists</li>
 <li>from clause</li>
@@ -25,30 +231,44 @@
 <li>offset and fetch</li>
 <li>set operators</li>
 <li>common table expressions</li>
-<li>wide range of scalar expressions</li>
+<li>wide range of value expressions</li>
 </ul>
 <p>See the <a href="supported_sql.html">supported_sql.html</a> page for details on the supported SQL.</p>
 <p>Here is a document with all the <a href="test_cases.html">simple-sql-parser test cases</a> rendered in a webpage so you can get an idea of what it supports.</p>
-<h1 id="installation">Installation</h1>
+<h1 id="installation"><a href="#installation">Installation</a></h1>
 <p>Installing the latest release from Hackage.</p>
 <pre><code>cabal update &amp;&amp; cabal install simple-sql-parser</code></pre>
 <p>Installing the latest development version.</p>
 <pre><code>git clone https://github.com/JakeWheat/simple-sql-parser.git
 cd simple-sql-parser
 cabal install</code></pre>
-<h1 id="documentation">Documentation</h1>
+<h1 id="documentation"><a href="#documentation">Documentation</a></h1>
 <ul>
 <li>see the <a href="test_cases.html">simple-sql-parser test cases</a> for examples.</li>
 <li><a href="haddock/index.html">simple-sql-parser haddock</a> (the haddock on Hackage has source links)</li>
 </ul>
-<h1 id="links">Links</h1>
+<h1 id="recommended-reading"><a href="#recommended-reading">Recommended reading</a></h1>
+<p>Here is some recommended reading on understanding SQL in depth.<br /><br /><br />SQL: The Complete Reference, 3rd Edition, James R. Groff, Paul N. Weinberg, Andrew J. Oppel</p>
+<p>This is a comprehensive book which covers up to the SQL:1999 standard.<br /><br /><br />SQL in a Nutshell, Kevin Kline, Brand Hunt, Daniel Kline</p>
+<p>This is another good book which covers some of the SQL:2003 and SQL:2008 standards. This means it covers a few newer things like window functions which 'SQL: The Complete Reference' doesn't. It also compares some main SQL product dialects.<br /><br /><br />SQL A Comparative Survey, Hugh Darwen http://bookboon.com/en/sql-a-comparative-survey-ebook</p>
+<p>This is a book about SQL from a relational theory perspective.<br /><br /><br />SQL and Relational Theory, 2nd Edition, Chris Date</p>
+<p>This also covers SQL from a partly theoretical perspective.<br /><br /><br />A Guide to the SQL Standard, C. J. Date, Hugh Darwen</p>
+<p>Review: TODO. It covers up to SQL:92.<br /><br /><br />There are several other good books by Chris Date, some with Hugh Darwen and others, for instance 'Introduction to Database Systems', 'Temporal Data &amp; the Relational Model, Databases', 'Types and the Relational Model'. Only the first one (Introduction to Database Systems) really relates to SQL.<br /><br /><br />The SQL draft standards are available to download for free (follow the links on the wikipedia page for SQL). They are a little tricky to read and understand.<br /><br /><br />TODO: add web links for the pdfs below<br /><br /><br />IBM DB2 10.5 SQL Reference Volume 1</p>
+<p><a href="http://public.dhe.ibm.com/ps/products/db2/info/vr105/pdf/en_US/DB2SQLRefVol1-db2s1e1050.pdf">http://public.dhe.ibm.com/ps/products/db2/info/vr105/pdf/en_US/DB2SQLRefVol1-db2s1e1050.pdf</a><br /><br /><br />Oracle SQL Reference 12c release 1</p>
+<p><a href="http://docs.oracle.com/cd/E16655_01/server.121/e17209.pdf">http://docs.oracle.com/cd/E16655_01/server.121/e17209.pdf</a><br /><br /><br />Teradata:</p>
+<p>TODO<br /><br /><br />Microsoft SQL Server 2012 TSQL reference online. I didn't find a PDF for this.</p>
+<p><a href="http://technet.microsoft.com/en-us/library/bb510741.aspx">http://technet.microsoft.com/en-us/library/bb510741.aspx</a><br /><br /><br />PostgreSQL 9.3 manual:</p>
+<p><a href="http://www.postgresql.org/docs/9.3/interactive/index.html">http://www.postgresql.org/docs/9.3/interactive/index.html</a></p>
+<p>No PDF for the Postgres manual either, but the web pages are very readable.<br /><br /><br />SQL BNF Grammars</p>
+<p>http://savage.net.au/SQL/index.html</p>
+<h1 id="links"><a href="#links">Links</a></h1>
 <ul>
 <li>Homepage: <a href="http://jakewheat.github.io/simple-sql-parser">http://jakewheat.github.io/simple-sql-parser</a></li>
 <li>Hackage: <a href="http://hackage.haskell.org/package/simple-sql-parser">http://hackage.haskell.org/package/simple-sql-parser</a></li>
 <li>Repository: <a href="https://github.com/JakeWheat/simple-sql-parser">https://github.com/JakeWheat/simple-sql-parser</a></li>
 <li>Bug tracker: <a href="https://github.com/JakeWheat/simple-sql-parser/issues">https://github.com/JakeWheat/simple-sql-parser/issues</a></li>
 </ul>
-<h1 id="contact">Contact</h1>
+<h1 id="contact"><a href="#contact">Contact</a></h1>
 <p>jakewheatmail@gmail.com</p>
 </body>
 </html>

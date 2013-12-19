@@ -1,5 +1,5 @@
 # parserTest
-## scalarExprTests
+## valueExprTests
 ### literals
 <table>
 <tr><td>
@@ -178,6 +178,18 @@ Iden (QName "quoted identifier")
 </td><td>
 ~~~~{.haskell}
 Star
+~~~~
+</td></tr>
+</table>
+### parameter
+<table>
+<tr><td>
+~~~~{.sql}
+?
+~~~~
+</td><td>
+~~~~{.haskell}
+Parameter
 ~~~~
 </td></tr>
 </table>
@@ -460,26 +472,6 @@ In True (Iden (Name "a"))
 </td></tr>
 <tr><td>
 ~~~~{.sql}
-a between b and c
-~~~~
-</td><td>
-~~~~{.haskell}
-SpecialOp (Name "between")
-  [Iden (Name "a"), Iden (Name "b"), Iden (Name "c")]
-~~~~
-</td></tr>
-<tr><td>
-~~~~{.sql}
-a not between b and c
-~~~~
-</td><td>
-~~~~{.haskell}
-SpecialOp (Name "not between")
-  [Iden (Name "a"), Iden (Name "b"), Iden (Name "c")]
-~~~~
-</td></tr>
-<tr><td>
-~~~~{.sql}
 a is null
 ~~~~
 </td><td>
@@ -617,21 +609,22 @@ BinOp (Iden (Name "a")) (Name "overlaps") (Iden (Name "b"))
 </td></tr>
 <tr><td>
 ~~~~{.sql}
-extract(day from t)
+a between b and c
 ~~~~
 </td><td>
 ~~~~{.haskell}
-SpecialOp (Name "extract") [Iden (Name "day"), Iden (Name "t")]
+SpecialOp (Name "between")
+  [Iden (Name "a"), Iden (Name "b"), Iden (Name "c")]
 ~~~~
 </td></tr>
 <tr><td>
 ~~~~{.sql}
-substring(x from 1 for 2)
+a not between b and c
 ~~~~
 </td><td>
 ~~~~{.haskell}
-SpecialOp (Name "substring")
-  [Iden (Name "x"), NumLit "1", NumLit "2"]
+SpecialOp (Name "not between")
+  [Iden (Name "a"), Iden (Name "b"), Iden (Name "c")]
 ~~~~
 </td></tr>
 <tr><td>
@@ -641,6 +634,192 @@ SpecialOp (Name "substring")
 </td><td>
 ~~~~{.haskell}
 SpecialOp (Name "rowctor") [NumLit "1", NumLit "2"]
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+extract(day from t)
+~~~~
+</td><td>
+~~~~{.haskell}
+SpecialOpK (Name "extract") (Just (Iden (Name "day")))
+  [("from", Iden (Name "t"))]
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+substring(x from 1 for 2)
+~~~~
+</td><td>
+~~~~{.haskell}
+SpecialOpK (Name "substring") (Just (Iden (Name "x")))
+  [("from", NumLit "1"), ("for", NumLit "2")]
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+substring(x from 1)
+~~~~
+</td><td>
+~~~~{.haskell}
+SpecialOpK (Name "substring") (Just (Iden (Name "x")))
+  [("from", NumLit "1")]
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+substring(x for 2)
+~~~~
+</td><td>
+~~~~{.haskell}
+SpecialOpK (Name "substring") (Just (Iden (Name "x")))
+  [("for", NumLit "2")]
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+substring(x from 1 for 2 collate 'C')
+~~~~
+</td><td>
+~~~~{.haskell}
+SpecialOpK (Name "substring") (Just (Iden (Name "x")))
+  [("from", NumLit "1"), ("for", NumLit "2"),
+   ("collate", StringLit "C")]
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+POSITION( string1 IN string2 )
+~~~~
+</td><td>
+~~~~{.haskell}
+SpecialOpK (Name "position") (Just (Iden (Name "string1")))
+  [("in", Iden (Name "string2"))]
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+CONVERT(char_value USING conversion_char_name)
+~~~~
+</td><td>
+~~~~{.haskell}
+SpecialOpK (Name "convert") (Just (Iden (Name "char_value")))
+  [("using", Iden (Name "conversion_char_name"))]
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+TRANSLATE(char_value USING translation_name)
+~~~~
+</td><td>
+~~~~{.haskell}
+SpecialOpK (Name "translate") (Just (Iden (Name "char_value")))
+  [("using", Iden (Name "translation_name"))]
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+OVERLAY(string PLACING embedded_string FROM start)
+~~~~
+</td><td>
+~~~~{.haskell}
+SpecialOpK (Name "overlay") (Just (Iden (Name "string")))
+  [("placing", Iden (Name "embedded_string")),
+   ("from", Iden (Name "start"))]
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+OVERLAY(string PLACING embedded_string FROM start FOR length)
+~~~~
+</td><td>
+~~~~{.haskell}
+SpecialOpK (Name "overlay") (Just (Iden (Name "string")))
+  [("placing", Iden (Name "embedded_string")),
+   ("from", Iden (Name "start")), ("for", Iden (Name "length"))]
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+trim(from target_string)
+~~~~
+</td><td>
+~~~~{.haskell}
+SpecialOpK (Name "trim") Nothing
+  [("both", StringLit " "), ("from", Iden (Name "target_string"))]
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+trim(leading from target_string)
+~~~~
+</td><td>
+~~~~{.haskell}
+SpecialOpK (Name "trim") Nothing
+  [("leading", StringLit " "), ("from", Iden (Name "target_string"))]
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+trim(trailing from target_string)
+~~~~
+</td><td>
+~~~~{.haskell}
+SpecialOpK (Name "trim") Nothing
+  [("trailing", StringLit " "),
+   ("from", Iden (Name "target_string"))]
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+trim(both from target_string)
+~~~~
+</td><td>
+~~~~{.haskell}
+SpecialOpK (Name "trim") Nothing
+  [("both", StringLit " "), ("from", Iden (Name "target_string"))]
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+trim(leading 'x' from target_string)
+~~~~
+</td><td>
+~~~~{.haskell}
+SpecialOpK (Name "trim") Nothing
+  [("leading", StringLit "x"), ("from", Iden (Name "target_string"))]
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+trim(trailing 'y' from target_string)
+~~~~
+</td><td>
+~~~~{.haskell}
+SpecialOpK (Name "trim") Nothing
+  [("trailing", StringLit "y"),
+   ("from", Iden (Name "target_string"))]
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+trim(both 'z' from target_string collate 'C')
+~~~~
+</td><td>
+~~~~{.haskell}
+SpecialOpK (Name "trim") Nothing
+  [("both", StringLit "z"), ("from", Iden (Name "target_string")),
+   ("collate", StringLit "C")]
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+trim(leading from target_string)
+~~~~
+</td><td>
+~~~~{.haskell}
+SpecialOpK (Name "trim") Nothing
+  [("leading", StringLit " "), ("from", Iden (Name "target_string"))]
 ~~~~
 </td></tr>
 </table>
@@ -674,7 +853,7 @@ exists (select a from t)
 </td><td>
 ~~~~{.haskell}
 SubQueryExpr SqExists
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList = [(Nothing, Iden (Name "a"))],
           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing, qeGroupBy = [],
           qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
@@ -688,7 +867,7 @@ SubQueryExpr SqExists
 </td><td>
 ~~~~{.haskell}
 SubQueryExpr SqSq
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList = [(Nothing, Iden (Name "a"))],
           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing, qeGroupBy = [],
           qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
@@ -703,7 +882,7 @@ a in (select a from t)
 ~~~~{.haskell}
 In True (Iden (Name "a"))
   (InQueryExpr
-     (Select{qeDuplicates = All,
+     (Select{qeSetQuantifier = All,
              qeSelectList = [(Nothing, Iden (Name "a"))],
              qeFrom = [TRSimple (Name "t")], qeWhere = Nothing, qeGroupBy = [],
              qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
@@ -718,7 +897,7 @@ a not in (select a from t)
 ~~~~{.haskell}
 In False (Iden (Name "a"))
   (InQueryExpr
-     (Select{qeDuplicates = All,
+     (Select{qeSetQuantifier = All,
              qeSelectList = [(Nothing, Iden (Name "a"))],
              qeFrom = [TRSimple (Name "t")], qeWhere = Nothing, qeGroupBy = [],
              qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
@@ -733,7 +912,7 @@ a > all (select a from t)
 ~~~~{.haskell}
 BinOp (Iden (Name "a")) (Name ">")
   (SubQueryExpr SqAll
-     (Select{qeDuplicates = All,
+     (Select{qeSetQuantifier = All,
              qeSelectList = [(Nothing, Iden (Name "a"))],
              qeFrom = [TRSimple (Name "t")], qeWhere = Nothing, qeGroupBy = [],
              qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
@@ -748,7 +927,7 @@ a = some (select a from t)
 ~~~~{.haskell}
 BinOp (Iden (Name "a")) (Name "=")
   (SubQueryExpr SqSome
-     (Select{qeDuplicates = All,
+     (Select{qeSetQuantifier = All,
              qeSelectList = [(Nothing, Iden (Name "a"))],
              qeFrom = [TRSimple (Name "t")], qeWhere = Nothing, qeGroupBy = [],
              qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
@@ -763,7 +942,7 @@ a <= any (select a from t)
 ~~~~{.haskell}
 BinOp (Iden (Name "a")) (Name "<=")
   (SubQueryExpr SqAny
-     (Select{qeDuplicates = All,
+     (Select{qeSetQuantifier = All,
              qeSelectList = [(Nothing, Iden (Name "a"))],
              qeFrom = [TRSimple (Name "t")], qeWhere = Nothing, qeGroupBy = [],
              qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
@@ -790,7 +969,7 @@ sum(a order by a)
 ~~~~{.haskell}
 AggregateApp{aggName = Name "sum", aggDistinct = Nothing,
              aggArgs = [Iden (Name "a")],
-             aggOrderBy = [OrderField (Iden (Name "a")) Asc NullsOrderDefault]}
+             aggOrderBy = [SortSpec (Iden (Name "a")) Asc NullsOrderDefault]}
 ~~~~
 </td></tr>
 <tr><td>
@@ -865,7 +1044,7 @@ sum(a) over (order by b)
 ~~~~{.haskell}
 WindowApp{wnName = Name "sum", wnArgs = [Iden (Name "a")],
           wnPartition = [],
-          wnOrderBy = [OrderField (Iden (Name "b")) Asc NullsOrderDefault],
+          wnOrderBy = [SortSpec (Iden (Name "b")) Asc NullsOrderDefault],
           wnFrame = Nothing}
 ~~~~
 </td></tr>
@@ -878,8 +1057,8 @@ sum(a) over (order by b desc,c)
 WindowApp{wnName = Name "sum", wnArgs = [Iden (Name "a")],
           wnPartition = [],
           wnOrderBy =
-            [OrderField (Iden (Name "b")) Desc NullsOrderDefault,
-             OrderField (Iden (Name "c")) Asc NullsOrderDefault],
+            [SortSpec (Iden (Name "b")) Desc NullsOrderDefault,
+             SortSpec (Iden (Name "c")) Asc NullsOrderDefault],
           wnFrame = Nothing}
 ~~~~
 </td></tr>
@@ -891,7 +1070,7 @@ sum(a) over (partition by b order by c)
 ~~~~{.haskell}
 WindowApp{wnName = Name "sum", wnArgs = [Iden (Name "a")],
           wnPartition = [Iden (Name "b")],
-          wnOrderBy = [OrderField (Iden (Name "c")) Asc NullsOrderDefault],
+          wnOrderBy = [SortSpec (Iden (Name "c")) Asc NullsOrderDefault],
           wnFrame = Nothing}
 ~~~~
 </td></tr>
@@ -903,7 +1082,7 @@ sum(a) over (partition by b order by c range unbounded preceding)
 ~~~~{.haskell}
 WindowApp{wnName = Name "sum", wnArgs = [Iden (Name "a")],
           wnPartition = [Iden (Name "b")],
-          wnOrderBy = [OrderField (Iden (Name "c")) Asc NullsOrderDefault],
+          wnOrderBy = [SortSpec (Iden (Name "c")) Asc NullsOrderDefault],
           wnFrame = Just (FrameFrom FrameRange UnboundedPreceding)}
 ~~~~
 </td></tr>
@@ -915,7 +1094,7 @@ sum(a) over (partition by b order by c range 5 preceding)
 ~~~~{.haskell}
 WindowApp{wnName = Name "sum", wnArgs = [Iden (Name "a")],
           wnPartition = [Iden (Name "b")],
-          wnOrderBy = [OrderField (Iden (Name "c")) Asc NullsOrderDefault],
+          wnOrderBy = [SortSpec (Iden (Name "c")) Asc NullsOrderDefault],
           wnFrame = Just (FrameFrom FrameRange (Preceding (NumLit "5")))}
 ~~~~
 </td></tr>
@@ -927,7 +1106,7 @@ sum(a) over (partition by b order by c range current row)
 ~~~~{.haskell}
 WindowApp{wnName = Name "sum", wnArgs = [Iden (Name "a")],
           wnPartition = [Iden (Name "b")],
-          wnOrderBy = [OrderField (Iden (Name "c")) Asc NullsOrderDefault],
+          wnOrderBy = [SortSpec (Iden (Name "c")) Asc NullsOrderDefault],
           wnFrame = Just (FrameFrom FrameRange Current)}
 ~~~~
 </td></tr>
@@ -939,7 +1118,7 @@ sum(a) over (partition by b order by c rows 5 following)
 ~~~~{.haskell}
 WindowApp{wnName = Name "sum", wnArgs = [Iden (Name "a")],
           wnPartition = [Iden (Name "b")],
-          wnOrderBy = [OrderField (Iden (Name "c")) Asc NullsOrderDefault],
+          wnOrderBy = [SortSpec (Iden (Name "c")) Asc NullsOrderDefault],
           wnFrame = Just (FrameFrom FrameRows (Following (NumLit "5")))}
 ~~~~
 </td></tr>
@@ -951,7 +1130,7 @@ sum(a) over (partition by b order by c range unbounded following)
 ~~~~{.haskell}
 WindowApp{wnName = Name "sum", wnArgs = [Iden (Name "a")],
           wnPartition = [Iden (Name "b")],
-          wnOrderBy = [OrderField (Iden (Name "c")) Asc NullsOrderDefault],
+          wnOrderBy = [SortSpec (Iden (Name "c")) Asc NullsOrderDefault],
           wnFrame = Just (FrameFrom FrameRange UnboundedFollowing)}
 ~~~~
 </td></tr>
@@ -964,7 +1143,7 @@ range between 5 preceding and 5 following)
 ~~~~{.haskell}
 WindowApp{wnName = Name "sum", wnArgs = [Iden (Name "a")],
           wnPartition = [Iden (Name "b")],
-          wnOrderBy = [OrderField (Iden (Name "c")) Asc NullsOrderDefault],
+          wnOrderBy = [SortSpec (Iden (Name "c")) Asc NullsOrderDefault],
           wnFrame =
             Just
               (FrameBetween FrameRange (Preceding (NumLit "5"))
@@ -981,7 +1160,7 @@ select a from t
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom = [TRSimple (Name "t")], qeWhere = Nothing, qeGroupBy = [],
        qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
@@ -994,7 +1173,7 @@ select all a from t
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom = [TRSimple (Name "t")], qeWhere = Nothing, qeGroupBy = [],
        qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
@@ -1007,7 +1186,7 @@ select distinct a from t
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = Distinct,
+Select{qeSetQuantifier = Distinct,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom = [TRSimple (Name "t")], qeWhere = Nothing, qeGroupBy = [],
        qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
@@ -1023,8 +1202,9 @@ select 1
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All, qeSelectList = [(Nothing, NumLit "1")],
-       qeFrom = [], qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+Select{qeSetQuantifier = All,
+       qeSelectList = [(Nothing, NumLit "1")], qeFrom = [],
+       qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
        qeOrderBy = [], qeOffset = Nothing, qeFetch = Nothing}
 ~~~~
 </td></tr>
@@ -1034,7 +1214,7 @@ select a
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))], qeFrom = [],
        qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
        qeOrderBy = [], qeOffset = Nothing, qeFetch = Nothing}
@@ -1046,7 +1226,7 @@ select a,b
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList =
          [(Nothing, Iden (Name "a")), (Nothing, Iden (Name "b"))],
        qeFrom = [], qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
@@ -1059,7 +1239,7 @@ select 1+2,3+4
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList =
          [(Nothing, BinOp (NumLit "1") (Name "+") (NumLit "2")),
           (Nothing, BinOp (NumLit "3") (Name "+") (NumLit "4"))],
@@ -1073,7 +1253,7 @@ select a as a, /*comment*/ b as b
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList =
          [(Just (Name "a"), Iden (Name "a")),
           (Just (Name "b"), Iden (Name "b"))],
@@ -1087,10 +1267,25 @@ select a a, b b
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList =
          [(Just (Name "a"), Iden (Name "a")),
           (Just (Name "b"), Iden (Name "b"))],
+       qeFrom = [], qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+       qeOrderBy = [], qeOffset = Nothing, qeFetch = Nothing}
+~~~~
+</td></tr>
+<tr><td>
+~~~~{.sql}
+select a + b * c
+~~~~
+</td><td>
+~~~~{.haskell}
+Select{qeSetQuantifier = All,
+       qeSelectList =
+         [(Nothing,
+           BinOp (Iden (Name "a")) (Name "+")
+             (BinOp (Iden (Name "b")) (Name "*") (Iden (Name "c"))))],
        qeFrom = [], qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
        qeOrderBy = [], qeOffset = Nothing, qeFetch = Nothing}
 ~~~~
@@ -1104,7 +1299,7 @@ select a from t where a = 5
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom = [TRSimple (Name "t")],
        qeWhere = Just (BinOp (Iden (Name "a")) (Name "=") (NumLit "5")),
@@ -1121,7 +1316,7 @@ select a,sum(b) from t group by a having sum(b) > 5
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList =
          [(Nothing, Iden (Name "a")),
           (Nothing, App (Name "sum") [Iden (Name "b")])],
@@ -1143,11 +1338,11 @@ select a from t order by a
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom = [TRSimple (Name "t")], qeWhere = Nothing, qeGroupBy = [],
        qeHaving = Nothing,
-       qeOrderBy = [OrderField (Iden (Name "a")) Asc NullsOrderDefault],
+       qeOrderBy = [SortSpec (Iden (Name "a")) Asc NullsOrderDefault],
        qeOffset = Nothing, qeFetch = Nothing}
 ~~~~
 </td></tr>
@@ -1157,13 +1352,13 @@ select a from t order by a, b
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom = [TRSimple (Name "t")], qeWhere = Nothing, qeGroupBy = [],
        qeHaving = Nothing,
        qeOrderBy =
-         [OrderField (Iden (Name "a")) Asc NullsOrderDefault,
-          OrderField (Iden (Name "b")) Asc NullsOrderDefault],
+         [SortSpec (Iden (Name "a")) Asc NullsOrderDefault,
+          SortSpec (Iden (Name "b")) Asc NullsOrderDefault],
        qeOffset = Nothing, qeFetch = Nothing}
 ~~~~
 </td></tr>
@@ -1173,11 +1368,11 @@ select a from t order by a asc
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom = [TRSimple (Name "t")], qeWhere = Nothing, qeGroupBy = [],
        qeHaving = Nothing,
-       qeOrderBy = [OrderField (Iden (Name "a")) Asc NullsOrderDefault],
+       qeOrderBy = [SortSpec (Iden (Name "a")) Asc NullsOrderDefault],
        qeOffset = Nothing, qeFetch = Nothing}
 ~~~~
 </td></tr>
@@ -1187,13 +1382,13 @@ select a from t order by a desc, b desc
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom = [TRSimple (Name "t")], qeWhere = Nothing, qeGroupBy = [],
        qeHaving = Nothing,
        qeOrderBy =
-         [OrderField (Iden (Name "a")) Desc NullsOrderDefault,
-          OrderField (Iden (Name "b")) Desc NullsOrderDefault],
+         [SortSpec (Iden (Name "a")) Desc NullsOrderDefault,
+          SortSpec (Iden (Name "b")) Desc NullsOrderDefault],
        qeOffset = Nothing, qeFetch = Nothing}
 ~~~~
 </td></tr>
@@ -1203,13 +1398,13 @@ select a from t order by a desc nulls first, b desc nulls last
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom = [TRSimple (Name "t")], qeWhere = Nothing, qeGroupBy = [],
        qeHaving = Nothing,
        qeOrderBy =
-         [OrderField (Iden (Name "a")) Desc NullsFirst,
-          OrderField (Iden (Name "b")) Desc NullsLast],
+         [SortSpec (Iden (Name "a")) Desc NullsFirst,
+          SortSpec (Iden (Name "b")) Desc NullsLast],
        qeOffset = Nothing, qeFetch = Nothing}
 ~~~~
 </td></tr>
@@ -1222,7 +1417,7 @@ select a from t offset 5 rows fetch next 10 rows only
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom = [TRSimple (Name "t")], qeWhere = Nothing, qeGroupBy = [],
        qeHaving = Nothing, qeOrderBy = [], qeOffset = Just (NumLit "5"),
@@ -1235,7 +1430,7 @@ select a from t offset 5 rows;
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom = [TRSimple (Name "t")], qeWhere = Nothing, qeGroupBy = [],
        qeHaving = Nothing, qeOrderBy = [], qeOffset = Just (NumLit "5"),
@@ -1248,7 +1443,7 @@ select a from t fetch next 10 row only;
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom = [TRSimple (Name "t")], qeWhere = Nothing, qeGroupBy = [],
        qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
@@ -1261,7 +1456,7 @@ select a from t offset 5 row fetch first 10 row only
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom = [TRSimple (Name "t")], qeWhere = Nothing, qeGroupBy = [],
        qeHaving = Nothing, qeOrderBy = [], qeOffset = Just (NumLit "5"),
@@ -1274,7 +1469,7 @@ select a from t limit 10 offset 5
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom = [TRSimple (Name "t")], qeWhere = Nothing, qeGroupBy = [],
        qeHaving = Nothing, qeOrderBy = [], qeOffset = Just (NumLit "5"),
@@ -1291,15 +1486,15 @@ select a from t union select b from u
 </td><td>
 ~~~~{.haskell}
 CombineQueryExpr{qe0 =
-                   Select{qeDuplicates = All,
+                   Select{qeSetQuantifier = All,
                           qeSelectList = [(Nothing, Iden (Name "a"))],
                           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing, qeGroupBy = [],
                           qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
                           qeFetch = Nothing},
-                 qeCombOp = Union, qeDuplicates = All,
+                 qeCombOp = Union, qeSetQuantifier = All,
                  qeCorresponding = Respectively,
                  qe1 =
-                   Select{qeDuplicates = All,
+                   Select{qeSetQuantifier = All,
                           qeSelectList = [(Nothing, Iden (Name "b"))],
                           qeFrom = [TRSimple (Name "u")], qeWhere = Nothing, qeGroupBy = [],
                           qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
@@ -1313,15 +1508,15 @@ select a from t intersect select b from u
 </td><td>
 ~~~~{.haskell}
 CombineQueryExpr{qe0 =
-                   Select{qeDuplicates = All,
+                   Select{qeSetQuantifier = All,
                           qeSelectList = [(Nothing, Iden (Name "a"))],
                           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing, qeGroupBy = [],
                           qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
                           qeFetch = Nothing},
-                 qeCombOp = Intersect, qeDuplicates = All,
+                 qeCombOp = Intersect, qeSetQuantifier = All,
                  qeCorresponding = Respectively,
                  qe1 =
-                   Select{qeDuplicates = All,
+                   Select{qeSetQuantifier = All,
                           qeSelectList = [(Nothing, Iden (Name "b"))],
                           qeFrom = [TRSimple (Name "u")], qeWhere = Nothing, qeGroupBy = [],
                           qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
@@ -1335,15 +1530,15 @@ select a from t except all select b from u
 </td><td>
 ~~~~{.haskell}
 CombineQueryExpr{qe0 =
-                   Select{qeDuplicates = All,
+                   Select{qeSetQuantifier = All,
                           qeSelectList = [(Nothing, Iden (Name "a"))],
                           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing, qeGroupBy = [],
                           qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
                           qeFetch = Nothing},
-                 qeCombOp = Except, qeDuplicates = All,
+                 qeCombOp = Except, qeSetQuantifier = All,
                  qeCorresponding = Respectively,
                  qe1 =
-                   Select{qeDuplicates = All,
+                   Select{qeSetQuantifier = All,
                           qeSelectList = [(Nothing, Iden (Name "b"))],
                           qeFrom = [TRSimple (Name "u")], qeWhere = Nothing, qeGroupBy = [],
                           qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
@@ -1357,15 +1552,15 @@ select a from t union distinct corresponding select b from u
 </td><td>
 ~~~~{.haskell}
 CombineQueryExpr{qe0 =
-                   Select{qeDuplicates = All,
+                   Select{qeSetQuantifier = All,
                           qeSelectList = [(Nothing, Iden (Name "a"))],
                           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing, qeGroupBy = [],
                           qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
                           qeFetch = Nothing},
-                 qeCombOp = Union, qeDuplicates = Distinct,
+                 qeCombOp = Union, qeSetQuantifier = Distinct,
                  qeCorresponding = Corresponding,
                  qe1 =
-                   Select{qeDuplicates = All,
+                   Select{qeSetQuantifier = All,
                           qeSelectList = [(Nothing, Iden (Name "b"))],
                           qeFrom = [TRSimple (Name "u")], qeWhere = Nothing, qeGroupBy = [],
                           qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
@@ -1379,24 +1574,24 @@ select a from t union select a from t union select a from t
 </td><td>
 ~~~~{.haskell}
 CombineQueryExpr{qe0 =
-                   Select{qeDuplicates = All,
+                   Select{qeSetQuantifier = All,
                           qeSelectList = [(Nothing, Iden (Name "a"))],
                           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing, qeGroupBy = [],
                           qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
                           qeFetch = Nothing},
-                 qeCombOp = Union, qeDuplicates = All,
+                 qeCombOp = Union, qeSetQuantifier = All,
                  qeCorresponding = Respectively,
                  qe1 =
                    CombineQueryExpr{qe0 =
-                                      Select{qeDuplicates = All,
+                                      Select{qeSetQuantifier = All,
                                              qeSelectList = [(Nothing, Iden (Name "a"))],
                                              qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
                                              qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
                                              qeOffset = Nothing, qeFetch = Nothing},
-                                    qeCombOp = Union, qeDuplicates = All,
+                                    qeCombOp = Union, qeSetQuantifier = All,
                                     qeCorresponding = Respectively,
                                     qe1 =
-                                      Select{qeDuplicates = All,
+                                      Select{qeSetQuantifier = All,
                                              qeSelectList = [(Nothing, Iden (Name "a"))],
                                              qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
                                              qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
@@ -1415,13 +1610,13 @@ with u as (select a from t) select a from u
 With{qeWithRecursive = False,
      qeViews =
        [(Alias (Name "u") Nothing,
-         Select{qeDuplicates = All,
+         Select{qeSetQuantifier = All,
                 qeSelectList = [(Nothing, Iden (Name "a"))],
                 qeFrom = [TRSimple (Name "t")], qeWhere = Nothing, qeGroupBy = [],
                 qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
                 qeFetch = Nothing})],
      qeQueryExpression =
-       Select{qeDuplicates = All,
+       Select{qeSetQuantifier = All,
               qeSelectList = [(Nothing, Iden (Name "a"))],
               qeFrom = [TRSimple (Name "u")], qeWhere = Nothing, qeGroupBy = [],
               qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
@@ -1437,13 +1632,13 @@ with u(b) as (select a from t) select a from u
 With{qeWithRecursive = False,
      qeViews =
        [(Alias (Name "u") (Just [Name "b"]),
-         Select{qeDuplicates = All,
+         Select{qeSetQuantifier = All,
                 qeSelectList = [(Nothing, Iden (Name "a"))],
                 qeFrom = [TRSimple (Name "t")], qeWhere = Nothing, qeGroupBy = [],
                 qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
                 qeFetch = Nothing})],
      qeQueryExpression =
-       Select{qeDuplicates = All,
+       Select{qeSetQuantifier = All,
               qeSelectList = [(Nothing, Iden (Name "a"))],
               qeFrom = [TRSimple (Name "u")], qeWhere = Nothing, qeGroupBy = [],
               qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
@@ -1461,19 +1656,19 @@ select a from u
 With{qeWithRecursive = False,
      qeViews =
        [(Alias (Name "x") Nothing,
-         Select{qeDuplicates = All,
+         Select{qeSetQuantifier = All,
                 qeSelectList = [(Nothing, Iden (Name "a"))],
                 qeFrom = [TRSimple (Name "t")], qeWhere = Nothing, qeGroupBy = [],
                 qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
                 qeFetch = Nothing}),
         (Alias (Name "u") Nothing,
-         Select{qeDuplicates = All,
+         Select{qeSetQuantifier = All,
                 qeSelectList = [(Nothing, Iden (Name "a"))],
                 qeFrom = [TRSimple (Name "x")], qeWhere = Nothing, qeGroupBy = [],
                 qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
                 qeFetch = Nothing})],
      qeQueryExpression =
-       Select{qeDuplicates = All,
+       Select{qeSetQuantifier = All,
               qeSelectList = [(Nothing, Iden (Name "a"))],
               qeFrom = [TRSimple (Name "u")], qeWhere = Nothing, qeGroupBy = [],
               qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
@@ -1489,13 +1684,13 @@ with recursive u as (select a from t) select a from u
 With{qeWithRecursive = True,
      qeViews =
        [(Alias (Name "u") Nothing,
-         Select{qeDuplicates = All,
+         Select{qeSetQuantifier = All,
                 qeSelectList = [(Nothing, Iden (Name "a"))],
                 qeFrom = [TRSimple (Name "t")], qeWhere = Nothing, qeGroupBy = [],
                 qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
                 qeFetch = Nothing})],
      qeQueryExpression =
-       Select{qeDuplicates = All,
+       Select{qeSetQuantifier = All,
               qeSelectList = [(Nothing, Iden (Name "a"))],
               qeFrom = [TRSimple (Name "u")], qeWhere = Nothing, qeGroupBy = [],
               qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
@@ -1535,8 +1730,9 @@ select 1
 ~~~~
 </td><td>
 ~~~~{.haskell}
-[Select{qeDuplicates = All, qeSelectList = [(Nothing, NumLit "1")],
-        qeFrom = [], qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+[Select{qeSetQuantifier = All,
+        qeSelectList = [(Nothing, NumLit "1")], qeFrom = [],
+        qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
         qeOrderBy = [], qeOffset = Nothing, qeFetch = Nothing}]
 ~~~~
 </td></tr>
@@ -1546,8 +1742,9 @@ select 1;
 ~~~~
 </td><td>
 ~~~~{.haskell}
-[Select{qeDuplicates = All, qeSelectList = [(Nothing, NumLit "1")],
-        qeFrom = [], qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+[Select{qeSetQuantifier = All,
+        qeSelectList = [(Nothing, NumLit "1")], qeFrom = [],
+        qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
         qeOrderBy = [], qeOffset = Nothing, qeFetch = Nothing}]
 ~~~~
 </td></tr>
@@ -1557,11 +1754,13 @@ select 1;select 1
 ~~~~
 </td><td>
 ~~~~{.haskell}
-[Select{qeDuplicates = All, qeSelectList = [(Nothing, NumLit "1")],
-        qeFrom = [], qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+[Select{qeSetQuantifier = All,
+        qeSelectList = [(Nothing, NumLit "1")], qeFrom = [],
+        qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
         qeOrderBy = [], qeOffset = Nothing, qeFetch = Nothing},
- Select{qeDuplicates = All, qeSelectList = [(Nothing, NumLit "1")],
-        qeFrom = [], qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+ Select{qeSetQuantifier = All,
+        qeSelectList = [(Nothing, NumLit "1")], qeFrom = [],
+        qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
         qeOrderBy = [], qeOffset = Nothing, qeFetch = Nothing}]
 ~~~~
 </td></tr>
@@ -1571,11 +1770,13 @@ select 1;select 1
 ~~~~
 </td><td>
 ~~~~{.haskell}
-[Select{qeDuplicates = All, qeSelectList = [(Nothing, NumLit "1")],
-        qeFrom = [], qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+[Select{qeSetQuantifier = All,
+        qeSelectList = [(Nothing, NumLit "1")], qeFrom = [],
+        qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
         qeOrderBy = [], qeOffset = Nothing, qeFetch = Nothing},
- Select{qeDuplicates = All, qeSelectList = [(Nothing, NumLit "1")],
-        qeFrom = [], qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+ Select{qeSetQuantifier = All,
+        qeSelectList = [(Nothing, NumLit "1")], qeFrom = [],
+        qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
         qeOrderBy = [], qeOffset = Nothing, qeFetch = Nothing}]
 ~~~~
 </td></tr>
@@ -1588,7 +1789,7 @@ select a from t
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom = [TRSimple (Name "t")], qeWhere = Nothing, qeGroupBy = [],
        qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
@@ -1601,7 +1802,7 @@ select a from f(a)
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom = [TRFunction (Name "f") [Iden (Name "a")]],
        qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
@@ -1614,7 +1815,7 @@ select a from t,u
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom = [TRSimple (Name "t"), TRSimple (Name "u")],
        qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
@@ -1627,7 +1828,7 @@ select a from lateral a
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom = [TRLateral (TRSimple (Name "a"))], qeWhere = Nothing,
        qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
@@ -1640,7 +1841,7 @@ select a from lateral a,b
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom = [TRLateral (TRSimple (Name "a")), TRSimple (Name "b")],
        qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
@@ -1653,7 +1854,7 @@ select a from a, lateral b
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom = [TRSimple (Name "a"), TRLateral (TRSimple (Name "b"))],
        qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
@@ -1666,7 +1867,7 @@ select a from a natural join lateral b
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom =
          [TRJoin (TRSimple (Name "a")) JInner
@@ -1682,7 +1883,7 @@ select a from lateral a natural join lateral b
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom =
          [TRJoin (TRLateral (TRSimple (Name "a"))) JInner
@@ -1698,7 +1899,7 @@ select a from t inner join u on expr
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom =
          [TRJoin (TRSimple (Name "t")) JInner (TRSimple (Name "u"))
@@ -1713,7 +1914,7 @@ select a from t join u on expr
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom =
          [TRJoin (TRSimple (Name "t")) JInner (TRSimple (Name "u"))
@@ -1728,7 +1929,7 @@ select a from t left join u on expr
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom =
          [TRJoin (TRSimple (Name "t")) JLeft (TRSimple (Name "u"))
@@ -1743,7 +1944,7 @@ select a from t right join u on expr
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom =
          [TRJoin (TRSimple (Name "t")) JRight (TRSimple (Name "u"))
@@ -1758,7 +1959,7 @@ select a from t full join u on expr
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom =
          [TRJoin (TRSimple (Name "t")) JFull (TRSimple (Name "u"))
@@ -1773,7 +1974,7 @@ select a from t cross join u
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom =
          [TRJoin (TRSimple (Name "t")) JCross (TRSimple (Name "u"))
@@ -1788,7 +1989,7 @@ select a from t natural inner join u
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom =
          [TRJoin (TRSimple (Name "t")) JInner (TRSimple (Name "u"))
@@ -1803,7 +2004,7 @@ select a from t inner join u using(a,b)
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom =
          [TRJoin (TRSimple (Name "t")) JInner (TRSimple (Name "u"))
@@ -1818,11 +2019,11 @@ select a from (select a from t)
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom =
          [TRQueryExpr
-            (Select{qeDuplicates = All,
+            (Select{qeSetQuantifier = All,
                     qeSelectList = [(Nothing, Iden (Name "a"))],
                     qeFrom = [TRSimple (Name "t")], qeWhere = Nothing, qeGroupBy = [],
                     qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
@@ -1837,7 +2038,7 @@ select a from t as u
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom =
          [TRAlias (TRSimple (Name "t")) (Alias (Name "u") Nothing)],
@@ -1851,7 +2052,7 @@ select a from t u
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom =
          [TRAlias (TRSimple (Name "t")) (Alias (Name "u") Nothing)],
@@ -1865,7 +2066,7 @@ select a from t u(b)
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom =
          [TRAlias (TRSimple (Name "t"))
@@ -1880,7 +2081,7 @@ select a from (t cross join u) as u
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom =
          [TRAlias
@@ -1898,7 +2099,7 @@ select a from t cross join u cross join v
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, Iden (Name "a"))],
        qeFrom =
          [TRJoin
@@ -1920,7 +2121,7 @@ select a,sum(b) from t group by a
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList =
          [(Nothing, Iden (Name "a")),
           (Nothing, App (Name "sum") [Iden (Name "b")])],
@@ -1935,7 +2136,7 @@ select a,b,sum(c) from t group by a,b
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList =
          [(Nothing, Iden (Name "a")), (Nothing, Iden (Name "b")),
           (Nothing, App (Name "sum") [Iden (Name "c")])],
@@ -1955,7 +2156,7 @@ select * from t group by ()
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
        qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
        qeGroupBy = [GroupingParens []], qeHaving = Nothing,
        qeOrderBy = [], qeOffset = Nothing, qeFetch = Nothing}
@@ -1967,7 +2168,7 @@ select * from t group by grouping sets ((), (a))
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
        qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
        qeGroupBy =
          [GroupingSets
@@ -1983,7 +2184,7 @@ select * from t group by cube(a,b)
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
        qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
        qeGroupBy =
          [Cube
@@ -1998,7 +2199,7 @@ select * from t group by rollup(a,b)
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
        qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
        qeGroupBy =
          [Rollup
@@ -2017,7 +2218,7 @@ select * from t GROUP BY a
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
           qeGroupBy = [SimpleGroup (Iden (Name "a"))], qeHaving = Nothing,
           qeOrderBy = [], qeOffset = Nothing, qeFetch = Nothing})
@@ -2030,7 +2231,7 @@ select * from t GROUP BY GROUPING SETS((a))
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
           qeGroupBy =
             [GroupingSets [GroupingParens [SimpleGroup (Iden (Name "a"))]]],
@@ -2045,7 +2246,7 @@ select * from t GROUP BY a,b,c
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
           qeGroupBy =
             [SimpleGroup (Iden (Name "a")), SimpleGroup (Iden (Name "b")),
@@ -2061,7 +2262,7 @@ select * from t GROUP BY GROUPING SETS((a,b,c))
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
           qeGroupBy =
             [GroupingSets
@@ -2079,7 +2280,7 @@ select * from t GROUP BY ROLLUP(a,b)
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
           qeGroupBy =
             [Rollup
@@ -2097,7 +2298,7 @@ select * from t GROUP BY GROUPING SETS((a,b),
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
           qeGroupBy =
             [GroupingSets
@@ -2116,7 +2317,7 @@ select * from t GROUP BY ROLLUP(b,a)
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
           qeGroupBy =
             [Rollup
@@ -2134,7 +2335,7 @@ select * from t GROUP BY GROUPING SETS((b,a),
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
           qeGroupBy =
             [GroupingSets
@@ -2153,7 +2354,7 @@ select * from t GROUP BY CUBE(a,b,c)
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
           qeGroupBy =
             [Cube
@@ -2177,7 +2378,7 @@ select * from t GROUP BY GROUPING SETS((a,b,c),
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
           qeGroupBy =
             [GroupingSets
@@ -2205,7 +2406,7 @@ select * from t GROUP BY ROLLUP(Province, County, City)
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
           qeGroupBy =
             [Rollup
@@ -2223,7 +2424,7 @@ select * from t GROUP BY ROLLUP(Province, (County, City))
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
           qeGroupBy =
             [Rollup
@@ -2242,7 +2443,7 @@ select * from t GROUP BY ROLLUP(Province, (County, City))
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
           qeGroupBy =
             [Rollup
@@ -2263,7 +2464,7 @@ select * from t GROUP BY GROUPING SETS((Province, County, City),
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
           qeGroupBy =
             [GroupingSets
@@ -2287,7 +2488,7 @@ select * from t GROUP BY GROUPING SETS((Province, County, City),
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
           qeGroupBy =
             [GroupingSets
@@ -2311,7 +2512,7 @@ select * from t GROUP BY a, ROLLUP(b,c)
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
           qeGroupBy =
             [SimpleGroup (Iden (Name "a")),
@@ -2330,7 +2531,7 @@ select * from t GROUP BY GROUPING SETS((a,b,c),
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
           qeGroupBy =
             [GroupingSets
@@ -2351,7 +2552,7 @@ select * from t GROUP BY a, b, ROLLUP(c,d)
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
           qeGroupBy =
             [SimpleGroup (Iden (Name "a")), SimpleGroup (Iden (Name "b")),
@@ -2370,7 +2571,7 @@ select * from t GROUP BY GROUPING SETS((a,b,c,d),
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
           qeGroupBy =
             [GroupingSets
@@ -2393,7 +2594,7 @@ select * from t GROUP BY ROLLUP(a), ROLLUP(b,c)
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
           qeGroupBy =
             [Rollup [SimpleGroup (Iden (Name "a"))],
@@ -2415,7 +2616,7 @@ select * from t GROUP BY GROUPING SETS((a,b,c),
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
           qeGroupBy =
             [GroupingSets
@@ -2440,7 +2641,7 @@ select * from t GROUP BY ROLLUP(a), CUBE(b,c)
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
           qeGroupBy =
             [Rollup [SimpleGroup (Iden (Name "a"))],
@@ -2464,7 +2665,7 @@ select * from t GROUP BY GROUPING SETS((a,b,c),
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
           qeGroupBy =
             [GroupingSets
@@ -2492,7 +2693,7 @@ select * from t GROUP BY CUBE(a,b), ROLLUP(c,d)
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
           qeGroupBy =
             [Cube
@@ -2521,7 +2722,7 @@ select * from t GROUP BY GROUPING SETS((a,b,c,d),
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
           qeGroupBy =
             [GroupingSets
@@ -2560,7 +2761,7 @@ select * from t GROUP BY a, ROLLUP(a,b)
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
           qeGroupBy =
             [SimpleGroup (Iden (Name "a")),
@@ -2578,7 +2779,7 @@ select * from t GROUP BY GROUPING SETS((a,b),
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
           qeGroupBy =
             [GroupingSets
@@ -2598,7 +2799,7 @@ CUBE(YEAR(Sales_Date), MONTH (Sales_Date))
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
           qeGroupBy =
             [SimpleGroup (Iden (Name "Region")),
@@ -2620,7 +2821,7 @@ YEAR(Sales_Date), MONTH(Sales_Date) )
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
           qeGroupBy =
             [Rollup
@@ -2646,7 +2847,7 @@ ORDER BY WEEK, DAY_WEEK, SALES_PERSON
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Just (Name "WEEK"),
               App (Name "WEEK") [Iden (Name "SALES_DATE")]),
@@ -2666,9 +2867,9 @@ Right
              SimpleGroup (Iden (Name "SALES_PERSON"))],
           qeHaving = Nothing,
           qeOrderBy =
-            [OrderField (Iden (Name "WEEK")) Asc NullsOrderDefault,
-             OrderField (Iden (Name "DAY_WEEK")) Asc NullsOrderDefault,
-             OrderField (Iden (Name "SALES_PERSON")) Asc NullsOrderDefault],
+            [SortSpec (Iden (Name "WEEK")) Asc NullsOrderDefault,
+             SortSpec (Iden (Name "DAY_WEEK")) Asc NullsOrderDefault,
+             SortSpec (Iden (Name "SALES_PERSON")) Asc NullsOrderDefault],
           qeOffset = Nothing, qeFetch = Nothing})
 ~~~~
 </td></tr>
@@ -2686,7 +2887,7 @@ ORDER BY WEEK, DAY_WEEK, SALES_PERSON
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Just (Name "WEEK"),
               App (Name "WEEK") [Iden (Name "SALES_DATE")]),
@@ -2710,9 +2911,9 @@ Right
                    SimpleGroup (Iden (Name "SALES_PERSON"))]]],
           qeHaving = Nothing,
           qeOrderBy =
-            [OrderField (Iden (Name "WEEK")) Asc NullsOrderDefault,
-             OrderField (Iden (Name "DAY_WEEK")) Asc NullsOrderDefault,
-             OrderField (Iden (Name "SALES_PERSON")) Asc NullsOrderDefault],
+            [SortSpec (Iden (Name "WEEK")) Asc NullsOrderDefault,
+             SortSpec (Iden (Name "DAY_WEEK")) Asc NullsOrderDefault,
+             SortSpec (Iden (Name "SALES_PERSON")) Asc NullsOrderDefault],
           qeOffset = Nothing, qeFetch = Nothing})
 ~~~~
 </td></tr>
@@ -2729,7 +2930,7 @@ ORDER BY WEEK, DAY_WEEK, SALES_PERSON
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Just (Name "WEEK"),
               App (Name "WEEK") [Iden (Name "SALES_DATE")]),
@@ -2750,9 +2951,9 @@ Right
                 SimpleGroup (Iden (Name "SALES_PERSON"))]],
           qeHaving = Nothing,
           qeOrderBy =
-            [OrderField (Iden (Name "WEEK")) Asc NullsOrderDefault,
-             OrderField (Iden (Name "DAY_WEEK")) Asc NullsOrderDefault,
-             OrderField (Iden (Name "SALES_PERSON")) Asc NullsOrderDefault],
+            [SortSpec (Iden (Name "WEEK")) Asc NullsOrderDefault,
+             SortSpec (Iden (Name "DAY_WEEK")) Asc NullsOrderDefault,
+             SortSpec (Iden (Name "SALES_PERSON")) Asc NullsOrderDefault],
           qeOffset = Nothing, qeFetch = Nothing})
 ~~~~
 </td></tr>
@@ -2769,7 +2970,7 @@ ORDER BY WEEK, DAY_WEEK, SALES_PERSON
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Just (Name "WEEK"),
               App (Name "WEEK") [Iden (Name "SALES_DATE")]),
@@ -2790,9 +2991,9 @@ Right
                 SimpleGroup (Iden (Name "SALES_PERSON"))]],
           qeHaving = Nothing,
           qeOrderBy =
-            [OrderField (Iden (Name "WEEK")) Asc NullsOrderDefault,
-             OrderField (Iden (Name "DAY_WEEK")) Asc NullsOrderDefault,
-             OrderField (Iden (Name "SALES_PERSON")) Asc NullsOrderDefault],
+            [SortSpec (Iden (Name "WEEK")) Asc NullsOrderDefault,
+             SortSpec (Iden (Name "DAY_WEEK")) Asc NullsOrderDefault,
+             SortSpec (Iden (Name "SALES_PERSON")) Asc NullsOrderDefault],
           qeOffset = Nothing, qeFetch = Nothing})
 ~~~~
 </td></tr>
@@ -2810,7 +3011,7 @@ ORDER BY SALES_PERSON, MONTH
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing, Iden (Name "SALES_PERSON")),
              (Just (Name "MONTH"),
@@ -2826,8 +3027,8 @@ Right
                 GroupingParens []]],
           qeHaving = Nothing,
           qeOrderBy =
-            [OrderField (Iden (Name "SALES_PERSON")) Asc NullsOrderDefault,
-             OrderField (Iden (Name "MONTH")) Asc NullsOrderDefault],
+            [SortSpec (Iden (Name "SALES_PERSON")) Asc NullsOrderDefault,
+             SortSpec (Iden (Name "MONTH")) Asc NullsOrderDefault],
           qeOffset = Nothing, qeFetch = Nothing})
 ~~~~
 </td></tr>
@@ -2843,7 +3044,7 @@ ORDER BY WEEK, DAY_WEEK
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Just (Name "WEEK"),
               App (Name "WEEK") [Iden (Name "SALES_DATE")]),
@@ -2858,8 +3059,8 @@ Right
                 SimpleGroup (App (Name "DAYOFWEEK") [Iden (Name "SALES_DATE")])]],
           qeHaving = Nothing,
           qeOrderBy =
-            [OrderField (Iden (Name "WEEK")) Asc NullsOrderDefault,
-             OrderField (Iden (Name "DAY_WEEK")) Asc NullsOrderDefault],
+            [SortSpec (Iden (Name "WEEK")) Asc NullsOrderDefault,
+             SortSpec (Iden (Name "DAY_WEEK")) Asc NullsOrderDefault],
           qeOffset = Nothing, qeFetch = Nothing})
 ~~~~
 </td></tr>
@@ -2875,7 +3076,7 @@ ORDER BY MONTH, REGION
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Just (Name "MONTH"),
               App (Name "MONTH") [Iden (Name "SALES_DATE")]),
@@ -2889,8 +3090,8 @@ Right
                 SimpleGroup (Iden (Name "REGION"))]],
           qeHaving = Nothing,
           qeOrderBy =
-            [OrderField (Iden (Name "MONTH")) Asc NullsOrderDefault,
-             OrderField (Iden (Name "REGION")) Asc NullsOrderDefault],
+            [SortSpec (Iden (Name "MONTH")) Asc NullsOrderDefault,
+             SortSpec (Iden (Name "REGION")) Asc NullsOrderDefault],
           qeOffset = Nothing, qeFetch = Nothing})
 ~~~~
 </td></tr>
@@ -2909,7 +3110,7 @@ ORDER BY WEEK, DAY_WEEK, MONTH, REGION
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Just (Name "WEEK"),
               App (Name "WEEK") [Iden (Name "SALES_DATE")]),
@@ -2931,10 +3132,10 @@ Right
                    SimpleGroup (Iden (Name "REGION"))]]],
           qeHaving = Nothing,
           qeOrderBy =
-            [OrderField (Iden (Name "WEEK")) Asc NullsOrderDefault,
-             OrderField (Iden (Name "DAY_WEEK")) Asc NullsOrderDefault,
-             OrderField (Iden (Name "MONTH")) Asc NullsOrderDefault,
-             OrderField (Iden (Name "REGION")) Asc NullsOrderDefault],
+            [SortSpec (Iden (Name "WEEK")) Asc NullsOrderDefault,
+             SortSpec (Iden (Name "DAY_WEEK")) Asc NullsOrderDefault,
+             SortSpec (Iden (Name "MONTH")) Asc NullsOrderDefault,
+             SortSpec (Iden (Name "REGION")) Asc NullsOrderDefault],
           qeOffset = Nothing, qeFetch = Nothing})
 ~~~~
 </td></tr>
@@ -2954,7 +3155,7 @@ ORDER BY WEEK, DAY_WEEK, MONTH, REGION
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing, Iden (Name "R1")), (Nothing, Iden (Name "R2")),
              (Just (Name "WEEK"), App (Name "WEEK") [Iden (Name "SALES_DATE")]),
@@ -2985,10 +3186,10 @@ Right
                       SimpleGroup (Iden (Name "REGION"))]]]],
           qeHaving = Nothing,
           qeOrderBy =
-            [OrderField (Iden (Name "WEEK")) Asc NullsOrderDefault,
-             OrderField (Iden (Name "DAY_WEEK")) Asc NullsOrderDefault,
-             OrderField (Iden (Name "MONTH")) Asc NullsOrderDefault,
-             OrderField (Iden (Name "REGION")) Asc NullsOrderDefault],
+            [SortSpec (Iden (Name "WEEK")) Asc NullsOrderDefault,
+             SortSpec (Iden (Name "DAY_WEEK")) Asc NullsOrderDefault,
+             SortSpec (Iden (Name "MONTH")) Asc NullsOrderDefault,
+             SortSpec (Iden (Name "REGION")) Asc NullsOrderDefault],
           qeOffset = Nothing, qeFetch = Nothing})
 ~~~~
 </td></tr>
@@ -3006,7 +3207,7 @@ ORDER BY MONTH, REGION
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Just (Name "MONTH"),
               App (Name "MONTH") [Iden (Name "SALES_DATE")]),
@@ -3026,8 +3227,8 @@ Right
                 SimpleGroup (Iden (Name "REGION"))]],
           qeHaving = Nothing,
           qeOrderBy =
-            [OrderField (Iden (Name "MONTH")) Asc NullsOrderDefault,
-             OrderField (Iden (Name "REGION")) Asc NullsOrderDefault],
+            [SortSpec (Iden (Name "MONTH")) Asc NullsOrderDefault,
+             SortSpec (Iden (Name "REGION")) Asc NullsOrderDefault],
           qeOffset = Nothing, qeFetch = Nothing})
 ~~~~
 </td></tr>
@@ -3040,7 +3241,7 @@ select count(*) from t
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList = [(Nothing, App (Name "count") [Star])],
        qeFrom = [TRSimple (Name "t")], qeWhere = Nothing, qeGroupBy = [],
        qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
@@ -3058,7 +3259,7 @@ select a, sum(c+d) as s
 ~~~~
 </td><td>
 ~~~~{.haskell}
-Select{qeDuplicates = All,
+Select{qeSetQuantifier = All,
        qeSelectList =
          [(Nothing, Iden (Name "a")),
           (Just (Name "s"),
@@ -3070,7 +3271,7 @@ Select{qeDuplicates = All,
        qeHaving =
          Just
            (BinOp (App (Name "count") [NumLit "1"]) (Name ">") (NumLit "5")),
-       qeOrderBy = [OrderField (Iden (Name "s")) Asc NullsOrderDefault],
+       qeOrderBy = [SortSpec (Iden (Name "s")) Asc NullsOrderDefault],
        qeOffset = Nothing, qeFetch = Nothing}
 ~~~~
 </td></tr>
@@ -3086,12 +3287,12 @@ SELECT name, (SELECT max(pop) FROM cities
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing, Iden (Name "name")),
              (Nothing,
               SubQueryExpr SqSq
-                (Select{qeDuplicates = All,
+                (Select{qeSetQuantifier = All,
                         qeSelectList = [(Nothing, App (Name "max") [Iden (Name "pop")])],
                         qeFrom = [TRSimple (Name "cities")],
                         qeWhere =
@@ -3114,7 +3315,7 @@ SELECT ROW(1,2.5,'this is a test');
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing,
               App (Name "ROW")
@@ -3130,7 +3331,7 @@ SELECT ROW(t.*, 42) FROM t;
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing,
               App (Name "ROW")
@@ -3147,7 +3348,7 @@ SELECT ROW(t.f1, t.f2, 42) FROM t;
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing,
               App (Name "ROW")
@@ -3166,7 +3367,7 @@ SELECT getf1(CAST(ROW(11,'this is a test',2.5) AS myrowtype));
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing,
               App (Name "getf1")
@@ -3185,7 +3386,7 @@ SELECT ROW(1,2.5,'this is a test') = ROW(1, 3, 'not the same');
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing,
               BinOp
@@ -3205,7 +3406,7 @@ SELECT ROW(table.*) IS NULL FROM table;
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing,
               PostfixOp (Name "is null")
@@ -3222,7 +3423,7 @@ SELECT true OR somefunc();
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing,
               BinOp (Iden (Name "true")) (Name "OR")
@@ -3238,7 +3439,7 @@ SELECT somefunc() OR true;
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing,
               BinOp (App (Name "somefunc") []) (Name "OR")
@@ -3254,7 +3455,7 @@ SELECT * FROM t1 CROSS JOIN t2;
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom =
             [TRJoin (TRSimple (Name "t1")) JCross (TRSimple (Name "t2"))
                Nothing],
@@ -3269,7 +3470,7 @@ SELECT * FROM t1 INNER JOIN t2 ON t1.num = t2.num;
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom =
             [TRJoin (TRSimple (Name "t1")) JInner (TRSimple (Name "t2"))
                (Just
@@ -3288,7 +3489,7 @@ SELECT * FROM t1 INNER JOIN t2 USING (num);
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom =
             [TRJoin (TRSimple (Name "t1")) JInner (TRSimple (Name "t2"))
                (Just (JoinUsing [Name "num"]))],
@@ -3303,7 +3504,7 @@ SELECT * FROM t1 NATURAL INNER JOIN t2;
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom =
             [TRJoin (TRSimple (Name "t1")) JInner (TRSimple (Name "t2"))
                (Just JoinNatural)],
@@ -3318,7 +3519,7 @@ SELECT * FROM t1 LEFT JOIN t2 ON t1.num = t2.num;
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom =
             [TRJoin (TRSimple (Name "t1")) JLeft (TRSimple (Name "t2"))
                (Just
@@ -3337,7 +3538,7 @@ SELECT * FROM t1 LEFT JOIN t2 USING (num);
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom =
             [TRJoin (TRSimple (Name "t1")) JLeft (TRSimple (Name "t2"))
                (Just (JoinUsing [Name "num"]))],
@@ -3352,7 +3553,7 @@ SELECT * FROM t1 RIGHT JOIN t2 ON t1.num = t2.num;
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom =
             [TRJoin (TRSimple (Name "t1")) JRight (TRSimple (Name "t2"))
                (Just
@@ -3371,7 +3572,7 @@ SELECT * FROM t1 FULL JOIN t2 ON t1.num = t2.num;
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom =
             [TRJoin (TRSimple (Name "t1")) JFull (TRSimple (Name "t2"))
                (Just
@@ -3390,7 +3591,7 @@ SELECT * FROM t1 LEFT JOIN t2 ON t1.num = t2.num AND t2.value = 'xxx';
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom =
             [TRJoin (TRSimple (Name "t1")) JLeft (TRSimple (Name "t2"))
                (Just
@@ -3417,7 +3618,7 @@ SELECT * FROM t1 LEFT JOIN t2 ON t1.num = t2.num WHERE t2.value = 'xxx';
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom =
             [TRJoin (TRSimple (Name "t1")) JLeft (TRSimple (Name "t2"))
                (Just
@@ -3442,7 +3643,7 @@ JOIN another_fairly_long_name a ON s.id = a.num;
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom =
             [TRJoin
                (TRAlias (TRSimple (Name "some_very_long_table_name"))
@@ -3467,7 +3668,7 @@ SELECT * FROM people AS mother JOIN people AS child
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom =
             [TRJoin
                (TRAlias (TRSimple (Name "people"))
@@ -3491,7 +3692,7 @@ SELECT * FROM my_table AS a CROSS JOIN my_table AS b;
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom =
             [TRJoin
                (TRAlias (TRSimple (Name "my_table")) (Alias (Name "a") Nothing))
@@ -3509,7 +3710,7 @@ SELECT * FROM (my_table AS a CROSS JOIN my_table) AS b;
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom =
             [TRAlias
                (TRParens
@@ -3530,7 +3731,7 @@ SELECT * FROM getfoo(1) AS t1;
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom =
             [TRAlias (TRFunction (Name "getfoo") [NumLit "1"])
                (Alias (Name "t1") Nothing)],
@@ -3550,13 +3751,13 @@ SELECT * FROM foo
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "foo")],
           qeWhere =
             Just
               (In True (Iden (Name "foosubid"))
                  (InQueryExpr
-                    (Select{qeDuplicates = All,
+                    (Select{qeSetQuantifier = All,
                             qeSelectList = [(Nothing, Iden (Name "foosubid"))],
                             qeFrom =
                               [TRAlias
@@ -3581,13 +3782,13 @@ SELECT * FROM foo, LATERAL (SELECT * FROM bar WHERE bar.id = foo.bar_id) ss;
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom =
             [TRSimple (Name "foo"),
              TRLateral
                (TRAlias
                   (TRQueryExpr
-                     (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+                     (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
                              qeFrom = [TRSimple (Name "bar")],
                              qeWhere =
                                Just
@@ -3608,7 +3809,7 @@ SELECT * FROM foo, bar WHERE bar.id = foo.bar_id;
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "foo"), TRSimple (Name "bar")],
           qeWhere =
             Just
@@ -3628,7 +3829,7 @@ WHERE pname IS NULL;
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing,
               BinOp (Iden (Name "m")) (Name ".") (Iden (Name "name")))],
@@ -3655,7 +3856,7 @@ SELECT * FROM fdt WHERE c1 > 5
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "fdt")],
           qeWhere = Just (BinOp (Iden (Name "c1")) (Name ">") (NumLit "5")),
           qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
@@ -3669,7 +3870,7 @@ SELECT * FROM fdt WHERE c1 IN (1, 2, 3)
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "fdt")],
           qeWhere =
             Just
@@ -3686,13 +3887,13 @@ SELECT * FROM fdt WHERE c1 IN (SELECT c1 FROM t2)
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "fdt")],
           qeWhere =
             Just
               (In True (Iden (Name "c1"))
                  (InQueryExpr
-                    (Select{qeDuplicates = All,
+                    (Select{qeSetQuantifier = All,
                             qeSelectList = [(Nothing, Iden (Name "c1"))],
                             qeFrom = [TRSimple (Name "t2")], qeWhere = Nothing, qeGroupBy = [],
                             qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
@@ -3708,13 +3909,13 @@ SELECT * FROM fdt WHERE c1 IN (SELECT c3 FROM t2 WHERE c2 = fdt.c1 + 10)
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "fdt")],
           qeWhere =
             Just
               (In True (Iden (Name "c1"))
                  (InQueryExpr
-                    (Select{qeDuplicates = All,
+                    (Select{qeSetQuantifier = All,
                             qeSelectList = [(Nothing, Iden (Name "c3"))],
                             qeFrom = [TRSimple (Name "t2")],
                             qeWhere =
@@ -3737,14 +3938,14 @@ SELECT * FROM fdt WHERE c1 BETWEEN
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "fdt")],
           qeWhere =
             Just
               (SpecialOp (Name "between")
                  [Iden (Name "c1"),
                   SubQueryExpr SqSq
-                    (Select{qeDuplicates = All,
+                    (Select{qeSetQuantifier = All,
                             qeSelectList = [(Nothing, Iden (Name "c3"))],
                             qeFrom = [TRSimple (Name "t2")],
                             qeWhere =
@@ -3767,12 +3968,12 @@ SELECT * FROM fdt WHERE EXISTS (SELECT c1 FROM t2 WHERE c2 > fdt.c1)
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "fdt")],
           qeWhere =
             Just
               (SubQueryExpr SqExists
-                 (Select{qeDuplicates = All,
+                 (Select{qeSetQuantifier = All,
                          qeSelectList = [(Nothing, Iden (Name "c1"))],
                          qeFrom = [TRSimple (Name "t2")],
                          qeWhere =
@@ -3792,7 +3993,7 @@ SELECT * FROM test1;
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "test1")], qeWhere = Nothing,
           qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
           qeOffset = Nothing, qeFetch = Nothing})
@@ -3805,7 +4006,7 @@ SELECT x FROM test1 GROUP BY x;
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList = [(Nothing, Iden (Name "x"))],
           qeFrom = [TRSimple (Name "test1")], qeWhere = Nothing,
           qeGroupBy = [SimpleGroup (Iden (Name "x"))], qeHaving = Nothing,
@@ -3819,7 +4020,7 @@ SELECT x, sum(y) FROM test1 GROUP BY x;
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing, Iden (Name "x")),
              (Nothing, App (Name "sum") [Iden (Name "y")])],
@@ -3837,7 +4038,7 @@ SELECT product_id, p.name, (sum(s.units) * p.price) AS sales
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing, Iden (Name "product_id")),
              (Nothing, BinOp (Iden (Name "p")) (Name ".") (Iden (Name "name"))),
@@ -3872,7 +4073,7 @@ SELECT x, sum(y) FROM test1 GROUP BY x HAVING sum(y) > 3;
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing, Iden (Name "x")),
              (Nothing, App (Name "sum") [Iden (Name "y")])],
@@ -3892,7 +4093,7 @@ SELECT x, sum(y) FROM test1 GROUP BY x HAVING x < 'c';
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing, Iden (Name "x")),
              (Nothing, App (Name "sum") [Iden (Name "y")])],
@@ -3914,7 +4115,7 @@ SELECT product_id, p.name, (sum(s.units) * (p.price - p.cost)) AS profit
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing, Iden (Name "product_id")),
              (Nothing, BinOp (Iden (Name "p")) (Name ".") (Iden (Name "name"))),
@@ -3967,7 +4168,7 @@ SELECT a, b, c FROM t
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing, Iden (Name "a")), (Nothing, Iden (Name "b")),
              (Nothing, Iden (Name "c"))],
@@ -3983,7 +4184,7 @@ SELECT tbl1.a, tbl2.a, tbl1.b FROM t
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing,
               BinOp (Iden (Name "tbl1")) (Name ".") (Iden (Name "a"))),
@@ -4002,7 +4203,7 @@ SELECT tbl1.*, tbl2.a FROM t
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing, BinOp (Iden (Name "tbl1")) (Name ".") Star),
              (Nothing,
@@ -4019,7 +4220,7 @@ SELECT a AS value, b + c AS sum FROM t
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Just (Name "value"), Iden (Name "a")),
              (Just (Name "sum"),
@@ -4036,7 +4237,7 @@ SELECT a "value", b + c AS sum FROM t
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Just (QName "value"), Iden (Name "a")),
              (Just (Name "sum"),
@@ -4053,7 +4254,7 @@ SELECT DISTINCT select_list t
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = Distinct,
+  (Select{qeSetQuantifier = Distinct,
           qeSelectList = [(Just (Name "t"), Iden (Name "select_list"))],
           qeFrom = [], qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
           qeOrderBy = [], qeOffset = Nothing, qeFetch = Nothing})
@@ -4083,27 +4284,27 @@ SELECT 3, 'three';
 ~~~~{.haskell}
 Right
   (CombineQueryExpr{qe0 =
-                      Select{qeDuplicates = All,
+                      Select{qeSetQuantifier = All,
                              qeSelectList =
                                [(Just (Name "column1"), NumLit "1"),
                                 (Just (Name "column2"), StringLit "one")],
                              qeFrom = [], qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
                              qeOrderBy = [], qeOffset = Nothing, qeFetch = Nothing},
-                    qeCombOp = Union, qeDuplicates = All,
+                    qeCombOp = Union, qeSetQuantifier = All,
                     qeCorresponding = Respectively,
                     qe1 =
                       CombineQueryExpr{qe0 =
-                                         Select{qeDuplicates = All,
+                                         Select{qeSetQuantifier = All,
                                                 qeSelectList =
                                                   [(Nothing, NumLit "2"),
                                                    (Nothing, StringLit "two")],
                                                 qeFrom = [], qeWhere = Nothing, qeGroupBy = [],
                                                 qeHaving = Nothing, qeOrderBy = [],
                                                 qeOffset = Nothing, qeFetch = Nothing},
-                                       qeCombOp = Union, qeDuplicates = All,
+                                       qeCombOp = Union, qeSetQuantifier = All,
                                        qeCorresponding = Respectively,
                                        qe1 =
-                                         Select{qeDuplicates = All,
+                                         Select{qeSetQuantifier = All,
                                                 qeSelectList =
                                                   [(Nothing, NumLit "3"),
                                                    (Nothing, StringLit "three")],
@@ -4119,7 +4320,7 @@ SELECT * FROM (VALUES (1, 'one'), (2, 'two'), (3, 'three')) AS t (num,letter);
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom =
             [TRAlias
                (TRQueryExpr
@@ -4156,7 +4357,7 @@ Right
   (With{qeWithRecursive = False,
         qeViews =
           [(Alias (Name "regional_sales") Nothing,
-            Select{qeDuplicates = All,
+            Select{qeSetQuantifier = All,
                    qeSelectList =
                      [(Nothing, Iden (Name "region")),
                       (Just (Name "total_sales"),
@@ -4166,14 +4367,14 @@ Right
                    qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
                    qeFetch = Nothing}),
            (Alias (Name "top_regions") Nothing,
-            Select{qeDuplicates = All,
+            Select{qeSetQuantifier = All,
                    qeSelectList = [(Nothing, Iden (Name "region"))],
                    qeFrom = [TRSimple (Name "regional_sales")],
                    qeWhere =
                      Just
                        (BinOp (Iden (Name "total_sales")) (Name ">")
                           (SubQueryExpr SqSq
-                             (Select{qeDuplicates = All,
+                             (Select{qeSetQuantifier = All,
                                      qeSelectList =
                                        [(Nothing,
                                          BinOp (App (Name "SUM") [Iden (Name "total_sales")])
@@ -4185,7 +4386,7 @@ Right
                    qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
                    qeOffset = Nothing, qeFetch = Nothing})],
         qeQueryExpression =
-          Select{qeDuplicates = All,
+          Select{qeSetQuantifier = All,
                  qeSelectList =
                    [(Nothing, Iden (Name "region")), (Nothing, Iden (Name "product")),
                     (Just (Name "product_units"),
@@ -4197,7 +4398,7 @@ Right
                    Just
                      (In True (Iden (Name "region"))
                         (InQueryExpr
-                           (Select{qeDuplicates = All,
+                           (Select{qeSetQuantifier = All,
                                    qeSelectList = [(Nothing, Iden (Name "region"))],
                                    qeFrom = [TRSimple (Name "top_regions")], qeWhere = Nothing,
                                    qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
@@ -4225,9 +4426,9 @@ Right
         qeViews =
           [(Alias (Name "t") (Just [Name "n"]),
             CombineQueryExpr{qe0 = Values [[NumLit "1"]], qeCombOp = Union,
-                             qeDuplicates = All, qeCorresponding = Respectively,
+                             qeSetQuantifier = All, qeCorresponding = Respectively,
                              qe1 =
-                               Select{qeDuplicates = All,
+                               Select{qeSetQuantifier = All,
                                       qeSelectList =
                                         [(Nothing,
                                           BinOp (Iden (Name "n")) (Name "+") (NumLit "1"))],
@@ -4237,7 +4438,7 @@ Right
                                       qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
                                       qeOffset = Nothing, qeFetch = Nothing}})],
         qeQueryExpression =
-          Select{qeDuplicates = All,
+          Select{qeSetQuantifier = All,
                  qeSelectList = [(Nothing, App (Name "sum") [Iden (Name "n")])],
                  qeFrom = [TRSimple (Name "t")], qeWhere = Nothing, qeGroupBy = [],
                  qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
@@ -4265,7 +4466,7 @@ Right
           [(Alias (Name "included_parts")
               (Just [Name "sub_part", Name "part", Name "quantity"]),
             CombineQueryExpr{qe0 =
-                               Select{qeDuplicates = All,
+                               Select{qeSetQuantifier = All,
                                       qeSelectList =
                                         [(Nothing, Iden (Name "sub_part")),
                                          (Nothing, Iden (Name "part")),
@@ -4277,10 +4478,10 @@ Right
                                              (StringLit "our_product")),
                                       qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
                                       qeOffset = Nothing, qeFetch = Nothing},
-                             qeCombOp = Union, qeDuplicates = All,
+                             qeCombOp = Union, qeSetQuantifier = All,
                              qeCorresponding = Respectively,
                              qe1 =
-                               Select{qeDuplicates = All,
+                               Select{qeSetQuantifier = All,
                                       qeSelectList =
                                         [(Nothing,
                                           BinOp (Iden (Name "p")) (Name ".")
@@ -4306,7 +4507,7 @@ Right
                                       qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
                                       qeOffset = Nothing, qeFetch = Nothing}})],
         qeQueryExpression =
-          Select{qeDuplicates = All,
+          Select{qeSetQuantifier = All,
                  qeSelectList =
                    [(Nothing, Iden (Name "sub_part")),
                     (Just (Name "total_quantity"),
@@ -4337,7 +4538,7 @@ Right
           [(Alias (Name "search_graph")
               (Just [Name "id", Name "link", Name "data", Name "depth"]),
             CombineQueryExpr{qe0 =
-                               Select{qeDuplicates = All,
+                               Select{qeSetQuantifier = All,
                                       qeSelectList =
                                         [(Nothing,
                                           BinOp (Iden (Name "g")) (Name ".") (Iden (Name "id"))),
@@ -4351,10 +4552,10 @@ Right
                                            (Alias (Name "g") Nothing)],
                                       qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
                                       qeOrderBy = [], qeOffset = Nothing, qeFetch = Nothing},
-                             qeCombOp = Union, qeDuplicates = All,
+                             qeCombOp = Union, qeSetQuantifier = All,
                              qeCorresponding = Respectively,
                              qe1 =
-                               Select{qeDuplicates = All,
+                               Select{qeSetQuantifier = All,
                                       qeSelectList =
                                         [(Nothing,
                                           BinOp (Iden (Name "g")) (Name ".") (Iden (Name "id"))),
@@ -4383,7 +4584,7 @@ Right
                                       qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
                                       qeOffset = Nothing, qeFetch = Nothing}})],
         qeQueryExpression =
-          Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+          Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
                  qeFrom = [TRSimple (Name "search_graph")], qeWhere = Nothing,
                  qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
                  qeOffset = Nothing, qeFetch = Nothing}})
@@ -4405,14 +4606,14 @@ Right
         qeViews =
           [(Alias (Name "t") (Just [Name "n"]),
             CombineQueryExpr{qe0 =
-                               Select{qeDuplicates = All, qeSelectList = [(Nothing, NumLit "1")],
-                                      qeFrom = [], qeWhere = Nothing, qeGroupBy = [],
-                                      qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
-                                      qeFetch = Nothing},
-                             qeCombOp = Union, qeDuplicates = All,
+                               Select{qeSetQuantifier = All,
+                                      qeSelectList = [(Nothing, NumLit "1")], qeFrom = [],
+                                      qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+                                      qeOrderBy = [], qeOffset = Nothing, qeFetch = Nothing},
+                             qeCombOp = Union, qeSetQuantifier = All,
                              qeCorresponding = Respectively,
                              qe1 =
-                               Select{qeDuplicates = All,
+                               Select{qeSetQuantifier = All,
                                       qeSelectList =
                                         [(Nothing,
                                           BinOp (Iden (Name "n")) (Name "+") (NumLit "1"))],
@@ -4420,7 +4621,7 @@ Right
                                       qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
                                       qeOffset = Nothing, qeFetch = Nothing}})],
         qeQueryExpression =
-          Select{qeDuplicates = All,
+          Select{qeSetQuantifier = All,
                  qeSelectList = [(Nothing, Iden (Name "n"))],
                  qeFrom = [TRSimple (Name "t")], qeWhere = Nothing, qeGroupBy = [],
                  qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
@@ -4436,7 +4637,7 @@ SELECT f.title, f.did, d.name, f.date_prod, f.kind
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing,
               BinOp (Iden (Name "f")) (Name ".") (Iden (Name "title"))),
@@ -4469,7 +4670,7 @@ SELECT kind, sum(len) AS total
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing, Iden (Name "kind")),
              (Just (Name "total"), App (Name "sum") [Iden (Name "len")])],
@@ -4489,11 +4690,10 @@ SELECT * FROM distributors ORDER BY name;
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "distributors")], qeWhere = Nothing,
           qeGroupBy = [], qeHaving = Nothing,
-          qeOrderBy =
-            [OrderField (Iden (Name "name")) Asc NullsOrderDefault],
+          qeOrderBy = [SortSpec (Iden (Name "name")) Asc NullsOrderDefault],
           qeOffset = Nothing, qeFetch = Nothing})
 ~~~~
 </td></tr>
@@ -4504,10 +4704,10 @@ SELECT * FROM distributors ORDER BY 2;
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+  (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
           qeFrom = [TRSimple (Name "distributors")], qeWhere = Nothing,
           qeGroupBy = [], qeHaving = Nothing,
-          qeOrderBy = [OrderField (NumLit "2") Asc NullsOrderDefault],
+          qeOrderBy = [SortSpec (NumLit "2") Asc NullsOrderDefault],
           qeOffset = Nothing, qeFetch = Nothing})
 ~~~~
 </td></tr>
@@ -4525,7 +4725,7 @@ SELECT actors.name
 ~~~~{.haskell}
 Right
   (CombineQueryExpr{qe0 =
-                      Select{qeDuplicates = All,
+                      Select{qeSetQuantifier = All,
                              qeSelectList =
                                [(Nothing,
                                  BinOp (Iden (Name "distributors")) (Name ".")
@@ -4540,10 +4740,10 @@ Right
                                     (StringLit "W%")),
                              qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
                              qeOffset = Nothing, qeFetch = Nothing},
-                    qeCombOp = Union, qeDuplicates = All,
+                    qeCombOp = Union, qeSetQuantifier = All,
                     qeCorresponding = Respectively,
                     qe1 =
-                      Select{qeDuplicates = All,
+                      Select{qeSetQuantifier = All,
                              qeSelectList =
                                [(Nothing,
                                  BinOp (Iden (Name "actors")) (Name ".") (Iden (Name "name")))],
@@ -4573,7 +4773,7 @@ Right
   (With{qeWithRecursive = False,
         qeViews =
           [(Alias (Name "t") Nothing,
-            Select{qeDuplicates = All,
+            Select{qeSetQuantifier = All,
                    qeSelectList = [(Just (Name "x"), App (Name "random") [])],
                    qeFrom =
                      [TRFunction (Name "generate_series") [NumLit "1", NumLit "3"]],
@@ -4581,14 +4781,14 @@ Right
                    qeOrderBy = [], qeOffset = Nothing, qeFetch = Nothing})],
         qeQueryExpression =
           CombineQueryExpr{qe0 =
-                             Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+                             Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
                                     qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
                                     qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
                                     qeOffset = Nothing, qeFetch = Nothing},
-                           qeCombOp = Union, qeDuplicates = All,
+                           qeCombOp = Union, qeSetQuantifier = All,
                            qeCorresponding = Respectively,
                            qe1 =
-                             Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+                             Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
                                     qeFrom = [TRSimple (Name "t")], qeWhere = Nothing,
                                     qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
                                     qeOffset = Nothing, qeFetch = Nothing}}})
@@ -4616,7 +4816,7 @@ Right
               (Just
                  [Name "distance", Name "employee_name", Name "manager_name"]),
             CombineQueryExpr{qe0 =
-                               Select{qeDuplicates = All,
+                               Select{qeSetQuantifier = All,
                                       qeSelectList =
                                         [(Nothing, NumLit "1"),
                                          (Nothing, Iden (Name "employee_name")),
@@ -4628,10 +4828,10 @@ Right
                                              (StringLit "Mary")),
                                       qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
                                       qeOffset = Nothing, qeFetch = Nothing},
-                             qeCombOp = Union, qeDuplicates = All,
+                             qeCombOp = Union, qeSetQuantifier = All,
                              qeCorresponding = Respectively,
                              qe1 =
-                               Select{qeDuplicates = All,
+                               Select{qeSetQuantifier = All,
                                       qeSelectList =
                                         [(Nothing,
                                           BinOp
@@ -4661,7 +4861,7 @@ Right
                                       qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
                                       qeOffset = Nothing, qeFetch = Nothing}})],
         qeQueryExpression =
-          Select{qeDuplicates = All,
+          Select{qeSetQuantifier = All,
                  qeSelectList =
                    [(Nothing, Iden (Name "distance")),
                     (Nothing, Iden (Name "employee_name"))],
@@ -4678,7 +4878,7 @@ FROM manufacturers m, LATERAL get_product_names(m.id) pname;
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Just (Name "mname"),
               BinOp (Iden (Name "m")) (Name ".") (Iden (Name "name"))),
@@ -4703,7 +4903,7 @@ FROM manufacturers m LEFT JOIN LATERAL get_product_names(m.id) pname ON true;
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Just (Name "mname"),
               BinOp (Iden (Name "m")) (Name ".") (Iden (Name "name"))),
@@ -4730,7 +4930,7 @@ SELECT 2+2;
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing, BinOp (NumLit "2") (Name "+") (NumLit "2"))],
           qeFrom = [], qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
@@ -4744,7 +4944,7 @@ SELECT distributors.* WHERE distributors.name = 'Westward';
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing, BinOp (Iden (Name "distributors")) (Name ".") Star)],
           qeFrom = [],
@@ -4790,7 +4990,7 @@ order by
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing, Iden (Name "l_returnflag")),
              (Nothing, Iden (Name "l_linestatus")),
@@ -4830,8 +5030,8 @@ Right
              SimpleGroup (Iden (Name "l_linestatus"))],
           qeHaving = Nothing,
           qeOrderBy =
-            [OrderField (Iden (Name "l_returnflag")) Asc NullsOrderDefault,
-             OrderField (Iden (Name "l_linestatus")) Asc NullsOrderDefault],
+            [SortSpec (Iden (Name "l_returnflag")) Asc NullsOrderDefault,
+             SortSpec (Iden (Name "l_linestatus")) Asc NullsOrderDefault],
           qeOffset = Nothing, qeFetch = Nothing})
 ~~~~
 </td></tr>
@@ -4886,7 +5086,7 @@ fetch first 100 rows only
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing, Iden (Name "s_acctbal")),
              (Nothing, Iden (Name "s_name")), (Nothing, Iden (Name "n_name")),
@@ -4928,7 +5128,7 @@ Right
                  (Name "and")
                  (BinOp (Iden (Name "ps_supplycost")) (Name "=")
                     (SubQueryExpr SqSq
-                       (Select{qeDuplicates = All,
+                       (Select{qeSetQuantifier = All,
                                qeSelectList =
                                  [(Nothing, App (Name "min") [Iden (Name "ps_supplycost")])],
                                qeFrom =
@@ -4958,10 +5158,10 @@ Right
                                qeOffset = Nothing, qeFetch = Nothing})))),
           qeGroupBy = [], qeHaving = Nothing,
           qeOrderBy =
-            [OrderField (Iden (Name "s_acctbal")) Desc NullsOrderDefault,
-             OrderField (Iden (Name "n_name")) Asc NullsOrderDefault,
-             OrderField (Iden (Name "s_name")) Asc NullsOrderDefault,
-             OrderField (Iden (Name "p_partkey")) Asc NullsOrderDefault],
+            [SortSpec (Iden (Name "s_acctbal")) Desc NullsOrderDefault,
+             SortSpec (Iden (Name "n_name")) Asc NullsOrderDefault,
+             SortSpec (Iden (Name "s_name")) Asc NullsOrderDefault,
+             SortSpec (Iden (Name "p_partkey")) Asc NullsOrderDefault],
           qeOffset = Nothing, qeFetch = Just (NumLit "100")})
 ~~~~
 </td></tr>
@@ -4995,7 +5195,7 @@ Right
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing, Iden (Name "l_orderkey")),
              (Just (Name "revenue"),
@@ -5034,8 +5234,8 @@ Right
              SimpleGroup (Iden (Name "o_shippriority"))],
           qeHaving = Nothing,
           qeOrderBy =
-            [OrderField (Iden (Name "revenue")) Desc NullsOrderDefault,
-             OrderField (Iden (Name "o_orderdate")) Asc NullsOrderDefault],
+            [SortSpec (Iden (Name "revenue")) Desc NullsOrderDefault,
+             SortSpec (Iden (Name "o_orderdate")) Asc NullsOrderDefault],
           qeOffset = Nothing, qeFetch = Just (NumLit "10")})
 ~~~~
 </td></tr>
@@ -5067,7 +5267,7 @@ Right
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing, Iden (Name "o_orderpriority")),
              (Just (Name "order_count"), App (Name "count") [Star])],
@@ -5085,7 +5285,7 @@ Right
                                        ilPrecision = Nothing}))))
                  (Name "and")
                  (SubQueryExpr SqExists
-                    (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+                    (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
                             qeFrom = [TRSimple (Name "lineitem")],
                             qeWhere =
                               Just
@@ -5100,7 +5300,7 @@ Right
           qeGroupBy = [SimpleGroup (Iden (Name "o_orderpriority"))],
           qeHaving = Nothing,
           qeOrderBy =
-            [OrderField (Iden (Name "o_orderpriority")) Asc NullsOrderDefault],
+            [SortSpec (Iden (Name "o_orderpriority")) Asc NullsOrderDefault],
           qeOffset = Nothing, qeFetch = Nothing})
 ~~~~
 </td></tr>
@@ -5135,7 +5335,7 @@ Right
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing, Iden (Name "n_name")),
              (Just (Name "revenue"),
@@ -5187,7 +5387,7 @@ Right
           qeGroupBy = [SimpleGroup (Iden (Name "n_name"))],
           qeHaving = Nothing,
           qeOrderBy =
-            [OrderField (Iden (Name "revenue")) Desc NullsOrderDefault],
+            [SortSpec (Iden (Name "revenue")) Desc NullsOrderDefault],
           qeOffset = Nothing, qeFetch = Nothing})
 ~~~~
 </td></tr>
@@ -5207,7 +5407,7 @@ Right
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Just (Name "revenue"),
               App (Name "sum")
@@ -5283,7 +5483,7 @@ Right
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing, Iden (Name "supp_nation")),
              (Nothing, Iden (Name "cust_nation")),
@@ -5292,15 +5492,15 @@ Right
           qeFrom =
             [TRAlias
                (TRQueryExpr
-                  (Select{qeDuplicates = All,
+                  (Select{qeSetQuantifier = All,
                           qeSelectList =
                             [(Just (Name "supp_nation"),
                               BinOp (Iden (Name "n1")) (Name ".") (Iden (Name "n_name"))),
                              (Just (Name "cust_nation"),
                               BinOp (Iden (Name "n2")) (Name ".") (Iden (Name "n_name"))),
                              (Just (Name "l_year"),
-                              SpecialOp (Name "extract")
-                                [Iden (Name "year"), Iden (Name "l_shipdate")]),
+                              SpecialOpK (Name "extract") (Just (Iden (Name "year")))
+                                [("from", Iden (Name "l_shipdate"))]),
                              (Just (Name "volume"),
                               BinOp (Iden (Name "l_extendedprice")) (Name "*")
                                 (Parens
@@ -5379,9 +5579,9 @@ Right
              SimpleGroup (Iden (Name "l_year"))],
           qeHaving = Nothing,
           qeOrderBy =
-            [OrderField (Iden (Name "supp_nation")) Asc NullsOrderDefault,
-             OrderField (Iden (Name "cust_nation")) Asc NullsOrderDefault,
-             OrderField (Iden (Name "l_year")) Asc NullsOrderDefault],
+            [SortSpec (Iden (Name "supp_nation")) Asc NullsOrderDefault,
+             SortSpec (Iden (Name "cust_nation")) Asc NullsOrderDefault,
+             SortSpec (Iden (Name "l_year")) Asc NullsOrderDefault],
           qeOffset = Nothing, qeFetch = Nothing})
 ~~~~
 </td></tr>
@@ -5429,7 +5629,7 @@ Right
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing, Iden (Name "o_year")),
              (Just (Name "mkt_share"),
@@ -5445,11 +5645,11 @@ Right
           qeFrom =
             [TRAlias
                (TRQueryExpr
-                  (Select{qeDuplicates = All,
+                  (Select{qeSetQuantifier = All,
                           qeSelectList =
                             [(Just (Name "o_year"),
-                              SpecialOp (Name "extract")
-                                [Iden (Name "year"), Iden (Name "o_orderdate")]),
+                              SpecialOpK (Name "extract") (Just (Iden (Name "year")))
+                                [("from", Iden (Name "o_orderdate"))]),
                              (Just (Name "volume"),
                               BinOp (Iden (Name "l_extendedprice")) (Name "*")
                                 (Parens
@@ -5520,7 +5720,7 @@ Right
           qeGroupBy = [SimpleGroup (Iden (Name "o_year"))],
           qeHaving = Nothing,
           qeOrderBy =
-            [OrderField (Iden (Name "o_year")) Asc NullsOrderDefault],
+            [SortSpec (Iden (Name "o_year")) Asc NullsOrderDefault],
           qeOffset = Nothing, qeFetch = Nothing})
 ~~~~
 </td></tr>
@@ -5563,7 +5763,7 @@ Right
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing, Iden (Name "nation")), (Nothing, Iden (Name "o_year")),
              (Just (Name "sum_profit"),
@@ -5571,12 +5771,12 @@ Right
           qeFrom =
             [TRAlias
                (TRQueryExpr
-                  (Select{qeDuplicates = All,
+                  (Select{qeSetQuantifier = All,
                           qeSelectList =
                             [(Just (Name "nation"), Iden (Name "n_name")),
                              (Just (Name "o_year"),
-                              SpecialOp (Name "extract")
-                                [Iden (Name "year"), Iden (Name "o_orderdate")]),
+                              SpecialOpK (Name "extract") (Just (Iden (Name "year")))
+                                [("from", Iden (Name "o_orderdate"))]),
                              (Just (Name "amount"),
                               BinOp
                                 (BinOp (Iden (Name "l_extendedprice")) (Name "*")
@@ -5626,8 +5826,8 @@ Right
              SimpleGroup (Iden (Name "o_year"))],
           qeHaving = Nothing,
           qeOrderBy =
-            [OrderField (Iden (Name "nation")) Asc NullsOrderDefault,
-             OrderField (Iden (Name "o_year")) Desc NullsOrderDefault],
+            [SortSpec (Iden (Name "nation")) Asc NullsOrderDefault,
+             SortSpec (Iden (Name "o_year")) Desc NullsOrderDefault],
           qeOffset = Nothing, qeFetch = Nothing})
 ~~~~
 </td></tr>
@@ -5670,7 +5870,7 @@ Right
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing, Iden (Name "c_custkey")),
              (Nothing, Iden (Name "c_name")),
@@ -5722,7 +5922,7 @@ Right
              SimpleGroup (Iden (Name "c_comment"))],
           qeHaving = Nothing,
           qeOrderBy =
-            [OrderField (Iden (Name "revenue")) Desc NullsOrderDefault],
+            [SortSpec (Iden (Name "revenue")) Desc NullsOrderDefault],
           qeOffset = Nothing, qeFetch = Just (NumLit "20")})
 ~~~~
 </td></tr>
@@ -5760,7 +5960,7 @@ Right
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing, Iden (Name "ps_partkey")),
              (Just (Name "value"),
@@ -5790,7 +5990,7 @@ Right
                        (Iden (Name "ps_availqty"))])
                  (Name ">")
                  (SubQueryExpr SqSq
-                    (Select{qeDuplicates = All,
+                    (Select{qeSetQuantifier = All,
                             qeSelectList =
                               [(Nothing,
                                 BinOp
@@ -5816,7 +6016,7 @@ Right
                             qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
                             qeOffset = Nothing, qeFetch = Nothing}))),
           qeOrderBy =
-            [OrderField (Iden (Name "value")) Desc NullsOrderDefault],
+            [SortSpec (Iden (Name "value")) Desc NullsOrderDefault],
           qeOffset = Nothing, qeFetch = Nothing})
 ~~~~
 </td></tr>
@@ -5855,7 +6055,7 @@ Right
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing, Iden (Name "l_shipmode")),
              (Just (Name "high_line_count"),
@@ -5913,7 +6113,7 @@ Right
           qeGroupBy = [SimpleGroup (Iden (Name "l_shipmode"))],
           qeHaving = Nothing,
           qeOrderBy =
-            [OrderField (Iden (Name "l_shipmode")) Asc NullsOrderDefault],
+            [SortSpec (Iden (Name "l_shipmode")) Asc NullsOrderDefault],
           qeOffset = Nothing, qeFetch = Nothing})
 ~~~~
 </td></tr>
@@ -5944,14 +6144,14 @@ Right
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing, Iden (Name "c_count")),
              (Just (Name "custdist"), App (Name "count") [Star])],
           qeFrom =
             [TRAlias
                (TRQueryExpr
-                  (Select{qeDuplicates = All,
+                  (Select{qeSetQuantifier = All,
                           qeSelectList =
                             [(Nothing, Iden (Name "c_custkey")),
                              (Nothing, App (Name "count") [Iden (Name "o_orderkey")])],
@@ -5976,8 +6176,8 @@ Right
           qeGroupBy = [SimpleGroup (Iden (Name "c_count"))],
           qeHaving = Nothing,
           qeOrderBy =
-            [OrderField (Iden (Name "custdist")) Desc NullsOrderDefault,
-             OrderField (Iden (Name "c_count")) Desc NullsOrderDefault],
+            [SortSpec (Iden (Name "custdist")) Desc NullsOrderDefault,
+             SortSpec (Iden (Name "c_count")) Desc NullsOrderDefault],
           qeOffset = Nothing, qeFetch = Nothing})
 ~~~~
 </td></tr>
@@ -6001,7 +6201,7 @@ Right
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Just (Name "promo_revenue"),
               BinOp
@@ -6091,7 +6291,7 @@ Right
   (With{qeWithRecursive = False,
         qeViews =
           [(Alias (Name "revenue0") Nothing,
-            Select{qeDuplicates = All,
+            Select{qeSetQuantifier = All,
                    qeSelectList =
                      [(Just (Name "supplier_no"), Iden (Name "l_suppkey")),
                       (Just (Name "total_revenue"),
@@ -6114,7 +6314,7 @@ Right
                    qeHaving = Nothing, qeOrderBy = [], qeOffset = Nothing,
                    qeFetch = Nothing})],
         qeQueryExpression =
-          Select{qeDuplicates = All,
+          Select{qeSetQuantifier = All,
                  qeSelectList =
                    [(Nothing, Iden (Name "s_suppkey")),
                     (Nothing, Iden (Name "s_name")),
@@ -6130,7 +6330,7 @@ Right
                         (Name "and")
                         (BinOp (Iden (Name "total_revenue")) (Name "=")
                            (SubQueryExpr SqSq
-                              (Select{qeDuplicates = All,
+                              (Select{qeSetQuantifier = All,
                                       qeSelectList =
                                         [(Nothing, App (Name "max") [Iden (Name "total_revenue")])],
                                       qeFrom = [TRSimple (Name "revenue0")], qeWhere = Nothing,
@@ -6138,7 +6338,7 @@ Right
                                       qeOffset = Nothing, qeFetch = Nothing})))),
                  qeGroupBy = [], qeHaving = Nothing,
                  qeOrderBy =
-                   [OrderField (Iden (Name "s_suppkey")) Asc NullsOrderDefault],
+                   [SortSpec (Iden (Name "s_suppkey")) Asc NullsOrderDefault],
                  qeOffset = Nothing, qeFetch = Nothing}})
 ~~~~
 </td></tr>
@@ -6179,7 +6379,7 @@ Right
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing, Iden (Name "p_brand")), (Nothing, Iden (Name "p_type")),
              (Nothing, Iden (Name "p_size")),
@@ -6210,7 +6410,7 @@ Right
                     (Name "and")
                     (Iden (Name "ps_suppkey")))
                  (InQueryExpr
-                    (Select{qeDuplicates = All,
+                    (Select{qeSetQuantifier = All,
                             qeSelectList = [(Nothing, Iden (Name "s_suppkey"))],
                             qeFrom = [TRSimple (Name "supplier")],
                             qeWhere =
@@ -6225,10 +6425,10 @@ Right
              SimpleGroup (Iden (Name "p_size"))],
           qeHaving = Nothing,
           qeOrderBy =
-            [OrderField (Iden (Name "supplier_cnt")) Desc NullsOrderDefault,
-             OrderField (Iden (Name "p_brand")) Asc NullsOrderDefault,
-             OrderField (Iden (Name "p_type")) Asc NullsOrderDefault,
-             OrderField (Iden (Name "p_size")) Asc NullsOrderDefault],
+            [SortSpec (Iden (Name "supplier_cnt")) Desc NullsOrderDefault,
+             SortSpec (Iden (Name "p_brand")) Asc NullsOrderDefault,
+             SortSpec (Iden (Name "p_type")) Asc NullsOrderDefault,
+             SortSpec (Iden (Name "p_size")) Asc NullsOrderDefault],
           qeOffset = Nothing, qeFetch = Nothing})
 ~~~~
 </td></tr>
@@ -6256,7 +6456,7 @@ Right
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Just (Name "avg_yearly"),
               BinOp (App (Name "sum") [Iden (Name "l_extendedprice")]) (Name "/")
@@ -6277,7 +6477,7 @@ Right
                  (Name "and")
                  (BinOp (Iden (Name "l_quantity")) (Name "<")
                     (SubQueryExpr SqSq
-                       (Select{qeDuplicates = All,
+                       (Select{qeSetQuantifier = All,
                                qeSelectList =
                                  [(Nothing,
                                    BinOp (NumLit "0.2") (Name "*")
@@ -6333,7 +6533,7 @@ Right
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing, Iden (Name "c_name")),
              (Nothing, Iden (Name "c_custkey")),
@@ -6350,7 +6550,7 @@ Right
                  (BinOp
                     (In True (Iden (Name "o_orderkey"))
                        (InQueryExpr
-                          (Select{qeDuplicates = All,
+                          (Select{qeSetQuantifier = All,
                                   qeSelectList = [(Nothing, Iden (Name "l_orderkey"))],
                                   qeFrom = [TRSimple (Name "lineitem")], qeWhere = Nothing,
                                   qeGroupBy = [SimpleGroup (Iden (Name "l_orderkey"))],
@@ -6374,8 +6574,8 @@ Right
              SimpleGroup (Iden (Name "o_totalprice"))],
           qeHaving = Nothing,
           qeOrderBy =
-            [OrderField (Iden (Name "o_totalprice")) Desc NullsOrderDefault,
-             OrderField (Iden (Name "o_orderdate")) Asc NullsOrderDefault],
+            [SortSpec (Iden (Name "o_totalprice")) Desc NullsOrderDefault,
+             SortSpec (Iden (Name "o_orderdate")) Asc NullsOrderDefault],
           qeOffset = Nothing, qeFetch = Just (NumLit "100")})
 ~~~~
 </td></tr>
@@ -6421,7 +6621,7 @@ Right
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Just (Name "revenue"),
               App (Name "sum")
@@ -6591,7 +6791,7 @@ Right
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing, Iden (Name "s_name")),
              (Nothing, Iden (Name "s_address"))],
@@ -6602,7 +6802,7 @@ Right
                  (BinOp
                     (In True (Iden (Name "s_suppkey"))
                        (InQueryExpr
-                          (Select{qeDuplicates = All,
+                          (Select{qeSetQuantifier = All,
                                   qeSelectList = [(Nothing, Iden (Name "ps_suppkey"))],
                                   qeFrom = [TRSimple (Name "partsupp")],
                                   qeWhere =
@@ -6610,7 +6810,7 @@ Right
                                       (BinOp
                                          (In True (Iden (Name "ps_partkey"))
                                             (InQueryExpr
-                                               (Select{qeDuplicates = All,
+                                               (Select{qeSetQuantifier = All,
                                                        qeSelectList =
                                                          [(Nothing, Iden (Name "p_partkey"))],
                                                        qeFrom = [TRSimple (Name "part")],
@@ -6625,7 +6825,7 @@ Right
                                          (Name "and")
                                          (BinOp (Iden (Name "ps_availqty")) (Name ">")
                                             (SubQueryExpr SqSq
-                                               (Select{qeDuplicates = All,
+                                               (Select{qeSetQuantifier = All,
                                                        qeSelectList =
                                                          [(Nothing,
                                                            BinOp (NumLit "0.5") (Name "*")
@@ -6672,7 +6872,7 @@ Right
                  (BinOp (Iden (Name "n_name")) (Name "=") (StringLit "VIETNAM"))),
           qeGroupBy = [], qeHaving = Nothing,
           qeOrderBy =
-            [OrderField (Iden (Name "s_name")) Asc NullsOrderDefault],
+            [SortSpec (Iden (Name "s_name")) Asc NullsOrderDefault],
           qeOffset = Nothing, qeFetch = Nothing})
 ~~~~
 </td></tr>
@@ -6723,7 +6923,7 @@ Right
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing, Iden (Name "s_name")),
              (Just (Name "numwait"), App (Name "count") [Star])],
@@ -6753,7 +6953,7 @@ Right
                              (Iden (Name "l_commitdate")))))
                     (Name "and")
                     (SubQueryExpr SqExists
-                       (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+                       (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
                                qeFrom =
                                  [TRAlias (TRSimple (Name "lineitem")) (Alias (Name "l2") Nothing)],
                                qeWhere =
@@ -6779,7 +6979,7 @@ Right
                     (BinOp
                        (BinOp
                           (SubQueryExpr SqExists
-                             (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+                             (Select{qeSetQuantifier = All, qeSelectList = [(Nothing, Star)],
                                      qeFrom =
                                        [TRAlias (TRSimple (Name "lineitem"))
                                           (Alias (Name "l3") Nothing)],
@@ -6817,8 +7017,8 @@ Right
           qeGroupBy = [SimpleGroup (Iden (Name "s_name"))],
           qeHaving = Nothing,
           qeOrderBy =
-            [OrderField (Iden (Name "numwait")) Desc NullsOrderDefault,
-             OrderField (Iden (Name "s_name")) Asc NullsOrderDefault],
+            [SortSpec (Iden (Name "numwait")) Desc NullsOrderDefault,
+             SortSpec (Iden (Name "s_name")) Asc NullsOrderDefault],
           qeOffset = Nothing, qeFetch = Just (NumLit "100")})
 ~~~~
 </td></tr>
@@ -6866,7 +7066,7 @@ Right
 </td><td>
 ~~~~{.haskell}
 Right
-  (Select{qeDuplicates = All,
+  (Select{qeSetQuantifier = All,
           qeSelectList =
             [(Nothing, Iden (Name "cntrycode")),
              (Just (Name "numcust"), App (Name "count") [Star]),
@@ -6875,11 +7075,11 @@ Right
           qeFrom =
             [TRAlias
                (TRQueryExpr
-                  (Select{qeDuplicates = All,
+                  (Select{qeSetQuantifier = All,
                           qeSelectList =
                             [(Just (Name "cntrycode"),
-                              SpecialOp (Name "substring")
-                                [Iden (Name "c_phone"), NumLit "1", NumLit "2"]),
+                              SpecialOpK (Name "substring") (Just (Iden (Name "c_phone")))
+                                [("from", NumLit "1"), ("for", NumLit "2")]),
                              (Nothing, Iden (Name "c_acctbal"))],
                           qeFrom = [TRSimple (Name "customer")],
                           qeWhere =
@@ -6887,8 +7087,8 @@ Right
                               (BinOp
                                  (BinOp
                                     (In True
-                                       (SpecialOp (Name "substring")
-                                          [Iden (Name "c_phone"), NumLit "1", NumLit "2"])
+                                       (SpecialOpK (Name "substring") (Just (Iden (Name "c_phone")))
+                                          [("from", NumLit "1"), ("for", NumLit "2")])
                                        (InList
                                           [StringLit "41", StringLit "28", StringLit "39",
                                            StringLit "21", StringLit "24", StringLit "29",
@@ -6896,7 +7096,7 @@ Right
                                     (Name "and")
                                     (BinOp (Iden (Name "c_acctbal")) (Name ">")
                                        (SubQueryExpr SqSq
-                                          (Select{qeDuplicates = All,
+                                          (Select{qeSetQuantifier = All,
                                                   qeSelectList =
                                                     [(Nothing,
                                                       App (Name "avg") [Iden (Name "c_acctbal")])],
@@ -6909,9 +7109,10 @@ Right
                                                                (Name ">")
                                                                (NumLit "0.00"))
                                                             (Name "and")
-                                                            (SpecialOp (Name "substring")
-                                                               [Iden (Name "c_phone"), NumLit "1",
-                                                                NumLit "2"]))
+                                                            (SpecialOpK (Name "substring")
+                                                               (Just (Iden (Name "c_phone")))
+                                                               [("from", NumLit "1"),
+                                                                ("for", NumLit "2")]))
                                                          (InList
                                                             [StringLit "41", StringLit "28",
                                                              StringLit "39", StringLit "21",
@@ -6923,7 +7124,8 @@ Right
                                  (Name "and")
                                  (PrefixOp (Name "not")
                                     (SubQueryExpr SqExists
-                                       (Select{qeDuplicates = All, qeSelectList = [(Nothing, Star)],
+                                       (Select{qeSetQuantifier = All,
+                                               qeSelectList = [(Nothing, Star)],
                                                qeFrom = [TRSimple (Name "orders")],
                                                qeWhere =
                                                  Just
@@ -6938,7 +7140,7 @@ Right
           qeGroupBy = [SimpleGroup (Iden (Name "cntrycode"))],
           qeHaving = Nothing,
           qeOrderBy =
-            [OrderField (Iden (Name "cntrycode")) Asc NullsOrderDefault],
+            [SortSpec (Iden (Name "cntrycode")) Asc NullsOrderDefault],
           qeOffset = Nothing, qeFetch = Nothing})
 ~~~~
 </td></tr>
