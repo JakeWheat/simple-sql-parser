@@ -87,8 +87,8 @@
 > scalarExpr (SpecialOp nm es) =
 >   name nm <+> parens (commaSep $ map scalarExpr es)
 
-> scalarExpr (SpecialOpK (Name nm) fs as) =
->     text nm <> parens (sep $ catMaybes
+> scalarExpr (SpecialOpK nm fs as) =
+>     name nm <> parens (sep $ catMaybes
 >         ((fmap scalarExpr fs)
 >          : map (\(n,e) -> Just (text n <+> scalarExpr e)) as))
 

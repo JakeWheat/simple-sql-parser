@@ -36,7 +36,7 @@ These are a few misc tests which don't fit anywhere else.
 >     ]
 >  where
 >    ms d = makeSelect
->           {qeDuplicates = d
+>           {qeSetQuantifier = d
 >           ,qeSelectList = [(Nothing,Iden "a")]
 >           ,qeFrom = [TRSimple "t"]}
 
@@ -64,6 +64,12 @@ These are a few misc tests which don't fit anywhere else.
 >     ,("select a a, b b"
 >      ,makeSelect {qeSelectList = [(Just "a", Iden "a")
 >                                  ,(Just "b", Iden "b")]})
+
+>     ,("select a + b * c"
+>      ,makeSelect {qeSelectList =
+>       [(Nothing,BinOp (Iden (Name "a")) (Name "+")
+>        (BinOp (Iden (Name "b")) (Name "*") (Iden (Name "c"))))]})
+
 >     ]
 
 > whereClause :: TestItem

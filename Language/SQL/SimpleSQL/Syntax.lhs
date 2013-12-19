@@ -5,7 +5,7 @@
 >      ScalarExpr(..)
 >     ,Name(..)
 >     ,TypeName(..)
->     ,Duplicates(..)
+>     ,SetQuantifier(..)
 >     ,SortSpec(..)
 >     ,Direction(..)
 >     ,NullsOrder(..)
@@ -65,7 +65,7 @@
 >       -- order by, to regular function application
 >     | AggregateApp
 >       {aggName :: Name -- ^ aggregate function name
->       ,aggDistinct :: Maybe Duplicates -- ^ distinct
+>       ,aggDistinct :: Maybe SetQuantifier -- ^ distinct
 >       ,aggArgs :: [ScalarExpr]-- ^ args
 >       ,aggOrderBy :: [SortSpec] -- ^ order by
 >       }
@@ -192,9 +192,16 @@
 > --    t'.
 > data QueryExpr
 >     = Select
->       {qeDuplicates :: Duplicates
+>       {qeSetQuantifier :: SetQuantifier
 >       ,qeSelectList :: [(Maybe Name,ScalarExpr)]
 >        -- ^ the column aliases and the expressions
+
+TODO: consider breaking this up. The SQL grammar has
+queryexpr = select <select list> [<table expression>]
+table expression = <from> [where] [groupby] [having] ...
+
+This would make some things a bit cleaner?
+
 >       ,qeFrom :: [TableRef]
 >       ,qeWhere :: Maybe ScalarExpr
 >       ,qeGroupBy :: [GroupingExpr]
@@ -206,7 +213,7 @@
 >     | CombineQueryExpr
 >       {qe0 :: QueryExpr
 >       ,qeCombOp :: CombineOp
->       ,qeDuplicates :: Duplicates
+>       ,qeSetQuantifier :: SetQuantifier
 >       ,qeCorresponding :: Corresponding
 >       ,qe1 :: QueryExpr
 >       }
@@ -225,7 +232,7 @@ I'm not sure if this is valid syntax or not.
 > -- | Helper/'default' value for query exprs to make creating query
 > -- expr values a little easier.
 > makeSelect :: QueryExpr
-> makeSelect = Select {qeDuplicates = All
+> makeSelect = Select {qeSetQuantifier = All
 >                     ,qeSelectList = []
 >                     ,qeFrom = []
 >                     ,qeWhere = Nothing
@@ -239,7 +246,7 @@ I'm not sure if this is valid syntax or not.
 > -- | Represents the Distinct or All keywords, which can be used
 > -- before a select list, in an aggregate/window function
 > -- application, or in a query expression set operator.
-> data Duplicates = Distinct | All deriving (Eq,Show,Read)
+> data SetQuantifier = Distinct | All deriving (Eq,Show,Read)
 
 > -- | The direction for a column in order by.
 > data Direction = Asc | Desc deriving (Eq,Show,Read)

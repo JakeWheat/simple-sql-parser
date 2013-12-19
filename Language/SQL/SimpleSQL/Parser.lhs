@@ -158,7 +158,7 @@ aggregate([all|distinct] args [order by orderitems])
 >     makeApp i (Nothing,es,Nothing) = App i es
 >     makeApp i (d,es,od) = AggregateApp i d es (fromMaybe [] od)
 
-> duplicates :: P (Maybe Duplicates)
+> duplicates :: P (Maybe SetQuantifier)
 > duplicates = optionMaybe $ try $
 >     choice [All <$ keyword_ "all"
 >            ,Distinct <$ keyword "distinct"]
