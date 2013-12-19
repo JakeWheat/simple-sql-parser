@@ -3,7 +3,6 @@
 
 > import Language.SQL.SimpleSQL.Pretty
 > import Language.SQL.SimpleSQL.Parser
-> import Data.List
 
 > main :: IO ()
 > main = do
@@ -14,4 +13,4 @@
 >              either (error . peFormattedError)
 >                     (putStrLn . prettyQueryExprs)
 >                     $ parseQueryExprs f Nothing src
->       _ -> error "please pass filename to prettify"
+>       _ -> error "please pass filename to indent"
