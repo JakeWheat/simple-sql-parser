@@ -62,7 +62,7 @@ Test-Suite Tests
                        Language.SQL.SimpleSQL.Postgres,
                        Language.SQL.SimpleSQL.QueryExprComponents,
                        Language.SQL.SimpleSQL.QueryExprs,
-                       Language.SQL.SimpleSQL.ScalarExprs,
+                       Language.SQL.SimpleSQL.ValueExprs,
                        Language.SQL.SimpleSQL.TableRefs,
                        Language.SQL.SimpleSQL.TestTypes,
                        Language.SQL.SimpleSQL.Tests,

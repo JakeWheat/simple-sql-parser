@@ -4,7 +4,7 @@
 > -- readable way.
 > module Language.SQL.SimpleSQL.Pretty
 >     (prettyQueryExpr
->     ,prettyScalarExpr
+>     ,prettyValueExpr
 >     ,prettyQueryExprs
 >     ) where
 
@@ -16,50 +16,50 @@
 > prettyQueryExpr :: QueryExpr -> String
 > prettyQueryExpr = render . queryExpr
 
-> -- | Convert a scalar expr ast to concrete syntax.
-> prettyScalarExpr :: ScalarExpr -> String
-> prettyScalarExpr = render . scalarExpr
+> -- | Convert a value expr ast to concrete syntax.
+> prettyValueExpr :: ValueExpr -> String
+> prettyValueExpr = render . valueExpr
 
 > -- | Convert a list of query exprs to concrete syntax. A semi colon
 > -- is inserted after each query expr.
 > prettyQueryExprs :: [QueryExpr] -> String
 > prettyQueryExprs = render . vcat . map ((<> text ";\n") . queryExpr)
 
-= scalar expressions
+= value expressions
 
-> scalarExpr :: ScalarExpr -> Doc
-> scalarExpr (StringLit s) = quotes $ text $ doubleUpQuotes s
+> valueExpr :: ValueExpr -> Doc
+> valueExpr (StringLit s) = quotes $ text $ doubleUpQuotes s
 >   where doubleUpQuotes [] = []
 >         doubleUpQuotes ('\'':cs) = '\'':'\'':doubleUpQuotes cs
 >         doubleUpQuotes (c:cs) = c:doubleUpQuotes cs
 
-> scalarExpr (NumLit s) = text s
-> scalarExpr (IntervalLit v u p) =
+> valueExpr (NumLit s) = text s
+> valueExpr (IntervalLit v u p) =
 >     text "interval" <+> quotes (text v)
 >     <+> text u
 >     <+> maybe empty (parens . text . show ) p
-> scalarExpr (Iden i) = name i
-> scalarExpr Star = text "*"
-> scalarExpr Parameter = text "?"
+> valueExpr (Iden i) = name i
+> valueExpr Star = text "*"
+> valueExpr Parameter = text "?"
 
-> scalarExpr (App f es) = name f <> parens (commaSep (map scalarExpr es))
+> valueExpr (App f es) = name f <> parens (commaSep (map valueExpr es))
 
-> scalarExpr (AggregateApp f d es od) =
+> valueExpr (AggregateApp f d es od) =
 >     name f
 >     <> parens ((case d of
 >                   Just Distinct -> text "distinct"
 >                   Just All -> text "all"
 >                   Nothing -> empty)
->                <+> commaSep (map scalarExpr es)
+>                <+> commaSep (map valueExpr es)
 >                <+> orderBy od)
 
-> scalarExpr (WindowApp f es pb od fr) =
->     name f <> parens (commaSep $ map scalarExpr es)
+> valueExpr (WindowApp f es pb od fr) =
+>     name f <> parens (commaSep $ map valueExpr es)
 >     <+> text "over"
 >     <+> parens ((case pb of
 >                     [] -> empty
 >                     _ -> text "partition by"
->                           <+> nest 13 (commaSep $ map scalarExpr pb))
+>                           <+> nest 13 (commaSep $ map valueExpr pb))
 >                 <+> orderBy od
 >     <+> maybe empty frd fr)
 >   where
@@ -73,64 +73,64 @@
 >     fpd UnboundedPreceding = text "unbounded preceding"
 >     fpd UnboundedFollowing = text "unbounded following"
 >     fpd Current = text "current row"
->     fpd (Preceding e) = scalarExpr e <+> text "preceding"
->     fpd (Following e) = scalarExpr e <+> text "following"
+>     fpd (Preceding e) = valueExpr e <+> text "preceding"
+>     fpd (Following e) = valueExpr e <+> text "following"
 
-> scalarExpr (SpecialOp nm [a,b,c]) | nm `elem` [Name "between"
+> valueExpr (SpecialOp nm [a,b,c]) | nm `elem` [Name "between"
 >                                               ,Name "not between"] =
->   sep [scalarExpr a
->       ,name nm <+> scalarExpr b
->       ,nest (length (unname nm) + 1) $ text "and" <+> scalarExpr c]
+>   sep [valueExpr a
+>       ,name nm <+> valueExpr b
+>       ,nest (length (unname nm) + 1) $ text "and" <+> valueExpr c]
 
-> scalarExpr (SpecialOp (Name "rowctor") as) =
->     parens $ commaSep $ map scalarExpr as
+> valueExpr (SpecialOp (Name "rowctor") as) =
+>     parens $ commaSep $ map valueExpr as
 
-> scalarExpr (SpecialOp nm es) =
->   name nm <+> parens (commaSep $ map scalarExpr es)
+> valueExpr (SpecialOp nm es) =
+>   name nm <+> parens (commaSep $ map valueExpr es)
 
-> scalarExpr (SpecialOpK nm fs as) =
+> valueExpr (SpecialOpK nm fs as) =
 >     name nm <> parens (sep $ catMaybes
->         ((fmap scalarExpr fs)
->          : map (\(n,e) -> Just (text n <+> scalarExpr e)) as))
+>         ((fmap valueExpr fs)
+>          : map (\(n,e) -> Just (text n <+> valueExpr e)) as))
 
-> scalarExpr (PrefixOp f e) = name f <+> scalarExpr e
-> scalarExpr (PostfixOp f e) = scalarExpr e <+> name f
-> scalarExpr e@(BinOp _ op _) | op `elem` [Name "and", Name "or"] =
+> valueExpr (PrefixOp f e) = name f <+> valueExpr e
+> valueExpr (PostfixOp f e) = valueExpr e <+> name f
+> valueExpr e@(BinOp _ op _) | op `elem` [Name "and", Name "or"] =
 >     -- special case for and, or, get all the ands so we can vcat them
 >     -- nicely
 >     case ands e of
->       (e':es) -> vcat (scalarExpr e'
->                        : map ((name op <+>) . scalarExpr) es)
+>       (e':es) -> vcat (valueExpr e'
+>                        : map ((name op <+>) . valueExpr) es)
 >       [] -> empty -- shouldn't be possible
 >   where
 >     ands (BinOp a op' b) | op == op' = ands a ++ ands b
 >     ands x = [x]
 > -- special case for . we don't use whitespace
-> scalarExpr (BinOp e0 (Name ".") e1) =
->     scalarExpr e0 <> text "." <> scalarExpr e1
-> scalarExpr (BinOp e0 f e1) =
->     scalarExpr e0 <+> name f <+> scalarExpr e1
+> valueExpr (BinOp e0 (Name ".") e1) =
+>     valueExpr e0 <> text "." <> valueExpr e1
+> valueExpr (BinOp e0 f e1) =
+>     valueExpr e0 <+> name f <+> valueExpr e1
 
-> scalarExpr (Case t ws els) =
->     sep $ [text "case" <+> maybe empty scalarExpr t]
+> valueExpr (Case t ws els) =
+>     sep $ [text "case" <+> maybe empty valueExpr t]
 >           ++ map w ws
 >           ++ maybeToList (fmap e els)
 >           ++ [text "end"]
 >   where
 >     w (t0,t1) =
->       text "when" <+> nest 5 (commaSep $ map scalarExpr t0)
->       <+> text "then" <+> nest 5 (scalarExpr t1)
->     e el = text "else" <+> nest 5 (scalarExpr el)
-> scalarExpr (Parens e) = parens $ scalarExpr e
-> scalarExpr (Cast e tn) =
->     text "cast" <> parens (sep [scalarExpr e
+>       text "when" <+> nest 5 (commaSep $ map valueExpr t0)
+>       <+> text "then" <+> nest 5 (valueExpr t1)
+>     e el = text "else" <+> nest 5 (valueExpr el)
+> valueExpr (Parens e) = parens $ valueExpr e
+> valueExpr (Cast e tn) =
+>     text "cast" <> parens (sep [valueExpr e
 >                                ,text "as"
 >                                ,typeName tn])
 
-> scalarExpr (TypedLit tn s) =
+> valueExpr (TypedLit tn s) =
 >     typeName tn <+> quotes (text s)
 
-> scalarExpr (SubQueryExpr ty qe) =
+> valueExpr (SubQueryExpr ty qe) =
 >     (case ty of
 >         SqSq -> empty
 >         SqExists -> text "exists"
@@ -139,13 +139,13 @@
 >         SqAny -> text "any"
 >     ) <+> parens (queryExpr qe)
 
-> scalarExpr (In b se x) =
->     scalarExpr se <+>
+> valueExpr (In b se x) =
+>     valueExpr se <+>
 >     (if b then empty else text "not")
 >     <+> text "in"
 >     <+> parens (nest (if b then 3 else 7) $
 >                  case x of
->                      InList es -> commaSep $ map scalarExpr es
+>                      InList es -> commaSep $ map valueExpr es
 >                      InQueryExpr qe -> queryExpr qe)
 
 > unname :: Name -> String
@@ -173,12 +173,12 @@
 >           Distinct -> text "distinct"
 >       ,nest 7 $ sep [selectList sl]
 >       ,from fr
->       ,maybeScalarExpr "where" wh
+>       ,maybeValueExpr "where" wh
 >       ,grpBy gb
->       ,maybeScalarExpr "having" hv
+>       ,maybeValueExpr "having" hv
 >       ,orderBy od
->       ,maybe empty (\e -> text "offset" <+> scalarExpr e <+> text "rows") off
->       ,maybe empty (\e -> text "fetch next" <+> scalarExpr e
+>       ,maybe empty (\e -> text "offset" <+> valueExpr e <+> text "rows") off
+>       ,maybe empty (\e -> text "fetch next" <+> valueExpr e
 >                           <+> text "rows only") fe
 >       ]
 > queryExpr (CombineQueryExpr q1 ct d c q2) =
@@ -202,7 +202,7 @@
 >            ,queryExpr qe]
 > queryExpr (Values vs) =
 >     text "values"
->     <+> nest 7 (commaSep (map (parens . commaSep . map scalarExpr) vs))
+>     <+> nest 7 (commaSep (map (parens . commaSep . map valueExpr) vs))
 > queryExpr (Table t) = text "table" <+> name t
 
 
@@ -211,10 +211,10 @@
 >     text "as" <+> name nm
 >     <+> maybe empty (parens . commaSep . map name) cols
 
-> selectList :: [(Maybe Name, ScalarExpr)] -> Doc
+> selectList :: [(Maybe Name, ValueExpr)] -> Doc
 > selectList is = commaSep $ map si is
 >   where
->     si (al,e) = scalarExpr e <+> maybe empty als al
+>     si (al,e) = valueExpr e <+> maybe empty als al
 >     als al = text "as" <+> name al
 
 > from :: [TableRef] -> Doc
@@ -226,7 +226,7 @@
 >     tr (TRSimple t) = name t
 >     tr (TRLateral t) = text "lateral" <+> tr t
 >     tr (TRFunction f as) =
->         name f <> parens (commaSep $ map scalarExpr as)
+>         name f <> parens (commaSep $ map valueExpr as)
 >     tr (TRAlias t a) = sep [tr t, alias a]
 >     tr (TRParens t) = parens $ tr t
 >     tr (TRQueryExpr q) = parens $ queryExpr q
@@ -245,23 +245,23 @@
 >               JFull -> text "full"
 >               JCross -> text "cross"
 >           ,text "join"]
->     joinCond (Just (JoinOn e)) = text "on" <+> scalarExpr e
+>     joinCond (Just (JoinOn e)) = text "on" <+> valueExpr e
 >     joinCond (Just (JoinUsing es)) =
 >         text "using" <+> parens (commaSep $ map name es)
 >     joinCond Nothing = empty
 >     joinCond (Just JoinNatural) = empty
 
-> maybeScalarExpr :: String -> Maybe ScalarExpr -> Doc
-> maybeScalarExpr k = maybe empty
+> maybeValueExpr :: String -> Maybe ValueExpr -> Doc
+> maybeValueExpr k = maybe empty
 >       (\e -> sep [text k
->                  ,nest (length k + 1) $ scalarExpr e])
+>                  ,nest (length k + 1) $ valueExpr e])
 
 > grpBy :: [GroupingExpr] -> Doc
 > grpBy [] = empty
 > grpBy gs = sep [text "group by"
 >                ,nest 9 $ commaSep $ map ge gs]
 >   where
->     ge (SimpleGroup e) = scalarExpr e
+>     ge (SimpleGroup e) = valueExpr e
 >     ge (GroupingParens g) = parens (commaSep $ map ge g)
 >     ge (Cube es) = text "cube" <> parens (commaSep $ map ge es)
 >     ge (Rollup es) = text "rollup" <> parens (commaSep $ map ge es)
@@ -273,7 +273,7 @@
 >                  ,nest 9 $ commaSep $ map f os]
 >   where
 >     f (SortSpec e d n) =
->         scalarExpr e
+>         valueExpr e
 >         <+> (if d == Asc then empty else text "desc")
 >         <+> (case n of
 >                 NullsOrderDefault -> empty

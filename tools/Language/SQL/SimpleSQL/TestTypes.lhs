@@ -9,7 +9,7 @@ Tests.lhs module for the 'interpreter'.
 > import Data.String
 
 > data TestItem = Group String [TestItem]
->               | TestScalarExpr String ScalarExpr
+>               | TestValueExpr String ValueExpr
 >               | TestQueryExpr String QueryExpr
 >               | TestQueryExprs String [QueryExpr]
 

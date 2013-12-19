@@ -1,10 +1,47 @@
 
-This is the module which deals with fixing up the scalar expression
+This is the module which deals with fixing up the value expression
 trees for the operator precedence and associativity (aka 'fixity').
 
 It currently uses haskell-src-exts as a hack, the algorithm from there
 should be ported to work on these trees natively. Maybe it could be
-made generic to use in places other than the scalar expr parser?
+made generic to use in places other than the value expr parser?
+
+
+
+New plan to write custom fixity code to work directly on
+simple-query-parser AST.
+
+Might also want to run simple fixity fixes on CombineQueryExprs, and
+on tableref trees.
+
+these operators take part in fixity:
+binop prefixop postfixop
+in, any, some, all
+between: maybe postfix ops might be either in the last expr in the
+between or outside the between (& not between)
+collate
+
+these don't: we just recursively apply on each sub value expr
+independently
+all special ops, except the special case for between
+case, should check nested cases work nice
+app, agg app, winapp, parens
+casts:
+  cast(a as b) doesn't
+  int 'sdasd' doesn't since the argument is a string literal only
+  a::b does, this is postgres which isn't currently supported. Would
+    like to support it in the future though. This will not be a ast
+    binary op since the second argument is a typename and not a value
+    expr
+
+because the parser applies the fixity fix to every 'top level' value
+expr, we don't need to descend into query exprs to find the value
+exprs inside them.
+
+start creating test list
+
+
+
 
 > {-# LANGUAGE TupleSections #-}
 > module Language.SQL.SimpleSQL.Fixity
@@ -52,24 +89,24 @@ made generic to use in places other than the scalar expr parser?
 >                     AssocRight -> HSE.infixr_ n [nm]
 >                     AssocNone -> HSE.infix_ n [nm]
 
-fix the fixities in the given scalar expr. All the expressions to be
+fix the fixities in the given value expr. All the expressions to be
 fixed should be left associative and equal precedence to be fixed
 correctly. It doesn't descend into query expressions in subqueries and
-the scalar expressions they contain.
+the value expressions they contain.
 
 TODO: get it to work on prefix and postfix unary operators also maybe
 it should work on some of the other syntax (such as in).
 
-> fixFixities :: [[Fixity]] -> ScalarExpr -> ScalarExpr
+> fixFixities :: [[Fixity]] -> ValueExpr -> ValueExpr
 > fixFixities fs se =
 >   runIdentity $ toSql <$> HSE.applyFixities (toHSEFixity fs) (toHaskell se)
 
-Now have to convert all our scalar exprs to Haskell and back again.
+Now have to convert all our value exprs to Haskell and back again.
 Have to come up with a recipe for each ctor. Only continue if you have
 a strong stomach. Probably would have been less effort to just write
 the fixity code.
 
-> toHaskell :: ScalarExpr -> HSE.Exp
+> toHaskell :: ValueExpr -> HSE.Exp
 > toHaskell e = case e of
 >     BinOp e0 op e1 -> HSE.InfixApp
 >                       (toHaskell e0)
@@ -128,7 +165,7 @@ the fixity code.
 
 
 
-> toSql :: HSE.Exp -> ScalarExpr
+> toSql :: HSE.Exp -> ValueExpr
 > toSql e = case e of
 
 

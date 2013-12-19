@@ -3,7 +3,7 @@
 > -- | This is the module with the parser functions.
 > module Language.SQL.SimpleSQL.Parser
 >     (parseQueryExpr
->     ,parseScalarExpr
+>     ,parseValueExpr
 >     ,parseQueryExprs
 >     ,ParseError(..)) where
 
@@ -41,15 +41,15 @@ The public API functions.
 >                 -> Either ParseError [QueryExpr]
 > parseQueryExprs = wrapParse queryExprs
 
-> -- | Parses a scalar expression.
-> parseScalarExpr :: FilePath
+> -- | Parses a value expression.
+> parseValueExpr :: FilePath
 >                    -- ^ filename to use in errors
 >                 -> Maybe (Int,Int)
 >                    -- ^ line number and column number to use in errors
 >                 -> String
 >                    -- ^ the SQL source to parse
->                 -> Either ParseError ScalarExpr
-> parseScalarExpr = wrapParse scalarExpr
+>                 -> Either ParseError ValueExpr
+> parseValueExpr = wrapParse valueExpr
 
 This helper function takes the parser given and:
 
@@ -84,16 +84,16 @@ converts the error return to the nice wrapper
 
 > type P a = ParsecT String () Identity a
 
-= scalar expressions
+= value expressions
 
 == literals
 
 See the stringLiteral lexer below for notes on string literal syntax.
 
-> estring :: P ScalarExpr
+> estring :: P ValueExpr
 > estring = StringLit <$> stringLiteral
 
-> number :: P ScalarExpr
+> number :: P ValueExpr
 > number = NumLit <$> numberLiteral
 
 parse SQL interval literals, something like
@@ -105,14 +105,14 @@ wrap the whole lot in try, in case we get something like this:
 interval '3 days'
 which parses as a typed literal
 
-> interval :: P ScalarExpr
+> interval :: P ValueExpr
 > interval = try (keyword_ "interval" >>
 >     IntervalLit
 >     <$> stringLiteral
 >     <*> identifierString
 >     <*> optionMaybe (try $ parens integerLiteral))
 
-> literal :: P ScalarExpr
+> literal :: P ValueExpr
 > literal = number <|> estring <|> interval
 
 == identifiers
@@ -124,7 +124,7 @@ identifiers.
 > name = choice [QName <$> quotedIdentifier
 >               ,Name <$> identifierString]
 
-> identifier :: P ScalarExpr
+> identifier :: P ValueExpr
 > identifier = Iden <$> name
 
 == star
@@ -132,34 +132,34 @@ identifiers.
 used in select *, select x.*, and agg(*) variations, and some other
 places as well. Because it is quite general, the parser doesn't
 attempt to check that the star is in a valid context, it parses it OK
-in any scalar expression context.
+in any value expression context.
 
-> star :: P ScalarExpr
+> star :: P ValueExpr
 > star = Star <$ symbol "*"
 
 == parameter
 
 use in e.g. select * from t where a = ?
 
-> parameter :: P ScalarExpr
+> parameter :: P ValueExpr
 > parameter = Parameter <$ symbol "?"
 
 == function application, aggregates and windows
 
 this represents anything which syntactically looks like regular C
-function application: an identifier, parens with comma sep scalar
+function application: an identifier, parens with comma sep value
 expression arguments.
 
 The parsing for the aggregate extensions is here as well:
 
 aggregate([all|distinct] args [order by orderitems])
 
-> aggOrApp :: P ScalarExpr
+> aggOrApp :: P ValueExpr
 > aggOrApp =
 >     makeApp
 >     <$> name
 >     <*> parens ((,,) <$> try duplicates
->                      <*> choice [commaSep scalarExpr']
+>                      <*> choice [commaSep valueExpr']
 >                      <*> try (optionMaybe orderBy))
 >   where
 >     makeApp i (Nothing,es,Nothing) = App i es
@@ -180,7 +180,7 @@ The convention in this file is that the 'Suffix', erm, suffix on
 parser names means that they have been left factored. These are almost
 always used with the optionSuffix combinator.
 
-> windowSuffix :: ScalarExpr -> P ScalarExpr
+> windowSuffix :: ValueExpr -> P ValueExpr
 > windowSuffix (App f es) =
 >     try (keyword_ "over")
 >     *> parens (WindowApp f es
@@ -189,7 +189,7 @@ always used with the optionSuffix combinator.
 >                <*> optionMaybe frameClause)
 >   where
 >     partitionBy = try (keyword_ "partition") >>
->         keyword_ "by" >> commaSep1 scalarExpr'
+>         keyword_ "by" >> commaSep1 valueExpr'
 >     frameClause =
 >         mkFrame <$> choice [FrameRows <$ keyword_ "rows"
 >                            ,FrameRange <$ keyword_ "range"]
@@ -208,7 +208,7 @@ always used with the optionSuffix combinator.
 >          choice [UnboundedPreceding <$ keyword_ "preceding"
 >                 ,UnboundedFollowing <$ keyword_ "following"]
 >         ,do
->          e <- if useB then scalarExprB else scalarExpr
+>          e <- if useB then valueExprB else valueExpr
 >          choice [Preceding e <$ keyword_ "preceding"
 >                 ,Following e <$ keyword_ "following"]
 >         ]
@@ -217,21 +217,21 @@ always used with the optionSuffix combinator.
 >     mkFrame rs c = c rs
 > windowSuffix _ = fail ""
 
-> app :: P ScalarExpr
+> app :: P ValueExpr
 > app = aggOrApp >>= optionSuffix windowSuffix
 
 == case expression
 
-> scase :: P ScalarExpr
+> scase :: P ValueExpr
 > scase =
->     Case <$> (try (keyword_ "case") *> optionMaybe (try scalarExpr'))
+>     Case <$> (try (keyword_ "case") *> optionMaybe (try valueExpr'))
 >          <*> many1 swhen
->          <*> optionMaybe (try (keyword_ "else") *> scalarExpr')
+>          <*> optionMaybe (try (keyword_ "else") *> valueExpr')
 >          <* keyword_ "end"
 >   where
 >     swhen = keyword_ "when" *>
->             ((,) <$> commaSep1 scalarExpr'
->                  <*> (keyword_ "then" *> scalarExpr'))
+>             ((,) <$> commaSep1 valueExpr'
+>                  <*> (keyword_ "then" *> valueExpr'))
 
 == miscellaneous keyword operators
 
@@ -242,11 +242,11 @@ to separate the arguments.
 
 cast: cast(expr as type)
 
-> cast :: P ScalarExpr
+> cast :: P ValueExpr
 > cast = parensCast <|> prefixCast
 >   where
 >     parensCast = try (keyword_ "cast") >>
->                  parens (Cast <$> scalarExpr'
+>                  parens (Cast <$> valueExpr'
 >                          <*> (keyword_ "as" *> typeName))
 >     prefixCast = try (TypedLit <$> typeName
 >                              <*> stringLiteral)
@@ -263,12 +263,12 @@ operatorname(firstArg keyword0 arg0 keyword1 arg1 etc.)
 >            -> SpecialOpKFirstArg -- has a first arg without a keyword
 >            -> [(String,Bool)] -- the other args with their keywords
 >                               -- and whether they are optional
->            -> P ScalarExpr
+>            -> P ValueExpr
 > specialOpK opName firstArg kws =
 >     keyword_ opName >> do
 >     void $ symbol  "("
 >     let pfa = do
->               e <- scalarExpr'
+>               e <- valueExpr'
 >               -- check we haven't parsed the first
 >               -- keyword as an identifier
 >               guard (case (e,kws) of
@@ -284,7 +284,7 @@ operatorname(firstArg keyword0 arg0 keyword1 arg1 etc.)
 >     return $ SpecialOpK (Name opName) fa $ catMaybes as
 >   where
 >     parseArg (nm,mand) =
->         let p = keyword_ nm >> scalarExpr'
+>         let p = keyword_ nm >> valueExpr'
 >         in fmap (nm,) <$> if mand
 >                           then Just <$> p
 >                           else optionMaybe (try p)
@@ -309,31 +309,31 @@ TRIM( [ [{LEADING | TRAILING | BOTH}] [removal_char] FROM ]
 target_string
 [COLLATE collation_name] )
 
-> specialOpKs :: P ScalarExpr
+> specialOpKs :: P ValueExpr
 > specialOpKs = choice $ map try
 >     [extract, position, substring, convert, translate, overlay, trim]
 
-> extract :: P ScalarExpr
+> extract :: P ValueExpr
 > extract = specialOpK "extract" SOKMandatory [("from", True)]
 
-> position :: P ScalarExpr
+> position :: P ValueExpr
 > position = specialOpK "position" SOKMandatory [("in", True)]
 
 strictly speaking, the substring must have at least one of from and
 for, but the parser doens't enforce this
 
-> substring :: P ScalarExpr
+> substring :: P ValueExpr
 > substring = specialOpK "substring" SOKMandatory
 >                 [("from", False),("for", False),("collate", False)]
 
-> convert :: P ScalarExpr
+> convert :: P ValueExpr
 > convert = specialOpK "convert" SOKMandatory [("using", True)]
 
 
-> translate :: P ScalarExpr
+> translate :: P ValueExpr
 > translate = specialOpK "translate" SOKMandatory [("using", True)]
 
-> overlay :: P ScalarExpr
+> overlay :: P ValueExpr
 > overlay = specialOpK "overlay" SOKMandatory
 >                 [("placing", True),("from", True),("for", False)]
 
@@ -341,13 +341,13 @@ trim is too different because of the optional char, so a custom parser
 the both ' ' is filled in as the default if either parts are missing
 in the source
 
-> trim :: P ScalarExpr
+> trim :: P ValueExpr
 > trim =
 >     keyword "trim" >>
 >     parens (mkTrim
 >             <$> option "both" sides
 >             <*> option " " stringLiteral
->             <*> (keyword_ "from" *> scalarExpr')
+>             <*> (keyword_ "from" *> valueExpr')
 >             <*> optionMaybe (keyword_ "collate" *> stringLiteral))
 >   where
 >     sides = choice ["leading" <$ keyword_ "leading"
@@ -363,13 +363,13 @@ in: two variations:
 a in (expr0, expr1, ...)
 a in (queryexpr)
 
-> inSuffix :: ScalarExpr -> P ScalarExpr
+> inSuffix :: ValueExpr -> P ValueExpr
 > inSuffix e =
 >     In <$> inty
 >        <*> return e
 >        <*> parens (choice
 >                    [InQueryExpr <$> queryExpr
->                    ,InList <$> commaSep1 scalarExpr'])
+>                    ,InList <$> commaSep1 valueExpr'])
 >   where
 >     inty = try $ choice [True <$ keyword_ "in"
 >                         ,False <$ keyword_ "not" <* keyword_ "in"]
@@ -383,16 +383,16 @@ binary operator or part of the between. This code follows what
 postgres does, which might be standard across SQL implementations,
 which is that you can't have a binary and operator in the middle
 expression in a between unless it is wrapped in parens. The 'bExpr
-parsing' is used to create alternative scalar expression parser which
+parsing' is used to create alternative value expression parser which
 is identical to the normal one expect it doesn't recognise the binary
-and operator. This is the call to scalarExpr'' True.
+and operator. This is the call to valueExpr'' True.
 
-> betweenSuffix :: ScalarExpr -> P ScalarExpr
+> betweenSuffix :: ValueExpr -> P ValueExpr
 > betweenSuffix e =
 >     makeOp <$> (Name <$> opName)
 >            <*> return e
->            <*> scalarExpr'' True
->            <*> (keyword_ "and" *> scalarExpr'' True)
+>            <*> valueExpr'' True
+>            <*> (keyword_ "and" *> valueExpr'' True)
 >   where
 >     opName = try $ choice
 >              ["between" <$ keyword_ "between"
@@ -402,7 +402,7 @@ and operator. This is the call to scalarExpr'' True.
 subquery expression:
 [exists|all|any|some] (queryexpr)
 
-> subquery :: P ScalarExpr
+> subquery :: P ValueExpr
 > subquery =
 >     choice
 >     [try $ SubQueryExpr SqSq <$> parens queryExpr
@@ -453,11 +453,11 @@ todo: timestamp types:
 >     makeWrap _ _ = fail "there must be one or two precision components"
 
 
-== scalar parens and row ctor
+== value expression parens and row ctor
 
-> sparens :: P ScalarExpr
+> sparens :: P ValueExpr
 > sparens =
->     ctor <$> parens (commaSep1 scalarExpr')
+>     ctor <$> parens (commaSep1 valueExpr')
 >   where
 >     ctor [a] = Parens a
 >     ctor as = SpecialOp (Name "rowctor") as
@@ -521,9 +521,9 @@ supported. Maybe all these 'is's can be left factored?
 
 The parsers:
 
-> prefixUnaryOp :: P ScalarExpr
+> prefixUnaryOp :: P ValueExpr
 > prefixUnaryOp =
->     PrefixOp <$> (Name <$> opSymbol) <*> scalarExpr'
+>     PrefixOp <$> (Name <$> opSymbol) <*> valueExpr'
 >   where
 >     opSymbol = choice (map (try . symbol) prefixUnOpSymbolNames
 >                        ++ map (try . keyword) prefixUnOpKeywordNames)
@@ -532,7 +532,7 @@ TODO: the handling of multikeyword args is different in
 postfixopsuffix and binaryoperatorsuffix. It should be the same in
 both cases
 
-> postfixOpSuffix :: ScalarExpr -> P ScalarExpr
+> postfixOpSuffix :: ValueExpr -> P ValueExpr
 > postfixOpSuffix e =
 >     try $ choice $ map makeOp opPairs
 >   where
@@ -543,7 +543,7 @@ both cases
 All the binary operators are parsed as same precedence and left
 associativity. This is fixed with a separate pass over the AST.
 
-> binaryOperatorSuffix :: Bool -> ScalarExpr -> P ScalarExpr
+> binaryOperatorSuffix :: Bool -> ValueExpr -> P ValueExpr
 > binaryOperatorSuffix bExpr e0 =
 >     BinOp e0 <$> (Name <$> opSymbol) <*> factor
 >   where
@@ -586,17 +586,17 @@ associativity. This is fixed with a separate pass over the AST.
 >     fName (Fixity n _) = n
 
 
-== scalar expressions
+== value expressions
 
 TODO:
 left factor stuff which starts with identifier
 
-This parses most of the scalar exprs. I'm not sure if factor is the
+This parses most of the value exprs. I'm not sure if factor is the
 correct terminology here. The order of the parsers and use of try is
 carefully done to make everything work. It is a little fragile and
 could at least do with some heavy explanation.
 
-> factor :: P ScalarExpr
+> factor :: P ValueExpr
 > factor = choice [literal
 >                 ,parameter
 >                 ,scase
@@ -611,8 +611,8 @@ could at least do with some heavy explanation.
 
 putting the factor together with the extra bits
 
-> scalarExpr'' :: Bool -> P ScalarExpr
-> scalarExpr'' bExpr = factor >>= trysuffix
+> valueExpr'' :: Bool -> P ValueExpr
+> valueExpr'' bExpr = factor >>= trysuffix
 >   where
 >     trysuffix e = try (suffix e) <|> return e
 >     suffix e0 = choice
@@ -625,22 +625,22 @@ putting the factor together with the extra bits
 Wrapper for non 'bExpr' parsing. See the between parser for
 explanation.
 
-> scalarExpr' :: P ScalarExpr
-> scalarExpr' = scalarExpr'' False
+> valueExpr' :: P ValueExpr
+> valueExpr' = valueExpr'' False
 
-The scalarExpr wrapper. The idea is that directly nested scalar
-expressions use the scalarExpr' parser, then other code uses the
-scalarExpr parser and then everyone gets the fixity fixes and it's
-easy to ensure that this fix is only applied once to each scalar
+The valueExpr wrapper. The idea is that directly nested value
+expressions use the valueExpr' parser, then other code uses the
+valueExpr parser and then everyone gets the fixity fixes and it's
+easy to ensure that this fix is only applied once to each value
 expression tree (for efficiency and code clarity).
 
-> scalarExpr :: P ScalarExpr
-> scalarExpr = fixFixities sqlFixities <$> scalarExpr'
+> valueExpr :: P ValueExpr
+> valueExpr = fixFixities sqlFixities <$> valueExpr'
 
 expose the b expression for window frame clause range between
 
-> scalarExprB :: P ScalarExpr
-> scalarExprB = fixFixities sqlFixities <$> scalarExpr'' True
+> valueExprB :: P ValueExpr
+> valueExprB = fixFixities sqlFixities <$> valueExpr'' True
 
 
 -------------------------------------------------
@@ -649,11 +649,11 @@ expose the b expression for window frame clause range between
 
 == select lists
 
-> selectItem :: P (Maybe Name, ScalarExpr)
-> selectItem = flip (,) <$> scalarExpr <*> optionMaybe (try als)
+> selectItem :: P (Maybe Name, ValueExpr)
+> selectItem = flip (,) <$> valueExpr <*> optionMaybe (try als)
 >   where als = optional (try (keyword_ "as")) *> name
 
-> selectList :: P [(Maybe Name,ScalarExpr)]
+> selectList :: P [(Maybe Name,ValueExpr)]
 > selectList = commaSep1 selectItem
 
 == from
@@ -674,7 +674,7 @@ tref
 >                          ,TRLateral <$> (try (keyword_ "lateral")
 >                                          *> nonJoinTref)
 >                          ,try (TRFunction <$> name
->                                           <*> parens (commaSep scalarExpr))
+>                                           <*> parens (commaSep valueExpr))
 >                          ,TRSimple <$> name]
 >                   >>= optionSuffix aliasSuffix
 >     aliasSuffix j = option j (TRAlias j <$> alias)
@@ -697,7 +697,7 @@ tref
 >     joinCondition nat =
 >         choice [guard nat >> return JoinNatural
 >                ,try (keyword_ "on") >>
->                 JoinOn <$> scalarExpr
+>                 JoinOn <$> valueExpr
 >                ,try (keyword_ "using") >>
 >                 JoinUsing <$> parens (commaSep1 name)
 >                ]
@@ -716,11 +716,11 @@ pretty trivial.
 Here is a helper for parsing a few parts of the query expr (currently
 where, having, limit, offset).
 
-> keywordScalarExpr :: String -> P ScalarExpr
-> keywordScalarExpr k = try (keyword_ k) *> scalarExpr
+> keywordValueExpr :: String -> P ValueExpr
+> keywordValueExpr k = try (keyword_ k) *> valueExpr
 
-> swhere :: P ScalarExpr
-> swhere = keywordScalarExpr "where"
+> swhere :: P ValueExpr
+> swhere = keywordValueExpr "where"
 
 > sgroupBy :: P [GroupingExpr]
 > sgroupBy = try (keyword_ "group")
@@ -736,17 +736,17 @@ where, having, limit, offset).
 >       ,GroupingParens <$> parens (commaSep groupingExpression)
 >       ,try (keyword_ "grouping") >> keyword_ "sets" >>
 >        GroupingSets <$> parens (commaSep groupingExpression)
->       ,SimpleGroup <$> scalarExpr
+>       ,SimpleGroup <$> valueExpr
 >       ]
 
-> having :: P ScalarExpr
-> having = keywordScalarExpr "having"
+> having :: P ValueExpr
+> having = keywordValueExpr "having"
 
 > orderBy :: P [SortSpec]
 > orderBy = try (keyword_ "order") *> keyword_ "by" *> commaSep1 ob
 >   where
 >     ob = SortSpec
->          <$> scalarExpr
+>          <$> valueExpr
 >          <*> option Asc (choice [Asc <$ keyword_ "asc"
 >                                 ,Desc <$ keyword_ "desc"])
 >          <*> option NullsOrderDefault
@@ -757,23 +757,23 @@ where, having, limit, offset).
 allows offset and fetch in either order
 + postgresql offset without row(s) and limit instead of fetch also
 
-> offsetFetch :: P (Maybe ScalarExpr, Maybe ScalarExpr)
+> offsetFetch :: P (Maybe ValueExpr, Maybe ValueExpr)
 > offsetFetch = permute ((,) <$?> (Nothing, Just <$> offset)
 >                            <|?> (Nothing, Just <$> fetch))
 
-> offset :: P ScalarExpr
-> offset = try (keyword_ "offset") *> scalarExpr
+> offset :: P ValueExpr
+> offset = try (keyword_ "offset") *> valueExpr
 >          <* option () (try $ choice [try (keyword_ "rows"),keyword_ "row"])
 
-> fetch :: P ScalarExpr
+> fetch :: P ValueExpr
 > fetch = choice [ansiFetch, limit]
 >   where
 >     ansiFetch = try (keyword_ "fetch") >>
 >         choice [keyword_ "first",keyword_ "next"]
->         *> scalarExpr
+>         *> valueExpr
 >         <* choice [keyword_ "rows",keyword_ "row"]
 >         <* keyword_ "only"
->     limit = try (keyword_ "limit") *> scalarExpr
+>     limit = try (keyword_ "limit") *> valueExpr
 
 == common table expressions
 
@@ -810,7 +810,7 @@ and union, etc..
 >     mkSelect d sl f w g h od (ofs,fe) =
 >         Select d sl f w g h od ofs fe
 >     values = try (keyword_ "values")
->              >> Values <$> commaSep (parens (commaSep scalarExpr))
+>              >> Values <$> commaSep (parens (commaSep valueExpr))
 >     table = try (keyword_ "table") >> Table <$> name
 
 > queryExprSuffix :: QueryExpr -> P QueryExpr

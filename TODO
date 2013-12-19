@@ -1,10 +1,21 @@
 = next release
 
-Most important goal is to replace the fixity code and fix all the bugs
-   here. Could also review parens and fixity at query expr level, and
-   in tablerefs
+New fixity code + extensive tests.
+check fixity in query expr level?
+check fixity in tablerefs
 
-== docs
+release checklist:
+hlint
+haddock review
+spell check
+update changelog
+update website text
+
+= Later general tasks:
+
+----
+
+docs
 
 add to website: pretty printed tpch, maybe other queries as
    demonstration
@@ -14,7 +25,7 @@ add preamble to the rendered test page
 add links from the supported sql page to the rendered test page for
    each section -> have to section up the tests some more
 
-== testing
+testing
 
 review tests to copy from hssqlppp
 
@@ -22,14 +33,13 @@ much more table reference tests, for joins and aliases etc.?
 
 review internal sql collection for more syntax/tests
 
-== other
+other
 
 change any/some/all to be proper infix operators like in ??
 
 review syntax to replace maybe and bool with better ctors
 
-
-= Later general tasks:
+----
 
 demo program: convert tpch to sql server syntax exe processor
 

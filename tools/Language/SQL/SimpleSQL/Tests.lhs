@@ -1,13 +1,7 @@
 
-TODO:
-
-split into multiple files:
-scalar expressions
-tablerefs
-other queryexpr parts: not enough to split into multiple files
-full queries
-tpch tests
-
+This is the main tests module which exposes the test data plus the
+Test.Framework tests. It also contains the code which converts the
+test data to the Test.Framework tests.
 
 > module Language.SQL.SimpleSQL.Tests
 >     (testData
@@ -31,7 +25,7 @@ tpch tests
 > import Language.SQL.SimpleSQL.QueryExprComponents
 > import Language.SQL.SimpleSQL.QueryExprs
 > import Language.SQL.SimpleSQL.TableRefs
-> import Language.SQL.SimpleSQL.ScalarExprs
+> import Language.SQL.SimpleSQL.ValueExprs
 > import Language.SQL.SimpleSQL.Tpch
 
 
@@ -42,7 +36,7 @@ order on the generated documentation.
 > testData :: TestItem
 > testData =
 >     Group "parserTest"
->     [scalarExprTests
+>     [valueExprTests
 >     ,queryExprComponentTests
 >     ,queryExprsTests
 >     ,tableRefTests
@@ -61,8 +55,8 @@ order on the generated documentation.
 > itemToTest :: TestItem -> Test.Framework.Test
 > itemToTest (Group nm ts) =
 >     testGroup nm $ map itemToTest ts
-> itemToTest (TestScalarExpr str expected) =
->     toTest parseScalarExpr prettyScalarExpr str expected
+> itemToTest (TestValueExpr str expected) =
+>     toTest parseValueExpr prettyValueExpr str expected
 > itemToTest (TestQueryExpr str expected) =
 >     toTest parseQueryExpr prettyQueryExpr str expected
 > itemToTest (TestQueryExprs str expected) =

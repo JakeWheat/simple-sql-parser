@@ -1,14 +1,14 @@
 
-Tests for parsing scalar expressions
+Tests for parsing value expressions
 
 > {-# LANGUAGE OverloadedStrings #-}
-> module Language.SQL.SimpleSQL.ScalarExprs (scalarExprTests) where
+> module Language.SQL.SimpleSQL.ValueExprs (valueExprTests) where
 
 > import Language.SQL.SimpleSQL.TestTypes
 > import Language.SQL.SimpleSQL.Syntax
 
-> scalarExprTests :: TestItem
-> scalarExprTests = Group "scalarExprTests"
+> valueExprTests :: TestItem
+> valueExprTests = Group "valueExprTests"
 >     [literals
 >     ,identifiers
 >     ,star
@@ -24,7 +24,7 @@ Tests for parsing scalar expressions
 >     ]
 
 > literals :: TestItem
-> literals = Group "literals" $ map (uncurry TestScalarExpr)
+> literals = Group "literals" $ map (uncurry TestValueExpr)
 >     [("3", NumLit "3")
 >      ,("3.", NumLit "3.")
 >      ,("3.3", NumLit "3.3")
@@ -44,27 +44,27 @@ Tests for parsing scalar expressions
 >     ]
 
 > identifiers :: TestItem
-> identifiers = Group "identifiers" $ map (uncurry TestScalarExpr)
+> identifiers = Group "identifiers" $ map (uncurry TestValueExpr)
 >     [("iden1", Iden "iden1")
 >     --,("t.a", Iden2 "t" "a")
 >     ,("\"quoted identifier\"", Iden $ QName "quoted identifier")
 >     ]
 
 > star :: TestItem
-> star = Group "star" $ map (uncurry TestScalarExpr)
+> star = Group "star" $ map (uncurry TestValueExpr)
 >     [("*", Star)
 >     --,("t.*", Star2 "t")
 >     --,("ROW(t.*,42)", App "ROW" [Star2 "t", NumLit "42"])
 >     ]
 
 > parameter :: TestItem
-> parameter = Group "parameter" $ map (uncurry TestScalarExpr)
+> parameter = Group "parameter" $ map (uncurry TestValueExpr)
 >     [("?", Parameter)
 >     ]
 
 
 > dots :: TestItem
-> dots = Group "dot" $ map (uncurry TestScalarExpr)
+> dots = Group "dot" $ map (uncurry TestValueExpr)
 >     [("t.a", BinOp (Iden "t") "." (Iden "a"))
 >     ,("t.*", BinOp (Iden "t") "." Star)
 >     ,("a.b.c", BinOp (BinOp (Iden "a") "." (Iden "b")) "." (Iden "c"))
@@ -72,14 +72,14 @@ Tests for parsing scalar expressions
 >     ]
 
 > app :: TestItem
-> app = Group "app" $ map (uncurry TestScalarExpr)
+> app = Group "app" $ map (uncurry TestValueExpr)
 >     [("f()", App "f" [])
 >     ,("f(a)", App "f" [Iden "a"])
 >     ,("f(a,b)", App "f" [Iden "a", Iden "b"])
 >     ]
 
 > caseexp :: TestItem
-> caseexp = Group "caseexp" $ map (uncurry TestScalarExpr)
+> caseexp = Group "caseexp" $ map (uncurry TestValueExpr)
 >     [("case a when 1 then 2 end"
 >      ,Case (Just $ Iden "a") [([NumLit "1"]
 >                               ,NumLit "2")] Nothing)
@@ -115,7 +115,7 @@ Tests for parsing scalar expressions
 >     ,miscOps]
 
 > binaryOperators :: TestItem
-> binaryOperators = Group "binaryOperators" $ map (uncurry TestScalarExpr)
+> binaryOperators = Group "binaryOperators" $ map (uncurry TestValueExpr)
 >     [("a + b", BinOp (Iden "a") "+" (Iden "b"))
 >      -- sanity check fixities
 >      -- todo: add more fixity checking
@@ -130,7 +130,7 @@ Tests for parsing scalar expressions
 >     ]
 
 > unaryOperators :: TestItem
-> unaryOperators = Group "unaryOperators" $ map (uncurry TestScalarExpr)
+> unaryOperators = Group "unaryOperators" $ map (uncurry TestValueExpr)
 >     [("not a", PrefixOp "not" $ Iden "a")
 >     ,("not not a", PrefixOp "not" $ PrefixOp "not" $ Iden "a")
 >     ,("+a", PrefixOp "+" $ Iden "a")
@@ -139,7 +139,7 @@ Tests for parsing scalar expressions
 
 
 > casts :: TestItem
-> casts = Group "operators" $ map (uncurry TestScalarExpr)
+> casts = Group "operators" $ map (uncurry TestValueExpr)
 >     [("cast('1' as int)"
 >      ,Cast (StringLit "1") $ TypeName "int")
 
@@ -161,7 +161,7 @@ Tests for parsing scalar expressions
 >     ]
 
 > subqueries :: TestItem
-> subqueries = Group "unaryOperators" $ map (uncurry TestScalarExpr)
+> subqueries = Group "unaryOperators" $ map (uncurry TestValueExpr)
 >     [("exists (select a from t)", SubQueryExpr SqExists ms)
 >     ,("(select a from t)", SubQueryExpr SqSq ms)
 
@@ -187,7 +187,7 @@ Tests for parsing scalar expressions
 >          }
 
 > miscOps :: TestItem
-> miscOps = Group "unaryOperators" $ map (uncurry TestScalarExpr)
+> miscOps = Group "unaryOperators" $ map (uncurry TestValueExpr)
 >     [("a in (1,2,3)"
 >      ,In True (Iden "a") $ InList $ map NumLit ["1","2","3"])
 
@@ -324,7 +324,7 @@ target_string
 >     ]
 
 > aggregates :: TestItem
-> aggregates = Group "aggregates" $ map (uncurry TestScalarExpr)
+> aggregates = Group "aggregates" $ map (uncurry TestValueExpr)
 >     [("count(*)",App "count" [Star])
 
 >     ,("sum(a order by a)"
@@ -339,7 +339,7 @@ target_string
 >     ]
 
 > windowFunctions :: TestItem
-> windowFunctions = Group "windowFunctions" $ map (uncurry TestScalarExpr)
+> windowFunctions = Group "windowFunctions" $ map (uncurry TestValueExpr)
 >     [("max(a) over ()", WindowApp "max" [Iden "a"] [] [] Nothing)
 >     ,("count(*) over ()", WindowApp "count" [Star] [] [] Nothing)
 
@@ -398,7 +398,7 @@ target_string
 >     ]
 
 > parens :: TestItem
-> parens = Group "parens" $ map (uncurry TestScalarExpr)
+> parens = Group "parens" $ map (uncurry TestValueExpr)
 >     [("(a)", Parens (Iden "a"))
 >     ,("(a + b)", Parens (BinOp (Iden "a") "+" (Iden "b")))
 >     ]
