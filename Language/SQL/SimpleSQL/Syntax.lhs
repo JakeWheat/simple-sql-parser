@@ -115,6 +115,7 @@
 >       -- | in list literal and in subquery, if the bool is false it
 >       -- means not in was used ('a not in (1,2)')
 >     | In Bool ScalarExpr InPredValue
+>     | Parameter -- ^ Represents a ? in a parameterized query
 >       deriving (Eq,Show,Read)
 
 > -- | Represents an identifier name, which can be quoted or unquoted.

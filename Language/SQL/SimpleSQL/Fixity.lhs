@@ -78,6 +78,7 @@ the fixity code.
 >     -- TODO fix me
 >     (SpecialOpK {}) -> str ('v':show e)
 >     Iden {} -> str ('v':show e)
+>     Parameter -> str ('v':show e)
 >     StringLit {} -> str ('v':show e)
 >     NumLit {} -> str ('v':show e)
 >     App n es -> HSE.App (var ('f':name n)) $ ltoh es

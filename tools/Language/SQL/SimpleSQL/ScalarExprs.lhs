@@ -12,6 +12,7 @@ Tests for parsing scalar expressions
 >     [literals
 >     ,identifiers
 >     ,star
+>     ,parameter
 >     ,dots
 >     ,app
 >     ,caseexp
@@ -55,6 +56,12 @@ Tests for parsing scalar expressions
 >     --,("t.*", Star2 "t")
 >     --,("ROW(t.*,42)", App "ROW" [Star2 "t", NumLit "42"])
 >     ]
+
+> parameter :: TestItem
+> parameter = Group "parameter" $ map (uncurry TestScalarExpr)
+>     [("?", Parameter)
+>     ]
+
 
 > dots :: TestItem
 > dots = Group "dot" $ map (uncurry TestScalarExpr)

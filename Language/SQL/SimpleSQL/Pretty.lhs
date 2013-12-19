@@ -40,6 +40,7 @@
 >     <+> maybe empty (parens . text . show ) p
 > scalarExpr (Iden i) = name i
 > scalarExpr Star = text "*"
+> scalarExpr Parameter = text "?"
 
 > scalarExpr (App f es) = name f <> parens (commaSep (map scalarExpr es))
 

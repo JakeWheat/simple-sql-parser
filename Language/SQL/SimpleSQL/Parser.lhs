@@ -137,6 +137,13 @@ in any scalar expression context.
 > star :: P ScalarExpr
 > star = Star <$ symbol "*"
 
+== parameter
+
+use in e.g. select * from t where a = ?
+
+> parameter :: P ScalarExpr
+> parameter = Parameter <$ symbol "?"
+
 == function application, aggregates and windows
 
 this represents anything which syntactically looks like regular C
@@ -591,6 +598,7 @@ could at least do with some heavy explanation.
 
 > factor :: P ScalarExpr
 > factor = choice [literal
+>                 ,parameter
 >                 ,scase
 >                 ,cast
 >                 ,try specialOpKs
