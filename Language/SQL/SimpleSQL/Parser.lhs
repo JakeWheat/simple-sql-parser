@@ -411,13 +411,35 @@ typename: used in casts. Special cases for the multi keyword typenames
 that SQL supports.
 
 > typeName :: P TypeName
-> typeName = choice
->     [TypeName "double precision"
->      <$ try (keyword_ "double" <* keyword_ "precision")
->     ,TypeName "character varying"
->      <$ try (keyword_ "character" <* keyword_ "varying")
->     ,TypeName <$> identifierString] >>= optionSuffix precision
+> typeName = choice (multiWordParsers
+>                    ++ [TypeName <$> identifierString])
+>            >>= optionSuffix precision
 >   where
+>     multiWordParsers =
+>         flip map multiWordTypeNames
+>         $ \ks -> (TypeName . unwords) <$> try (mapM keyword ks)
+>     multiWordTypeNames = map words
+>         ["double precision"
+>         ,"character varying"
+>         ,"char varying"
+>         ,"character large object"
+>         ,"char large object"
+>         ,"national character"
+>         ,"national char"
+>         ,"national character varying"
+>         ,"national char varying"
+>         ,"national character large object"
+>         ,"nchar large object"
+>         ,"nchar varying"
+>         ,"bit varying"
+>         ]
+
+todo: timestamp types:
+
+    | TIME [ <left paren> <time precision> <right paren> ] [ WITH TIME ZONE ]
+     | TIMESTAMP [ <left paren> <timestamp precision> <right paren> ] [ WITH TIME ZONE ]
+
+
 >     precision t = try (parens (commaSep integerLiteral)) >>= makeWrap t
 >     makeWrap (TypeName t) [a] = return $ PrecTypeName t a
 >     makeWrap (TypeName t) [a,b] = return $ PrecScaleTypeName t a b
