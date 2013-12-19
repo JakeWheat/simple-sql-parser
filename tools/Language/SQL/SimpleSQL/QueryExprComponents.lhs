@@ -138,7 +138,7 @@ These are a few misc tests which don't fit anywhere else.
 >              {qeSelectList = [(Nothing,Iden "a")]
 >              ,qeFrom = [TRSimple "t"]
 >              ,qeOffset = o
->              ,qeFetch = l}
+>              ,qeFetchFirst = l}
 
 > combos :: TestItem
 > combos = Group "combos" $ map (uncurry TestQueryExpr)

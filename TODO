@@ -5,6 +5,11 @@ check fixity in query expr level?
 check fixity in tablerefs
 
 try and use the proper css theme
+  create a header like in the haddock with simple-sql-parser +
+    contents link
+  change the toc gen so that it works the same as in haddock (same
+    div, no links on the actual titles
+  fix the page margins, and the table stuff: patches to the css?
 
 release checklist:
 hlint
@@ -91,6 +96,8 @@ and on group by
 a collation in ansi sql is a optional qualifier plus identifier, not a
    string
 have to do fixity for this to work
+
+see what schema.fun(a) parses to and decide if this is correct
 
 all ansi string literal syntax?
 

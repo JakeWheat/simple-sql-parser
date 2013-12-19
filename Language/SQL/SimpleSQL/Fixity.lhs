@@ -38,9 +38,37 @@ because the parser applies the fixity fix to every 'top level' value
 expr, we don't need to descend into query exprs to find the value
 exprs inside them.
 
-start creating test list
+start creating test list:
 
+create tests with an explicit fixity table to check the features of
+the fixity code, then create tests for sql value expressions which
+sanity check the fixity applied to these expressions.
 
+basic fixity tests:
+
+a + b + c
+a + b * c
+a * b + c
+a + b + c * d
+a * b + c + d
+
+try also with right assocative
+
+a HI b PostfixLow
+
+a low b PostfixHigh
+
+a LOWEST b HI c PostfixMEDIUM
++ variations
+
+same with prefix
+same with chained binops
+
+----
+
+now sanity check the basic operators (these use BinOp, PrefixOp,
+PostfixOp) then sanity check all the other operators which take part
+in the fixity
 
 
 > {-# LANGUAGE TupleSections #-}

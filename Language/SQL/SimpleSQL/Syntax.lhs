@@ -211,7 +211,7 @@ This would make some things a bit cleaner?
 >       ,qeHaving :: Maybe ValueExpr
 >       ,qeOrderBy :: [SortSpec]
 >       ,qeOffset :: Maybe ValueExpr
->       ,qeFetch :: Maybe ValueExpr
+>       ,qeFetchFirst :: Maybe ValueExpr
 >       }
 >     | CombineQueryExpr
 >       {qe0 :: QueryExpr
@@ -244,7 +244,7 @@ I'm not sure if this is valid syntax or not.
 > -- >                     ,qeHaving = Nothing
 > -- >                     ,qeOrderBy = []
 > -- >                     ,qeOffset = Nothing
-> -- >                     ,qeFetch = Nothing}
+> -- >                     ,qeFetchFirst = Nothing}
 
 > makeSelect :: QueryExpr
 > makeSelect = Select {qeSetQuantifier = All
@@ -255,7 +255,7 @@ I'm not sure if this is valid syntax or not.
 >                     ,qeHaving = Nothing
 >                     ,qeOrderBy = []
 >                     ,qeOffset = Nothing
->                     ,qeFetch = Nothing}
+>                     ,qeFetchFirst = Nothing}
 
 
 > -- | Represents the Distinct or All keywords, which can be used
