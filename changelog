@@ -1,5 +1,4 @@
-[this file updated to commit b68c116839cf852832cef28f3cd479ac7622293c]
-0.3.0 (HEAD)
+0.3.0-dev (commit b68c116839cf852832cef28f3cd479ac7622293c)
 	rename Duplicates to SetQuantifier
 	rename qeDuplicates to qeSetQuantifier
 	rename OrderField to SortSpec
