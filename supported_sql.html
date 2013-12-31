@@ -72,7 +72,7 @@
 <li>offset and fetch clause expressions;</li>
 <li>table value constructors.</li>
 </ul>
-<p>This doesn't follow the ANSI Standards, which have separate grammars for most of these.</p>
+<p>This doesn't exactly follow the ANSI Standards, which have separate grammars for most of these.</p>
 <p>The supported value expressions include:</p>
 <ul>
 <li>basic string literals in single quotes (escapes and other string literal syntaxes coming soon)</li>
@@ -81,9 +81,9 @@
 <li>binary operators
 <ul>
 <li>comparisons: = != &lt;&gt; &lt;= &gt;= &lt; &gt;</li>
-<li>arithmetic: + - / * %</li>
+<li>arithmetic: + - / * % ^</li>
 <li>logic: and, or</li>
-<li>bitwise: ^ &amp; |</li>
+<li>bitwise: &amp; | (and ^ as above)</li>
 <li>string: ||, like, not like</li>
 <li>other: overlaps, is similar to, is not similar too, is distinct from, is not distinct from</li>
 </ul></li>
@@ -98,9 +98,6 @@
 <li>is null, is not null</li>
 <li>is true, is not true, is false, is not false, is unknown, is not unknown</li>
 </ul></li>
-</ul>
-<p>Some of the precedence and associativity parsing of operators isn't completely correct at the moment. This mainly affects unary prefix and postfix operator precedence.</p>
-<ul>
 <li>other operators
 <ul>
 <li>extract (extract(day from dt))</li>

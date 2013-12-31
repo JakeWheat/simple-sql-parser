@@ -69,8 +69,8 @@ including:
 * offset and fetch clause expressions;
 * table value constructors.
 
-This doesn't follow the ANSI Standards, which have separate grammars
-for most of these.
+This doesn't exactly follow the ANSI Standards, which have separate
+grammars for most of these.
 
 The supported value expressions include:
 
@@ -80,9 +80,9 @@ The supported value expressions include:
 * explicitly typed literal, e.g. int '3'
 * binary operators
     - comparisons: = != <> <= >= < >
-    - arithmetic: + - / * %
+    - arithmetic: + - / * % ^
     - logic: and, or
-    - bitwise: ^ & |
+    - bitwise: & | (and ^ as above)
     - string: ||, like, not like
     - other: overlaps, is similar to, is not similar too, is distinct
     from, is not distinct from
@@ -93,11 +93,6 @@ The supported value expressions include:
 * postfix unary
     - is null, is not null
     - is true, is not true, is false, is not false, is unknown, is not unknown
-
-Some of the precedence and associativity parsing of operators isn't
-completely correct at the moment. This mainly affects unary prefix and
-postfix operator precedence.
-
 * other operators
     - extract (extract(day from dt))
     - position (position string1 in string2)
