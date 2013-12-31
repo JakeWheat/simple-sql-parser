@@ -1,4 +1,4 @@
-0.3.0-dev (commit 9e75fa93650b4f1a08d94f4225a243bcc50445ae)
+0.3.0 (commit 9e75fa93650b4f1a08d94f4225a243bcc50445ae)
 	fix the basic operator fixity parsing
 	swap the order in select item abstract syntax so it is now
 	  (expression, alias) which matches the order in the concrete
