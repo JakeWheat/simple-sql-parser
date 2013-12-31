@@ -1,3 +1,6 @@
+TODO:
+P -> P.Parser
+swap order in select items
 
 > {-# LANGUAGE TupleSections #-}
 > -- | This is the module with the parser functions.
@@ -14,9 +17,9 @@
 > import Text.Parsec hiding (ParseError)
 > import qualified Text.Parsec as P
 > import Text.Parsec.Perm
+> import qualified Text.Parsec.Expr as E
 
 > import Language.SQL.SimpleSQL.Syntax
-> import Language.SQL.SimpleSQL.Fixity
 
 The public API functions.
 
@@ -159,7 +162,7 @@ aggregate([all|distinct] args [order by orderitems])
 >     makeApp
 >     <$> name
 >     <*> parens ((,,) <$> try duplicates
->                      <*> choice [commaSep valueExpr']
+>                      <*> choice [commaSep valueExpr]
 >                      <*> try (optionMaybe orderBy))
 >   where
 >     makeApp i (Nothing,es,Nothing) = App i es
@@ -189,7 +192,7 @@ always used with the optionSuffix combinator.
 >                <*> optionMaybe frameClause)
 >   where
 >     partitionBy = try (keyword_ "partition") >>
->         keyword_ "by" >> commaSep1 valueExpr'
+>         keyword_ "by" >> commaSep1 valueExpr
 >     frameClause =
 >         mkFrame <$> choice [FrameRows <$ keyword_ "rows"
 >                            ,FrameRange <$ keyword_ "range"]
@@ -224,14 +227,14 @@ always used with the optionSuffix combinator.
 
 > scase :: P ValueExpr
 > scase =
->     Case <$> (try (keyword_ "case") *> optionMaybe (try valueExpr'))
+>     Case <$> (try (keyword_ "case") *> optionMaybe (try valueExpr))
 >          <*> many1 swhen
->          <*> optionMaybe (try (keyword_ "else") *> valueExpr')
+>          <*> optionMaybe (try (keyword_ "else") *> valueExpr)
 >          <* keyword_ "end"
 >   where
 >     swhen = keyword_ "when" *>
->             ((,) <$> commaSep1 valueExpr'
->                  <*> (keyword_ "then" *> valueExpr'))
+>             ((,) <$> commaSep1 valueExpr
+>                  <*> (keyword_ "then" *> valueExpr))
 
 == miscellaneous keyword operators
 
@@ -246,7 +249,7 @@ cast: cast(expr as type)
 > cast = parensCast <|> prefixCast
 >   where
 >     parensCast = try (keyword_ "cast") >>
->                  parens (Cast <$> valueExpr'
+>                  parens (Cast <$> valueExpr
 >                          <*> (keyword_ "as" *> typeName))
 >     prefixCast = try (TypedLit <$> typeName
 >                              <*> stringLiteral)
@@ -268,7 +271,7 @@ operatorname(firstArg keyword0 arg0 keyword1 arg1 etc.)
 >     keyword_ opName >> do
 >     void $ symbol  "("
 >     let pfa = do
->               e <- valueExpr'
+>               e <- valueExpr
 >               -- check we haven't parsed the first
 >               -- keyword as an identifier
 >               guard (case (e,kws) of
@@ -284,7 +287,7 @@ operatorname(firstArg keyword0 arg0 keyword1 arg1 etc.)
 >     return $ SpecialOpK (Name opName) fa $ catMaybes as
 >   where
 >     parseArg (nm,mand) =
->         let p = keyword_ nm >> valueExpr'
+>         let p = keyword_ nm >> valueExpr
 >         in fmap (nm,) <$> if mand
 >                           then Just <$> p
 >                           else optionMaybe (try p)
@@ -347,7 +350,7 @@ in the source
 >     parens (mkTrim
 >             <$> option "both" sides
 >             <*> option " " stringLiteral
->             <*> (keyword_ "from" *> valueExpr')
+>             <*> (keyword_ "from" *> valueExpr)
 >             <*> optionMaybe (keyword_ "collate" *> stringLiteral))
 >   where
 >     sides = choice ["leading" <$ keyword_ "leading"
@@ -363,16 +366,19 @@ in: two variations:
 a in (expr0, expr1, ...)
 a in (queryexpr)
 
-> inSuffix :: ValueExpr -> P ValueExpr
-> inSuffix e =
->     In <$> inty
->        <*> return e
->        <*> parens (choice
->                    [InQueryExpr <$> queryExpr
->                    ,InList <$> commaSep1 valueExpr'])
+this is parsed as a postfix operator which is why it is in this form
+
+> inSuffix :: P (ValueExpr -> ValueExpr)
+> inSuffix =
+>     mkIn <$> inty
+>          <*> parens (choice
+>                      [InQueryExpr <$> queryExpr
+>                      ,InList <$> commaSep1 valueExpr])
 >   where
 >     inty = try $ choice [True <$ keyword_ "in"
 >                         ,False <$ keyword_ "not" <* keyword_ "in"]
+>     mkIn i v = \e -> In i e v
+
 
 between:
 expr between expr and expr
@@ -385,19 +391,18 @@ which is that you can't have a binary and operator in the middle
 expression in a between unless it is wrapped in parens. The 'bExpr
 parsing' is used to create alternative value expression parser which
 is identical to the normal one expect it doesn't recognise the binary
-and operator. This is the call to valueExpr'' True.
+and operator. This is the call to valueExprB.
 
-> betweenSuffix :: ValueExpr -> P ValueExpr
-> betweenSuffix e =
+> betweenSuffix :: P (ValueExpr -> ValueExpr)
+> betweenSuffix =
 >     makeOp <$> (Name <$> opName)
->            <*> return e
->            <*> valueExpr'' True
->            <*> (keyword_ "and" *> valueExpr'' True)
+>            <*> valueExprB
+>            <*> (keyword_ "and" *> valueExprB)
 >   where
 >     opName = try $ choice
 >              ["between" <$ keyword_ "between"
 >              ,"not between" <$ keyword_ "not" <* keyword_ "between"]
->     makeOp n a b c = SpecialOp n [a,b,c]
+>     makeOp n b c = \a -> SpecialOp n [a,b,c]
 
 subquery expression:
 [exists|all|any|some] (queryexpr)
@@ -457,7 +462,7 @@ todo: timestamp types:
 
 > sparens :: P ValueExpr
 > sparens =
->     ctor <$> parens (commaSep1 valueExpr')
+>     ctor <$> parens (commaSep1 valueExpr)
 >   where
 >     ctor [a] = Parens a
 >     ctor as = SpecialOp (Name "rowctor") as
@@ -470,177 +475,92 @@ unary prefix, unary postfix and binary infix operators. The operators
 can be symbols (a + b), single keywords (a and b) or multiple keywords
 (a is similar to b).
 
-First, the list of the regulars operators split by operator type
-(prefix, postfix, binary) and by symbol/single keyword/ multiple
-keyword.
-
-> binOpSymbolNames :: [String]
-> binOpSymbolNames =
->     ["=", "<=", ">=", "!=", "<>", "<", ">"
->     ,"*", "/", "+", "-", "%"
->     ,"||", "."
->     ,"^", "|", "&"
->     ]
-
-> binOpKeywordNames :: [String]
-> binOpKeywordNames = ["and", "or", "like", "overlaps"]
-
-> binOpMultiKeywordNames :: [[String]]
-> binOpMultiKeywordNames = map words
->     ["not like"
->     ,"is similar to"
->     ,"is not similar to"
->     ,"is distinct from"
->     ,"is not distinct from"]
-
-used for between parsing
-
-> binOpKeywordNamesNoAnd :: [String]
-> binOpKeywordNamesNoAnd = filter (/="and") binOpKeywordNames
-
-There aren't any multi keyword prefix operators currently supported.
-
-> prefixUnOpKeywordNames :: [String]
-> prefixUnOpKeywordNames = ["not"]
-
-> prefixUnOpSymbolNames :: [String]
-> prefixUnOpSymbolNames = ["+", "-", "~"]
-
-There aren't any single keyword postfix operators currently
-supported. Maybe all these 'is's can be left factored?
-
-> postfixOpKeywords :: [String]
-> postfixOpKeywords = ["is null"
->                     ,"is not null"
->                     ,"is true"
->                     ,"is not true"
->                     ,"is false"
->                     ,"is not false"
->                     ,"is unknown"
->                     ,"is not unknown"]
-
-The parsers:
-
-> prefixUnaryOp :: P ValueExpr
-> prefixUnaryOp =
->     PrefixOp <$> (Name <$> opSymbol) <*> valueExpr'
+> opTable :: Bool -> [[E.Operator String () Identity ValueExpr]]
+> opTable bExpr =
+>         [[binarySym "." E.AssocLeft]
+>         ,[prefixSym "+", prefixSym "-"]
+>         ,[binarySym "^" E.AssocLeft]
+>         ,[binarySym "*" E.AssocLeft
+>          ,binarySym "/" E.AssocLeft
+>          ,binarySym "%" E.AssocLeft]
+>         ,[binarySym "+" E.AssocLeft
+>          ,binarySym "-" E.AssocLeft]
+>         ,[binarySym ">=" E.AssocNone
+>          ,binarySym "<=" E.AssocNone
+>          ,binarySym "!=" E.AssocRight
+>          ,binarySym "<>" E.AssocRight
+>          ,binarySym "||" E.AssocRight
+>          ,prefixSym "~"
+>          ,binarySym "&" E.AssocRight
+>          ,binarySym "|" E.AssocRight
+>          ,binaryKeyword "like" E.AssocNone
+>          ,binaryKeyword "overlaps" E.AssocNone]
+>          ++ map (flip binaryKeywords E.AssocNone)
+>          ["not like"
+>          ,"is similar to"
+>          ,"is not similar to"
+>          ,"is distinct from"
+>          ,"is not distinct from"]
+>          ++ map postfixKeywords
+>          ["is null"
+>          ,"is not null"
+>          ,"is true"
+>          ,"is not true"
+>          ,"is false"
+>          ,"is not false"
+>          ,"is unknown"
+>          ,"is not unknown"]
+>           ++ [E.Postfix $ try inSuffix,E.Postfix $ try betweenSuffix]
+>         ]
+>         ++
+>         [[binarySym "<" E.AssocNone
+>          ,binarySym ">" E.AssocNone]
+>         ,[binarySym "=" E.AssocRight]
+>         ,[prefixKeyword "not"]]
+>         ++
+>         if bExpr then [] else [[binaryKeyword "and" E.AssocLeft]]
+>         ++
+>         [[binaryKeyword "or" E.AssocLeft]]
 >   where
->     opSymbol = choice (map (try . symbol) prefixUnOpSymbolNames
->                        ++ map (try . keyword) prefixUnOpKeywordNames)
-
-TODO: the handling of multikeyword args is different in
-postfixopsuffix and binaryoperatorsuffix. It should be the same in
-both cases
-
-> postfixOpSuffix :: ValueExpr -> P ValueExpr
-> postfixOpSuffix e =
->     try $ choice $ map makeOp opPairs
->   where
->     opPairs = flip map postfixOpKeywords $ \o -> (o, words o)
->     makeOp (o,ws) = try $ PostfixOp (Name o) e <$ keywords_ ws
->     keywords_ = try . mapM_ keyword_
-
-All the binary operators are parsed as same precedence and left
-associativity. This is fixed with a separate pass over the AST.
-
-> binaryOperatorSuffix :: Bool -> ValueExpr -> P ValueExpr
-> binaryOperatorSuffix bExpr e0 =
->     BinOp e0 <$> (Name <$> opSymbol) <*> factor
->   where
->     opSymbol = choice
->         (map (try . symbol) binOpSymbolNames
->         ++ map (try . keywords) binOpMultiKeywordNames
->         ++ map (try . keyword)
->                (if bExpr
->                 then binOpKeywordNamesNoAnd
->                 else binOpKeywordNames))
->     keywords ks = unwords <$> mapM keyword ks
-
-> sqlFixities :: [[Fixity]]
-> sqlFixities = highPrec ++ defaultPrec ++ lowPrec
->   where
->     allOps = binOpSymbolNames ++ binOpKeywordNames
->              ++ map unwords binOpMultiKeywordNames
->              ++ prefixUnOpKeywordNames ++ prefixUnOpSymbolNames
->              ++ postfixOpKeywords
->     -- these are the ops with the highest precedence in order
->     highPrec = [infixl_ ["."]
->                ,infixl_ ["*","/", "%"]
->                ,infixl_ ["+", "-"]
->                ,infixl_ ["<=",">=","!=","<>","||","like"]
->                ]
->     -- these are the ops with the lowest precedence in order
->     lowPrec = [infix_ ["<",">"]
->               ,infixr_ ["="]
->               ,infixr_ ["not"]
->               ,infixl_ ["and"]
->               ,infixl_ ["or"]]
->     already = concatMap (map fName) highPrec
->               ++ concatMap (map fName)  lowPrec
->     -- all the other ops have equal precedence and go between the
->     -- high and low precedence ops
->     defaultPrecOps = filter (`notElem` already) allOps
->     -- almost correct, have to do some more work to
->     -- get the associativity correct for these operators
->     defaultPrec = [infixl_ defaultPrecOps]
->     fName (Fixity n _) = n
-
+>     binarySym nm assoc = binary (try $ symbol_ nm) nm assoc
+>     binaryKeyword nm assoc = binary (try $ keyword_ nm) nm assoc
+>     binaryKeywords nm assoc = binary (try $ mapM_ keyword_ (words nm)) nm assoc
+>     binary p nm assoc =
+>       E.Infix (p >> return (\a b -> BinOp a (Name nm) b)) assoc
+>     prefixKeyword nm = prefix (try $ keyword_ nm) nm
+>     prefixSym nm = prefix (try $ symbol_ nm) nm
+>     prefix p nm = E.Prefix (p >> return (PrefixOp (Name nm)))
+>     postfixKeywords nm = postfix (try $ mapM_ keyword_ (words nm)) nm
+>     postfix p nm = E.Postfix (p >> return (PostfixOp (Name nm)))
 
 == value expressions
 
 TODO:
 left factor stuff which starts with identifier
 
-This parses most of the value exprs. I'm not sure if factor is the
-correct terminology here. The order of the parsers and use of try is
-carefully done to make everything work. It is a little fragile and
-could at least do with some heavy explanation.
-
-> factor :: P ValueExpr
-> factor = choice [literal
->                 ,parameter
->                 ,scase
->                 ,cast
->                 ,try specialOpKs
->                 ,subquery
->                 ,prefixUnaryOp
->                 ,try app
->                 ,try star
->                 ,identifier
->                 ,sparens]
-
-putting the factor together with the extra bits
-
-> valueExpr'' :: Bool -> P ValueExpr
-> valueExpr'' bExpr = factor >>= trysuffix
->   where
->     trysuffix e = try (suffix e) <|> return e
->     suffix e0 = choice
->                 [binaryOperatorSuffix bExpr e0
->                 ,inSuffix e0
->                 ,betweenSuffix e0
->                 ,postfixOpSuffix e0
->                 ] >>= trysuffix
-
-Wrapper for non 'bExpr' parsing. See the between parser for
-explanation.
-
-> valueExpr' :: P ValueExpr
-> valueExpr' = valueExpr'' False
-
-The valueExpr wrapper. The idea is that directly nested value
-expressions use the valueExpr' parser, then other code uses the
-valueExpr parser and then everyone gets the fixity fixes and it's
-easy to ensure that this fix is only applied once to each value
-expression tree (for efficiency and code clarity).
+This parses most of the value exprs.The order of the parsers and use
+of try is carefully done to make everything work. It is a little
+fragile and could at least do with some heavy explanation.
 
 > valueExpr :: P ValueExpr
-> valueExpr = fixFixities sqlFixities <$> valueExpr'
+> valueExpr = E.buildExpressionParser (opTable False) term
+
+> term :: P ValueExpr
+> term = choice [literal
+>               ,parameter
+>               ,scase
+>               ,cast
+>               ,try specialOpKs
+>               ,subquery
+>               ,try app
+>               ,try star
+>               ,identifier
+>               ,sparens]
 
 expose the b expression for window frame clause range between
 
 > valueExprB :: P ValueExpr
-> valueExprB = fixFixities sqlFixities <$> valueExpr'' True
+> valueExprB = E.buildExpressionParser (opTable True) term
 
 
 -------------------------------------------------
