@@ -9,8 +9,10 @@
 >     ) where
 
 > import Language.SQL.SimpleSQL.Syntax
-> import Text.PrettyPrint
-> import Data.Maybe
+> import Text.PrettyPrint (render, vcat, text, (<>), (<+>), empty, parens,
+>                          nest, Doc, punctuate, comma, sep, quotes,
+>                          doubleQuotes)
+> import Data.Maybe (maybeToList, catMaybes)
 
 > -- | Convert a query expr ast to concrete syntax.
 > prettyQueryExpr :: QueryExpr -> String

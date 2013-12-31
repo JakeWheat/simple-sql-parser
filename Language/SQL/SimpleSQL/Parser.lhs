@@ -10,13 +10,19 @@ swap order in select items
 >     ,parseQueryExprs
 >     ,ParseError(..)) where
 
-> import Control.Monad.Identity
-> import Control.Applicative hiding (many, (<|>), optional)
-> import Data.Maybe
-> import Data.Char
-> import Text.Parsec hiding (ParseError)
-> import qualified Text.Parsec as P
-> import Text.Parsec.Perm
+> import Control.Monad.Identity (Identity)
+> import Control.Monad (guard, void)
+> import Control.Applicative ((<$), (<$>), (<*>) ,(<*), (*>))
+> import Data.Maybe (fromMaybe,catMaybes)
+> import Data.Char (toLower)
+> import Text.Parsec (errorPos,sourceLine,sourceColumn,sourceName
+>                    ,setPosition,setSourceColumn,setSourceLine,getPosition
+>                    ,option,between,sepBy,sepBy1,string,manyTill,anyChar
+>                    ,try,string,many1,oneOf,digit,(<|>),choice,char,eof
+>                    ,optionMaybe,optional,many,letter,alphaNum,parse)
+> import Text.Parsec.String (Parser)
+> import qualified Text.Parsec as P (ParseError)
+> import Text.Parsec.Perm (permute,(<$?>), (<|?>))
 > import qualified Text.Parsec.Expr as E
 
 > import Language.SQL.SimpleSQL.Syntax
@@ -61,7 +67,7 @@ automatically skips leading whitespace
 checks the parser parses all the input using eof
 converts the error return to the nice wrapper
 
-> wrapParse :: P a
+> wrapParse :: Parser a
 >           -> FilePath
 >           -> Maybe (Int,Int)
 >           -> String
@@ -85,18 +91,16 @@ converts the error return to the nice wrapper
 
 ------------------------------------------------
 
-> type P a = ParsecT String () Identity a
-
 = value expressions
 
 == literals
 
 See the stringLiteral lexer below for notes on string literal syntax.
 
-> estring :: P ValueExpr
+> estring :: Parser ValueExpr
 > estring = StringLit <$> stringLiteral
 
-> number :: P ValueExpr
+> number :: Parser ValueExpr
 > number = NumLit <$> numberLiteral
 
 parse SQL interval literals, something like
@@ -108,14 +112,14 @@ wrap the whole lot in try, in case we get something like this:
 interval '3 days'
 which parses as a typed literal
 
-> interval :: P ValueExpr
+> interval :: Parser ValueExpr
 > interval = try (keyword_ "interval" >>
 >     IntervalLit
 >     <$> stringLiteral
 >     <*> identifierString
 >     <*> optionMaybe (try $ parens integerLiteral))
 
-> literal :: P ValueExpr
+> literal :: Parser ValueExpr
 > literal = number <|> estring <|> interval
 
 == identifiers
@@ -123,11 +127,11 @@ which parses as a typed literal
 Uses the identifierString 'lexer'. See this function for notes on
 identifiers.
 
-> name :: P Name
+> name :: Parser Name
 > name = choice [QName <$> quotedIdentifier
 >               ,Name <$> identifierString]
 
-> identifier :: P ValueExpr
+> identifier :: Parser ValueExpr
 > identifier = Iden <$> name
 
 == star
@@ -137,14 +141,14 @@ places as well. Because it is quite general, the parser doesn't
 attempt to check that the star is in a valid context, it parses it OK
 in any value expression context.
 
-> star :: P ValueExpr
+> star :: Parser ValueExpr
 > star = Star <$ symbol "*"
 
 == parameter
 
 use in e.g. select * from t where a = ?
 
-> parameter :: P ValueExpr
+> parameter :: Parser ValueExpr
 > parameter = Parameter <$ symbol "?"
 
 == function application, aggregates and windows
@@ -157,7 +161,7 @@ The parsing for the aggregate extensions is here as well:
 
 aggregate([all|distinct] args [order by orderitems])
 
-> aggOrApp :: P ValueExpr
+> aggOrApp :: Parser ValueExpr
 > aggOrApp =
 >     makeApp
 >     <$> name
@@ -168,7 +172,7 @@ aggregate([all|distinct] args [order by orderitems])
 >     makeApp i (Nothing,es,Nothing) = App i es
 >     makeApp i (d,es,od) = AggregateApp i d es (fromMaybe [] od)
 
-> duplicates :: P (Maybe SetQuantifier)
+> duplicates :: Parser (Maybe SetQuantifier)
 > duplicates = optionMaybe $ try $
 >     choice [All <$ keyword_ "all"
 >            ,Distinct <$ keyword "distinct"]
@@ -183,7 +187,7 @@ The convention in this file is that the 'Suffix', erm, suffix on
 parser names means that they have been left factored. These are almost
 always used with the optionSuffix combinator.
 
-> windowSuffix :: ValueExpr -> P ValueExpr
+> windowSuffix :: ValueExpr -> Parser ValueExpr
 > windowSuffix (App f es) =
 >     try (keyword_ "over")
 >     *> parens (WindowApp f es
@@ -220,12 +224,12 @@ always used with the optionSuffix combinator.
 >     mkFrame rs c = c rs
 > windowSuffix _ = fail ""
 
-> app :: P ValueExpr
+> app :: Parser ValueExpr
 > app = aggOrApp >>= optionSuffix windowSuffix
 
 == case expression
 
-> scase :: P ValueExpr
+> scase :: Parser ValueExpr
 > scase =
 >     Case <$> (try (keyword_ "case") *> optionMaybe (try valueExpr))
 >          <*> many1 swhen
@@ -245,7 +249,7 @@ to separate the arguments.
 
 cast: cast(expr as type)
 
-> cast :: P ValueExpr
+> cast :: Parser ValueExpr
 > cast = parensCast <|> prefixCast
 >   where
 >     parensCast = try (keyword_ "cast") >>
@@ -266,7 +270,7 @@ operatorname(firstArg keyword0 arg0 keyword1 arg1 etc.)
 >            -> SpecialOpKFirstArg -- has a first arg without a keyword
 >            -> [(String,Bool)] -- the other args with their keywords
 >                               -- and whether they are optional
->            -> P ValueExpr
+>            -> Parser ValueExpr
 > specialOpK opName firstArg kws =
 >     keyword_ opName >> do
 >     void $ symbol  "("
@@ -312,31 +316,31 @@ TRIM( [ [{LEADING | TRAILING | BOTH}] [removal_char] FROM ]
 target_string
 [COLLATE collation_name] )
 
-> specialOpKs :: P ValueExpr
+> specialOpKs :: Parser ValueExpr
 > specialOpKs = choice $ map try
 >     [extract, position, substring, convert, translate, overlay, trim]
 
-> extract :: P ValueExpr
+> extract :: Parser ValueExpr
 > extract = specialOpK "extract" SOKMandatory [("from", True)]
 
-> position :: P ValueExpr
+> position :: Parser ValueExpr
 > position = specialOpK "position" SOKMandatory [("in", True)]
 
 strictly speaking, the substring must have at least one of from and
 for, but the parser doens't enforce this
 
-> substring :: P ValueExpr
+> substring :: Parser ValueExpr
 > substring = specialOpK "substring" SOKMandatory
 >                 [("from", False),("for", False),("collate", False)]
 
-> convert :: P ValueExpr
+> convert :: Parser ValueExpr
 > convert = specialOpK "convert" SOKMandatory [("using", True)]
 
 
-> translate :: P ValueExpr
+> translate :: Parser ValueExpr
 > translate = specialOpK "translate" SOKMandatory [("using", True)]
 
-> overlay :: P ValueExpr
+> overlay :: Parser ValueExpr
 > overlay = specialOpK "overlay" SOKMandatory
 >                 [("placing", True),("from", True),("for", False)]
 
@@ -344,7 +348,7 @@ trim is too different because of the optional char, so a custom parser
 the both ' ' is filled in as the default if either parts are missing
 in the source
 
-> trim :: P ValueExpr
+> trim :: Parser ValueExpr
 > trim =
 >     keyword "trim" >>
 >     parens (mkTrim
@@ -368,7 +372,7 @@ a in (queryexpr)
 
 this is parsed as a postfix operator which is why it is in this form
 
-> inSuffix :: P (ValueExpr -> ValueExpr)
+> inSuffix :: Parser (ValueExpr -> ValueExpr)
 > inSuffix =
 >     mkIn <$> inty
 >          <*> parens (choice
@@ -393,7 +397,7 @@ parsing' is used to create alternative value expression parser which
 is identical to the normal one expect it doesn't recognise the binary
 and operator. This is the call to valueExprB.
 
-> betweenSuffix :: P (ValueExpr -> ValueExpr)
+> betweenSuffix :: Parser (ValueExpr -> ValueExpr)
 > betweenSuffix =
 >     makeOp <$> (Name <$> opName)
 >            <*> valueExprB
@@ -407,7 +411,7 @@ and operator. This is the call to valueExprB.
 subquery expression:
 [exists|all|any|some] (queryexpr)
 
-> subquery :: P ValueExpr
+> subquery :: Parser ValueExpr
 > subquery =
 >     choice
 >     [try $ SubQueryExpr SqSq <$> parens queryExpr
@@ -422,7 +426,7 @@ subquery expression:
 typename: used in casts. Special cases for the multi keyword typenames
 that SQL supports.
 
-> typeName :: P TypeName
+> typeName :: Parser TypeName
 > typeName = choice (multiWordParsers
 >                    ++ [TypeName <$> identifierString])
 >            >>= optionSuffix precision
@@ -449,7 +453,7 @@ that SQL supports.
 todo: timestamp types:
 
     | TIME [ <left paren> <time precision> <right paren> ] [ WITH TIME ZONE ]
-     | TIMESTAMP [ <left paren> <timestamp precision> <right paren> ] [ WITH TIME ZONE ]
+     | TIMESTAMParser [ <left paren> <timestamp precision> <right paren> ] [ WITH TIME ZONE ]
 
 
 >     precision t = try (parens (commaSep integerLiteral)) >>= makeWrap t
@@ -460,7 +464,7 @@ todo: timestamp types:
 
 == value expression parens and row ctor
 
-> sparens :: P ValueExpr
+> sparens :: Parser ValueExpr
 > sparens =
 >     ctor <$> parens (commaSep1 valueExpr)
 >   where
@@ -542,10 +546,10 @@ This parses most of the value exprs.The order of the parsers and use
 of try is carefully done to make everything work. It is a little
 fragile and could at least do with some heavy explanation.
 
-> valueExpr :: P ValueExpr
+> valueExpr :: Parser ValueExpr
 > valueExpr = E.buildExpressionParser (opTable False) term
 
-> term :: P ValueExpr
+> term :: Parser ValueExpr
 > term = choice [literal
 >               ,parameter
 >               ,scase
@@ -559,7 +563,7 @@ fragile and could at least do with some heavy explanation.
 
 expose the b expression for window frame clause range between
 
-> valueExprB :: P ValueExpr
+> valueExprB :: Parser ValueExpr
 > valueExprB = E.buildExpressionParser (opTable True) term
 
 
@@ -569,11 +573,11 @@ expose the b expression for window frame clause range between
 
 == select lists
 
-> selectItem :: P (Maybe Name, ValueExpr)
+> selectItem :: Parser (Maybe Name, ValueExpr)
 > selectItem = flip (,) <$> valueExpr <*> optionMaybe (try als)
 >   where als = optional (try (keyword_ "as")) *> name
 
-> selectList :: P [(Maybe Name,ValueExpr)]
+> selectList :: Parser [(Maybe Name,ValueExpr)]
 > selectList = commaSep1 selectItem
 
 == from
@@ -585,7 +589,7 @@ tref
 tref
 [on expr | using (...)]
 
-> from :: P [TableRef]
+> from :: Parser [TableRef]
 > from = try (keyword_ "from") *> commaSep1 tref
 >   where
 >     tref = nonJoinTref >>= optionSuffix joinTrefSuffix
@@ -622,7 +626,7 @@ tref
 >                 JoinUsing <$> parens (commaSep1 name)
 >                ]
 
-> alias :: P Alias
+> alias :: Parser Alias
 > alias = Alias <$> try tableAlias <*> try columnAliases
 >   where
 >     tableAlias = optional (try $ keyword_ "as") *> name
@@ -636,13 +640,13 @@ pretty trivial.
 Here is a helper for parsing a few parts of the query expr (currently
 where, having, limit, offset).
 
-> keywordValueExpr :: String -> P ValueExpr
+> keywordValueExpr :: String -> Parser ValueExpr
 > keywordValueExpr k = try (keyword_ k) *> valueExpr
 
-> swhere :: P ValueExpr
+> swhere :: Parser ValueExpr
 > swhere = keywordValueExpr "where"
 
-> sgroupBy :: P [GroupingExpr]
+> sgroupBy :: Parser [GroupingExpr]
 > sgroupBy = try (keyword_ "group")
 >            *> keyword_ "by"
 >            *> commaSep1 groupingExpression
@@ -659,10 +663,10 @@ where, having, limit, offset).
 >       ,SimpleGroup <$> valueExpr
 >       ]
 
-> having :: P ValueExpr
+> having :: Parser ValueExpr
 > having = keywordValueExpr "having"
 
-> orderBy :: P [SortSpec]
+> orderBy :: Parser [SortSpec]
 > orderBy = try (keyword_ "order") *> keyword_ "by" *> commaSep1 ob
 >   where
 >     ob = SortSpec
@@ -677,15 +681,15 @@ where, having, limit, offset).
 allows offset and fetch in either order
 + postgresql offset without row(s) and limit instead of fetch also
 
-> offsetFetch :: P (Maybe ValueExpr, Maybe ValueExpr)
+> offsetFetch :: Parser (Maybe ValueExpr, Maybe ValueExpr)
 > offsetFetch = permute ((,) <$?> (Nothing, Just <$> offset)
 >                            <|?> (Nothing, Just <$> fetch))
 
-> offset :: P ValueExpr
+> offset :: Parser ValueExpr
 > offset = try (keyword_ "offset") *> valueExpr
 >          <* option () (try $ choice [try (keyword_ "rows"),keyword_ "row"])
 
-> fetch :: P ValueExpr
+> fetch :: Parser ValueExpr
 > fetch = choice [ansiFetch, limit]
 >   where
 >     ansiFetch = try (keyword_ "fetch") >>
@@ -697,7 +701,7 @@ allows offset and fetch in either order
 
 == common table expressions
 
-> with :: P QueryExpr
+> with :: Parser QueryExpr
 > with = try (keyword_ "with") >>
 >     With <$> option False (try (True <$ keyword_ "recursive"))
 >          <*> commaSep1 withQuery <*> queryExpr
@@ -711,7 +715,7 @@ allows offset and fetch in either order
 This parser parses any query expression variant: normal select, cte,
 and union, etc..
 
-> queryExpr :: P QueryExpr
+> queryExpr :: Parser QueryExpr
 > queryExpr =
 >   choice [with
 >          ,choice [values,table, select]
@@ -733,7 +737,7 @@ and union, etc..
 >              >> Values <$> commaSep (parens (commaSep valueExpr))
 >     table = try (keyword_ "table") >> Table <$> name
 
-> queryExprSuffix :: QueryExpr -> P QueryExpr
+> queryExprSuffix :: QueryExpr -> Parser QueryExpr
 > queryExprSuffix qe =
 >     (CombineQueryExpr qe
 >      <$> try (choice
@@ -748,7 +752,7 @@ and union, etc..
 
 wrapper for query expr which ignores optional trailing semicolon.
 
-> topLevelQueryExpr :: P QueryExpr
+> topLevelQueryExpr :: Parser QueryExpr
 > topLevelQueryExpr =
 >      queryExpr >>= optionSuffix ((symbol ";" *>) . return)
 
@@ -756,7 +760,7 @@ wrapper to parse a series of query exprs from a single source. They
 must be separated by semicolon, but for the last expression, the
 trailing semicolon is optional.
 
-> queryExprs :: P [QueryExpr]
+> queryExprs :: Parser [QueryExpr]
 > queryExprs =
 >     (:[]) <$> queryExpr
 >     >>= optionSuffix ((symbol ";" *>) . return)
@@ -772,24 +776,24 @@ characters directly or indirectly here (i.e. ones which use char,
 string, digit, etc.), except for the parsers which only indirectly
 access them via these functions, if you follow?
 
-> symbol :: String -> P String
+> symbol :: String -> Parser String
 > symbol s = string s
 >            -- <* notFollowedBy (oneOf "+-/*<>=!|")
 >            <* whiteSpace
 
-> symbol_ :: String -> P ()
+> symbol_ :: String -> Parser ()
 > symbol_ s = symbol s *> return ()
 
 TODO: now that keyword has try in it, a lot of the trys above can be
 removed
 
-> keyword :: String -> P String
+> keyword :: String -> Parser String
 > keyword s = try $ do
 >     i <- identifierRaw
 >     guard (map toLower i == map toLower s)
 >     return i
 
-> keyword_ :: String -> P ()
+> keyword_ :: String -> Parser ()
 > keyword_ s = keyword s *> return ()
 
 Identifiers are very simple at the moment: start with a letter or
@@ -800,14 +804,14 @@ blacklist of keywords which aren't supported as identifiers.
 the identifier raw doesn't check the blacklist since it is used by the
 keyword parser also
 
-> identifierRaw :: P String
+> identifierRaw :: Parser String
 > identifierRaw = (:) <$> letterOrUnderscore
 >                     <*> many letterDigitOrUnderscore <* whiteSpace
 >   where
 >     letterOrUnderscore = char '_' <|> letter
 >     letterDigitOrUnderscore = char '_' <|> alphaNum
 
-> identifierString :: P String
+> identifierString :: Parser String
 > identifierString = do
 >     s <- identifierRaw
 >     guard (map toLower s `notElem` blacklist)
@@ -829,14 +833,14 @@ sure what other places strictly need the blacklist, and in theory it
 could be tuned differently for each place the identifierString/
 identifier parsers are used to only blacklist the bare minimum.
 
-> quotedIdentifier :: P String
+> quotedIdentifier :: Parser String
 > quotedIdentifier = char '"' *> manyTill anyChar (symbol_ "\"")
 
 
 String literals: limited at the moment, no escaping \' or other
 variations.
 
-> stringLiteral :: P String
+> stringLiteral :: Parser String
 > stringLiteral = (char '\'' *> manyTill anyChar (char '\'')
 >                  >>= optionSuffix moreString) <* whiteSpace
 >   where
@@ -858,7 +862,7 @@ numbers are parsed to strings, not to a numeric type. This is to avoid
 making a decision on how to represent numbers, the client code can
 make this choice.
 
-> numberLiteral :: P String
+> numberLiteral :: Parser String
 > numberLiteral =
 >     choice [int
 >             >>= optionSuffix dot
@@ -879,12 +883,12 @@ make this choice.
 
 lexer for integer literals which appear in some places in SQL
 
-> integerLiteral :: P Int
+> integerLiteral :: Parser Int
 > integerLiteral = read <$> many1 digit <* whiteSpace
 
 whitespace parser which skips comments also
 
-> whiteSpace :: P ()
+> whiteSpace :: Parser ()
 > whiteSpace =
 >     choice [simpleWhiteSpace *> whiteSpace
 >            ,lineComment *> whiteSpace
@@ -907,24 +911,24 @@ associativity when chaining it recursively. Have to review
 all these uses and figure out if any should be right associative
 instead, and create an alternative suffix parser
 
-> optionSuffix :: (a -> P a) -> a -> P a
+> optionSuffix :: (a -> Parser a) -> a -> Parser a
 > optionSuffix p a = option a (p a)
 
-> parens :: P a -> P a
+> parens :: Parser a -> Parser a
 > parens = between (symbol_ "(") (symbol_ ")")
 
-> commaSep :: P a -> P [a]
+> commaSep :: Parser a -> Parser [a]
 > commaSep = (`sepBy` symbol_ ",")
 
 
-> commaSep1 :: P a -> P [a]
+> commaSep1 :: Parser a -> Parser [a]
 > commaSep1 = (`sepBy1` symbol_ ",")
 
 --------------------------------------------
 
 = helper functions
 
-> setPos :: Maybe (Int,Int) -> P ()
+> setPos :: Maybe (Int,Int) -> Parser ()
 > setPos Nothing = return ()
 > setPos (Just (l,c)) = fmap f getPosition >>= setPosition
 >   where f = flip setSourceColumn c

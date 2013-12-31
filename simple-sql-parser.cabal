@@ -53,7 +53,6 @@ Test-Suite Tests
   Other-Modules:       Language.SQL.SimpleSQL.Pretty,
                        Language.SQL.SimpleSQL.Parser,
                        Language.SQL.SimpleSQL.Syntax,
-                       Language.SQL.SimpleSQL.Fixity,
 
                        Language.SQL.SimpleSQL.FullQueries,
                        Language.SQL.SimpleSQL.GroupBy,
