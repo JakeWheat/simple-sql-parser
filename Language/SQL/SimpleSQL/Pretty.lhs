@@ -8,6 +8,9 @@
 >     ,prettyQueryExprs
 >     ) where
 
+TODO: there should be more comments in this file, especially the bits
+which have been changed to try to improve the layout of the output.
+
 > import Language.SQL.SimpleSQL.Syntax
 > import Text.PrettyPrint (render, vcat, text, (<>), (<+>), empty, parens,
 >                          nest, Doc, punctuate, comma, sep, quotes,

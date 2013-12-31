@@ -1,4 +1,8 @@
-0.3.0-dev (commit 3b2730fd9962b9a51ad659191ac842364dab86b4)
+0.3.0-dev (commit 9e75fa93650b4f1a08d94f4225a243bcc50445ae)
+	fix the basic operator fixity parsing
+	swap the order in select item abstract syntax so it is now
+	  (expression, alias) which matches the order in the concrete
+	  syntax
 	rename ScalarExpr -> ValueExpr
 	rename Duplicates to SetQuantifier
 	rename qeDuplicates to qeSetQuantifier
@@ -29,6 +33,9 @@
 	     bit varying
 	rename tools/PrettyIt to tools/SQLIdent and add to cabal file as
 	  optional executable (disabled by default)
+	rename the qeFetch field in Select to qeFetchFirst
+	change the pretty printer to use 'fetch first' instead of
+	  'fetch next'
 
 0.2.0 (commit 9ea29c1a0ceb2c3f3157fb161d1ea819ea5d64d4)
 	'' quotes in string literal

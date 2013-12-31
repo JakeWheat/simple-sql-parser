@@ -30,18 +30,20 @@ The public API functions.
 > parseQueryExpr :: FilePath
 >                   -- ^ filename to use in errors
 >                -> Maybe (Int,Int)
->                   -- ^ line number and column number to use in errors
+>                   -- ^ line number and column number of the first character
+>                   -- in the source (to use in errors)
 >                -> String
 >                   -- ^ the SQL source to parse
 >                -> Either ParseError QueryExpr
 > parseQueryExpr = wrapParse topLevelQueryExpr
 
-> -- | Parses a list of query exprs, with semi colons between
+> -- | Parses a list of query expressions, with semi colons between
 > -- them. The final semicolon is optional.
 > parseQueryExprs :: FilePath
 >                    -- ^ filename to use in errors
 >                 -> Maybe (Int,Int)
->                    -- ^ line number and column number to use in errors
+>                    -- ^ line number and column number of the first character
+>                    -- in the source (to use in errors)
 >                 -> String
 >                    -- ^ the SQL source to parse
 >                 -> Either ParseError [QueryExpr]
@@ -51,7 +53,8 @@ The public API functions.
 > parseValueExpr :: FilePath
 >                    -- ^ filename to use in errors
 >                 -> Maybe (Int,Int)
->                    -- ^ line number and column number to use in errors
+>                    -- ^ line number and column number of the first character
+>                    -- in the source (to use in errors)
 >                 -> String
 >                    -- ^ the SQL source to parse
 >                 -> Either ParseError ValueExpr
@@ -475,6 +478,8 @@ The 'regular' operators in this parsing and in the abstract syntax are
 unary prefix, unary postfix and binary infix operators. The operators
 can be symbols (a + b), single keywords (a and b) or multiple keywords
 (a is similar to b).
+
+TODO: carefully review the precedences and associativities.
 
 > opTable :: Bool -> [[E.Operator String () Identity ValueExpr]]
 > opTable bExpr =
