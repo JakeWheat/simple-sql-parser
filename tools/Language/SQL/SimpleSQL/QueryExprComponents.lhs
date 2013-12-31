@@ -37,45 +37,46 @@ These are a few misc tests which don't fit anywhere else.
 >  where
 >    ms d = makeSelect
 >           {qeSetQuantifier = d
->           ,qeSelectList = [(Nothing,Iden "a")]
+>           ,qeSelectList = [(Iden "a",Nothing)]
 >           ,qeFrom = [TRSimple "t"]}
 
 > selectLists :: TestItem
 > selectLists = Group "selectLists" $ map (uncurry TestQueryExpr)
 >     [("select 1",
->       makeSelect {qeSelectList = [(Nothing,NumLit "1")]})
+>       makeSelect {qeSelectList = [(NumLit "1",Nothing)]})
 
 >     ,("select a"
->      ,makeSelect {qeSelectList = [(Nothing,Iden "a")]})
+>      ,makeSelect {qeSelectList = [(Iden "a",Nothing)]})
 
 >     ,("select a,b"
->      ,makeSelect {qeSelectList = [(Nothing,Iden "a")
->                                  ,(Nothing,Iden "b")]})
+>      ,makeSelect {qeSelectList = [(Iden "a",Nothing)
+>                                  ,(Iden "b",Nothing)]})
 
 >     ,("select 1+2,3+4"
 >      ,makeSelect {qeSelectList =
->                      [(Nothing,BinOp (NumLit "1") "+" (NumLit "2"))
->                      ,(Nothing,BinOp (NumLit "3") "+" (NumLit "4"))]})
+>                      [(BinOp (NumLit "1") "+" (NumLit "2"),Nothing)
+>                      ,(BinOp (NumLit "3") "+" (NumLit "4"),Nothing)]})
 
 >     ,("select a as a, /*comment*/ b as b"
->      ,makeSelect {qeSelectList = [(Just "a", Iden "a")
->                                  ,(Just "b", Iden "b")]})
+>      ,makeSelect {qeSelectList = [(Iden "a", Just "a")
+>                                  ,(Iden "b", Just "b")]})
 
 >     ,("select a a, b b"
->      ,makeSelect {qeSelectList = [(Just "a", Iden "a")
->                                  ,(Just "b", Iden "b")]})
+>      ,makeSelect {qeSelectList = [(Iden "a", Just "a")
+>                                  ,(Iden "b", Just "b")]})
 
 >     ,("select a + b * c"
 >      ,makeSelect {qeSelectList =
->       [(Nothing,BinOp (Iden (Name "a")) (Name "+")
->        (BinOp (Iden (Name "b")) (Name "*") (Iden (Name "c"))))]})
+>       [(BinOp (Iden (Name "a")) (Name "+")
+>         (BinOp (Iden (Name "b")) (Name "*") (Iden (Name "c")))
+>        ,Nothing)]})
 
 >     ]
 
 > whereClause :: TestItem
 > whereClause = Group "whereClause" $ map (uncurry TestQueryExpr)
 >     [("select a from t where a = 5"
->      ,makeSelect {qeSelectList = [(Nothing,Iden "a")]
+>      ,makeSelect {qeSelectList = [(Iden "a",Nothing)]
 >                  ,qeFrom = [TRSimple "t"]
 >                  ,qeWhere = Just $ BinOp (Iden "a") "=" (NumLit "5")})
 >     ]
@@ -83,8 +84,8 @@ These are a few misc tests which don't fit anywhere else.
 > having :: TestItem
 > having = Group "having" $ map (uncurry TestQueryExpr)
 >     [("select a,sum(b) from t group by a having sum(b) > 5"
->      ,makeSelect {qeSelectList = [(Nothing, Iden "a")
->                                  ,(Nothing, App "sum" [Iden "b"])]
+>      ,makeSelect {qeSelectList = [(Iden "a",Nothing)
+>                                  ,(App "sum" [Iden "b"],Nothing)]
 >                  ,qeFrom = [TRSimple "t"]
 >                  ,qeGroupBy = [SimpleGroup $ Iden "a"]
 >                  ,qeHaving = Just $ BinOp (App "sum" [Iden "b"])
@@ -114,7 +115,7 @@ These are a few misc tests which don't fit anywhere else.
 
 >     ]
 >   where
->     ms o = makeSelect {qeSelectList = [(Nothing,Iden "a")]
+>     ms o = makeSelect {qeSelectList = [(Iden "a",Nothing)]
 >                       ,qeFrom = [TRSimple "t"]
 >                       ,qeOrderBy = o}
 
@@ -135,7 +136,7 @@ These are a few misc tests which don't fit anywhere else.
 >     ]
 >   where
 >     ms o l = makeSelect
->              {qeSelectList = [(Nothing,Iden "a")]
+>              {qeSelectList = [(Iden "a",Nothing)]
 >              ,qeFrom = [TRSimple "t"]
 >              ,qeOffset = o
 >              ,qeFetchFirst = l}
@@ -164,10 +165,10 @@ These are a few misc tests which don't fit anywhere else.
 >     ]
 >   where
 >     ms1 = makeSelect
->           {qeSelectList = [(Nothing,Iden "a")]
+>           {qeSelectList = [(Iden "a",Nothing)]
 >           ,qeFrom = [TRSimple "t"]}
 >     ms2 = makeSelect
->           {qeSelectList = [(Nothing,Iden "b")]
+>           {qeSelectList = [(Iden "b",Nothing)]
 >           ,qeFrom = [TRSimple "u"]}
 
 
@@ -189,7 +190,7 @@ These are a few misc tests which don't fit anywhere else.
 >     ]
 >  where
 >    ms c t = makeSelect
->             {qeSelectList = [(Nothing,Iden c)]
+>             {qeSelectList = [(Iden c,Nothing)]
 >             ,qeFrom = [TRSimple t]}
 >    ms1 = ms "a" "t"
 >    ms2 = ms "a" "u"

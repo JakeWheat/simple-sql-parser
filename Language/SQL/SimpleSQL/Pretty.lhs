@@ -213,10 +213,10 @@
 >     text "as" <+> name nm
 >     <+> maybe empty (parens . commaSep . map name) cols
 
-> selectList :: [(Maybe Name, ValueExpr)] -> Doc
+> selectList :: [(ValueExpr,Maybe Name)] -> Doc
 > selectList is = commaSep $ map si is
 >   where
->     si (al,e) = valueExpr e <+> maybe empty als al
+>     si (e,al) = valueExpr e <+> maybe empty als al
 >     als al = text "as" <+> name al
 
 > from :: [TableRef] -> Doc

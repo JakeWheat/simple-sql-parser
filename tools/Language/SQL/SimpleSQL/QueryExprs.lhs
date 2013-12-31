@@ -15,4 +15,4 @@ query expressions from one string.
 >     ,(" select 1;select 1; ",[ms,ms])
 >     ]
 >   where
->     ms = makeSelect {qeSelectList = [(Nothing,NumLit "1")]}
+>     ms = makeSelect {qeSelectList = [(NumLit "1",Nothing)]}

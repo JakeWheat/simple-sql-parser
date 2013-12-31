@@ -1,7 +1,3 @@
-TODO:
-P -> P.Parser
-swap order in select items
-
 > {-# LANGUAGE TupleSections #-}
 > -- | This is the module with the parser functions.
 > module Language.SQL.SimpleSQL.Parser
@@ -573,11 +569,11 @@ expose the b expression for window frame clause range between
 
 == select lists
 
-> selectItem :: Parser (Maybe Name, ValueExpr)
-> selectItem = flip (,) <$> valueExpr <*> optionMaybe (try als)
+> selectItem :: Parser (ValueExpr,Maybe Name)
+> selectItem = (,) <$> valueExpr <*> optionMaybe (try als)
 >   where als = optional (try (keyword_ "as")) *> name
 
-> selectList :: Parser [(Maybe Name,ValueExpr)]
+> selectList :: Parser [(ValueExpr,Maybe Name)]
 > selectList = commaSep1 selectItem
 
 == from

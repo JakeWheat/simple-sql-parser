@@ -183,7 +183,7 @@ Tests for parsing value expressions
 >     ]
 >   where
 >     ms = makeSelect
->          {qeSelectList = [(Nothing,Iden "a")]
+>          {qeSelectList = [(Iden "a",Nothing)]
 >          ,qeFrom = [TRSimple "t"]
 >          }
 

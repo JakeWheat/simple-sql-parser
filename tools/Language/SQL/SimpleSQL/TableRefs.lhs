@@ -100,5 +100,5 @@ these lateral queries make no sense but the syntax is valid
 >            JCross (TRSimple "v") Nothing])
 >     ]
 >   where
->     ms f = makeSelect {qeSelectList = [(Nothing,Iden "a")]
+>     ms f = makeSelect {qeSelectList = [(Iden "a",Nothing)]
 >                       ,qeFrom = f}

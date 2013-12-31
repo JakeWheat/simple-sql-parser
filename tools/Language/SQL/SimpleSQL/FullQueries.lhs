@@ -12,7 +12,7 @@ Some tests for parsing full queries.
 > fullQueriesTests = Group "queries" $ map (uncurry TestQueryExpr)
 >     [("select count(*) from t"
 >      ,makeSelect
->       {qeSelectList = [(Nothing, App "count" [Star])]
+>       {qeSelectList = [(App "count" [Star], Nothing)]
 >       ,qeFrom = [TRSimple "t"]
 >       }
 >      )
@@ -24,10 +24,10 @@ Some tests for parsing full queries.
 >       \  having count(1) > 5\n\
 >       \  order by s"
 >      ,makeSelect
->       {qeSelectList = [(Nothing, Iden "a")
->                       ,(Just "s"
->                        ,App "sum" [BinOp (Iden "c")
->                                          "+" (Iden "d")])]
+>       {qeSelectList = [(Iden "a", Nothing)
+>                       ,(App "sum" [BinOp (Iden "c")
+>                                          "+" (Iden "d")]
+>                        ,Just "s")]
 >       ,qeFrom = [TRSimple "t", TRSimple "u"]
 >       ,qeWhere = Just $ BinOp (Iden "a") ">" (NumLit "5")
 >       ,qeGroupBy = [SimpleGroup $ Iden "a"]

@@ -18,16 +18,16 @@ Here are the tests for the group by component of query exprs
 > simpleGroupBy :: TestItem
 > simpleGroupBy = Group "simpleGroupBy" $ map (uncurry TestQueryExpr)
 >     [("select a,sum(b) from t group by a"
->      ,makeSelect {qeSelectList = [(Nothing, Iden "a")
->                                  ,(Nothing, App "sum" [Iden "b"])]
+>      ,makeSelect {qeSelectList = [(Iden "a",Nothing)
+>                                  ,(App "sum" [Iden "b"],Nothing)]
 >                  ,qeFrom = [TRSimple "t"]
 >                  ,qeGroupBy = [SimpleGroup $ Iden "a"]
 >                  })
 
 >     ,("select a,b,sum(c) from t group by a,b"
->      ,makeSelect {qeSelectList = [(Nothing, Iden "a")
->                                  ,(Nothing, Iden "b")
->                                  ,(Nothing, App "sum" [Iden "c"])]
+>      ,makeSelect {qeSelectList = [(Iden "a",Nothing)
+>                                  ,(Iden "b",Nothing)
+>                                  ,(App "sum" [Iden "c"],Nothing)]
 >                  ,qeFrom = [TRSimple "t"]
 >                  ,qeGroupBy = [SimpleGroup $ Iden "a"
 >                               ,SimpleGroup $ Iden "b"]
@@ -49,7 +49,7 @@ sure which sql version they were introduced, 1999 or 2003 I think).
 >      ,ms [Rollup [SimpleGroup $ Iden "a", SimpleGroup $ Iden "b"]])
 >     ]
 >   where
->     ms g = makeSelect {qeSelectList = [(Nothing,Star)]
+>     ms g = makeSelect {qeSelectList = [(Star,Nothing)]
 >                       ,qeFrom = [TRSimple "t"]
 >                       ,qeGroupBy = g}
 

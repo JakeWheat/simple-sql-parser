@@ -196,8 +196,8 @@
 > data QueryExpr
 >     = Select
 >       {qeSetQuantifier :: SetQuantifier
->       ,qeSelectList :: [(Maybe Name,ValueExpr)]
->        -- ^ the column aliases and the expressions
+>       ,qeSelectList :: [(ValueExpr,Maybe Name)]
+>        -- ^ the expressions and the column aliases
 
 TODO: consider breaking this up. The SQL grammar has
 queryexpr = select <select list> [<table expression>]
