@@ -1,9 +1,5 @@
 = next release
 
-New fixity code + extensive tests.
-check fixity in query expr level?
-check fixity in tablerefs
-
 try and use the proper css theme
   create a header like in the haddock with simple-sql-parser +
     contents link

@@ -92,7 +92,7 @@
 
 > valueExpr (SpecialOpK nm fs as) =
 >     name nm <> parens (sep $ catMaybes
->         ((fmap valueExpr fs)
+>         (fmap valueExpr fs
 >          : map (\(n,e) -> Just (text n <+> valueExpr e)) as))
 
 > valueExpr (PrefixOp f e) = name f <+> valueExpr e

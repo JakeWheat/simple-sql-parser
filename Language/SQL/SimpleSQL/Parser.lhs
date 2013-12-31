@@ -1,3 +1,4 @@
+
 > {-# LANGUAGE TupleSections #-}
 > -- | This is the module with the parser functions.
 > module Language.SQL.SimpleSQL.Parser
@@ -275,7 +276,7 @@ operatorname(firstArg keyword0 arg0 keyword1 arg1 etc.)
 >               -- check we haven't parsed the first
 >               -- keyword as an identifier
 >               guard (case (e,kws) of
->                   (Iden (Name i), ((k,_):_)) | map toLower i == k -> False
+>                   (Iden (Name i), (k,_):_) | map toLower i == k -> False
 >                   _ -> True)
 >               return e
 >     fa <- case firstArg of
@@ -495,7 +496,7 @@ can be symbols (a + b), single keywords (a and b) or multiple keywords
 >          ,binarySym "|" E.AssocRight
 >          ,binaryKeyword "like" E.AssocNone
 >          ,binaryKeyword "overlaps" E.AssocNone]
->          ++ map (flip binaryKeywords E.AssocNone)
+>          ++ map (`binaryKeywords` E.AssocNone)
 >          ["not like"
 >          ,"is similar to"
 >          ,"is not similar to"
