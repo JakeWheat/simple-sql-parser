@@ -229,6 +229,7 @@ which have been changed to try to improve the layout of the output.
 >         ,nest 5 $ vcat $ punctuate comma $ map tr ts]
 >   where
 >     tr (TRSimple t) = name t
+>     tr (TRQualified s t) = name s <> text "." <> name t
 >     tr (TRLateral t) = text "lateral" <+> tr t
 >     tr (TRFunction f as) =
 >         name f <> parens (commaSep $ map valueExpr as)

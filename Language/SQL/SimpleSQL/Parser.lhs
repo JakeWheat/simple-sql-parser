@@ -601,6 +601,7 @@ tref
 >                                          *> nonJoinTref)
 >                          ,try (TRFunction <$> name
 >                                           <*> parens (commaSep valueExpr))
+>                          ,try (TRQualified <$> name <*> (char '.' >> name))
 >                          ,TRSimple <$> name]
 >                   >>= optionSuffix aliasSuffix
 >     aliasSuffix j = option j (TRAlias j <$> alias)

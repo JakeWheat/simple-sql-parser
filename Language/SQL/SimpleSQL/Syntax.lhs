@@ -282,6 +282,8 @@ I'm not sure if this is valid syntax or not.
 > -- | Represents a entry in the csv of tables in the from clause.
 > data TableRef = -- | from t
 >                 TRSimple Name
+>                 -- | from s.t
+>               | TRQualified Name Name
 >                 -- | from a join b
 >               | TRJoin TableRef JoinType TableRef (Maybe JoinCondition)
 >                 -- | from (a)

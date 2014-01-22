@@ -20,6 +20,9 @@ expression
 >     ,("select a from t,u"
 >      ,ms [TRSimple "t", TRSimple "u"])
 
+>     ,("select a from s.t"
+>      ,ms [TRQualified "s" "t"])
+
 these lateral queries make no sense but the syntax is valid
 
 >     ,("select a from lateral a"
