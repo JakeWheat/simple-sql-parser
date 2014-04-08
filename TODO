@@ -13,6 +13,7 @@ haddock review
 spell check
 update changelog
 update website text
+regenerate the examples on the index.txt
 
 = Later general tasks:
 
@@ -29,6 +30,8 @@ add links from the supported sql page to the rendered test page for
 testing
 
 review tests to copy from hssqlppp
+
+add lots more tests using SQL from the xb2 manual
 
 much more table reference tests, for joins and aliases etc.?
 
@@ -166,3 +169,9 @@ db2?
 maybe later: other dml
   insert, update, delete, truncate, merge + set, show?
   copy, execute?, explain?, begin/end/rollback?
+
+big feature summary:
+1. dialects
+2. position annotation
+3. dml
+4. quasiquotes
