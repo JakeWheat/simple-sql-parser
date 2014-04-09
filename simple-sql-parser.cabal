@@ -1,5 +1,5 @@
 name:                simple-sql-parser
-version:             0.3.0
+version:             0.3.1
 synopsis:            A parser for SQL queries
 description:         A parser for SQL queries. Please see the homepage for more information <http://jakewheat.github.io/simple-sql-parser/>.
 
@@ -28,7 +28,7 @@ library
                        Language.SQL.SimpleSQL.Parser,
                        Language.SQL.SimpleSQL.Syntax
   other-extensions:    TupleSections
-  build-depends:       base >=4.6 && <4.7,
+  build-depends:       base >=4.6 && <5,
                        parsec >=3.1 && <3.2,
                        mtl >=2.1 && <2.2,
                        pretty >= 1.1 && < 1.2
@@ -40,7 +40,7 @@ Test-Suite Tests
   type:                exitcode-stdio-1.0
   main-is:             RunTests.lhs
   hs-source-dirs:      .,tools
-  Build-Depends:       base >=4.6 && <4.7,
+  Build-Depends:       base >=4.6 && <5,
                        parsec >=3.1 && <3.2,
                        mtl >=2.1 && <2.2,
                        pretty >= 1.1 && < 1.2,
@@ -72,7 +72,7 @@ Test-Suite Tests
 executable SQLIndent
   main-is:             SQLIndent.lhs
   hs-source-dirs:      .,tools
-  Build-Depends:       base >=4.6 && <4.7,
+  Build-Depends:       base >=4.6 && <5,
                        parsec >=3.1 && <3.2,
                        mtl >=2.1 && <2.2,
                        pretty >= 1.1 && < 1.2,
