@@ -193,8 +193,8 @@ which have been changed to try to improve the layout of the output.
 >                 Intersect -> "intersect"
 >                 Except -> "except")
 >        <+> case d of
->                All -> empty
->                Distinct -> text "distinct"
+>                All -> text "all"
+>                Distinct -> empty -- text "distinct"
 >        <+> case c of
 >                Corresponding -> text "corresponding"
 >                Respectively -> empty
