@@ -1,5 +1,7 @@
 0.4.0-dev
 	completely remove dependency on haskell-src-exts
+0.3.1 (commit 5cba9a1cac19d66166aed2876d809aef892ff59f)
+	update to work with ghc 7.8.1
 0.3.0 (commit 9e75fa93650b4f1a08d94f4225a243bcc50445ae)
 	fix the basic operator fixity parsing
 	swap the order in select item abstract syntax so it is now
