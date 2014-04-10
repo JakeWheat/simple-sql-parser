@@ -1,5 +1,6 @@
 
 > -- | The AST for SQL queries.
+> {-# LANGUAGE DeriveDataTypeable #-}
 > module Language.SQL.SimpleSQL.Syntax
 >     (-- * Value expressions
 >      ValueExpr(..)
@@ -27,6 +28,7 @@
 >     ,JoinCondition(..)
 >     ) where
 
+> import Data.Data
 
 > -- | Represents a value expression. This is used for the expressions
 > -- in select lists. It is also used for expressions in where, group
@@ -119,25 +121,25 @@
 >       -- means not in was used ('a not in (1,2)')
 >     | In Bool ValueExpr InPredValue
 >     | Parameter -- ^ Represents a ? in a parameterized query
->       deriving (Eq,Show,Read)
+>       deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | Represents an identifier name, which can be quoted or unquoted.
 > data Name = Name String
 >           | QName String
->             deriving (Eq,Show,Read)
+>             deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | Represents a type name, used in casts.
 > data TypeName = TypeName String
 >               | PrecTypeName String Int
 >               | PrecScaleTypeName String Int Int
->                 deriving (Eq,Show,Read)
+>                 deriving (Eq,Show,Read,Data,Typeable)
 
 
 > -- | Used for 'expr in (value expression list)', and 'expr in
 > -- (subquery)' syntax.
 > data InPredValue = InList [ValueExpr]
 >                  | InQueryExpr QueryExpr
->                    deriving (Eq,Show,Read)
+>                    deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | A subquery in a value expression.
 > data SubQueryExprType
@@ -151,28 +153,28 @@
 >     | SqSome
 >       -- | any (query expr)
 >     | SqAny
->       deriving (Eq,Show,Read)
+>       deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | Represents one field in an order by list.
 > data SortSpec = SortSpec ValueExpr Direction NullsOrder
->                 deriving (Eq,Show,Read)
+>                 deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | Represents 'nulls first' or 'nulls last' in an order by clause.
 > data NullsOrder = NullsOrderDefault
 >                 | NullsFirst
 >                 | NullsLast
->                   deriving (Eq,Show,Read)
+>                   deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | Represents the frame clause of a window
 > -- this can be [range | rows] frame_start
 > -- or [range | rows] between frame_start and frame_end
 > data Frame = FrameFrom FrameRows FramePos
 >            | FrameBetween FrameRows FramePos FramePos
->              deriving (Eq,Show,Read)
+>              deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | Represents whether a window frame clause is over rows or ranges.
 > data FrameRows = FrameRows | FrameRange
->                  deriving (Eq,Show,Read)
+>                  deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | represents the start or end of a frame
 > data FramePos = UnboundedPreceding
@@ -180,7 +182,7 @@
 >               | Current
 >               | Following ValueExpr
 >               | UnboundedFollowing
->                 deriving (Eq,Show,Read)
+>                 deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | Represents a query expression, which can be:
 > --
@@ -226,7 +228,7 @@ This would make some things a bit cleaner?
 >       ,qeQueryExpression :: QueryExpr}
 >     | Values [[ValueExpr]]
 >     | Table Name
->       deriving (Eq,Show,Read)
+>       deriving (Eq,Show,Read,Data,Typeable)
 
 TODO: add queryexpr parens to deal with e.g.
 (select 1 union select 2) union select 3
@@ -261,14 +263,14 @@ I'm not sure if this is valid syntax or not.
 > -- | Represents the Distinct or All keywords, which can be used
 > -- before a select list, in an aggregate/window function
 > -- application, or in a query expression set operator.
-> data SetQuantifier = Distinct | All deriving (Eq,Show,Read)
+> data SetQuantifier = Distinct | All deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | The direction for a column in order by.
-> data Direction = Asc | Desc deriving (Eq,Show,Read)
+> data Direction = Asc | Desc deriving (Eq,Show,Read,Data,Typeable)
 > -- | Query expression set operators.
-> data CombineOp = Union | Except | Intersect deriving (Eq,Show,Read)
+> data CombineOp = Union | Except | Intersect deriving (Eq,Show,Read,Data,Typeable)
 > -- | Corresponding, an option for the set operators.
-> data Corresponding = Corresponding | Respectively deriving (Eq,Show,Read)
+> data Corresponding = Corresponding | Respectively deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | Represents an item in a group by clause.
 > data GroupingExpr
@@ -277,7 +279,7 @@ I'm not sure if this is valid syntax or not.
 >     | Rollup [GroupingExpr]
 >     | GroupingSets [GroupingExpr]
 >     | SimpleGroup ValueExpr
->       deriving (Eq,Show,Read)
+>       deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | Represents a entry in the csv of tables in the from clause.
 > data TableRef = -- | from t
@@ -296,20 +298,20 @@ I'm not sure if this is valid syntax or not.
 >               | TRFunction Name [ValueExpr]
 >                 -- | from lateral t
 >               | TRLateral TableRef
->                 deriving (Eq,Show,Read)
+>                 deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | Represents an alias for a table valued expression, used in with
 > -- queries and in from alias, e.g. select a from t u, select a from t u(b),
 > -- with a(c) as select 1, select * from a.
 > data Alias = Alias Name (Maybe [Name])
->              deriving (Eq,Show,Read)
+>              deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | The type of a join.
 > data JoinType = JInner | JLeft | JRight | JFull | JCross
->                 deriving (Eq,Show,Read)
+>                 deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | The join condition.
 > data JoinCondition = JoinOn ValueExpr -- ^ on expr
 >                    | JoinUsing [Name] -- ^ using (column list)
 >                    | JoinNatural -- ^ natural join was used
->                      deriving (Eq,Show,Read)
+>                      deriving (Eq,Show,Read,Data,Typeable)
