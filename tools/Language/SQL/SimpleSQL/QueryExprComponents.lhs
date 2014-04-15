@@ -144,10 +144,10 @@ These are a few misc tests which don't fit anywhere else.
 > combos :: TestItem
 > combos = Group "combos" $ map (uncurry TestQueryExpr)
 >     [("select a from t union select b from u"
->      ,CombineQueryExpr ms1 Union All Respectively ms2)
+>      ,CombineQueryExpr ms1 Union Distinct Respectively ms2)
 
 >     ,("select a from t intersect select b from u"
->      ,CombineQueryExpr ms1 Intersect All Respectively ms2)
+>      ,CombineQueryExpr ms1 Intersect Distinct Respectively ms2)
 
 >     ,("select a from t except all select b from u"
 >      ,CombineQueryExpr ms1 Except All Respectively ms2)
@@ -160,8 +160,8 @@ These are a few misc tests which don't fit anywhere else.
 >      -- TODO: union should be left associative. I think the others also
 >      -- so this needs to be fixed (new optionSuffix variation which
 >      -- handles this)
->      ,CombineQueryExpr ms1 Union All Respectively
->        (CombineQueryExpr ms1 Union All Respectively ms1))
+>      ,CombineQueryExpr ms1 Union Distinct Respectively
+>        (CombineQueryExpr ms1 Union Distinct Respectively ms1))
 >     ]
 >   where
 >     ms1 = makeSelect

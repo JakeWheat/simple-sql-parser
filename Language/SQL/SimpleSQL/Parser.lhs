@@ -747,7 +747,7 @@ and union, etc..
 >               [Union <$ keyword_ "union"
 >               ,Intersect <$ keyword_ "intersect"
 >               ,Except <$ keyword_ "except"])
->      <*> (fromMaybe All <$> duplicates)
+>      <*> (fromMaybe Distinct <$> duplicates)
 >      <*> option Respectively
 >                 (try (Corresponding <$ keyword_ "corresponding"))
 >      <*> queryExpr)

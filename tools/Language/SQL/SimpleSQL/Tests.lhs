@@ -79,9 +79,12 @@ order on the generated documentation.
 >                 let str' = pp got
 >                 let egot' = parser "" Nothing str'
 >                 case egot' of
->                     Left e' -> H.assertFailure $ "pp roundtrip "
+>                     Left e' -> H.assertFailure $ "pp roundtrip"
+>                                                  ++ "\n" ++ str'
 >                                                  ++ peFormattedError e'
->                     Right got' -> H.assertEqual "pp roundtrip" expected got'
+>                     Right got' -> H.assertEqual
+>                                   ("pp roundtrip" ++ "\n" ++ str')
+>                                    expected got'
 
 > toPTest :: (Eq a, Show a) =>
 >           (String -> Maybe (Int,Int) -> String -> Either ParseError a)
@@ -97,5 +100,6 @@ order on the generated documentation.
 >                 let egot' = parser "" Nothing str'
 >                 case egot' of
 >                     Left e' -> H.assertFailure $ "pp roundtrip "
+>                                                  ++ "\n" ++ str' ++ "\n"
 >                                                  ++ peFormattedError e'
 >                     Right _got' -> return ()

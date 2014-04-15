@@ -1,3 +1,10 @@
+synchronize parsing and syntax design with tutorial parser?
+
+error handling work: <?> + left factor
+
+create list of features to add, maybe try to do up to sql 99 for the
+   next release?
+
 = next release
 
 try and use the proper css theme
@@ -171,7 +178,15 @@ maybe later: other dml
   copy, execute?, explain?, begin/end/rollback?
 
 big feature summary:
-1. dialects
-2. position annotation
-3. dml
-4. quasiquotes
+all ansi sql queries
+error messages, left factor
+position annotation
+type checker/ etc.
+lexer
+dialects
+dml, ddl, procedural sql
+quasi quotes
+typesafe sql dbms wrapper support for haskell
+extensibility
+better expression tree parsing
+performance analysis
