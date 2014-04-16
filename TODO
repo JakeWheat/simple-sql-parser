@@ -1,9 +1,9 @@
 continue 2003 review and tests
-tutorial parser:
-  expr hack as best as can
-  left factor as much as possible
-  table expression in syntax
-replace into this project
+touch up the expr hack as best as can
+left factor as much as possible (see below on notes)
+table expression in syntax:
+  QueryExpr = Select SelectList (Maybe TableExpr)
+  and the TableExpr contains all the other bits?
 finish off ansi 2003 support or specific subset
   summarize todos
 start looking at error messages
@@ -12,7 +12,7 @@ represent missing optional bits in the ast as nothing instead of the
    default
 look at fixing the expression parsing completely
 represent natural and using/on in the syntax more close to the
-   concrete syntax - don't combine
+   concrete syntax - don't combine in the ast
 
 
 left factor/try removal:
