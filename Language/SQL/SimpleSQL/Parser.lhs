@@ -16,7 +16,8 @@
 >                    ,setPosition,setSourceColumn,setSourceLine,getPosition
 >                    ,option,between,sepBy,sepBy1,string,manyTill,anyChar
 >                    ,try,string,many1,oneOf,digit,(<|>),choice,char,eof
->                    ,optionMaybe,optional,many,letter,alphaNum,parse)
+>                    ,optionMaybe,optional,many,letter,parse
+>                    ,chainl1)
 > import Text.Parsec.String (Parser)
 > import qualified Text.Parsec as P (ParseError)
 > import Text.Parsec.Perm (permute,(<$?>), (<|?>))
@@ -74,7 +75,7 @@ converts the error return to the nice wrapper
 >           -> Either ParseError a
 > wrapParse parser f p src =
 >     either (Left . convParseError src) Right
->     $ parse (setPos p *> whiteSpace *> parser <* eof) f src
+>     $ parse (setPos p *> whitespace *> parser <* eof) f src
 
 > -- | Type to represent parse errors.
 > data ParseError = ParseError
@@ -95,10 +96,10 @@ converts the error return to the nice wrapper
 
 == literals
 
-See the stringLiteral lexer below for notes on string literal syntax.
+See the stringToken lexer below for notes on string literal syntax.
 
 > estring :: Parser ValueExpr
-> estring = StringLit <$> stringLiteral
+> estring = StringLit <$> stringToken
 
 > number :: Parser ValueExpr
 > number = NumLit <$> numberLiteral
@@ -115,9 +116,9 @@ which parses as a typed literal
 > interval :: Parser ValueExpr
 > interval = try (keyword_ "interval" >>
 >     IntervalLit
->     <$> stringLiteral
->     <*> identifierString
->     <*> optionMaybe (try $ parens integerLiteral))
+>     <$> stringToken
+>     <*> identifierBlacklist blacklist
+>     <*> optionMaybe (try $ parens integer))
 
 > literal :: Parser ValueExpr
 > literal = number <|> estring <|> interval
@@ -129,10 +130,10 @@ identifiers.
 
 > name :: Parser Name
 > name = choice [QName <$> quotedIdentifier
->               ,Name <$> identifierString]
+>               ,Name <$> identifierBlacklist blacklist]
 
-> identifier :: Parser ValueExpr
-> identifier = Iden <$> name
+> iden :: Parser ValueExpr
+> iden = Iden <$> name
 
 == star
 
@@ -149,7 +150,7 @@ in any value expression context.
 use in e.g. select * from t where a = ?
 
 > parameter :: Parser ValueExpr
-> parameter = Parameter <$ symbol "?"
+> parameter = Parameter <$ questionMark
 
 == function application, aggregates and windows
 
@@ -250,13 +251,13 @@ to separate the arguments.
 cast: cast(expr as type)
 
 > cast :: Parser ValueExpr
-> cast = parensCast <|> prefixCast
+> cast = (parensCast <|> prefixCast)
 >   where
 >     parensCast = try (keyword_ "cast") >>
 >                  parens (Cast <$> valueExpr
 >                          <*> (keyword_ "as" *> typeName))
 >     prefixCast = try (TypedLit <$> typeName
->                              <*> stringLiteral)
+>                              <*> stringToken)
 
 the special op keywords
 parse an operator which is
@@ -273,7 +274,7 @@ operatorname(firstArg keyword0 arg0 keyword1 arg1 etc.)
 >            -> Parser ValueExpr
 > specialOpK opName firstArg kws =
 >     keyword_ opName >> do
->     void $ symbol  "("
+>     void openParen
 >     let pfa = do
 >               e <- valueExpr
 >               -- check we haven't parsed the first
@@ -287,7 +288,7 @@ operatorname(firstArg keyword0 arg0 keyword1 arg1 etc.)
 >          SOKOptional -> optionMaybe (try pfa)
 >          SOKMandatory -> Just <$> pfa
 >     as <- mapM parseArg kws
->     void $ symbol ")"
+>     void closeParen
 >     return $ SpecialOpK (Name opName) fa $ catMaybes as
 >   where
 >     parseArg (nm,mand) =
@@ -353,9 +354,9 @@ in the source
 >     keyword "trim" >>
 >     parens (mkTrim
 >             <$> option "both" sides
->             <*> option " " stringLiteral
+>             <*> option " " stringToken
 >             <*> (keyword_ "from" *> valueExpr)
->             <*> optionMaybe (keyword_ "collate" *> stringLiteral))
+>             <*> optionMaybe (keyword_ "collate" *> stringToken))
 >   where
 >     sides = choice ["leading" <$ keyword_ "leading"
 >                    ,"trailing" <$ keyword_ "trailing"
@@ -428,7 +429,7 @@ that SQL supports.
 
 > typeName :: Parser TypeName
 > typeName = choice (multiWordParsers
->                    ++ [TypeName <$> identifierString])
+>                    ++ [TypeName <$> identifier])
 >            >>= optionSuffix precision
 >   where
 >     multiWordParsers =
@@ -456,7 +457,7 @@ todo: timestamp types:
      | TIMESTAMParser [ <left paren> <timestamp precision> <right paren> ] [ WITH TIME ZONE ]
 
 
->     precision t = try (parens (commaSep integerLiteral)) >>= makeWrap t
+>     precision t = try (parens (commaSep integer)) >>= makeWrap t
 >     makeWrap (TypeName t) [a] = return $ PrecTypeName t a
 >     makeWrap (TypeName t) [a,b] = return $ PrecScaleTypeName t a b
 >     makeWrap _ _ = fail "there must be one or two precision components"
@@ -535,9 +536,19 @@ TODO: carefully review the precedences and associativities.
 >       E.Infix (p >> return (\a b -> BinOp a (Name nm) b)) assoc
 >     prefixKeyword nm = prefix (try $ keyword_ nm) nm
 >     prefixSym nm = prefix (try $ symbol_ nm) nm
->     prefix p nm = E.Prefix (p >> return (PrefixOp (Name nm)))
+>     prefix p nm = prefix' (p >> return (PrefixOp (Name nm)))
 >     postfixKeywords nm = postfix (try $ mapM_ keyword_ (words nm)) nm
->     postfix p nm = E.Postfix (p >> return (PostfixOp (Name nm)))
+>     postfix p nm = postfix' (p >> return (PostfixOp (Name nm)))
+
+>     -- hack from here
+>     -- http://stackoverflow.com/questions/10475337/parsec-expr-repeated-prefix-postfix-operator-not-supported
+>     -- not implemented properly yet
+>     -- I don't think this will be enough for all cases
+>     -- at least it works for 'not not a'
+>     -- ok: "x is not true is not true"
+>     -- no work: "x is not true is not null"
+>     prefix'  p = E.Prefix  . chainl1 p $ return       (.)
+>     postfix' p = E.Postfix . chainl1 p $ return (flip (.))
 
 == value expressions
 
@@ -560,7 +571,7 @@ fragile and could at least do with some heavy explanation.
 >               ,subquery
 >               ,try app
 >               ,try star
->               ,identifier
+>               ,iden
 >               ,sparens]
 
 expose the b expression for window frame clause range between
@@ -757,7 +768,7 @@ wrapper for query expr which ignores optional trailing semicolon.
 
 > topLevelQueryExpr :: Parser QueryExpr
 > topLevelQueryExpr =
->      queryExpr >>= optionSuffix ((symbol ";" *>) . return)
+>      queryExpr >>= optionSuffix ((semi *>) . return)
 
 wrapper to parse a series of query exprs from a single source. They
 must be separated by semicolon, but for the last expression, the
@@ -766,91 +777,38 @@ trailing semicolon is optional.
 > queryExprs :: Parser [QueryExpr]
 > queryExprs =
 >     (:[]) <$> queryExpr
->     >>= optionSuffix ((symbol ";" *>) . return)
+>     >>= optionSuffix ((semi *>) . return)
 >     >>= optionSuffix (\p -> (p++) <$> queryExprs)
 
 ------------------------------------------------
 
 = lexing parsers
 
-The lexing is a bit 'virtual', in the usual parsec style. The
-convention in this file is to put all the parsers which access
-characters directly or indirectly here (i.e. ones which use char,
-string, digit, etc.), except for the parsers which only indirectly
-access them via these functions, if you follow?
+whitespace parser which skips comments also
 
-> symbol :: String -> Parser String
-> symbol s = string s
->            -- <* notFollowedBy (oneOf "+-/*<>=!|")
->            <* whiteSpace
-
-> symbol_ :: String -> Parser ()
-> symbol_ s = symbol s *> return ()
-
-TODO: now that keyword has try in it, a lot of the trys above can be
-removed
-
-> keyword :: String -> Parser String
-> keyword s = try $ do
->     i <- identifierRaw
->     guard (map toLower i == map toLower s)
->     return i
-
-> keyword_ :: String -> Parser ()
-> keyword_ s = keyword s *> return ()
-
-Identifiers are very simple at the moment: start with a letter or
-underscore, and continue with letter, underscore or digit. It doesn't
-support quoting other other sorts of identifiers yet. There is a
-blacklist of keywords which aren't supported as identifiers.
-
-the identifier raw doesn't check the blacklist since it is used by the
-keyword parser also
-
-> identifierRaw :: Parser String
-> identifierRaw = (:) <$> letterOrUnderscore
->                     <*> many letterDigitOrUnderscore <* whiteSpace
+> whitespace :: Parser ()
+> whitespace =
+>     choice [simpleWhitespace *> whitespace
+>            ,lineComment *> whitespace
+>            ,blockComment *> whitespace
+>            ,return ()]
 >   where
->     letterOrUnderscore = char '_' <|> letter
->     letterDigitOrUnderscore = char '_' <|> alphaNum
+>     lineComment = try (string "--")
+>                   *> manyTill anyChar (void (char '\n') <|> eof)
+>     blockComment = -- no nesting of block comments in SQL
+>                    try (string "/*")
+>                    -- try used here so it doesn't fail when we see a
+>                    -- '*' which isn't followed by a '/'
+>                    *> manyTill anyChar (try $ string "*/")
+>     -- use many1 so we can more easily avoid non terminating loops
+>     simpleWhitespace = void $ many1 (oneOf " \t\n")
 
-> identifierString :: Parser String
-> identifierString = do
->     s <- identifierRaw
->     guard (map toLower s `notElem` blacklist)
->     return s
+> lexeme :: Parser a -> Parser a
+> lexeme p = p <* whitespace
 
-> blacklist :: [String]
-> blacklist =
->     ["select", "as", "from", "where", "having", "group", "order"
->     ,"limit", "offset", "fetch"
->     ,"inner", "left", "right", "full", "natural", "join"
->     ,"cross", "on", "using", "lateral"
->     ,"when", "then", "case", "end", "in"
->     ,"except", "intersect", "union"]
+> integer :: Parser Integer
+> integer = read <$> lexeme (many1 digit)
 
-These blacklisted names are mostly needed when we parse something with
-an optional alias, e.g. select a a from t. If we write select a from
-t, we have to make sure the from isn't parsed as an alias. I'm not
-sure what other places strictly need the blacklist, and in theory it
-could be tuned differently for each place the identifierString/
-identifier parsers are used to only blacklist the bare minimum.
-
-> quotedIdentifier :: Parser String
-> quotedIdentifier = char '"' *> manyTill anyChar (symbol_ "\"")
-
-
-String literals: limited at the moment, no escaping \' or other
-variations.
-
-> stringLiteral :: Parser String
-> stringLiteral = (char '\'' *> manyTill anyChar (char '\'')
->                  >>= optionSuffix moreString) <* whiteSpace
->   where
->     moreString s0 = try $ do
->         void $ char '\''
->         s <- manyTill anyChar (char '\'')
->         optionSuffix moreString (s0 ++ "'" ++ s)
 
 number literals
 
@@ -866,13 +824,12 @@ making a decision on how to represent numbers, the client code can
 make this choice.
 
 > numberLiteral :: Parser String
-> numberLiteral =
+> numberLiteral = lexeme $
 >     choice [int
 >             >>= optionSuffix dot
 >             >>= optionSuffix fracts
 >             >>= optionSuffix expon
 >            ,fract "" >>= optionSuffix expon]
->     <* whiteSpace
 >   where
 >     int = many1 digit
 >     fract p = dot p >>= fracts
@@ -884,30 +841,83 @@ make this choice.
 >               ,option "" (string "+" <|> string "-")
 >               ,int]
 
-lexer for integer literals which appear in some places in SQL
 
-> integerLiteral :: Parser Int
-> integerLiteral = read <$> many1 digit <* whiteSpace
-
-whitespace parser which skips comments also
-
-> whiteSpace :: Parser ()
-> whiteSpace =
->     choice [simpleWhiteSpace *> whiteSpace
->            ,lineComment *> whiteSpace
->            ,blockComment *> whiteSpace
->            ,return ()]
+> identifier :: Parser String
+> identifier = lexeme ((:) <$> firstChar <*> many nonFirstChar)
 >   where
->     lineComment = try (string "--")
->                   *> manyTill anyChar (void (char '\n') <|> eof)
->     blockComment = -- no nesting of block comments in SQL
->                    try (string "/*")
->                    -- TODO: why is try used herex
->                    *> manyTill anyChar (try $ string "*/")
->     -- use many1 so we can more easily avoid non terminating loops
->     simpleWhiteSpace = void $ many1 (oneOf " \t\n")
+>     firstChar = letter <|> char '_'
+>     nonFirstChar = digit <|> firstChar
 
-= generic parser helpers
+> quotedIdentifier :: Parser String
+> quotedIdentifier = char '"' *> manyTill anyChar doubleQuote
+
+TODO: add "" inside quoted identifiers
+
+todo: work out the symbol parsing better
+
+> symbol :: String -> Parser String
+> symbol s = try $ lexeme $ do
+>     u <- choice
+>          [string "."
+>          ,many1 (oneOf "<>=+-^%/*!|~&")
+>          ]
+>     guard (s == u)
+>     return s
+
+> questionMark :: Parser Char
+> questionMark = lexeme $ char '?'
+
+> openParen :: Parser Char
+> openParen = lexeme $ char '('
+
+> closeParen :: Parser Char
+> closeParen = lexeme $ char ')'
+
+> comma :: Parser Char
+> comma = lexeme $ char ','
+
+> semi :: Parser Char
+> semi = lexeme $ char ';'
+
+> doubleQuote :: Parser Char
+> doubleQuote = lexeme $ char '"'
+
+> --stringToken :: Parser String
+> --stringToken = lexeme (char '\'' *> manyTill anyChar (char '\''))
+> -- todo: tidy this up, add the prefixes stuff, and add the multiple
+> -- string stuff
+> stringToken :: Parser String
+> stringToken =
+>     lexeme (char '\'' *> manyTill anyChar (char '\'')
+>     >>= optionSuffix moreString)
+>   where
+>     moreString s0 = try $ do
+>         void $ char '\''
+>         s <- manyTill anyChar (char '\'')
+>         optionSuffix moreString (s0 ++ "'" ++ s)
+
+= helper functions
+
+> keyword :: String -> Parser String
+> keyword k = try $ do
+>     i <- identifier
+>     guard (map toLower i == k)
+>     return k
+
+> parens :: Parser a -> Parser a
+> parens = between openParen closeParen
+
+> commaSep :: Parser a -> Parser [a]
+> commaSep = (`sepBy` comma)
+
+> keyword_ :: String -> Parser ()
+> keyword_ = void . keyword
+
+> symbol_ :: String -> Parser ()
+> symbol_ = void . symbol
+
+> commaSep1 :: Parser a -> Parser [a]
+> commaSep1 = (`sepBy1` comma)
 
 a possible issue with the option suffix is that it enforces left
 associativity when chaining it recursively. Have to review
@@ -917,15 +927,30 @@ instead, and create an alternative suffix parser
 > optionSuffix :: (a -> Parser a) -> a -> Parser a
 > optionSuffix p a = option a (p a)
 
-> parens :: Parser a -> Parser a
-> parens = between (symbol_ "(") (symbol_ ")")
+> identifierBlacklist :: [String] -> Parser String
+> identifierBlacklist bl = do
+>     i <- identifier
+>     guard (map toLower i `notElem` bl)
+>     return i
 
-> commaSep :: Parser a -> Parser [a]
-> commaSep = (`sepBy` symbol_ ",")
+> blacklist :: [String]
+> blacklist =
+>     [-- case
+>      "case", "when", "then", "else", "end"
+>     ,--join
+>      "natural","inner","outer","cross","left","right","full","join"
+>     ,"on","using","lateral"
+>     ,"from","where","group","having","order","limit", "offset", "fetch"
+>     ,"as","in"
+>     ,"except", "intersect", "union"
+>     ]
 
-
-> commaSep1 :: Parser a -> Parser [a]
-> commaSep1 = (`sepBy1` symbol_ ",")
+These blacklisted names are mostly needed when we parse something with
+an optional alias, e.g. select a a from t. If we write select a from
+t, we have to make sure the from isn't parsed as an alias. I'm not
+sure what other places strictly need the blacklist, and in theory it
+could be tuned differently for each place the identifierString/
+identifier parsers are used to only blacklist the bare minimum.
 
 --------------------------------------------
 

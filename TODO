@@ -1,9 +1,33 @@
-synchronize parsing and syntax design with tutorial parser?
+continue 2003 review and tests
+tutorial parser:
+  expr hack as best as can
+  left factor as much as possible
+  table expression in syntax
+replace into this project
+finish off ansi 2003 support or specific subset
+  summarize todos
+start looking at error messages
+change the booleans in the ast to better types for less ambiguity
+represent missing optional bits in the ast as nothing instead of the
+   default
+look at fixing the expression parsing completely
+represent natural and using/on in the syntax more close to the
+   concrete syntax - don't combine
 
-error handling work: <?> + left factor
+big feature summary:
+all ansi sql queries
+better expression tree parsing
+error messages, left factor
+dml, ddl, procedural sql
+position annotation
+type checker/ etc.
+lexer
+dialects
+quasi quotes
+typesafe sql dbms wrapper support for haskell
+extensibility
+performance analysis
 
-create list of features to add, maybe try to do up to sql 99 for the
-   next release?
 
 = next release
 
@@ -46,17 +70,12 @@ review internal sql collection for more syntax/tests
 
 other
 
-change any/some/all to be proper infix operators like in ??
-
 review syntax to replace maybe and bool with better ctors
 
 ----
 
 demo program: convert tpch to sql server syntax exe processor
 
-dialect framework
-try to implement fixity without the hse hack
-source position annotation?
 review abstract syntax (e.g. combine App with SpecialOp?)
 
 more operators
@@ -76,12 +95,6 @@ run through other manuals for example queries and features: sql in a
 
 check the order of exports, imports and functions/cases in the files
 fix up the import namespaces/explicit names nicely
-
-do some tests for parse errors?
-
-left factor parsing code in remaining places
-
-quasi quotes?
 
 ast checker: checks the ast represents valid syntax, the parser
    doesn't check as much as it could, and this can also be used to
@@ -172,21 +185,12 @@ teradata
 ms sql server
 mysql?
 db2?
+what other major dialects are there?
+sqlite
+sap dbmss (can't work out what are separate products or what are the
+   dialects)
 
 maybe later: other dml
   insert, update, delete, truncate, merge + set, show?
   copy, execute?, explain?, begin/end/rollback?
 
-big feature summary:
-all ansi sql queries
-error messages, left factor
-position annotation
-type checker/ etc.
-lexer
-dialects
-dml, ddl, procedural sql
-quasi quotes
-typesafe sql dbms wrapper support for haskell
-extensibility
-better expression tree parsing
-performance analysis

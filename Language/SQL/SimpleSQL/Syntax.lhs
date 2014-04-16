@@ -57,7 +57,7 @@
 >     | IntervalLit
 >       {ilLiteral :: String -- ^ literal text
 >       ,ilUnits :: String -- ^ units
->       ,ilPrecision :: Maybe Int -- ^ precision
+>       ,ilPrecision :: Maybe Integer -- ^ precision
 >       }
 >       -- | identifier without dots
 >     | Iden Name
@@ -130,8 +130,8 @@
 
 > -- | Represents a type name, used in casts.
 > data TypeName = TypeName String
->               | PrecTypeName String Int
->               | PrecScaleTypeName String Int Int
+>               | PrecTypeName String Integer
+>               | PrecScaleTypeName String Integer Integer
 >                 deriving (Eq,Show,Read,Data,Typeable)
 
 
