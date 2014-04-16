@@ -98,8 +98,8 @@ converts the error return to the nice wrapper
 
 See the stringToken lexer below for notes on string literal syntax.
 
-> estring :: Parser ValueExpr
-> estring = StringLit <$> stringToken
+> stringValue :: Parser ValueExpr
+> stringValue = StringLit <$> stringToken
 
 > number :: Parser ValueExpr
 > number = NumLit <$> numberLiteral
@@ -118,10 +118,10 @@ which parses as a typed literal
 >     IntervalLit
 >     <$> stringToken
 >     <*> identifierBlacklist blacklist
->     <*> optionMaybe (try $ parens integer))
+>     <*> optionMaybe (parens integer))
 
 > literal :: Parser ValueExpr
-> literal = number <|> estring <|> interval
+> literal = number <|> stringValue <|> interval
 
 == identifiers
 
@@ -166,15 +166,15 @@ aggregate([all|distinct] args [order by orderitems])
 > aggOrApp =
 >     makeApp
 >     <$> name
->     <*> parens ((,,) <$> try duplicates
+>     <*> parens ((,,) <$> duplicates
 >                      <*> choice [commaSep valueExpr]
->                      <*> try (optionMaybe orderBy))
+>                      <*> (optionMaybe orderBy))
 >   where
 >     makeApp i (Nothing,es,Nothing) = App i es
 >     makeApp i (d,es,od) = AggregateApp i d es (fromMaybe [] od)
 
 > duplicates :: Parser (Maybe SetQuantifier)
-> duplicates = optionMaybe $ try $
+> duplicates = optionMaybe $
 >     choice [All <$ keyword_ "all"
 >            ,Distinct <$ keyword "distinct"]
 
@@ -190,13 +190,13 @@ always used with the optionSuffix combinator.
 
 > windowSuffix :: ValueExpr -> Parser ValueExpr
 > windowSuffix (App f es) =
->     try (keyword_ "over")
+>     keyword_ "over"
 >     *> parens (WindowApp f es
 >                <$> option [] partitionBy
 >                <*> option [] orderBy
 >                <*> optionMaybe frameClause)
 >   where
->     partitionBy = try (keyword_ "partition") >>
+>     partitionBy = keyword_ "partition" >>
 >         keyword_ "by" >> commaSep1 valueExpr
 >     frameClause =
 >         mkFrame <$> choice [FrameRows <$ keyword_ "rows"
@@ -204,15 +204,15 @@ always used with the optionSuffix combinator.
 >                 <*> frameStartEnd
 >     frameStartEnd =
 >         choice
->         [try (keyword_ "between") >>
+>         [keyword_ "between" >>
 >          mkFrameBetween <$> frameLimit True
 >                         <*> (keyword_ "and" *> frameLimit True)
 >         ,mkFrameFrom <$> frameLimit False]
 >     -- use the bexpression style from the between parsing for frame between
 >     frameLimit useB =
 >         choice
->         [Current <$ try (keyword_ "current") <* keyword_ "row"
->         ,try (keyword_ "unbounded") >>
+>         [Current <$ keyword_ "current" <* keyword_ "row"
+>         ,keyword_ "unbounded" >>
 >          choice [UnboundedPreceding <$ keyword_ "preceding"
 >                 ,UnboundedFollowing <$ keyword_ "following"]
 >         ,do
@@ -230,16 +230,16 @@ always used with the optionSuffix combinator.
 
 == case expression
 
-> scase :: Parser ValueExpr
-> scase =
->     Case <$> (try (keyword_ "case") *> optionMaybe (try valueExpr))
->          <*> many1 swhen
->          <*> optionMaybe (try (keyword_ "else") *> valueExpr)
+> caseValue :: Parser ValueExpr
+> caseValue =
+>     Case <$> (keyword_ "case" *> optionMaybe valueExpr)
+>          <*> many1 whenClause
+>          <*> optionMaybe elseClause
 >          <* keyword_ "end"
 >   where
->     swhen = keyword_ "when" *>
->             ((,) <$> commaSep1 valueExpr
->                  <*> (keyword_ "then" *> valueExpr))
+>    whenClause = (,) <$> (keyword_ "when" *> commaSep1 valueExpr)
+>                     <*> (keyword_ "then" *> valueExpr)
+>    elseClause = keyword_ "else" *> valueExpr
 
 == miscellaneous keyword operators
 
@@ -253,11 +253,11 @@ cast: cast(expr as type)
 > cast :: Parser ValueExpr
 > cast = (parensCast <|> prefixCast)
 >   where
->     parensCast = try (keyword_ "cast") >>
+>     parensCast = keyword_ "cast" >>
 >                  parens (Cast <$> valueExpr
 >                          <*> (keyword_ "as" *> typeName))
 >     prefixCast = try (TypedLit <$> typeName
->                              <*> stringToken)
+>                                <*> stringToken)
 
 the special op keywords
 parse an operator which is
@@ -380,8 +380,8 @@ this is parsed as a postfix operator which is why it is in this form
 >                      [InQueryExpr <$> queryExpr
 >                      ,InList <$> commaSep1 valueExpr])
 >   where
->     inty = try $ choice [True <$ keyword_ "in"
->                         ,False <$ keyword_ "not" <* keyword_ "in"]
+>     inty = choice [True <$ keyword_ "in"
+>                   ,False <$ keyword_ "not" <* keyword_ "in"]
 >     mkIn i v = \e -> In i e v
 
 
@@ -404,9 +404,9 @@ and operator. This is the call to valueExprB.
 >            <*> valueExprB
 >            <*> (keyword_ "and" *> valueExprB)
 >   where
->     opName = try $ choice
+>     opName = choice
 >              ["between" <$ keyword_ "between"
->              ,"not between" <$ keyword_ "not" <* keyword_ "between"]
+>              ,"not between" <$ try (keyword_ "not" <* keyword_ "between")]
 >     makeOp n b c = \a -> SpecialOp n [a,b,c]
 
 subquery expression:
@@ -416,11 +416,11 @@ subquery expression:
 > subquery =
 >     choice
 >     [try $ SubQueryExpr SqSq <$> parens queryExpr
->     ,SubQueryExpr <$> try sqkw <*> parens queryExpr]
+>     ,SubQueryExpr <$> sqkw <*> parens queryExpr]
 >   where
->     sqkw = try $ choice
+>     sqkw = choice
 >            [SqExists <$ keyword_ "exists"
->            ,SqAll <$ try (keyword_ "all")
+>            ,SqAll <$ keyword_ "all"
 >            ,SqAny <$ keyword_ "any"
 >            ,SqSome <$ keyword_ "some"]
 
@@ -429,7 +429,7 @@ that SQL supports.
 
 > typeName :: Parser TypeName
 > typeName = choice (multiWordParsers
->                    ++ [TypeName <$> identifier])
+>                    ++ [TypeName <$> identifierBlacklist blacklist])
 >            >>= optionSuffix precision
 >   where
 >     multiWordParsers =
@@ -457,7 +457,7 @@ todo: timestamp types:
      | TIMESTAMParser [ <left paren> <timestamp precision> <right paren> ] [ WITH TIME ZONE ]
 
 
->     precision t = try (parens (commaSep integer)) >>= makeWrap t
+>     precision t = parens (commaSep integer) >>= makeWrap t
 >     makeWrap (TypeName t) [a] = return $ PrecTypeName t a
 >     makeWrap (TypeName t) [a,b] = return $ PrecScaleTypeName t a b
 >     makeWrap _ _ = fail "there must be one or two precision components"
@@ -465,8 +465,8 @@ todo: timestamp types:
 
 == value expression parens and row ctor
 
-> sparens :: Parser ValueExpr
-> sparens =
+> parensValue :: Parser ValueExpr
+> parensValue =
 >     ctor <$> parens (commaSep1 valueExpr)
 >   where
 >     ctor [a] = Parens a
@@ -517,7 +517,11 @@ TODO: carefully review the precedences and associativities.
 >          ,"is not false"
 >          ,"is unknown"
 >          ,"is not unknown"]
->           ++ [E.Postfix $ try inSuffix,E.Postfix $ try betweenSuffix]
+>          -- have to use try with inSuffix because of a conflict
+>          -- with 'in' in position function
+>          -- between also has a try in it to deal with 'not'
+>          -- ambiguity
+>           ++ [E.Postfix $ try inSuffix,E.Postfix betweenSuffix]
 >         ]
 >         ++
 >         [[binarySym "<" E.AssocNone
@@ -529,13 +533,16 @@ TODO: carefully review the precedences and associativities.
 >         ++
 >         [[binaryKeyword "or" E.AssocLeft]]
 >   where
->     binarySym nm assoc = binary (try $ symbol_ nm) nm assoc
->     binaryKeyword nm assoc = binary (try $ keyword_ nm) nm assoc
+>     binarySym nm assoc = binary (symbol_ nm) nm assoc
+>     binaryKeyword nm assoc = binary (keyword_ nm) nm assoc
+>     -- use try with the multi keywords because of shared
+>     -- prefixes to the sets of keywords. Should left factor
+>     -- somehow
 >     binaryKeywords nm assoc = binary (try $ mapM_ keyword_ (words nm)) nm assoc
 >     binary p nm assoc =
 >       E.Infix (p >> return (\a b -> BinOp a (Name nm) b)) assoc
->     prefixKeyword nm = prefix (try $ keyword_ nm) nm
->     prefixSym nm = prefix (try $ symbol_ nm) nm
+>     prefixKeyword nm = prefix (keyword_ nm) nm
+>     prefixSym nm = prefix (symbol_ nm) nm
 >     prefix p nm = prefix' (p >> return (PrefixOp (Name nm)))
 >     postfixKeywords nm = postfix (try $ mapM_ keyword_ (words nm)) nm
 >     postfix p nm = postfix' (p >> return (PostfixOp (Name nm)))
@@ -565,14 +572,14 @@ fragile and could at least do with some heavy explanation.
 > term :: Parser ValueExpr
 > term = choice [literal
 >               ,parameter
->               ,scase
+>               ,caseValue
 >               ,cast
 >               ,try specialOpKs
 >               ,subquery
 >               ,try app
->               ,try star
+>               ,star
 >               ,iden
->               ,sparens]
+>               ,parensValue]
 
 expose the b expression for window frame clause range between
 
@@ -587,8 +594,8 @@ expose the b expression for window frame clause range between
 == select lists
 
 > selectItem :: Parser (ValueExpr,Maybe Name)
-> selectItem = (,) <$> valueExpr <*> optionMaybe (try als)
->   where als = optional (try (keyword_ "as")) *> name
+> selectItem = (,) <$> valueExpr <*> optionMaybe als
+>   where als = optional (keyword_ "as") *> name
 
 > selectList :: Parser [(ValueExpr,Maybe Name)]
 > selectList = commaSep1 selectItem
@@ -603,7 +610,7 @@ tref
 [on expr | using (...)]
 
 > from :: Parser [TableRef]
-> from = try (keyword_ "from") *> commaSep1 tref
+> from = keyword_ "from" *> commaSep1 tref
 >   where
 >     tref = nonJoinTref >>= optionSuffix joinTrefSuffix
 >     nonJoinTref = choice [try (TRQueryExpr <$> parens queryExpr)
@@ -617,80 +624,78 @@ tref
 >                   >>= optionSuffix aliasSuffix
 >     aliasSuffix j = option j (TRAlias j <$> alias)
 >     joinTrefSuffix t = (do
->          nat <- option False $ try (True <$ try (keyword_ "natural"))
+>          nat <- option False (True <$ keyword_ "natural")
 >          TRJoin t <$> joinType
 >                   <*> nonJoinTref
 >                   <*> optionMaybe (joinCondition nat))
 >         >>= optionSuffix joinTrefSuffix
->     joinType =
->         choice [choice
->                 [JCross <$ try (keyword_ "cross")
->                 ,JInner <$ try (keyword_ "inner")
->                 ,choice [JLeft <$ try (keyword_ "left")
->                         ,JRight <$ try (keyword_ "right")
->                         ,JFull <$ try (keyword_ "full")]
->                  <* optional (try $ keyword_ "outer")]
->                 <* keyword "join"
->                ,JInner <$ keyword_ "join"]
->     joinCondition nat =
->         choice [guard nat >> return JoinNatural
->                ,try (keyword_ "on") >>
->                 JoinOn <$> valueExpr
->                ,try (keyword_ "using") >>
->                 JoinUsing <$> parens (commaSep1 name)
->                ]
+
+> joinType :: Parser JoinType
+> joinType = choice
+>     [JCross <$ keyword_ "cross" <* keyword_ "join"
+>     ,JInner <$ keyword_ "inner" <* keyword_ "join"
+>     ,JLeft <$ keyword_ "left"
+>            <* optional (keyword_ "outer")
+>            <* keyword_ "join"
+>     ,JRight <$ keyword_ "right"
+>             <* optional (keyword_ "outer")
+>             <* keyword_ "join"
+>     ,JFull <$ keyword_ "full"
+>            <* optional (keyword_ "outer")
+>            <* keyword_ "join"
+>     ,JInner <$ keyword_ "join"]
+
+> joinCondition :: Bool -> Parser JoinCondition
+> joinCondition nat =
+>     choice [guard nat >> return JoinNatural
+>            ,keyword_ "on" >> JoinOn <$> valueExpr
+>            ,keyword_ "using" >> JoinUsing <$> parens (commaSep1 name)
+>            ]
 
 > alias :: Parser Alias
-> alias = Alias <$> try tableAlias <*> try columnAliases
+> alias = Alias <$> tableAlias <*> columnAliases
 >   where
->     tableAlias = optional (try $ keyword_ "as") *> name
->     columnAliases = optionMaybe $ try $ parens $ commaSep1 name
+>     tableAlias = optional (keyword_ "as") *> name
+>     columnAliases = optionMaybe $ parens $ commaSep1 name
 
 == simple other parts
 
 Parsers for where, group by, having, order by and limit, which are
 pretty trivial.
 
-Here is a helper for parsing a few parts of the query expr (currently
-where, having, limit, offset).
+> whereClause :: Parser ValueExpr
+> whereClause = keyword_ "where" *> valueExpr
 
-> keywordValueExpr :: String -> Parser ValueExpr
-> keywordValueExpr k = try (keyword_ k) *> valueExpr
-
-> swhere :: Parser ValueExpr
-> swhere = keywordValueExpr "where"
-
-> sgroupBy :: Parser [GroupingExpr]
-> sgroupBy = try (keyword_ "group")
->            *> keyword_ "by"
+> groupByClause :: Parser [GroupingExpr]
+> groupByClause = keyword_ "group" *> keyword_ "by"
 >            *> commaSep1 groupingExpression
 >   where
 >     groupingExpression =
 >       choice
->       [try (keyword_ "cube") >>
+>       [keyword_ "cube" >>
 >        Cube <$> parens (commaSep groupingExpression)
->       ,try (keyword_ "rollup") >>
+>       ,keyword_ "rollup" >>
 >        Rollup <$> parens (commaSep groupingExpression)
 >       ,GroupingParens <$> parens (commaSep groupingExpression)
->       ,try (keyword_ "grouping") >> keyword_ "sets" >>
+>       ,keyword_ "grouping" >> keyword_ "sets" >>
 >        GroupingSets <$> parens (commaSep groupingExpression)
 >       ,SimpleGroup <$> valueExpr
 >       ]
 
 > having :: Parser ValueExpr
-> having = keywordValueExpr "having"
+> having = keyword_ "having" *> valueExpr
 
 > orderBy :: Parser [SortSpec]
-> orderBy = try (keyword_ "order") *> keyword_ "by" *> commaSep1 ob
+> orderBy = keyword_ "order" *> keyword_ "by" *> commaSep1 ob
 >   where
 >     ob = SortSpec
 >          <$> valueExpr
 >          <*> option Asc (choice [Asc <$ keyword_ "asc"
 >                                 ,Desc <$ keyword_ "desc"])
 >          <*> option NullsOrderDefault
->              (try (keyword_ "nulls" >>
+>              (keyword_ "nulls" >>
 >                     choice [NullsFirst <$ keyword "first"
->                            ,NullsLast <$ keyword "last"]))
+>                            ,NullsLast <$ keyword "last"])
 
 allows offset and fetch in either order
 + postgresql offset without row(s) and limit instead of fetch also
@@ -700,28 +705,29 @@ allows offset and fetch in either order
 >                            <|?> (Nothing, Just <$> fetch))
 
 > offset :: Parser ValueExpr
-> offset = try (keyword_ "offset") *> valueExpr
->          <* option () (try $ choice [try (keyword_ "rows"),keyword_ "row"])
+> offset = keyword_ "offset" *> valueExpr
+>          <* option () (choice [keyword_ "rows"
+>                               ,keyword_ "row"])
 
 > fetch :: Parser ValueExpr
 > fetch = choice [ansiFetch, limit]
 >   where
->     ansiFetch = try (keyword_ "fetch") >>
+>     ansiFetch = keyword_ "fetch" >>
 >         choice [keyword_ "first",keyword_ "next"]
 >         *> valueExpr
 >         <* choice [keyword_ "rows",keyword_ "row"]
 >         <* keyword_ "only"
->     limit = try (keyword_ "limit") *> valueExpr
+>     limit = keyword_ "limit" *> valueExpr
 
 == common table expressions
 
 > with :: Parser QueryExpr
-> with = try (keyword_ "with") >>
->     With <$> option False (try (True <$ keyword_ "recursive"))
+> with = keyword_ "with" >>
+>     With <$> option False (True <$ keyword_ "recursive")
 >          <*> commaSep1 withQuery <*> queryExpr
 >   where
 >     withQuery =
->         (,) <$> (alias <* optional (try $ keyword_ "as"))
+>         (,) <$> (alias <* keyword_ "as")
 >             <*> parens queryExpr
 
 == query expression
@@ -735,32 +741,32 @@ and union, etc..
 >          ,choice [values,table, select]
 >           >>= optionSuffix queryExprSuffix]
 >   where
->     select = try (keyword_ "select") >>
+>     select = keyword_ "select" >>
 >         mkSelect
 >         <$> (fromMaybe All <$> duplicates)
 >         <*> selectList
 >         <*> option [] from
->         <*> optionMaybe swhere
->         <*> option [] sgroupBy
+>         <*> optionMaybe whereClause
+>         <*> option [] groupByClause
 >         <*> optionMaybe having
 >         <*> option [] orderBy
 >         <*> offsetFetch
 >     mkSelect d sl f w g h od (ofs,fe) =
 >         Select d sl f w g h od ofs fe
->     values = try (keyword_ "values")
+>     values = keyword_ "values"
 >              >> Values <$> commaSep (parens (commaSep valueExpr))
->     table = try (keyword_ "table") >> Table <$> name
+>     table = keyword_ "table" >> Table <$> name
 
 > queryExprSuffix :: QueryExpr -> Parser QueryExpr
 > queryExprSuffix qe =
 >     (CombineQueryExpr qe
->      <$> try (choice
->               [Union <$ keyword_ "union"
->               ,Intersect <$ keyword_ "intersect"
->               ,Except <$ keyword_ "except"])
+>      <$> choice
+>          [Union <$ keyword_ "union"
+>          ,Intersect <$ keyword_ "intersect"
+>          ,Except <$ keyword_ "except"]
 >      <*> (fromMaybe Distinct <$> duplicates)
 >      <*> option Respectively
->                 (try (Corresponding <$ keyword_ "corresponding"))
+>                 (Corresponding <$ keyword_ "corresponding")
 >      <*> queryExpr)
 >     >>= optionSuffix queryExprSuffix
 
@@ -928,7 +934,7 @@ instead, and create an alternative suffix parser
 > optionSuffix p a = option a (p a)
 
 > identifierBlacklist :: [String] -> Parser String
-> identifierBlacklist bl = do
+> identifierBlacklist bl = try $ do
 >     i <- identifier
 >     guard (map toLower i `notElem` bl)
 >     return i

@@ -14,6 +14,29 @@ look at fixing the expression parsing completely
 represent natural and using/on in the syntax more close to the
    concrete syntax - don't combine
 
+
+left factor/try removal:
+try in the interval literal
+  have to left factor with the typed literal "interval 'xxx'" syntax
+  + with identifier
+try in the prefix cast: LF with identifier
+few tries in the specialopks: need review
+  + left factor the start of these (e.g. for function style substring
+   and for keyword style substring)
+not between: needs left factoring with a bunch of suffix operators
+subqueries: need left factoring with all the stuff which starts with
+   open parens. The subquery ast needs rethink as well
+typename: left factor with identifier
+inSuffix in expr table: conflicts with 'in' keyword in precision -
+   left factor
+the binary and postfix multi keyword ops need left factoring since
+   several share prefixes
+app needs lf with parens, identifier, etc.
+parens lf in nonJoinTref
+name start lf in nonJoinTref
+
+all of the above should help the error messages a lot
+
 big feature summary:
 all ansi sql queries
 better expression tree parsing
