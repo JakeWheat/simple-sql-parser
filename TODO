@@ -14,6 +14,97 @@ look at fixing the expression parsing completely
 represent natural and using/on in the syntax more close to the
    concrete syntax - don't combine in the ast
 
+decide whether to represent numeric literals better, instead of a
+   single string - break up into parts, or parse to a Decimal or
+   something
+
+rough SQL 2003 todo, including tests to write:
+multipart string literals
+national, unicode, hex, bit string literals, escapes
+string literal character sets
+more work on date and time literals
+support "" in delimited identifier
+unicode identifier
+support needed MODULE syntax in identifiers - already covered?
+review qualification names in identifiers support in various contexts
+  (e.g. function app, table refs)
+add missing type name support: lots of missing ones here, including
+   simple stuff like lob variations, and new things like interval,
+   row, ref, scope, array, multiset type names.
+decide how to represent special identifiers including the session
+   variables or whatever they are called like current_user
+host :parameter + indicator
+collation stuff, other character set stuff: list what is needed
+array[], multiset[]
+grouping - needs special syntax?
+review window function support and missing bits
+review case expressions
+next value for
+probably leave for now: subtypes, methods, new /routine, dereference
+array element reference
+multiset element reference - maybe nothing to do
+double check associativity, precedence (value exprs, joins, set ops)
+position expressions
+length expressions
+extract expression
+cardinality expression?
+check concatenations
+collations: review where can appear
+substring expressions
+regular expression substring function
+convert
+translate
+trim
+overlay
+specifictype
+datetime value expressions
+intervals
+array value constructors
+multiset value expressions, constructors
+row value constructors, expressions review
+review table value constructor exactly what is allowed
+lots more tests for from clause variations
+tablesamples
+unnest
+table function derived table
+only spec
+join variations, including union join
+review group by
+window clauses
+all fields reference with alias 'select * as (a,b,c) ... '
+search or cycle clause
+between symmetric/asymmetric
+in predicate review
+escape for like
+escape for [not] similar to
+regular expression syntax?
+quantified comparison predicate: represent different from current
+unique predicate
+normalized predicate
+match predicate
+overlaps predicate
+distinct from predicate
+member predicate
+submultiset predicate
+set predicate
+type predicate
+additional stuff review:
+interval stuff
+collate clause
+aggregate functions: lots of missing bits
+
+
+
+review areas where this parser is too permissive, e.g. value
+   expressions allowed where column reference names only should be
+   allowed, such as group by, order by (perhaps there can be a flag or
+   warnings or something), unqualified asterisk in select list
+
+
+
+
+
+
 
 left factor/try removal:
 try in the interval literal
@@ -124,82 +215,10 @@ ast checker: checks the ast represents valid syntax, the parser
    check generated trees. Maybe this doesn't belong in this package
    though?
 
-= sql support
-
-collate? -> postfix operator which binds very tightly:
-a < 'foo' collate 'C'
-->
-Op "<" [Iden "a", SpecialOp "collate" [StringLit 'foo', StringLit
-   'C']]
-  also postfix in order by:
-select a from t order by a collate 'C': add to order by syntax, one
-   collation per column
-and on group by
-a collation in ansi sql is a optional qualifier plus identifier, not a
-   string
-have to do fixity for this to work
-
-see what schema.fun(a) parses to and decide if this is correct
-
-all ansi string literal syntax?
-
-check ansi standard for operators (keywords and symbols)
-
-proper character sets for identifiers, escapes, etc.
-
-placeholder/positional arg
+= other sql support
 
 full number literals -> other bases?
 apply, pivot
-within group aggregate syntax
-
-try to do full review of sql2003 query syntax
-
-make ansi dialect which only supports ansi sql. Maybe there is a use
-   for a separate SQL 92, 99 and 2003 dialects?
-
-string literals:
-N'
-B'
-X'
-U&' ?
-looks like two string literals separated by any whitespace are
-     merged, which isn't what the postgres manual claims is the standard
-  plus something introducer, character set thing
-union join?
-corresponding by
-from in substring is not optional in ansi
-the keyword from is optional in trim iff there is neither
-   leading,etc. and explicit char
-extract can accept 'timezone hour' and 'timezone minute' for the
-   extraction field. Could hardcode the complete allowed list in the
-   parser?
-bunch of timezone keyword stuff
-interval a to b
-array specification int array or int array[5] - type name
-typenames: scope, multiset,row type, ref type
-unique subquery -> returns true if all the rows in the subquery are
-   distinct
-match predicate <row value constructor> MATCH [ UNIQUE ] [ PARTIAL |
-   FULL ] <table subquery>
-clob type: CLOB(4M) - M suffix on the precision
-array element reference a[4]
-regular expression substring function
-between symmetric
-unicode delimited identifier
-character set postfix type op for string types + collate on string types
-next value for
-treat as
-generalized invocation?
-position using
-multiset stuff
-table sample
-unnest
-only
-window frame exclusion: complete window support?
-select t.* as (a,b,c) from t
-search or cycle clause for ctes
-normalized
 
 other dialect targets:
 postgres

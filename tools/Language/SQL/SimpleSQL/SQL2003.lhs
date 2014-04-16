@@ -1093,7 +1093,7 @@ TODO: work out the exact syntax and add
 <SQL parameter reference>    ::=   <basic identifier chain>
 
 already covered above. Why on earth do they introduce so many aliases?
-How does this do anything except obfuscate everything?
+How does this do anything apart from obfuscate everything?
 
 
 
@@ -2485,7 +2485,7 @@ Specify a test for matching rows.
 
 <match predicate part 2>    ::=   MATCH [ UNIQUE ] [ SIMPLE | PARTIAL | FULL ] <table subquery>
 
-TODO: match predicat 
+TODO: match predicate
 
 == 8.13 <overlaps predicate> (p405)
 
