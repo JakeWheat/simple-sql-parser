@@ -591,10 +591,10 @@ fragile and could at least do with some heavy explanation.
 >               ,hostParameter
 >               ,caseValue
 >               ,cast
->	            ,try typedLiteral 
+>               ,specialOpKs
+>               ,try typedLiteral
 >               ,parensTerm
 >               ,subquery
->               ,try specialOpKs
 >               ,star
 >               ,idenPrefixTerm]
 >        <?> "value expression"
