@@ -1,4 +1,5 @@
 continue 2003 review and tests
+docs: how to run the tests
 touch up the expr hack as best as can
 left factor as much as possible (see below on notes)
 table expression in syntax:
@@ -14,11 +15,41 @@ look at fixing the expression parsing completely
 represent natural and using/on in the syntax more close to the
    concrete syntax - don't combine in the ast
 
+review the token parsers, and make sure they have trailing delimiters
+   or consume bad trailing characters and fail (e.g. 1e2e3 in a select
+   list parses as '1e2 e3' i.e. '1e2 as e3'
+   split the general symbol and operator parsing, and make it tighter
+   in terms of when the symbol or operator ends (don't allow to end
+   early)
+approach: review the lexical syntax, create complete list of
+   tokens/token generators. Divide into tokens which must be followed
+   by some particular other token or at least one whitespace, and ones
+   which can be immediately followed by another token. Then fix the
+   lexing parsers to work this way
+whitespace/comments
+integers
+numbers
+string literals
+keywords
+operator symbols <>=+=^%/*!|~&
+non operator symbols ()?,;"'
+identifiers
+quoted identifiers
+
+identifiers and keywords are ok for now
+there are issues with integers, numbers, operators and non operator
+   symbols
+
+
+review places in the parse which should allow only a fixed set of
+   identifiers (e.g. in interval literals)
+
 decide whether to represent numeric literals better, instead of a
    single string - break up into parts, or parse to a Decimal or
    something
 
 rough SQL 2003 todo, including tests to write:
+can multipart identifiers have whitespace around the '.'?
 multipart string literals
 national, unicode, hex, bit string literals, escapes
 string literal character sets
@@ -92,7 +123,7 @@ additional stuff review:
 interval stuff
 collate clause
 aggregate functions: lots of missing bits
-
+complete list of keywords/reserved keywords
 
 
 review areas where this parser is too permissive, e.g. value

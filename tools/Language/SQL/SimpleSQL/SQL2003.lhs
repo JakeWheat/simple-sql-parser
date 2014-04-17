@@ -8,18 +8,46 @@ We are only interested in the query syntax, goes through sections 5-10
 The goal is to create some coverage tests to get close to supporting a
 large amount of the SQL.
 
-> module Language.SQL.SimpleSQL.SQL2003 where
+> module Language.SQL.SimpleSQL.SQL2003 (sql2003Tests) where
 
 > import Language.SQL.SimpleSQL.TestTypes
 > import Language.SQL.SimpleSQL.Syntax
 
-
+> sql2003Tests :: TestItem
+> sql2003Tests = Group "sql2003Tests"
+>     [stringLiterals
+>     ,nationalCharacterStringLiterals
+>     ,unicodeStringLiterals
+>     ,binaryStringLiterals
+>     ,numericLiterals
+>     ,dateAndTimeLiterals
+>     ,booleanLiterals
+>     ,identifiers
+>     ,typeNames
+>     ,parenthesizedValueExpression
+>     ,targetSpecification
+>     ,contextuallyTypeValueSpec
+>     ,nextValueExpression
+>     ,arrayElementReference
+>     ,multisetElementReference
+>     ,numericValueExpression
+>     ,booleanValueExpression
+>     ,arrayValueConstructor
+>     ,tableValueConstructor
+>     ,fromClause
+>     ,whereClause
+>     ,groupbyClause
+>     ,querySpecification
+>     ,queryExpressions
+>     ,sortSpecificationList
+>     ]
 
 = 5 Lexical Elements
 
 Basic definitions of characters used, tokens, symbols, etc. Most of this section would normally be handled within the lexical analyzer rather than in the grammar proper. Further, the original document does not quote the various single characters, which makes it hard to process automatically.
 
-[There seems to be a lot of unused stuff here, so skip this section and only do bits which 
+[There seems to be a lot of unused stuff here, so skip this section
+and only do bits which are needed by other bits]
 
 5.1 <SQL terminal character> (p151)
 
@@ -488,8 +516,8 @@ standards to include everything that was dropped also?
 
 TODO: how to escapes work here?
 
-> bitBinaryStringLiterals :: TestItem
-> bitBinaryStringLiterals = Group "bit and hex string literals" $ map (uncurry TestValueExpr)
+> binaryStringLiterals :: TestItem
+> binaryStringLiterals = Group "bit and hex string literals" $ map (uncurry TestValueExpr)
 >     [("B'101010'", undefined)
 >     ,("X'7f7f7f'", undefined)
 >     ]
@@ -1031,11 +1059,12 @@ TODO: review how the special keywords are parsed and add tests for these
 > targetSpecification :: TestItem
 > targetSpecification = Group "target specification" $ map (uncurry TestValueExpr)
 >     [(":hostparam", undefined)
+>     ,(":hostparam indicator :another_host_param", undefined)
 >     ,("?", undefined)
 >     ,(":h[3]", undefined)
 >     ]
 
-TODO: modules stuff, indicators, not sure what current_collation is
+TODO: modules stuff, not sure what current_collation is
 for or how it works
 
 
@@ -1849,7 +1878,7 @@ Specify a set of <row value expression>s to be constructed into a table.
 <contextually typed row value expression list>    ::=   <contextually typed row value expression> [ { <comma> <contextually typed row value expression> }... ]
 
 > tableValueConstructor :: TestItem
-> tableValueConstructor = Group "table value constructor" $ map (uncurry TestValueExpr)
+> tableValueConstructor = Group "table value constructor" $ map (uncurry TestQueryExpr)
 >     [("values (1,2), (a+b,(select count(*) from t));", undefined)
 >     ]
 
@@ -1869,7 +1898,7 @@ Specify a table or a grouped table.
 TODO: expand on these tests and review uncovered grammar
 
 > fromClause :: TestItem
-> fromClause = Group "from clause" $ map (uncurry TestValueExpr)
+> fromClause = Group "from clause" $ map (uncurry TestQueryExpr)
 >     [("select * from t,u", undefined)
 
 >     ,("select * from t as a", undefined)
@@ -1990,7 +2019,7 @@ Specify a table derived by the application of a <search condition> to the result
 <where clause>    ::=   WHERE <search condition>
 
 > whereClause :: TestItem
-> whereClause = Group "where clause" $ map (uncurry TestValueExpr)
+> whereClause = Group "where clause" $ map (uncurry TestQueryExpr)
 >     [("select * from t where a = 5", undefined)]
 
 
@@ -2042,7 +2071,7 @@ It seems even in sql 2003, you can only put column references in the
 groups, and not general value expressions.
 
 > groupbyClause :: TestItem
-> groupbyClause = Group "group by clause" $ map (uncurry TestValueExpr)
+> groupbyClause = Group "group by clause" $ map (uncurry TestQueryExpr)
 >     [("select a, sum(b) from t group by a", undefined)
 >     ,("select a, c,sum(b) from t group by a,c", undefined)
 >     ,("select a, c,sum(b) from t group by a,c collate x", undefined)
@@ -2146,7 +2175,7 @@ TODO: review this and add more variants
 
 
 > querySpecification :: TestItem
-> querySpecification = Group "query specification" $ map (uncurry TestValueExpr)
+> querySpecification = Group "query specification" $ map (uncurry TestQueryExpr)
 >     [("select a from t", undefined)
 >     ,("select all a from t", undefined)
 >     ,("select distinct a from t", undefined)
@@ -2206,7 +2235,7 @@ TODO: common table expressions
 <corresponding column list>    ::=   <column name list>
 
 > queryExpressions :: TestItem
-> queryExpressions = Group "query expressions" $ map (uncurry TestValueExpr)
+> queryExpressions = Group "query expressions" $ map (uncurry TestQueryExpr)
 
 >     [("select a from t union select a from u", undefined)
 >     ,("select a from t union all select a from u", undefined)
@@ -2784,7 +2813,7 @@ Specify a sort order.
 TODO: review sort specifications
 
 > sortSpecificationList :: TestItem
-> sortSpecificationList = Group "sort specification list" $ map (uncurry TestValueExpr)
+> sortSpecificationList = Group "sort specification list" $ map (uncurry TestQueryExpr)
 >     [("select * from t order by a", undefined)
 >     ,("select * from t order by a,b", undefined)
 >     ,("select * from t order by a asc,b", undefined)
@@ -2794,3 +2823,7 @@ TODO: review sort specifications
 >     ]
 
 TODO: what happened to the collation in order by?
+Answer: sort used to be a column reference with an optional
+collate. Since it is now a value expression, the collate doesn't need
+to be mentioned here.
+

@@ -17,7 +17,7 @@
 >                    ,option,between,sepBy,sepBy1,string,manyTill,anyChar
 >                    ,try,string,many1,oneOf,digit,(<|>),choice,char,eof
 >                    ,optionMaybe,optional,many,letter,parse
->                    ,chainl1)
+>                    ,chainl1, (<?>),notFollowedBy,alphaNum)
 > import Text.Parsec.String (Parser)
 > import qualified Text.Parsec as P (ParseError)
 > import Text.Parsec.Perm (permute,(<$?>), (<|?>))
@@ -580,6 +580,7 @@ fragile and could at least do with some heavy explanation.
 >               ,star
 >               ,iden
 >               ,parensValue]
+>        <?> "value expression"
 
 expose the b expression for window frame clause range between
 
@@ -745,25 +746,48 @@ and union, etc..
 >         mkSelect
 >         <$> (fromMaybe All <$> duplicates)
 >         <*> selectList
->         <*> option [] from
->         <*> optionMaybe whereClause
->         <*> option [] groupByClause
->         <*> optionMaybe having
->         <*> option [] orderBy
->         <*> offsetFetch
->     mkSelect d sl f w g h od (ofs,fe) =
+>         <*> optionMaybe tableExpression
+>     mkSelect d sl Nothing =
+>         makeSelect{qeSetQuantifier = d, qeSelectList = sl}
+>     mkSelect d sl (Just (TableExpression f w g h od ofs fe)) =
 >         Select d sl f w g h od ofs fe
 >     values = keyword_ "values"
 >              >> Values <$> commaSep (parens (commaSep valueExpr))
 >     table = keyword_ "table" >> Table <$> name
 
+local data type to help with parsing the bit after the select list,
+called 'table expression' in the ansi sql grammar. Maybe this should
+be in the public syntax?
+
+> data TableExpression
+>     = TableExpression
+>       {_teFrom :: [TableRef]
+>       ,_teWhere :: Maybe ValueExpr
+>       ,_teGroupBy :: [GroupingExpr]
+>       ,_teHaving :: Maybe ValueExpr
+>       ,_teOrderBy :: [SortSpec]
+>       ,_teOffset :: Maybe ValueExpr
+>       ,_teFetchFirst :: Maybe ValueExpr}
+
+> tableExpression :: Parser TableExpression
+> tableExpression =
+>    mkTe <$> from
+>         <*> optionMaybe whereClause
+>         <*> option [] groupByClause
+>         <*> optionMaybe having
+>         <*> option [] orderBy
+>         <*> offsetFetch
+>  where
+>     mkTe f w g h od (ofs,fe) =
+>         TableExpression f w g h od ofs fe
+
 > queryExprSuffix :: QueryExpr -> Parser QueryExpr
 > queryExprSuffix qe =
 >     (CombineQueryExpr qe
->      <$> choice
+>      <$> (choice
 >          [Union <$ keyword_ "union"
 >          ,Intersect <$ keyword_ "intersect"
->          ,Except <$ keyword_ "except"]
+>          ,Except <$ keyword_ "except"] <?> "set operator")
 >      <*> (fromMaybe Distinct <$> duplicates)
 >      <*> option Respectively
 >                 (Corresponding <$ keyword_ "corresponding")
@@ -797,7 +821,7 @@ whitespace parser which skips comments also
 >     choice [simpleWhitespace *> whitespace
 >            ,lineComment *> whitespace
 >            ,blockComment *> whitespace
->            ,return ()]
+>            ,return ()] <?> "whitespace"
 >   where
 >     lineComment = try (string "--")
 >                   *> manyTill anyChar (void (char '\n') <|> eof)
@@ -813,7 +837,7 @@ whitespace parser which skips comments also
 > lexeme p = p <* whitespace
 
 > integer :: Parser Integer
-> integer = read <$> lexeme (many1 digit)
+> integer = read <$> lexeme (many1 digit) <?> "integer"
 
 
 number literals
@@ -830,12 +854,14 @@ making a decision on how to represent numbers, the client code can
 make this choice.
 
 > numberLiteral :: Parser String
-> numberLiteral = lexeme $
->     choice [int
+> numberLiteral = lexeme (
+>     (choice [int
 >             >>= optionSuffix dot
 >             >>= optionSuffix fracts
 >             >>= optionSuffix expon
->            ,fract "" >>= optionSuffix expon]
+>            ,fract "" >>= optionSuffix expon])
+>     <* notFollowedBy (alphaNum <|> char '.'))
+>     <?> "number literal"
 >   where
 >     int = many1 digit
 >     fract p = dot p >>= fracts
@@ -850,25 +876,27 @@ make this choice.
 
 > identifier :: Parser String
 > identifier = lexeme ((:) <$> firstChar <*> many nonFirstChar)
+>              <?> "identifier"
 >   where
 >     firstChar = letter <|> char '_'
 >     nonFirstChar = digit <|> firstChar
 
 > quotedIdentifier :: Parser String
 > quotedIdentifier = char '"' *> manyTill anyChar doubleQuote
+>                    <?> "identifier"
 
 TODO: add "" inside quoted identifiers
 
 todo: work out the symbol parsing better
 
 > symbol :: String -> Parser String
-> symbol s = try $ lexeme $ do
->     u <- choice
->          [string "."
->          ,many1 (oneOf "<>=+-^%/*!|~&")
->          ]
+> symbol s = try (lexeme $ do
+>     u <- choice (many1 (char '.') :
+>                  map (try . string) [">=","<=","!=","<>","||"]
+>                  ++ map (string . (:[])) "+-^*/%~&|<>=")
 >     guard (s == u)
->     return s
+>     return s)
+>     <?> s
 
 > questionMark :: Parser Char
 > questionMark = lexeme $ char '?'
@@ -896,6 +924,7 @@ todo: work out the symbol parsing better
 > stringToken =
 >     lexeme (char '\'' *> manyTill anyChar (char '\'')
 >     >>= optionSuffix moreString)
+>     <?> "string"
 >   where
 >     moreString s0 = try $ do
 >         void $ char '\''
@@ -905,10 +934,10 @@ todo: work out the symbol parsing better
 = helper functions
 
 > keyword :: String -> Parser String
-> keyword k = try $ do
+> keyword k = try (do
 >     i <- identifier
 >     guard (map toLower i == k)
->     return k
+>     return k) <?> k
 
 > parens :: Parser a -> Parser a
 > parens = between openParen closeParen
@@ -934,10 +963,11 @@ instead, and create an alternative suffix parser
 > optionSuffix p a = option a (p a)
 
 > identifierBlacklist :: [String] -> Parser String
-> identifierBlacklist bl = try $ do
+> identifierBlacklist bl = try (do
 >     i <- identifier
 >     guard (map toLower i `notElem` bl)
->     return i
+>     return i)
+>     <?> "identifier"
 
 > blacklist :: [String]
 > blacklist =
@@ -957,6 +987,10 @@ t, we have to make sure the from isn't parsed as an alias. I'm not
 sure what other places strictly need the blacklist, and in theory it
 could be tuned differently for each place the identifierString/
 identifier parsers are used to only blacklist the bare minimum.
+
+The standard has a weird mix of reserved keywords and unreserved
+keywords (I'm not sure what exactly being an unreserved keyword
+means).
 
 --------------------------------------------
 

@@ -264,6 +264,8 @@ select page reference
 
 >     ,"SELECT 2+2;"
 
->     ,"SELECT distributors.* WHERE distributors.name = 'Westward';"
+>     -- simple-sql-parser doesn't support where without from
+>     -- this can be added for the postgres dialect when it is written
+>     --,"SELECT distributors.* WHERE distributors.name = 'Westward';"
 
 >     ]
