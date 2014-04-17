@@ -126,17 +126,11 @@ which parses as a typed literal
 > literal :: Parser ValueExpr
 > literal = number <|> stringValue <|> interval
 
-== identifiers
-
-Uses the identifierString 'lexer'. See this function for notes on
-identifiers.
+== Names
 
 > name :: Parser Name
 > name = choice [QName <$> quotedIdentifier
 >               ,Name <$> identifierBlacklist blacklist]
-
-> iden :: Parser ValueExpr
-> iden = Iden <$> name
 
 == star
 
@@ -175,11 +169,10 @@ The parsing for the aggregate extensions is here as well:
 
 aggregate([all|distinct] args [order by orderitems])
 
-> aggOrApp :: Parser ValueExpr
-> aggOrApp =
->     makeApp
->     <$> name
->     <*> parens ((,,) <$> duplicates
+> aggOrApp :: Name -> Parser ValueExpr
+> aggOrApp n =
+>     makeApp n
+>     <$> parens ((,,) <$> duplicates
 >                      <*> choice [commaSep valueExpr]
 >                      <*> (optionMaybe orderBy))
 >   where
@@ -238,8 +231,20 @@ always used with the optionSuffix combinator.
 >     mkFrame rs c = c rs
 > windowSuffix _ = fail ""
 
-> app :: Parser ValueExpr
-> app = aggOrApp >>= optionSuffix windowSuffix
+> app :: Name -> Parser ValueExpr
+> app x = aggOrApp x >>= optionSuffix windowSuffix
+
+== iden prefix term
+
+all the value expressions which start with an identifier
+
+(todo: really put all of them here instead of just some of them)
+
+> idenPrefixTerm :: Parser ValueExpr
+> idenPrefixTerm = do
+>     n <- name
+>     choice [app n
+>            ,return $ Iden n]
 
 == case expression
 
@@ -586,12 +591,11 @@ fragile and could at least do with some heavy explanation.
 >               ,hostParameter
 >               ,caseValue
 >               ,cast
->               ,try specialOpKs
 >               ,parensTerm
 >               ,subquery
->               ,try app
+>               ,try specialOpKs
 >               ,star
->               ,iden]
+>               ,idenPrefixTerm]
 >        <?> "value expression"
 
 expose the b expression for window frame clause range between
