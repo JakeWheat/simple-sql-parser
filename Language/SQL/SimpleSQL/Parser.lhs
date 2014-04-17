@@ -426,10 +426,7 @@ subquery expression:
 [exists|all|any|some] (queryexpr)
 
 > subquery :: Parser ValueExpr
-> subquery =
->     choice
->     [try $ SubQueryExpr SqSq <$> parens queryExpr
->     ,SubQueryExpr <$> sqkw <*> parens queryExpr]
+> subquery = SubQueryExpr <$> sqkw <*> parens queryExpr
 >   where
 >     sqkw = choice
 >            [SqExists <$ keyword_ "exists"
@@ -476,11 +473,12 @@ todo: timestamp types:
 >     makeWrap _ _ = fail "there must be one or two precision components"
 
 
-== value expression parens and row ctor
+== value expression parens, row ctor and scalar subquery
 
-> parensValue :: Parser ValueExpr
-> parensValue =
->     ctor <$> parens (commaSep1 valueExpr)
+> parensTerm :: Parser ValueExpr
+> parensTerm = parens $ choice
+>     [SubQueryExpr SqSq <$> queryExpr
+>     ,ctor <$> commaSep1 valueExpr]
 >   where
 >     ctor [a] = Parens a
 >     ctor as = SpecialOp (Name "rowctor") as
@@ -589,11 +587,11 @@ fragile and could at least do with some heavy explanation.
 >               ,caseValue
 >               ,cast
 >               ,try specialOpKs
+>               ,parensTerm
 >               ,subquery
 >               ,try app
 >               ,star
->               ,iden
->               ,parensValue]
+>               ,iden]
 >        <?> "value expression"
 
 expose the b expression for window frame clause range between
