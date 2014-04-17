@@ -625,15 +625,20 @@ tref
 > from = keyword_ "from" *> commaSep1 tref
 >   where
 >     tref = nonJoinTref >>= optionSuffix joinTrefSuffix
->     nonJoinTref = choice [try (TRQueryExpr <$> parens queryExpr)
->                          ,TRParens <$> parens tref
->                          ,TRLateral <$> (try (keyword_ "lateral")
->                                          *> nonJoinTref)
->                          ,try (TRFunction <$> name
->                                           <*> parens (commaSep valueExpr))
->                          ,try (TRQualified <$> name <*> (char '.' >> name))
->                          ,TRSimple <$> name]
->                   >>= optionSuffix aliasSuffix
+>     nonJoinTref = choice
+>         [parens $ choice
+>              [TRQueryExpr <$> queryExpr
+>              ,TRParens <$> tref]
+>         ,TRLateral <$> (keyword_ "lateral"
+>                         *> nonJoinTref)
+>         ,do
+>          n <- name
+>          choice [TRFunction n
+>                  <$> parens (commaSep valueExpr)
+>                 ,do
+>                  choice [TRQualified n <$> (symbol "." >> name)
+>                         ,return $ TRSimple n]]]
+>         >>= optionSuffix aliasSuffix
 >     aliasSuffix j = option j (TRAlias j <$> alias)
 >     joinTrefSuffix t = (do
 >          nat <- option False (True <$ keyword_ "natural")
@@ -943,7 +948,7 @@ todo: work out the symbol parsing better
 >     >>= optionSuffix moreString)
 >     <?> "string"
 >   where
->     moreString s0 = try $ choice
+>     moreString s0 = choice
 >         [-- handle two adjacent quotes
 >          do
 >          void $ char '\''
@@ -952,8 +957,7 @@ todo: work out the symbol parsing better
 >         ,-- handle string in separate parts
 >          -- e.g. 'part 1' 'part 2'
 >          do
->          whitespace
->          void $ char '\''
+>          try (whitespace <* char '\'')
 >          s <- manyTill anyChar (char '\'')
 >          optionSuffix moreString (s0 ++ s)
 >         ]
