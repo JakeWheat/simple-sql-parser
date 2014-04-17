@@ -114,11 +114,14 @@ interval '3 days'
 which parses as a typed literal
 
 > interval :: Parser ValueExpr
-> interval = try (keyword_ "interval" >>
->     IntervalLit
->     <$> stringToken
->     <*> identifierBlacklist blacklist
->     <*> optionMaybe (parens integer))
+> interval = keyword_ "interval" >>
+>     mkIt <$> stringToken
+>     <*> optionMaybe
+>         ((,) <$> identifierBlacklist blacklist
+>              <*> optionMaybe (parens integer))
+>   where
+>     mkIt val Nothing = TypedLit (TypeName "interval") val
+>     mkIt val (Just (a,b)) = IntervalLit val a b
 
 > literal :: Parser ValueExpr
 > literal = number <|> stringValue <|> interval
