@@ -172,14 +172,14 @@ Tests for parsing value expressions
 >     ,("a not in (select a from t)"
 >      ,In False (Iden "a") (InQueryExpr ms))
 
->     --,("a > all (select a from t)"
->     -- ,BinOp (Iden "a") ">" (SubQueryExpr SqAll ms))
+>     ,("a > all (select a from t)"
+>      ,QuantifiedComparison (Iden "a") ">" CPAll ms)
 
->     --,("a = some (select a from t)"
->     -- ,BinOp (Iden "a") "=" (SubQueryExpr SqSome ms))
+>     ,("a = some (select a from t)"
+>      ,QuantifiedComparison (Iden "a") "=" CPSome ms)
 
->     --,("a <= any (select a from t)"
->     -- ,BinOp (Iden "a") "<=" (SubQueryExpr SqAny ms))
+>     ,("a <= any (select a from t)"
+>      ,QuantifiedComparison (Iden "a") "<=" CPAny ms)
 >     ]
 >   where
 >     ms = makeSelect
