@@ -123,6 +123,10 @@ which parses as a typed literal
 >     mkIt val Nothing = TypedLit (TypeName "interval") val
 >     mkIt val (Just (a,b)) = IntervalLit val a b
 
+> typedLiteral :: Parser ValueExpr
+> typedLiteral = TypedLit <$> typeName
+>                         <*> stringToken
+
 > literal :: Parser ValueExpr
 > literal = number <|> stringValue <|> interval
 
@@ -232,7 +236,7 @@ always used with the optionSuffix combinator.
 > windowSuffix _ = fail ""
 
 > app :: Name -> Parser ValueExpr
-> app x = aggOrApp x >>= optionSuffix windowSuffix
+> app n = aggOrApp n >>= optionSuffix windowSuffix
 
 == iden prefix term
 
@@ -269,13 +273,9 @@ to separate the arguments.
 cast: cast(expr as type)
 
 > cast :: Parser ValueExpr
-> cast = (parensCast <|> prefixCast)
->   where
->     parensCast = keyword_ "cast" >>
->                  parens (Cast <$> valueExpr
->                          <*> (keyword_ "as" *> typeName))
->     prefixCast = try (TypedLit <$> typeName
->                                <*> stringToken)
+> cast = keyword_ "cast" >>
+>        parens (Cast <$> valueExpr
+>                     <*> (keyword_ "as" *> typeName))
 
 the special op keywords
 parse an operator which is
@@ -591,6 +591,7 @@ fragile and could at least do with some heavy explanation.
 >               ,hostParameter
 >               ,caseValue
 >               ,cast
+>	            ,try typedLiteral 
 >               ,parensTerm
 >               ,subquery
 >               ,try specialOpKs
