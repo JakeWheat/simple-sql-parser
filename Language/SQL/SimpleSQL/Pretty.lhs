@@ -14,7 +14,7 @@ which have been changed to try to improve the layout of the output.
 > import Language.SQL.SimpleSQL.Syntax
 > import Text.PrettyPrint (render, vcat, text, (<>), (<+>), empty, parens,
 >                          nest, Doc, punctuate, comma, sep, quotes,
->                          doubleQuotes)
+>                          doubleQuotes, brackets)
 > import Data.Maybe (maybeToList, catMaybes)
 
 > -- | Convert a query expr ast to concrete syntax.
@@ -162,7 +162,6 @@ which have been changed to try to improve the layout of the output.
 >     <+> (if u then text "unique" else empty)
 >     <+> parens (queryExpr sq)
 
-
 > valueExpr (In b se x) =
 >     valueExpr se <+>
 >     (if b then empty else text "not")
@@ -171,6 +170,13 @@ which have been changed to try to improve the layout of the output.
 >                  case x of
 >                      InList es -> commaSep $ map valueExpr es
 >                      InQueryExpr qe -> queryExpr qe)
+
+> valueExpr (Array v es) =
+>     valueExpr v <> brackets (commaSep $ map valueExpr es)
+
+> valueExpr (ArrayCtor q) =
+>     text "array" <> parens (queryExpr q)
+
 
 > unname :: Name -> String
 > unname (QName n) = "\"" ++ n ++ "\""

@@ -134,6 +134,12 @@
 >             QueryExpr
 >       | Match ValueExpr Bool -- true if unique
 >           QueryExpr
+>     | Array ValueExpr [ValueExpr] -- ^ represents an array
+>                                   -- access expression, or an array ctor
+>                                   -- e.g. a[3]. The first
+>                                   -- valueExpr is the array, the
+>                                   -- second is the subscripts/ctor args
+>     | ArrayCtor QueryExpr -- ^ this is used for the query expression version of array constructors, e.g. array(select * from t)>       deriving (Eq,Show,Read,Data,Typeable)
 >       deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | Represents an identifier name, which can be quoted or unquoted.
@@ -154,7 +160,7 @@
 >                  | InQueryExpr QueryExpr
 >                    deriving (Eq,Show,Read,Data,Typeable)
 
-not sure if scalar subquery and aexists and unique should be represented like this
+not sure if scalar subquery, exists and unique should be represented like this
 
 > -- | A subquery in a value expression.
 > data SubQueryExprType

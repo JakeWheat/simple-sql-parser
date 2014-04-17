@@ -27,13 +27,13 @@ large amount of the SQL.
 >     --,typeNames
 >     --,parenthesizedValueExpression
 >     ,targetSpecification
->     --,contextuallyTypeValueSpec
+>     ,contextuallyTypeValueSpec
 >     --,nextValueExpression
->     --,arrayElementReference
+>     ,arrayElementReference
 >     --,multisetElementReference
 >     --,numericValueExpression
 >     --,booleanValueExpression
->     --,arrayValueConstructor
+>     ,arrayValueConstructor
 >     --,tableValueConstructor
 >     --,fromClause
 >     --,whereClause
@@ -1076,7 +1076,7 @@ TODO: review how the special keywords are parsed and add tests for these
 >     ,(":hostparam indicator :another_host_param"
 >      ,HostParameter "hostparam" $ Just "another_host_param")
 >     ,("?", Parameter)
->     --,(":h[3]", Array (HostParameter "h" Nothing) [NumLit "3"])
+>     ,(":h[3]", Array (HostParameter "h" Nothing) [NumLit "3"])
 >     ]
 
 TODO: modules stuff, not sure what current_collation is
@@ -1102,10 +1102,10 @@ for or how it works
 
 > contextuallyTypeValueSpec :: TestItem
 > contextuallyTypeValueSpec = Group "ontextually typed value specification" $ map (uncurry TestValueExpr)
->     [("null", undefined)
->     ,("array[]", undefined)
->     ,("multiset[]", undefined)
->     ,("default", undefined)
+>     [("null", Iden "null")
+>     ,("array[]", Array (Iden "array") [])
+>     --,("multiset[]", undefined)
+>     ,("default", Iden "default")
 >     ]
 
 todo: trigraphs?
@@ -1352,8 +1352,16 @@ TODO: reference resolution
 
 > arrayElementReference :: TestItem
 > arrayElementReference = Group "array element reference" $ map (uncurry TestValueExpr)
->     [("something[3]", undefined)
->     ,("(something(a))[x][y] ", undefined)
+>     [("something[3]"
+>      ,Array (Iden "something") [NumLit "3"])
+>     ,("(something(a))[x]"
+>       ,Array (Parens (App "something" [Iden "a"]))
+>         [Iden "x"])
+>     ,("(something(a))[x][y] "
+>       ,Array (
+>         Array (Parens (App "something" [Iden "a"]))
+>         [Iden "x"])
+>         [Iden "y"])
 >     ]
 
 TODO: work out the precendence of the array element reference suffix
@@ -1765,10 +1773,21 @@ operator is ||, same as the string concatenation operator.
 
 > arrayValueConstructor :: TestItem
 > arrayValueConstructor = Group "array value constructor" $ map (uncurry TestValueExpr)
->     [("array[1,2,3]", undefined)
->     ,("array[a,b,c]", undefined)
->     ,("array(select * from t)", undefined)
->     ,("array(select * from t order by a)", undefined)
+>     [("array[1,2,3]"
+>      ,Array (Iden "array")
+>       [NumLit "1", NumLit "2", NumLit "3"])
+>     ,("array[a,b,c]"
+>      ,Array (Iden "array")
+>       [Iden "a", Iden "b", Iden "c"])
+>     ,("array(select * from t)"
+>       ,ArrayCtor (makeSelect
+>                   {qeSelectList = [(Star,Nothing)]
+>                   ,qeFrom = [TRSimple "t"]}))
+>     ,("array(select * from t order by a)"
+>       ,ArrayCtor (makeSelect
+>                   {qeSelectList = [(Star,Nothing)]
+>                   ,qeFrom = [TRSimple "t"]
+>                   ,qeOrderBy = [SortSpec (Iden "a") Asc NullsOrderDefault] }))
 >     ]
 
 == 6.37 <multiset value expression> (p286)

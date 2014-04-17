@@ -462,6 +462,17 @@ a match (select a from t)
 >     return $ \v -> Match v u q
 
 
+> arrayPostfix :: Parser (ValueExpr -> ValueExpr)
+> arrayPostfix = do
+>     es <- brackets (commaSep valueExpr)
+>     return $ \v -> Array v es
+
+> arrayCtor :: Parser ValueExpr
+> arrayCtor = keyword_ "array" >>
+>     choice
+>     [ArrayCtor <$> parens queryExpr
+>     ,Array (Iden (Name "array")) <$> brackets (commaSep valueExpr)]
+
 typename: used in casts. Special cases for the multi keyword typenames
 that SQL supports.
 
@@ -529,6 +540,7 @@ TODO: carefully review the precedences and associativities.
 >          [E.Postfix $ try quantifiedComparison
 >          ,E.Postfix matchPredicate]
 >         ,[binarySym "." E.AssocLeft]
+>         ,[postfix' arrayPostfix]
 >         ,[prefixSym "+", prefixSym "-"]
 >         ,[binarySym "^" E.AssocLeft]
 >         ,[binarySym "*" E.AssocLeft
@@ -618,6 +630,7 @@ fragile and could at least do with some heavy explanation.
 >               ,hostParameter
 >               ,caseValue
 >               ,cast
+>               ,arrayCtor
 >               ,specialOpKs
 >               ,parensTerm
 >               ,subquery
@@ -961,6 +974,13 @@ todo: work out the symbol parsing better
 > closeParen :: Parser Char
 > closeParen = lexeme $ char ')'
 
+> openBracket :: Parser Char
+> openBracket = lexeme $ char '['
+
+> closeBracket :: Parser Char
+> closeBracket = lexeme $ char ']'
+
+
 > comma :: Parser Char
 > comma = lexeme $ char ','
 
@@ -1004,6 +1024,9 @@ todo: work out the symbol parsing better
 
 > parens :: Parser a -> Parser a
 > parens = between openParen closeParen
+
+> brackets :: Parser a -> Parser a
+> brackets = between openBracket closeBracket
 
 > commaSep :: Parser a -> Parser [a]
 > commaSep = (`sepBy` comma)
