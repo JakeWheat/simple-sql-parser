@@ -121,6 +121,11 @@
 >       -- means not in was used ('a not in (1,2)')
 >     | In Bool ValueExpr InPredValue
 >     | Parameter -- ^ Represents a ? in a parameterized query
+>     | HostParameter String (Maybe String) -- ^ represents a host
+>                                           -- parameter, e.g. :a. The
+>                                           -- Maybe String is for the
+>                                           -- indicator, e.g. :var
+>                                           -- indicator :nl
 >       deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | Represents an identifier name, which can be quoted or unquoted.

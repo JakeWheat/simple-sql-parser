@@ -26,7 +26,7 @@ large amount of the SQL.
 >     --,identifiers
 >     --,typeNames
 >     --,parenthesizedValueExpression
->     --,targetSpecification
+>     ,targetSpecification
 >     --,contextuallyTypeValueSpec
 >     --,nextValueExpression
 >     --,arrayElementReference
@@ -1069,10 +1069,11 @@ TODO: review how the special keywords are parsed and add tests for these
 
 > targetSpecification :: TestItem
 > targetSpecification = Group "target specification" $ map (uncurry TestValueExpr)
->     [(":hostparam", undefined)
->     ,(":hostparam indicator :another_host_param", undefined)
->     ,("?", undefined)
->     ,(":h[3]", undefined)
+>     [(":hostparam", HostParameter "hostparam" Nothing)
+>     ,(":hostparam indicator :another_host_param"
+>      ,HostParameter "hostparam" $ Just "another_host_param")
+>     ,("?", Parameter)
+>     --,(":h[3]", Array (HostParameter "h" Nothing) [NumLit "3"])
 >     ]
 
 TODO: modules stuff, not sure what current_collation is

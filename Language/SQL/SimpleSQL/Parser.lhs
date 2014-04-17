@@ -152,6 +152,16 @@ use in e.g. select * from t where a = ?
 > parameter :: Parser ValueExpr
 > parameter = Parameter <$ questionMark
 
+named parameter:
+
+select x from t where x > :param
+
+> hostParameter :: Parser ValueExpr
+> hostParameter =
+>     HostParameter
+>     <$> hostParameterToken
+>     <*> optionMaybe (keyword "indicator" *> hostParameterToken)
+
 == function application, aggregates and windows
 
 this represents anything which syntactically looks like regular C
@@ -572,6 +582,7 @@ fragile and could at least do with some heavy explanation.
 > term :: Parser ValueExpr
 > term = choice [literal
 >               ,parameter
+>               ,hostParameter
 >               ,caseValue
 >               ,cast
 >               ,try specialOpKs
@@ -886,6 +897,12 @@ make this choice.
 >                    <?> "identifier"
 
 TODO: add "" inside quoted identifiers
+
+parses an identifier with a : prefix. The : isn't included in the
+return value
+
+> hostParameterToken :: Parser String
+> hostParameterToken = lexeme $ char ':' *> identifier
 
 todo: work out the symbol parsing better
 
