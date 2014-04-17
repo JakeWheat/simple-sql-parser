@@ -17,9 +17,9 @@ large amount of the SQL.
 > sql2003Tests :: TestItem
 > sql2003Tests = Group "sql2003Tests"
 >     [stringLiterals
->     --,nationalCharacterStringLiterals
->     --,unicodeStringLiterals
->     --,binaryStringLiterals
+>     ,nationalCharacterStringLiterals
+>     ,unicodeStringLiterals
+>     ,binaryStringLiterals
 >     ,numericLiterals
 >     ,dateAndTimeLiterals
 >     ,booleanLiterals
@@ -43,6 +43,7 @@ large amount of the SQL.
 >     ,quantifiedComparisonPredicate
 >     ,uniquePredicate
 >     ,matchPredicate
+>     ,collateClause
 >     --,sortSpecificationList
 >     ]
 
@@ -479,9 +480,15 @@ The <quote symbol> rule consists of two immediately adjacent <quote> marks with 
 >      ,StringLit "something some moreand more")
 >     ,("'a quote: '', stuff'"
 >      ,StringLit "a quote: ', stuff")
+>     ,("''"
+>      ,StringLit "")
+>     ,("_francais 'français'"
+>      ,TypedLit (TypeName "_francais") "français")
 >     ]
 
 TODO: all the stuff with character set representations.
+
+
 
 == other string literals
 
@@ -491,8 +498,8 @@ TODO: all the stuff with character set representations.
 
 > nationalCharacterStringLiterals :: TestItem
 > nationalCharacterStringLiterals = Group "national character string literals" $ map (uncurry TestValueExpr)
->     [("N'something'", undefined)
->     ,("n'something'", undefined)
+>     [("N'something'", CSStringLit "N" "something")
+>     ,("n'something'", CSStringLit "n" "something")
 >     ]
 
 <Unicode character string literal>    ::= 
@@ -505,13 +512,12 @@ TODO: all the stuff with character set representations.
 
 > unicodeStringLiterals :: TestItem
 > unicodeStringLiterals = Group "national character string literals" $ map (uncurry TestValueExpr)
->     [("U&'something'", undefined)
->     ,("u&'something'", undefined)
+>     [("U&'something'", CSStringLit "U&" "something")
+>     ,("u&'something' escape ="
+>      ,Escape (CSStringLit "u&" "something") '=')
+>     ,("u&'something' uescape ="
+>      ,UEscape (CSStringLit "u&" "something") '=')
 >     ]
-
-TODO: put in some unicode and some unicode escape values plus work out
-the ESCAPE thing. I think this is to change the unicode escape value
-starting character.
 
 == other string literals
 
@@ -529,8 +535,9 @@ TODO: how to escapes work here?
 
 > binaryStringLiterals :: TestItem
 > binaryStringLiterals = Group "bit and hex string literals" $ map (uncurry TestValueExpr)
->     [("B'101010'", undefined)
->     ,("X'7f7f7f'", undefined)
+>     [("B'101010'", CSStringLit "B" "101010")
+>     ,("X'7f7f7f'", CSStringLit "X" "7f7f7f")
+>     ,("X'7f7f7f' escape z", Escape (CSStringLit "X" "7f7f7f") 'z')
 >     ]
 
 TODO: separator stuff for all the string literals?
@@ -2802,7 +2809,10 @@ Specify a default collating sequence.
 
 <collate clause>    ::=   COLLATE <collation name>
 
-covered elsewhere
+> collateClause :: TestItem
+> collateClause = Group "collate clause" $ map (uncurry TestValueExpr)
+>     [("a collate my_collation"
+>      ,Collate (Iden "a") "my_collation")]
 
 10.8 <constraint name definition> and <constraint characteristics> (p501)
 

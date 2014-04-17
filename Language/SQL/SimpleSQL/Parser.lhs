@@ -17,7 +17,7 @@
 >                    ,option,between,sepBy,sepBy1,string,manyTill,anyChar
 >                    ,try,string,many1,oneOf,digit,(<|>),choice,char,eof
 >                    ,optionMaybe,optional,many,letter,parse
->                    ,chainl1, (<?>),notFollowedBy,alphaNum)
+>                    ,chainl1, (<?>),notFollowedBy,alphaNum, lookAhead)
 > import Text.Parsec.String (Parser)
 > import qualified Text.Parsec as P (ParseError)
 > import Text.Parsec.Perm (permute,(<$?>), (<|?>))
@@ -123,8 +123,20 @@ which parses as a typed literal
 >     mkIt val Nothing = TypedLit (TypeName "interval") val
 >     mkIt val (Just (a,b)) = IntervalLit val a b
 
+> characterSetLiteral :: Parser ValueExpr
+> characterSetLiteral =
+>     CSStringLit <$> shortCSPrefix <*> stringToken
+>   where
+>     shortCSPrefix =
+>         choice
+>         [(:[]) <$> oneOf "nNbBxX"
+>         ,string "u&"
+>         ,string "U&"
+>         ] <* lookAhead (char '\'')
+
 > literal :: Parser ValueExpr
-> literal = number <|> stringValue <|> interval
+> literal = number <|> stringValue <|> interval <|> try characterSetLiteral
+
 
 == Names
 
@@ -348,7 +360,7 @@ for, but the parser doens't enforce this
 
 > substring :: Parser ValueExpr
 > substring = specialOpK "substring" SOKMandatory
->                 [("from", False),("for", False),("collate", False)]
+>                 [("from", False),("for", False)]
 
 > convert :: Parser ValueExpr
 > convert = specialOpK "convert" SOKMandatory [("using", True)]
@@ -371,17 +383,15 @@ in the source
 >     parens (mkTrim
 >             <$> option "both" sides
 >             <*> option " " stringToken
->             <*> (keyword_ "from" *> valueExpr)
->             <*> optionMaybe (keyword_ "collate" *> stringToken))
+>             <*> (keyword_ "from" *> valueExpr))
 >   where
 >     sides = choice ["leading" <$ keyword_ "leading"
 >                    ,"trailing" <$ keyword_ "trailing"
 >                    ,"both" <$ keyword_ "both"]
->     mkTrim fa ch fr cl =
+>     mkTrim fa ch fr =
 >       SpecialOpK (Name "trim") Nothing
 >           $ catMaybes [Just (fa,StringLit ch)
->                       ,Just ("from", fr)
->                       ,fmap (("collate",) . StringLit) cl]
+>                       ,Just ("from", fr)]
 
 in: two variations:
 a in (expr0, expr1, ...)
@@ -473,6 +483,21 @@ a match (select a from t)
 >     [ArrayCtor <$> parens queryExpr
 >     ,Array (Iden (Name "array")) <$> brackets (commaSep valueExpr)]
 
+> escape :: Parser (ValueExpr -> ValueExpr)
+> escape = do
+>     ctor <- choice
+>             [Escape <$ keyword_ "escape"
+>             ,UEscape <$ keyword_ "uescape"]
+>     c <- anyChar
+>     return $ \v -> ctor v c
+
+> collate :: Parser (ValueExpr -> ValueExpr)
+> collate = do
+>           keyword_ "collate"
+>           i <- identifier
+>           return $ \v -> Collate v i
+
+
 typename: used in casts. Special cases for the multi keyword typenames
 that SQL supports.
 
@@ -538,9 +563,12 @@ TODO: carefully review the precedences and associativities.
 >           -- todo: left factor the quantified comparison with regular
 >           -- binary comparison, somehow
 >          [E.Postfix $ try quantifiedComparison
->          ,E.Postfix matchPredicate]
+>          ,E.Postfix matchPredicate
+>          ]
 >         ,[binarySym "." E.AssocLeft]
->         ,[postfix' arrayPostfix]
+>         ,[postfix' arrayPostfix
+>          ,postfix' escape
+>          ,postfix' collate]
 >         ,[prefixSym "+", prefixSym "-"]
 >         ,[binarySym "^" E.AssocLeft]
 >         ,[binarySym "*" E.AssocLeft

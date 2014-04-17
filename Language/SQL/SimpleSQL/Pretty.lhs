@@ -34,9 +34,6 @@ which have been changed to try to improve the layout of the output.
 
 > valueExpr :: ValueExpr -> Doc
 > valueExpr (StringLit s) = quotes $ text $ doubleUpQuotes s
->   where doubleUpQuotes [] = []
->         doubleUpQuotes ('\'':cs) = '\'':'\'':doubleUpQuotes cs
->         doubleUpQuotes (c:cs) = c:doubleUpQuotes cs
 
 > valueExpr (NumLit s) = text s
 > valueExpr (IntervalLit v u p) =
@@ -176,6 +173,24 @@ which have been changed to try to improve the layout of the output.
 
 > valueExpr (ArrayCtor q) =
 >     text "array" <> parens (queryExpr q)
+
+> valueExpr (CSStringLit cs st) =
+>   text cs <> quotes (text $ doubleUpQuotes st)
+
+> valueExpr (Escape v e) =
+>     valueExpr v <+> text "escape" <+> text [e]
+
+> valueExpr (UEscape v e) =
+>     valueExpr v <+> text "uescape" <+> text [e]
+
+> valueExpr (Collate v c) =
+>     valueExpr v <+> text "collate" <+> text c
+
+
+> doubleUpQuotes :: String -> String
+> doubleUpQuotes [] = []
+> doubleUpQuotes ('\'':cs) = '\'':'\'':doubleUpQuotes cs
+> doubleUpQuotes (c:cs) = c:doubleUpQuotes cs
 
 
 > unname :: Name -> String
