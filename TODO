@@ -50,9 +50,6 @@ decide whether to represent numeric literals better, instead of a
 
 rough SQL 2003 todo, including tests to write:
 can multipart identifiers have whitespace around the '.'?
-multipart string literals
-national, unicode, hex, bit string literals, escapes
-string literal character sets
 more work on date and time literals
 support "" in delimited identifier
 unicode identifier
@@ -64,15 +61,12 @@ add missing type name support: lots of missing ones here, including
    row, ref, scope, array, multiset type names.
 decide how to represent special identifiers including the session
    variables or whatever they are called like current_user
-host :parameter + indicator
-collation stuff, other character set stuff: list what is needed
-array[], multiset[]
+multiset[]
 grouping - needs special syntax?
 review window function support and missing bits
 review case expressions
 next value for
 probably leave for now: subtypes, methods, new /routine, dereference
-array element reference
 multiset element reference - maybe nothing to do
 double check associativity, precedence (value exprs, joins, set ops)
 position expressions
@@ -80,7 +74,6 @@ length expressions
 extract expression
 cardinality expression?
 check concatenations
-collations: review where can appear
 substring expressions
 regular expression substring function
 convert
@@ -90,7 +83,6 @@ overlay
 specifictype
 datetime value expressions
 intervals
-array value constructors
 multiset value expressions, constructors
 row value constructors, expressions review
 review table value constructor exactly what is allowed
@@ -110,9 +102,7 @@ escape for like
 escape for [not] similar to
 regular expression syntax?
 quantified comparison predicate: represent different from current
-unique predicate
 normalized predicate
-match predicate
 overlaps predicate
 distinct from predicate
 member predicate
@@ -121,10 +111,11 @@ set predicate
 type predicate
 additional stuff review:
 interval stuff
-collate clause
 aggregate functions: lots of missing bits
+  especially: filter where, within group
 complete list of keywords/reserved keywords
-
+select into
+other language format identifiers for host params?
 
 review areas where this parser is too permissive, e.g. value
    expressions allowed where column reference names only should be

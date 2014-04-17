@@ -1,7 +1,7 @@
-0.4.0-dev (updated to dffd7b0d7a08e0c59a33f5da4730a49484eb2cdb)
+0.4.0-dev (updated to 37dca6596bee307749bd74d01303c12235342c65)
 	completely remove dependency on haskell-src-exts
-	remove lots of 'try' from the parser which should start to improve
-	  the error messages
+	remove lots of 'try' from the parser, and add some other code
+	  which should start to improve the error messages
 	fix some trailing whitespace issues in the keyword style functions,
 	  e.g. extract(day from x), dealing with trailing whitespace on
 	  the parens was fixed
@@ -9,8 +9,8 @@
 	  (still some issues here)
 	parse schema qualified table names in from clause (thanks to Sönke
 	  Hahn)
-	fix bug where the 'as' was incorrectly optional in a with
-	  expression list item
+	fix bug where the 'as' was incorrectly optional in a 'with
+	  expression list item'
 	fix bug in set operations where 'all' was assumed as the default
 	  instead of 'distinct', e.g. 'select * from t union select * from
 	  u' was parsed to 'select * from t union all select * from u'
@@ -20,6 +20,24 @@
 	  wrong way round
 	replace Int with Integer in the Syntax
 	derive Data and Typeable in all the Syntax types
+	remove support for parsing clauses after the from clause if there
+	  is no from clause
+	fix some trailing junk lexing issues with symbols and number
+	  literals
+	fix number literals to accept upper case E
+	support multiline string literals
+	support colon prefix host parameters and introducer
+	support unique predicate
+	support match predicate
+	change the syntax representation of quantified comparison
+	  predicates
+	support array constructors and subscripting
+	support character set literals
+	support collate
+	change the hardcoded collate keyword in substring and trim to use
+	  the new collate postfix operator, this also changes the collation
+	  name to be an identifier instead of a string
+	support escape for string literals as a postfix operator
 0.3.1 (commit 5cba9a1cac19d66166aed2876d809aef892ff59f)
 	update to work with ghc 7.8.1
 0.3.0 (commit 9e75fa93650b4f1a08d94f4225a243bcc50445ae)
