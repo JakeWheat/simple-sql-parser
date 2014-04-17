@@ -40,6 +40,9 @@ large amount of the SQL.
 >     --,groupbyClause
 >     --,querySpecification
 >     --,queryExpressions
+>     ,quantifiedComparisonPredicate
+>     ,uniquePredicate
+>     ,matchPredicate
 >     --,sortSpecificationList
 >     ]
 
@@ -2492,7 +2495,23 @@ Specify a quantified comparison.
 
 <some>    ::=   SOME | ANY
 
-TODO: quantified comparison predicate
+> quantifiedComparisonPredicate :: TestItem
+> quantifiedComparisonPredicate = Group "quantified comparison predicate" $ map (uncurry TestValueExpr)
+
+>     [("a = any (select * from t)"
+>      ,QuantifiedComparison (Iden "a") "=" CPAny qe)
+>     ,("a <= some (select * from t)"
+>      ,QuantifiedComparison (Iden "a") "<=" CPSome qe)
+>     ,("a > all (select * from t)"
+>      ,QuantifiedComparison (Iden "a") ">" CPAll qe)
+>     ,("(a,b) <> all (select * from t)"
+>      ,QuantifiedComparison
+>       (SpecialOp "rowctor" [Iden "a",Iden "b"]) "<>" CPAll qe)
+>     ]
+>   where
+>     qe = makeSelect
+>          {qeSelectList = [(Star,Nothing)]
+>          ,qeFrom = [TRSimple "t"]}
 
 == 8.9 <exists predicate> (p399)
 
@@ -2508,7 +2527,16 @@ Specify a test for the absence of duplicate rows
 
 <unique predicate>    ::=   UNIQUE <table subquery>
 
-TODO: unique predicate
+> uniquePredicate :: TestItem
+> uniquePredicate = Group "unique predicate" $ map (uncurry TestValueExpr)
+>     [("unique(select * from t where a = 4)"
+>      ,SubQueryExpr SqUnique
+>       $ makeSelect
+>         {qeSelectList = [(Star,Nothing)]
+>         ,qeFrom = [TRSimple "t"]
+>         ,qeWhere = Just (BinOp (Iden "a") "=" (NumLit "4"))
+>         }
+>      )]
 
 == 8.11 <normalized predicate> (p401)
 
@@ -2526,7 +2554,20 @@ Specify a test for matching rows.
 
 <match predicate part 2>    ::=   MATCH [ UNIQUE ] [ SIMPLE | PARTIAL | FULL ] <table subquery>
 
-TODO: match predicate
+> matchPredicate :: TestItem
+> matchPredicate = Group "match predicate" $ map (uncurry TestValueExpr)
+>     [("a match (select a from t)"
+>      ,Match (Iden "a") False qe)
+>     ,("(a,b) match (select a,b from t)"
+>      ,Match (SpecialOp "rowctor" [Iden "a", Iden "b"]) False qea)
+>     ,("(a,b) match unique (select a,b from t)"
+>      ,Match (SpecialOp "rowctor" [Iden "a", Iden "b"]) True qea)
+>     ]
+>   where
+>     qe = makeSelect
+>          {qeSelectList = [(Iden "a",Nothing)]
+>          ,qeFrom = [TRSimple "t"]}
+>     qea = qe {qeSelectList = qeSelectList qe ++ [(Iden "b",Nothing)]}
 
 == 8.13 <overlaps predicate> (p405)
 

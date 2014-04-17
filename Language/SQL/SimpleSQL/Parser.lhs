@@ -123,10 +123,6 @@ which parses as a typed literal
 >     mkIt val Nothing = TypedLit (TypeName "interval") val
 >     mkIt val (Just (a,b)) = IntervalLit val a b
 
-> typedLiteral :: Parser ValueExpr
-> typedLiteral = TypedLit <$> typeName
->                         <*> stringToken
-
 > literal :: Parser ValueExpr
 > literal = number <|> stringValue <|> interval
 
@@ -245,10 +241,12 @@ all the value expressions which start with an identifier
 (todo: really put all of them here instead of just some of them)
 
 > idenPrefixTerm :: Parser ValueExpr
-> idenPrefixTerm = do
->     n <- name
->     choice [app n
->            ,return $ Iden n]
+> idenPrefixTerm =
+>     -- todo: work out how to left factor this
+>     try (TypedLit <$> typeName <*> stringToken)
+>     <|> (name >>= iden)
+>   where
+>     iden n = app n <|> return (Iden n)
 
 == case expression
 
@@ -428,16 +426,41 @@ and operator. This is the call to valueExprB.
 >     makeOp n b c = \a -> SpecialOp n [a,b,c]
 
 subquery expression:
-[exists|all|any|some] (queryexpr)
+[exists|unique] (queryexpr)
 
 > subquery :: Parser ValueExpr
 > subquery = SubQueryExpr <$> sqkw <*> parens queryExpr
 >   where
 >     sqkw = choice
 >            [SqExists <$ keyword_ "exists"
->            ,SqAll <$ keyword_ "all"
->            ,SqAny <$ keyword_ "any"
->            ,SqSome <$ keyword_ "some"]
+>            ,SqUnique <$ keyword_ "unique"]
+
+
+a = any (select * from t)
+
+> quantifiedComparison :: Parser (ValueExpr -> ValueExpr)
+> quantifiedComparison = do
+>     c <- comp
+>     cq <- compQuan
+>     q <- parens queryExpr
+>     return $ \v -> QuantifiedComparison v c cq q
+>   where
+>     comp = Name <$> choice (map symbol
+>            ["=", "<>", "<=", "<", ">", ">="])
+>     compQuan = choice
+>                [CPAny <$ keyword_ "any"
+>                ,CPSome <$ keyword_ "some"
+>                ,CPAll <$ keyword_ "all"]
+
+a match (select a from t)
+
+> matchPredicate :: Parser (ValueExpr -> ValueExpr)
+> matchPredicate = do
+>     keyword_ "match"
+>     u <- option False (True <$ keyword_ "unique")
+>     q <- parens queryExpr
+>     return $ \v -> Match v u q
+
 
 typename: used in casts. Special cases for the multi keyword typenames
 that SQL supports.
@@ -500,7 +523,12 @@ TODO: carefully review the precedences and associativities.
 
 > opTable :: Bool -> [[E.Operator String () Identity ValueExpr]]
 > opTable bExpr =
->         [[binarySym "." E.AssocLeft]
+>         [-- parse match and quantified comparisons as postfix ops
+>           -- todo: left factor the quantified comparison with regular
+>           -- binary comparison, somehow
+>          [E.Postfix $ try quantifiedComparison
+>          ,E.Postfix matchPredicate]
+>         ,[binarySym "." E.AssocLeft]
 >         ,[prefixSym "+", prefixSym "-"]
 >         ,[binarySym "^" E.AssocLeft]
 >         ,[binarySym "*" E.AssocLeft
@@ -562,7 +590,6 @@ TODO: carefully review the precedences and associativities.
 >     prefix p nm = prefix' (p >> return (PrefixOp (Name nm)))
 >     postfixKeywords nm = postfix (try $ mapM_ keyword_ (words nm)) nm
 >     postfix p nm = postfix' (p >> return (PostfixOp (Name nm)))
-
 >     -- hack from here
 >     -- http://stackoverflow.com/questions/10475337/parsec-expr-repeated-prefix-postfix-operator-not-supported
 >     -- not implemented properly yet
@@ -592,7 +619,6 @@ fragile and could at least do with some heavy explanation.
 >               ,caseValue
 >               ,cast
 >               ,specialOpKs
->               ,try typedLiteral
 >               ,parensTerm
 >               ,subquery
 >               ,star

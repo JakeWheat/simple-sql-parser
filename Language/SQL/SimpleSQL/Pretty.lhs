@@ -144,10 +144,24 @@ which have been changed to try to improve the layout of the output.
 >     (case ty of
 >         SqSq -> empty
 >         SqExists -> text "exists"
->         SqAll -> text "all"
->         SqSome -> text "some"
->         SqAny -> text "any"
+>         SqUnique -> text "unique"
 >     ) <+> parens (queryExpr qe)
+
+> valueExpr (QuantifiedComparison v c cp sq) =
+>     valueExpr v
+>     <+> name c
+>     <+> (text $ case cp of
+>              CPAny -> "any"
+>              CPSome -> "some"
+>              CPAll -> "all")
+>     <+> parens (queryExpr sq)
+
+> valueExpr (Match v u sq) =
+>     valueExpr v
+>     <+> text "match"
+>     <+> (if u then text "unique" else empty)
+>     <+> parens (queryExpr sq)
+
 
 > valueExpr (In b se x) =
 >     valueExpr se <+>

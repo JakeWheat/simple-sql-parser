@@ -12,6 +12,7 @@
 >     ,NullsOrder(..)
 >     ,InPredValue(..)
 >     ,SubQueryExprType(..)
+>     ,CompPredQuantifier(..)
 >     ,Frame(..)
 >     ,FrameRows(..)
 >     ,FramePos(..)
@@ -126,6 +127,13 @@
 >                                           -- Maybe String is for the
 >                                           -- indicator, e.g. :var
 >                                           -- indicator :nl
+>       | QuantifiedComparison
+>             ValueExpr
+>             Name -- operator
+>             CompPredQuantifier
+>             QueryExpr
+>       | Match ValueExpr Bool -- true if unique
+>           QueryExpr
 >       deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | Represents an identifier name, which can be quoted or unquoted.
@@ -146,18 +154,22 @@
 >                  | InQueryExpr QueryExpr
 >                    deriving (Eq,Show,Read,Data,Typeable)
 
+not sure if scalar subquery and aexists and unique should be represented like this
+
 > -- | A subquery in a value expression.
 > data SubQueryExprType
 >     = -- | exists (query expr)
 >       SqExists
+>       -- | unique (query expr)
+>     | SqUnique
 >       -- | a scalar subquery
 >     | SqSq
->       -- | all (query expr)
->     | SqAll
->       -- | some (query expr)
->     | SqSome
->       -- | any (query expr)
->     | SqAny
+>       deriving (Eq,Show,Read,Data,Typeable)
+
+> data CompPredQuantifier
+>     = CPAny
+>     | CPSome
+>     | CPAll
 >       deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | Represents one field in an order by list.
