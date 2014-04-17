@@ -869,7 +869,7 @@ make this choice.
 >     fracts p = (p++) <$> int
 >     expon p = concat <$> sequence
 >               [return p
->               ,string "e"
+>               ,(:[]) <$> oneOf "eE"
 >               ,option "" (string "+" <|> string "-")
 >               ,int]
 
@@ -926,10 +926,20 @@ todo: work out the symbol parsing better
 >     >>= optionSuffix moreString)
 >     <?> "string"
 >   where
->     moreString s0 = try $ do
->         void $ char '\''
->         s <- manyTill anyChar (char '\'')
->         optionSuffix moreString (s0 ++ "'" ++ s)
+>     moreString s0 = try $ choice
+>         [-- handle two adjacent quotes
+>          do
+>          void $ char '\''
+>          s <- manyTill anyChar (char '\'')
+>          optionSuffix moreString (s0 ++ "'" ++ s)
+>         ,-- handle string in separate parts
+>          -- e.g. 'part 1' 'part 2'
+>          do
+>          whitespace
+>          void $ char '\''
+>          s <- manyTill anyChar (char '\'')
+>          optionSuffix moreString (s0 ++ s)
+>         ]
 
 = helper functions
 

@@ -8,6 +8,7 @@ We are only interested in the query syntax, goes through sections 5-10
 The goal is to create some coverage tests to get close to supporting a
 large amount of the SQL.
 
+> {-# LANGUAGE OverloadedStrings #-}
 > module Language.SQL.SimpleSQL.SQL2003 (sql2003Tests) where
 
 > import Language.SQL.SimpleSQL.TestTypes
@@ -16,30 +17,30 @@ large amount of the SQL.
 > sql2003Tests :: TestItem
 > sql2003Tests = Group "sql2003Tests"
 >     [stringLiterals
->     ,nationalCharacterStringLiterals
->     ,unicodeStringLiterals
->     ,binaryStringLiterals
+>     --,nationalCharacterStringLiterals
+>     --,unicodeStringLiterals
+>     --,binaryStringLiterals
 >     ,numericLiterals
 >     ,dateAndTimeLiterals
 >     ,booleanLiterals
->     ,identifiers
->     ,typeNames
->     ,parenthesizedValueExpression
->     ,targetSpecification
->     ,contextuallyTypeValueSpec
->     ,nextValueExpression
->     ,arrayElementReference
->     ,multisetElementReference
->     ,numericValueExpression
->     ,booleanValueExpression
->     ,arrayValueConstructor
->     ,tableValueConstructor
->     ,fromClause
->     ,whereClause
->     ,groupbyClause
->     ,querySpecification
->     ,queryExpressions
->     ,sortSpecificationList
+>     --,identifiers
+>     --,typeNames
+>     --,parenthesizedValueExpression
+>     --,targetSpecification
+>     --,contextuallyTypeValueSpec
+>     --,nextValueExpression
+>     --,arrayElementReference
+>     --,multisetElementReference
+>     --,numericValueExpression
+>     --,booleanValueExpression
+>     --,arrayValueConstructor
+>     --,tableValueConstructor
+>     --,fromClause
+>     --,whereClause
+>     --,groupbyClause
+>     --,querySpecification
+>     --,queryExpressions
+>     --,sortSpecificationList
 >     ]
 
 = 5 Lexical Elements
@@ -244,6 +245,8 @@ Syntax rule 6: A <nondoublequote character> is any character of the source langu
 <nondoublequote character>    ::=   !! See the Syntax Rules.
 
 The rule for <doublequote symbol> in the standard uses two adjacent literal double quotes rather than referencing <double quote>; the reasons are not clear. It is annotated '!! two consecutive double quote characters'.
+
+TODO: unicode delimited identifier
 
 <doublequote symbol>    ::=   <double quote> <double quote>
 
@@ -463,11 +466,16 @@ The <quote symbol> rule consists of two immediately adjacent <quote> marks with 
 
 > stringLiterals :: TestItem
 > stringLiterals = Group "string literals" $ map (uncurry TestValueExpr)
->     [("'a regular string literal'", undefined)
->     ,("'something' ' some more' 'and more'", undefined)
->     ,("'something' \n ' some more' \t 'and more'", undefined)
->     ,("'something' -- a comment\n ' some more' /*another comment*/ 'and more'", undefined)
->     ,("'a quote: '', stuff'", undefined)
+>     [("'a regular string literal'"
+>      ,StringLit "a regular string literal")
+>     ,("'something' ' some more' 'and more'"
+>      ,StringLit "something some moreand more")
+>     ,("'something' \n ' some more' \t 'and more'"
+>      ,StringLit "something some moreand more")
+>     ,("'something' -- a comment\n ' some more' /*another comment*/ 'and more'"
+>      ,StringLit "something some moreand more")
+>     ,("'a quote: '', stuff'"
+>      ,StringLit "a quote: ', stuff")
 >     ]
 
 TODO: all the stuff with character set representations.
@@ -546,32 +554,32 @@ TODO: separator stuff for all the string literals?
 
 > numericLiterals :: TestItem
 > numericLiterals = Group "numeric literals" $ map (uncurry TestValueExpr)
->     [("11", undefined)
->     ,("11.11", undefined)
+>     [("11", NumLit "11")
+>     ,("11.11", NumLit "11.11")
 
->     ,("11E23", undefined)
->     ,("11E+23", undefined)
->     ,("11E-23", undefined)
+>     ,("11E23", NumLit "11E23")
+>     ,("11E+23", NumLit "11E+23")
+>     ,("11E-23", NumLit "11E-23")
 
->     ,("11.11E23", undefined)
->     ,("11.11E+23", undefined)
->     ,("11.11E-23", undefined)
+>     ,("11.11E23", NumLit "11.11E23")
+>     ,("11.11E+23", NumLit "11.11E+23")
+>     ,("11.11E-23", NumLit "11.11E-23")
 
->     ,("+11E23", undefined)
->     ,("+11E+23", undefined)
->     ,("+11E-23", undefined)
->     ,("+11.11E23", undefined)
->     ,("+11.11E+23", undefined)
->     ,("+11.11E-23", undefined)
+>     ,("+11E23", PrefixOp "+" $ NumLit "11E23")
+>     ,("+11E+23", PrefixOp "+" $ NumLit "11E+23")
+>     ,("+11E-23", PrefixOp "+" $ NumLit "11E-23")
+>     ,("+11.11E23", PrefixOp "+" $ NumLit "11.11E23")
+>     ,("+11.11E+23", PrefixOp "+" $ NumLit "11.11E+23")
+>     ,("+11.11E-23", PrefixOp "+" $ NumLit "11.11E-23")
 
->     ,("-11E23", undefined)
->     ,("-11E+23", undefined)
->     ,("-11E-23", undefined)
->     ,("-11.11E23", undefined)
->     ,("-11.11E+23", undefined)
->     ,("-11.11E-23", undefined)
+>     ,("-11E23", PrefixOp "-" $ NumLit "11E23")
+>     ,("-11E+23", PrefixOp "-" $ NumLit "11E+23")
+>     ,("-11E-23", PrefixOp "-" $ NumLit "11E-23")
+>     ,("-11.11E23", PrefixOp "-" $ NumLit "11.11E23")
+>     ,("-11.11E+23", PrefixOp "-" $ NumLit "11.11E+23")
+>     ,("-11.11E-23", PrefixOp "-" $ NumLit "11.11E-23")
 
->     ,("11.11e23", undefined)
+>     ,("11.11e23", NumLit "11.11e23")
 
 >     ]
 
@@ -645,9 +653,12 @@ at this time.
 
 > dateAndTimeLiterals :: TestItem
 > dateAndTimeLiterals = Group "date and time literals" $ map (uncurry TestValueExpr)
->     [("date 'date literal", undefined)
->     ,("time 'time literal", undefined)
->     ,("timestamp 'timestamp literal'", undefined)
+>     [("date 'date literal'"
+>      ,TypedLit (TypeName "date") "date literal")
+>     ,("time 'time literal'"
+>      ,TypedLit (TypeName "time") "time literal")
+>     ,("timestamp 'timestamp literal'"
+>      ,TypedLit (TypeName "timestamp") "timestamp literal")
 >     ]
 
 TODO: intervals + more date and time literals
@@ -658,9 +669,9 @@ TODO: intervals + more date and time literals
 
 > booleanLiterals :: TestItem
 > booleanLiterals = Group "boolean literals" $ map (uncurry TestValueExpr)
->     [("true", undefined)
->     ,("false", undefined)
->     ,("unknown", undefined)
+>     [("true", Iden "true")
+>     ,("false", Iden "false")
+>     ,("unknown", Iden "unknown")
 >     ]
 
 so is unknown effectively an alias for null with a cast or is it
