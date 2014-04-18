@@ -22,6 +22,7 @@
 > import qualified Text.Parsec as P (ParseError)
 > import Text.Parsec.Perm (permute,(<$?>), (<|?>))
 > import qualified Text.Parsec.Expr as E
+> import Data.List (intercalate)
 
 > import Language.SQL.SimpleSQL.Syntax
 
@@ -132,7 +133,7 @@ which parses as a typed literal
 >         [(:[]) <$> oneOf "nNbBxX"
 >         ,string "u&"
 >         ,string "U&"
->         ] <* lookAhead (char '\'')
+>         ] <* lookAhead quote
 
 > literal :: Parser ValueExpr
 > literal = number <|> stringValue <|> interval <|> try characterSetLiteral
@@ -187,6 +188,9 @@ The parsing for the aggregate extensions is here as well:
 
 aggregate([all|distinct] args [order by orderitems])
 
+TODO: try to refactor the parser to not allow distinct/all or order by
+if there are no value exprs
+
 > aggOrApp :: [Name] -> Parser ValueExpr
 > aggOrApp n =
 >     makeApp n
@@ -220,8 +224,7 @@ always used with the optionSuffix combinator.
 >                <*> option [] orderBy
 >                <*> optionMaybe frameClause)
 >   where
->     partitionBy = keyword_ "partition" >>
->         keyword_ "by" >> commaSep1 valueExpr
+>     partitionBy = keywords_ ["partition","by"] >> commaSep1 valueExpr
 >     frameClause =
 >         mkFrame <$> choice [FrameRows <$ keyword_ "rows"
 >                            ,FrameRange <$ keyword_ "range"]
@@ -235,7 +238,9 @@ always used with the optionSuffix combinator.
 >     -- use the bexpression style from the between parsing for frame between
 >     frameLimit useB =
 >         choice
->         [Current <$ keyword_ "current" <* keyword_ "row"
+>         [Current <$ keywords_ ["current", "row"]
+>          -- todo: create an automatic left factor for stuff like
+>          -- this
 >         ,keyword_ "unbounded" >>
 >          choice [UnboundedPreceding <$ keyword_ "preceding"
 >                 ,UnboundedFollowing <$ keyword_ "following"]
@@ -413,7 +418,7 @@ this is parsed as a postfix operator which is why it is in this form
 >                      ,InList <$> commaSep1 valueExpr])
 >   where
 >     inty = choice [True <$ keyword_ "in"
->                   ,False <$ keyword_ "not" <* keyword_ "in"]
+>                   ,False <$ keywords_ ["not","in"]]
 >     mkIn i v = \e -> In i e v
 
 
@@ -438,7 +443,7 @@ and operator. This is the call to valueExprB.
 >   where
 >     opName = choice
 >              ["between" <$ keyword_ "between"
->              ,"not between" <$ try (keyword_ "not" <* keyword_ "between")]
+>              ,"not between" <$ try (keywords_ ["not","between"])]
 >     makeOp n b c = \a -> SpecialOp [n] [a,b,c]
 
 subquery expression:
@@ -508,13 +513,14 @@ typename: used in casts. Special cases for the multi keyword typenames
 that SQL supports.
 
 > typeName :: Parser TypeName
-> typeName = choice (multiWordParsers
+> typeName = (choice (multiWordParsers
 >                    ++ [TypeName <$> identifierBlacklist blacklist])
->            >>= optionSuffix precision
+>             >>= optionSuffix precision
+>            ) <?> "typename"
 >   where
 >     multiWordParsers =
 >         flip map multiWordTypeNames
->         $ \ks -> (TypeName . unwords) <$> try (mapM keyword ks)
+>         $ \ks -> (TypeName . unwords) <$> try (keywords ks)
 >     multiWordTypeNames = map words
 >         ["double precision"
 >         ,"character varying"
@@ -628,13 +634,13 @@ TODO: carefully review the precedences and associativities.
 >     -- use try with the multi keywords because of shared
 >     -- prefixes to the sets of keywords. Should left factor
 >     -- somehow
->     binaryKeywords nm assoc = binary (try $ mapM_ keyword_ (words nm)) nm assoc
+>     binaryKeywords nm assoc = binary (try $ keywords_ (words nm)) nm assoc
 >     binary p nm assoc =
 >       E.Infix (p >> return (\a b -> BinOp a [Name nm] b)) assoc
 >     prefixKeyword nm = prefix (keyword_ nm) nm
 >     prefixSym nm = prefix (symbol_ nm) nm
 >     prefix p nm = prefix' (p >> return (PrefixOp [Name nm]))
->     postfixKeywords nm = postfix (try $ mapM_ keyword_ (words nm)) nm
+>     postfixKeywords nm = postfix (try $ keywords_ (words nm)) nm
 >     postfix p nm = postfix' (p >> return (PostfixOp [Name nm]))
 >     -- hack from here
 >     -- http://stackoverflow.com/questions/10475337/parsec-expr-repeated-prefix-postfix-operator-not-supported
@@ -724,6 +730,8 @@ tref
 >                   <*> optionMaybe (joinCondition nat))
 >         >>= optionSuffix joinTrefSuffix
 
+TODO: factor the join stuff to produce better error messages
+
 > joinType :: Parser JoinType
 > joinType = choice
 >     [JCross <$ keyword_ "cross" <* keyword_ "join"
@@ -761,7 +769,7 @@ pretty trivial.
 > whereClause = keyword_ "where" *> valueExpr
 
 > groupByClause :: Parser [GroupingExpr]
-> groupByClause = keyword_ "group" *> keyword_ "by"
+> groupByClause = keywords_ ["group","by"]
 >            *> commaSep1 groupingExpression
 >   where
 >     groupingExpression =
@@ -771,7 +779,7 @@ pretty trivial.
 >       ,keyword_ "rollup" >>
 >        Rollup <$> parens (commaSep groupingExpression)
 >       ,GroupingParens <$> parens (commaSep groupingExpression)
->       ,keyword_ "grouping" >> keyword_ "sets" >>
+>       ,keywords_ ["grouping", "sets"] >>
 >        GroupingSets <$> parens (commaSep groupingExpression)
 >       ,SimpleGroup <$> valueExpr
 >       ]
@@ -780,13 +788,14 @@ pretty trivial.
 > having = keyword_ "having" *> valueExpr
 
 > orderBy :: Parser [SortSpec]
-> orderBy = keyword_ "order" *> keyword_ "by" *> commaSep1 ob
+> orderBy = keywords_ ["order","by"] *> commaSep1 ob
 >   where
 >     ob = SortSpec
 >          <$> valueExpr
 >          <*> option DirDefault (choice [Asc <$ keyword_ "asc"
 >                                        ,Desc <$ keyword_ "desc"])
 >          <*> option NullsOrderDefault
+>              -- todo: left factor better
 >              (keyword_ "nulls" >>
 >                     choice [NullsFirst <$ keyword "first"
 >                            ,NullsLast <$ keyword "last"])
@@ -805,7 +814,7 @@ allows offset and fetch in either order
 
 > fetch :: Parser ValueExpr
 > fetch = choice [ansiFetch, limit]
->   where
+>   where --todo: better left factoring
 >     ansiFetch = keyword_ "fetch" >>
 >         choice [keyword_ "first",keyword_ "next"]
 >         *> valueExpr
@@ -971,8 +980,8 @@ make this choice.
 > identifier = lexeme ((:) <$> firstChar <*> many nonFirstChar)
 >              <?> "identifier"
 >   where
->     firstChar = letter <|> char '_'
->     nonFirstChar = digit <|> firstChar
+>     firstChar = letter <|> char '_' <?> "identifier"
+>     nonFirstChar = digit <|> firstChar <?> ""
 
 > quotedIdentifier :: Parser String
 > quotedIdentifier = char '"' *> manyTill anyChar doubleQuote
@@ -998,7 +1007,7 @@ todo: work out the symbol parsing better
 >     <?> s
 
 > questionMark :: Parser Char
-> questionMark = lexeme $ char '?'
+> questionMark = lexeme (char '?') <?> "question mark"
 
 > openParen :: Parser Char
 > openParen = lexeme $ char '('
@@ -1014,13 +1023,16 @@ todo: work out the symbol parsing better
 
 
 > comma :: Parser Char
-> comma = lexeme $ char ','
+> comma = lexeme (char ',') <?> "comma"
 
 > semi :: Parser Char
-> semi = lexeme $ char ';'
+> semi = lexeme (char ';') <?> "semicolon"
 
 > doubleQuote :: Parser Char
-> doubleQuote = lexeme $ char '"'
+> doubleQuote = lexeme (char '"') <?> "double quotes"
+
+> quote :: Parser Char
+> quote = lexeme (char '\'') <?> "single quote"
 
 > --stringToken :: Parser String
 > --stringToken = lexeme (char '\'' *> manyTill anyChar (char '\''))
@@ -1028,23 +1040,25 @@ todo: work out the symbol parsing better
 > -- string stuff
 > stringToken :: Parser String
 > stringToken =
->     lexeme (char '\'' *> manyTill anyChar (char '\'')
+>     lexeme (nlquote *> manyTill anyChar nlquote
 >     >>= optionSuffix moreString)
 >     <?> "string"
 >   where
 >     moreString s0 = choice
 >         [-- handle two adjacent quotes
 >          do
->          void $ char '\''
->          s <- manyTill anyChar (char '\'')
+>          void nlquote
+>          s <- manyTill anyChar nlquote
 >          optionSuffix moreString (s0 ++ "'" ++ s)
 >         ,-- handle string in separate parts
 >          -- e.g. 'part 1' 'part 2'
 >          do
->          try (whitespace <* char '\'')
->          s <- manyTill anyChar (char '\'')
+>          try (whitespace <* nlquote)
+>          s <- manyTill anyChar nlquote
 >          optionSuffix moreString (s0 ++ s)
 >         ]
+>     -- non lexeme quote
+>     nlquote = char '\'' <?> "single quote"
 
 = helper functions
 
@@ -1053,6 +1067,15 @@ todo: work out the symbol parsing better
 >     i <- identifier
 >     guard (map toLower i == k)
 >     return k) <?> k
+
+helper function to improve error messages
+
+> keywords :: [String] -> Parser [String]
+> keywords ks = mapM keyword ks <?> intercalate " " ks
+
+> keywords_ :: [String] -> Parser ()
+> keywords_ ks = mapM_ keyword_ ks <?> intercalate " " ks
+
 
 > parens :: Parser a -> Parser a
 > parens = between openParen closeParen

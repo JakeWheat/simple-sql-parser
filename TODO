@@ -115,7 +115,11 @@ quantified comparison: left factor with normal comparison
 multi word operator names in expressions
 hardcode all the symbols in the symbol parser/split?
 left factor the not in 'not in' and 'not between', maybe others
-
+rules for changing the multi keyword parsing:
+  if a keyword must be followed by another
+    e.g. left join, want to refactor to produce 'expected "left join"'
+  if the keyword is optionally followed by another, e.g. with
+   recursive, then don't do this.
 
 future big feature summary:
 all ansi sql queries
