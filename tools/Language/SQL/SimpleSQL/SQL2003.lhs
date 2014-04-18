@@ -665,10 +665,23 @@ normal typed literals
 
 > intervalLiterals :: TestItem
 > intervalLiterals = Group "intervalLiterals literals" $ map (uncurry TestValueExpr)
->     [
->     ]
+>     [("interval '1'", TypedLit (TypeName "interval") "1")
+>     ,("interval '1' day"
+>      ,IntervalLit Nothing "1" (Itf "day" Nothing) Nothing)
+>     ,("interval '1' day(3)"
+>      ,IntervalLit Nothing "1" (Itf "day" $ Just (3,Nothing)) Nothing)
+>     ,("interval + '1' day(3)"
+>      ,IntervalLit (Just True) "1" (Itf "day" $ Just (3,Nothing)) Nothing)
+>     ,("interval - '1' second(2,2)"
+>      ,IntervalLit (Just False) "1" (Itf "second" $ Just (2,Just 2)) Nothing)
+>     ,("interval '1' year to month"
+>      ,IntervalLit Nothing "1" (Itf "year" Nothing)
+>                                   (Just $ Itf "month" Nothing))
 
-TODO: intervals + more date and time literals
+>     ,("interval '1' year(4) to second(2,3) "
+>      ,IntervalLit Nothing "1" (Itf "year" $ Just (4,Nothing))
+>                             (Just $ Itf "second" $ Just (2, Just 3)))
+>     ]
 
 == boolean literals
 

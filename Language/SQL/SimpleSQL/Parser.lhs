@@ -115,14 +115,16 @@ interval '3 days'
 which parses as a typed literal
 
 > interval :: Parser ValueExpr
-> interval = keyword_ "interval" >>
->     mkIt <$> stringToken
->     <*> optionMaybe
->         ((,) <$> identifierBlacklist blacklist
->              <*> optionMaybe (parens unsignedInteger))
+> interval = keyword_ "interval" >> do
+>     s <- optionMaybe $ choice [True <$ symbol_ "+"
+>                               ,False <$ symbol_ "-"]
+>     lit <- stringToken
+>     q <- optionMaybe intervalQualifier
+>     mkIt s lit q
 >   where
->     mkIt val Nothing = TypedLit (TypeName [Name "interval"]) val
->     mkIt val (Just (a,b)) = IntervalLit val a b
+>     mkIt Nothing val Nothing = return $ TypedLit (TypeName [Name "interval"]) val
+>     mkIt s val (Just (a,b)) = return $ IntervalLit s val a b
+>     mkIt (Just {}) _val Nothing = fail "cannot use sign without interval qualifier"
 
 > characterSetLiteral :: Parser ValueExpr
 > characterSetLiteral =
@@ -538,17 +540,8 @@ TODO: this need heavy refactoring
 >     rowField = (,) <$> name <*> typeName
 >     -- interval type names: interval a [to b]
 >     intervalTypeName =
->         keyword_ "interval" *>
->         choice
->         [IntervalTypeName <$> intervalField
->          <*> optionMaybe (keyword_ "to" *> intervalField)
->         ,return $ TypeName [Name "interval"]]
->     intervalField =
->         Itf
->         <$> identifierBlacklist blacklist
->         <*> optionMaybe
->             (parens ((,) <$> unsignedInteger
->                          <*> optionMaybe (comma *> unsignedInteger)))
+>         keyword_ "interval" >>
+>         uncurry IntervalTypeName <$> intervalQualifier
 >     -- other type names, which includes:
 >     -- precision, scale, lob scale and units, timezone, character
 >     -- set and collations
@@ -626,6 +619,18 @@ TODO: this need heavy refactoring
 >         ,"bit varying"
 >         ,"binary large object"
 >         ]
+
+> intervalQualifier :: Parser (IntervalTypeField,Maybe IntervalTypeField)
+> intervalQualifier =
+>     (,) <$> intervalField
+>         <*> optionMaybe (keyword_ "to" *> intervalField)
+>   where
+>     intervalField =
+>         Itf
+>         <$> identifierBlacklist blacklist
+>         <*> optionMaybe
+>             (parens ((,) <$> unsignedInteger
+>                          <*> optionMaybe (comma *> unsignedInteger)))
 
 
 == value expression parens, row ctor and scalar subquery

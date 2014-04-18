@@ -59,9 +59,10 @@
 >       -- | text of interval literal, units of interval precision,
 >       -- e.g. interval 3 days (3)
 >     | IntervalLit
->       {ilLiteral :: String -- ^ literal text
->       ,ilUnits :: String -- ^ units
->       ,ilPrecision :: Maybe Integer -- ^ precision
+>       {ilSign :: Maybe Bool -- ^ true if + used, false if - used
+>       ,ilLiteral :: String -- ^ literal text
+>       ,ilFrom :: IntervalTypeField
+>       ,ilTo :: Maybe IntervalTypeField
 >       }
 >       -- | identifier with parts separated by dots
 >     | Iden [Name]

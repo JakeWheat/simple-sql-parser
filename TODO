@@ -30,6 +30,8 @@ decide whether to represent numeric literals better, instead of a
 
 refactor the typename parsing
 
+reorder the parser and syntax (and the pretty)
+
 remove the IsString for Name and [Name]
 
 fixes:

@@ -37,10 +37,12 @@ which have been changed to try to improve the layout of the output.
 > valueExpr (StringLit s) = quotes $ text $ doubleUpQuotes s
 
 > valueExpr (NumLit s) = text s
-> valueExpr (IntervalLit v u p) =
->     text "interval" <+> quotes (text v)
->     <+> text u
->     <+> me (parens . text . show ) p
+> valueExpr (IntervalLit s v f t) =
+>     text "interval"
+>     <+> me (\x -> if x then text "+" else text "-") s
+>     <+> quotes (text v)
+>     <+> intervalTypeField f
+>     <+> me (\x -> text "to" <+> intervalTypeField x) t
 > valueExpr (Iden i) = names i
 > valueExpr Star = text "*"
 > valueExpr Parameter = text "?"
@@ -273,19 +275,21 @@ which have been changed to try to improve the layout of the output.
 >     f (n,t) = name n <+> typeName t
 > typeName (IntervalTypeName f t) =
 >     text "interval"
->     <+> it f
->     <+> me (\x -> text "to" <+> it x) t
->   where
->     it (Itf n p) =
->         text n
->         <+> me (\(x,x1) -> parens (text (show x)
->                               <+> me (\y -> (sep [comma,text (show y)])) x1)) p
+>     <+> intervalTypeField f
+>     <+> me (\x -> text "to" <+> intervalTypeField x) t
 
 > typeName (ArrayTypeName tn sz) =
 >     typeName tn <+> text "array" <+> me (brackets . text . show) sz
 
 > typeName (MultisetTypeName tn) =
 >     typeName tn <+> text "multiset"
+
+> intervalTypeField :: IntervalTypeField -> Doc
+> intervalTypeField (Itf n p) =
+>     text n
+>     <+> me (\(x,x1) ->
+>              parens (text (show x)
+>                      <+> me (\y -> (sep [comma,text (show y)])) x1)) p
 
 
 = query expressions

@@ -38,8 +38,10 @@ Tests for parsing value expressions
 >      ,("'string'", StringLit "string")
 >      ,("'string with a '' quote'", StringLit "string with a ' quote")
 >      ,("'1'", StringLit "1")
->      ,("interval '3' day", IntervalLit "3" "day" Nothing)
->      ,("interval '3' day (3)", IntervalLit "3" "day" $ Just 3)
+>      ,("interval '3' day"
+>       ,IntervalLit Nothing "3" (Itf "day" Nothing) Nothing)
+>      ,("interval '3' day (3)"
+>       ,IntervalLit Nothing "3" (Itf "day" $ Just (3,Nothing)) Nothing)
 >      ,("interval '3 weeks'", TypedLit (TypeName "interval") "3 weeks")
 >     ]
 
