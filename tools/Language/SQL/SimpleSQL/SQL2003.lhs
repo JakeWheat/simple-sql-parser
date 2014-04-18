@@ -37,14 +37,14 @@ large amount of the SQL.
 >     --,tableValueConstructor
 >     --,fromClause
 >     --,whereClause
->     --,groupbyClause
+>     ,groupbyClause
 >     --,querySpecification
 >     --,queryExpressions
 >     ,quantifiedComparisonPredicate
 >     ,uniquePredicate
 >     ,matchPredicate
 >     ,collateClause
->     --,sortSpecificationList
+>     ,sortSpecificationList
 >     ]
 
 = 5 Lexical Elements
@@ -2113,11 +2113,25 @@ groups, and not general value expressions.
 
 > groupbyClause :: TestItem
 > groupbyClause = Group "group by clause" $ map (uncurry TestQueryExpr)
->     [("select a, sum(b) from t group by a", undefined)
->     ,("select a, c,sum(b) from t group by a,c", undefined)
->     ,("select a, c,sum(b) from t group by a,c collate x", undefined)
->     ,("select a, c,sum(b) from t group by a,c collate x having sum(b) > 100", undefined)
+>     [("select a, sum(b) from t group by a",q)
+>     ,("select a, sum(b),c from t group by a,c"
+>       ,q1 {qeGroupBy = qeGroupBy q1 ++ [SimpleGroup $ Iden "c"]})
+>     ,("select a, sum(b),c from t group by a,c collate x"
+>       ,q1 {qeGroupBy = qeGroupBy q1
+>                        ++ [SimpleGroup $ Collate (Iden "c") "x"]})
+>     ,("select a, sum(b),c from t group by a,c collate x having sum(b) > 100"
+>       ,q1 {qeGroupBy = qeGroupBy q1
+>                        ++ [SimpleGroup $ Collate (Iden "c") "x"]
+>           ,qeHaving = Just (BinOp (App "sum" [Iden "b"])
+>                                   ">" (NumLit "100"))})
 >     ]
+>   where
+>     q = makeSelect
+>         {qeSelectList = [(Iden "a",Nothing), (App "sum" [Iden "b"],Nothing)]
+>         ,qeFrom = [TRSimple "t"]
+>         ,qeGroupBy = [SimpleGroup $ Iden "a"]
+>         }
+>     q1 = q {qeSelectList = qeSelectList q ++ [(Iden "c", Nothing)]}
 
 
 7.10 <having clause> (p329)
@@ -2896,13 +2910,28 @@ TODO: review sort specifications
 
 > sortSpecificationList :: TestItem
 > sortSpecificationList = Group "sort specification list" $ map (uncurry TestQueryExpr)
->     [("select * from t order by a", undefined)
->     ,("select * from t order by a,b", undefined)
->     ,("select * from t order by a asc,b", undefined)
->     ,("select * from t order by a desc,b", undefined)
->     ,("select * from t order by a collate x desc,b", undefined)
->     ,("select * from t order by 1,2", undefined)
+>     [("select * from t order by a"
+>      ,qe {qeOrderBy = [SortSpec (Iden "a") Asc NullsOrderDefault]})
+>     ,("select * from t order by a,b"
+>      ,qe {qeOrderBy = [SortSpec (Iden "a") Asc NullsOrderDefault
+>                       ,SortSpec (Iden "b") Asc NullsOrderDefault]})
+>     ,("select * from t order by a asc,b"
+>      ,qe {qeOrderBy = [SortSpec (Iden "a") Asc NullsOrderDefault
+>                       ,SortSpec (Iden "b") Asc NullsOrderDefault]})
+>     ,("select * from t order by a desc,b"
+>      ,qe {qeOrderBy = [SortSpec (Iden "a") Desc NullsOrderDefault
+>                       ,SortSpec (Iden "b") Asc NullsOrderDefault]})
+>     ,("select * from t order by a collate x desc,b"
+>      ,qe {qeOrderBy = [SortSpec (Collate (Iden "a") "x") Desc NullsOrderDefault
+>                       ,SortSpec (Iden "b") Asc NullsOrderDefault]})
+>     ,("select * from t order by 1,2"
+>      ,qe {qeOrderBy = [SortSpec (NumLit "1") Asc NullsOrderDefault
+>                       ,SortSpec (NumLit "2") Asc NullsOrderDefault]})
 >     ]
+>   where
+>     qe = makeSelect
+>          {qeSelectList = [(Star,Nothing)]
+>          ,qeFrom = [TRSimple "t"]}
 
 TODO: what happened to the collation in order by?
 Answer: sort used to be a column reference with an optional

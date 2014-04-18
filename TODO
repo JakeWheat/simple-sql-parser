@@ -15,31 +15,7 @@ look at fixing the expression parsing completely
 represent natural and using/on in the syntax more close to the
    concrete syntax - don't combine in the ast
 
-review the token parsers, and make sure they have trailing delimiters
-   or consume bad trailing characters and fail (e.g. 1e2e3 in a select
-   list parses as '1e2 e3' i.e. '1e2 as e3'
-   split the general symbol and operator parsing, and make it tighter
-   in terms of when the symbol or operator ends (don't allow to end
-   early)
-approach: review the lexical syntax, create complete list of
-   tokens/token generators. Divide into tokens which must be followed
-   by some particular other token or at least one whitespace, and ones
-   which can be immediately followed by another token. Then fix the
-   lexing parsers to work this way
-whitespace/comments
-integers
-numbers
-string literals
-keywords
-operator symbols <>=+=^%/*!|~&
-non operator symbols ()?,;"'
-identifiers
-quoted identifiers
-
-identifiers and keywords are ok for now
-there are issues with integers, numbers, operators and non operator
-   symbols
-
+careful review of token parses wrt trailing delimiters/junk
 
 review places in the parse which should allow only a fixed set of
    identifiers (e.g. in interval literals)
@@ -49,25 +25,30 @@ decide whether to represent numeric literals better, instead of a
    something
 
 rough SQL 2003 todo, including tests to write:
-can multipart identifiers have whitespace around the '.'?
-more work on date and time literals
-support "" in delimited identifier
-unicode identifier
-support needed MODULE syntax in identifiers - already covered?
-review qualification names in identifiers support in various contexts
-  (e.g. function app, table refs)
+
+idens: "", unicode, charset?, check dotted idens and contexts
 add missing type name support: lots of missing ones here, including
    simple stuff like lob variations, and new things like interval,
    row, ref, scope, array, multiset type names.
+date and time literals
+multisets
+review window functions, window clause
+review cases
+search/cycle, exclusions
+special operators
+from clause review
+table sample
+unnest
+filter in aggs
+within group in aggs
+rows review
+
+support needed MODULE syntax in identifiers - already covered?
 decide how to represent special identifiers including the session
    variables or whatever they are called like current_user
-multiset[]
 grouping - needs special syntax?
-review window function support and missing bits
-review case expressions
 next value for
 probably leave for now: subtypes, methods, new /routine, dereference
-multiset element reference - maybe nothing to do
 double check associativity, precedence (value exprs, joins, set ops)
 position expressions
 length expressions
@@ -83,7 +64,6 @@ overlay
 specifictype
 datetime value expressions
 intervals
-multiset value expressions, constructors
 row value constructors, expressions review
 review table value constructor exactly what is allowed
 lots more tests for from clause variations
@@ -101,7 +81,6 @@ in predicate review
 escape for like
 escape for [not] similar to
 regular expression syntax?
-quantified comparison predicate: represent different from current
 normalized predicate
 overlaps predicate
 distinct from predicate
@@ -123,36 +102,23 @@ review areas where this parser is too permissive, e.g. value
    warnings or something), unqualified asterisk in select list
 
 
-
-
-
-
-
 left factor/try removal:
-try in the interval literal
-  have to left factor with the typed literal "interval 'xxx'" syntax
-  + with identifier
-try in the prefix cast: LF with identifier
-few tries in the specialopks: need review
-  + left factor the start of these (e.g. for function style substring
-   and for keyword style substring)
-not between: needs left factoring with a bunch of suffix operators
-subqueries: need left factoring with all the stuff which starts with
-   open parens. The subquery ast needs rethink as well
-typename: left factor with identifier
-inSuffix in expr table: conflicts with 'in' keyword in precision -
-   left factor
-the binary and postfix multi keyword ops need left factoring since
-   several share prefixes
-app needs lf with parens, identifier, etc.
-parens lf in nonJoinTref
-name start lf in nonJoinTref
 
-all of the above should help the error messages a lot
+character set literal: leading identifier
+typed literal: leading identifier
+special operators: needs some rewriting to remove try
+  + left factor with iden( patterns
+conflict with in suffix and in in position
+conflict with not prefix op and not between??
+multi word type names: left factor
+quantified comparison: left factor with normal comparison
+multi word operator names in expressions
+hardcode all the symbols in the symbol parser/split?
 
-big feature summary:
+
+future big feature summary:
 all ansi sql queries
-better expression tree parsing
+completely working expression tree parsing
 error messages, left factor
 dml, ddl, procedural sql
 position annotation
@@ -165,7 +131,7 @@ extensibility
 performance analysis
 
 
-= next release
+= stuff
 
 try and use the proper css theme
   create a header like in the haddock with simple-sql-parser +
@@ -186,9 +152,6 @@ regenerate the examples on the index.txt
 
 docs
 
-add to website: pretty printed tpch, maybe other queries as
-   demonstration
-
 add preamble to the rendered test page
 
 add links from the supported sql page to the rendered test page for
@@ -206,22 +169,9 @@ review internal sql collection for more syntax/tests
 
 other
 
-review syntax to replace maybe and bool with better ctors
-
 ----
 
 demo program: convert tpch to sql server syntax exe processor
-
-review abstract syntax (e.g. combine App with SpecialOp?)
-
-more operators
-
-sql server top syntax
-
-named windows
-
-extended string literals, escapes and other flavours (like pg and
-   oracle custom delimiters)
 
 run through other manuals for example queries and features: sql in a
    nutshell, sql guide, sql reference guide, sql standard, sql server
@@ -239,6 +189,8 @@ ast checker: checks the ast represents valid syntax, the parser
 
 = other sql support
 
+top
+string literals
 full number literals -> other bases?
 apply, pivot
 
@@ -253,8 +205,4 @@ what other major dialects are there?
 sqlite
 sap dbmss (can't work out what are separate products or what are the
    dialects)
-
-maybe later: other dml
-  insert, update, delete, truncate, merge + set, show?
-  copy, execute?, explain?, begin/end/rollback?
 

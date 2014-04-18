@@ -8,7 +8,7 @@
 >     ,ParseError(..)) where
 
 > import Control.Monad.Identity (Identity)
-> import Control.Monad (guard, void)
+> import Control.Monad (guard, void, when)
 > import Control.Applicative ((<$), (<$>), (<*>) ,(<*), (*>))
 > import Data.Maybe (fromMaybe,catMaybes)
 > import Data.Char (toLower)
@@ -1079,7 +1079,8 @@ instead, and create an alternative suffix parser
 > identifierBlacklist :: [String] -> Parser String
 > identifierBlacklist bl = try (do
 >     i <- identifier
->     guard (map toLower i `notElem` bl)
+>     when (map toLower i `elem` bl) $
+>         fail $ "keyword not allowed here: " ++ i
 >     return i)
 >     <?> "identifier"
 
