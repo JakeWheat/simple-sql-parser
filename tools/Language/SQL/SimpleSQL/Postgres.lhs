@@ -29,7 +29,9 @@ TODO: get all the commented out tests working
 
 >     ,"SELECT ROW(1,2.5,'this is a test') = ROW(1, 3, 'not the same');"
 
->     ,"SELECT ROW(table.*) IS NULL FROM table;"
+>     -- table is a reservered keyword?
+>     --,"SELECT ROW(table.*) IS NULL FROM table;"
+>     ,"SELECT ROW(tablex.*) IS NULL FROM table;"
 
 >     ,"SELECT true OR somefunc();"
 

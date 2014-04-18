@@ -6,7 +6,6 @@ table expression in syntax:
   QueryExpr = Select SelectList (Maybe TableExpr)
   and the TableExpr contains all the other bits?
 finish off ansi 2003 support or specific subset
-  summarize todos
 start looking at error messages
 change the booleans in the ast to better types for less ambiguity
 represent missing optional bits in the ast as nothing instead of the
@@ -18,6 +17,10 @@ review haddock in the syntax and update
 review syntax names and representation
 careful review of token parses wrt trailing delimiters/junk
 
+decide how to handle character set literals and identifiers: don't
+   have any intention of actually supporting switching character sets
+   in the middle of parsing so maybe this would be better disabled?
+
 review places in the parse which should allow only a fixed set of
    identifiers (e.g. in interval literals)
 
@@ -25,14 +28,23 @@ decide whether to represent numeric literals better, instead of a
    single string - break up into parts, or parse to a Decimal or
    something
 
+refactor the typename parsing
+
+remove the IsString for Name and [Name]
+
+fixes:
+
+keyword tree, add explicit result then can use for joins also
+
+keyword tree support prefix mode so can start from already parsed
+   token
+
+do the final big left factor: typenames, interval lits, iden +
+   suffixes
+
 rough SQL 2003 todo, including tests to write:
 
-switch TypedLit to CSStringLit based on first char being underscore?
-idens: "", unicode, charset?, check dotted idens and contexts
-add missing type name support: lots of missing ones here, including
-   simple stuff like lob variations, and new things like interval,
-   row, ref, scope, array, multiset type names.
-  add tests for all the typenames cast and typed literal
+idens: "", unicode
 date and time literals
 multisets
 review window functions, window clause
@@ -45,6 +57,8 @@ unnest
 filter in aggs
 within group in aggs
 rows review
+matching simple partial full
+
 
 LNR: maybe leave until after next release
 

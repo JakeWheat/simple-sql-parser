@@ -173,6 +173,28 @@ which have been changed to try to improve the layout of the output.
 > valueExpr (ArrayCtor q) =
 >     text "array" <> parens (queryExpr q)
 
+> valueExpr (MultisetCtor es) =
+>     text "multiset" <> brackets (commaSep $ map valueExpr es)
+
+> valueExpr (MultisetQueryCtor q) =
+>     text "multiset" <> parens (queryExpr q)
+
+> valueExpr (MultisetBinOp a c q b) =
+>     sep
+>     [valueExpr a
+>     ,text "multiset"
+>     ,text $ case c of
+>                 Union -> "union"
+>                 Intersect -> "intersect"
+>                 Except -> "except"
+>     ,case q of
+>          SQDefault -> empty
+>          All -> text "all"
+>          Distinct -> text "distinct"
+>     ,valueExpr b]
+
+
+
 > valueExpr (CSStringLit cs st) =
 >   text cs <> quotes (text $ doubleUpQuotes st)
 

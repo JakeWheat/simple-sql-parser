@@ -494,6 +494,17 @@ a match (select a from t)
 >     [ArrayCtor <$> parens queryExpr
 >     ,Array (Iden [Name "array"]) <$> brackets (commaSep valueExpr)]
 
+> multisetCtor :: Parser ValueExpr
+> multisetCtor =
+>     choice
+>     [keyword_ "multiset" >>
+>      choice
+>      [MultisetQueryCtor <$> parens queryExpr
+>      ,MultisetCtor <$> brackets (commaSep valueExpr)]
+>     ,keyword_ "table" >>
+>      MultisetQueryCtor <$> parens queryExpr]
+
+
 > escape :: Parser (ValueExpr -> ValueExpr)
 > escape = do
 >     ctor <- choice
@@ -726,6 +737,7 @@ messages, but both of these are considered too important.
 >              ,"is unknown"
 >              ,"is not unknown"]
 >             ]
+>          ++ [multisetBinOp]
 >          -- have to use try with inSuffix because of a conflict
 >          -- with 'in' in position function, and not between
 >          -- between also has a try in it to deal with 'not'
@@ -755,6 +767,14 @@ messages, but both of these are considered too important.
 >           return $ PostfixOp [Name $ unwords o]
 >     binary p nm assoc =
 >       E.Infix (p >> return (\a b -> BinOp a [Name nm] b)) assoc
+>     multisetBinOp = E.Infix (do
+>         keyword_ "multiset"
+>         o <- choice [Union <$ keyword_ "union"
+>                     ,Intersect <$ keyword_ "intersect"
+>                     ,Except <$ keyword_ "except"]
+>         d <- fromMaybe SQDefault <$> duplicates
+>         return (\a b -> MultisetBinOp a o d b))
+>           E.AssocLeft
 >     prefixKeyword nm = prefix (keyword_ nm) nm
 >     prefixSym nm = prefix (symbol_ nm) nm
 >     prefix p nm = prefix' (p >> return (PrefixOp [Name nm]))
@@ -787,6 +807,7 @@ fragile and could at least do with some heavy explanation.
 >               ,caseValue
 >               ,cast
 >               ,arrayCtor
+>               ,multisetCtor
 >               ,specialOpKs
 >               ,parensTerm
 >               ,subquery

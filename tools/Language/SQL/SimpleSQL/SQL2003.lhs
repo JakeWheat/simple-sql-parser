@@ -21,19 +21,22 @@ large amount of the SQL.
 >     ,unicodeStringLiterals
 >     ,binaryStringLiterals
 >     ,numericLiterals
->     --,dateAndTimeLiterals
+>     ,intervalLiterals
 >     ,booleanLiterals
->     --,identifiers
+>     ,identifiers
 >     ,typeNameTests
->     --,parenthesizedValueExpression
+>     ,parenthesizedValueExpression
 >     ,targetSpecification
 >     ,contextuallyTypeValueSpec
 >     --,nextValueExpression
 >     ,arrayElementReference
->     --,multisetElementReference
+>     ,multisetElementReference
 >     --,numericValueExpression
 >     --,booleanValueExpression
 >     ,arrayValueConstructor
+>     ,multisetValueExpression
+>     ,multisetValueFunction
+>     ,multisetValueConstructor
 >     --,tableValueConstructor
 >     --,fromClause
 >     --,whereClause
@@ -486,9 +489,7 @@ The <quote symbol> rule consists of two immediately adjacent <quote> marks with 
 >      ,TypedLit (TypeName "_francais") "français")
 >     ]
 
-TODO: all the stuff with character set representations.
-
-
+TODO: all the stuff with character set representations. (?)
 
 == other string literals
 
@@ -662,15 +663,10 @@ TODO: interval literals
 (e.g. parse the literal string), at the moment they are treated as
 normal typed literals
 
-> {-dateAndTimeLiterals :: TestItem
-> dateAndTimeLiterals = Group "date and time literals" $ map (uncurry TestValueExpr)
->     [("date 'date literal'"
->      ,TypedLit (TypeName "date") "date literal")
->     ,("time 'time literal'"
->      ,TypedLit (TypeName "time") "time literal")
->     ,("timestamp 'timestamp literal'"
->      ,TypedLit (TypeName "timestamp") "timestamp literal")
->     ]-}
+> intervalLiterals :: TestItem
+> intervalLiterals = Group "intervalLiterals literals" $ map (uncurry TestValueExpr)
+>     [
+>     ]
 
 TODO: intervals + more date and time literals
 
@@ -804,11 +800,14 @@ TODO: language identifiers have different rules to generic identifiers
 
 > identifiers :: TestItem
 > identifiers = Group "identifiers" $ map (uncurry TestValueExpr)
->     [("test",undefined)
->     ,("_test",undefined)
->     ,("t1",undefined)
->     ,("a.b",undefined)
->     ,("a.b.c",undefined)
+>     [("test",Iden [Name "test"])
+>     ,("_test",Iden [Name "_test"])
+>     ,("t1",Iden [Name "t1"])
+>     ,("a.b",Iden [Name "a", Name "b"])
+>     ,("a.b.c",Iden [Name "a", Name "b", Name "c"])
+>      -- TODO: quoted idens
+>      -- double double quotes in quoted idens
+>      -- unicode idens syntax (needs escape?)
 >     ]
 
 TODO: module stuff
@@ -1093,58 +1092,11 @@ expression
 >         ,(ctn ++ " 'test'", TypedLit stn "test")
 >         ]
 
-> {-typeNames :: TestItem
-> typeNames = Group "type names" $ map (uncurry TestValueExpr)
->     [("cast('test' as character(5))", undefined)
->     ,("cast('test' as character)", undefined)
->     ,("cast('test' as char(5))", undefined)
->     ,("cast('test' as character varying(5))", undefined)
->     ,("cast('test' as char varying(5))", undefined)
->     ,("cast('test' as varchar(5))", undefined)
->     ,("cast('test' as char(5) character set _xxx)", undefined)
-
->     ,("cast('test' as national character(5))", undefined)
->     ,("cast('test' as national char)", undefined)
->     ,("cast('test' as nchar)", undefined)
->     ,("cast('test' as national character varying)", undefined)
->     ,("cast('test' as national char varying)", undefined)
->     ,("cast('test' as nchar varying)", undefined)
-
->     ,("cast('test' as bit(4))", undefined)
->     ,("cast('test' as bit varying(4))", undefined)
->     ,("cast('test' as bit varying)", undefined)
-
->     ,("cast(5 as numeric)", undefined)
->     ,("cast(5 as numeric(3))", undefined)
->     ,("cast(5 as numeric(5,3))", undefined)
->     ,("cast(5 as decimal(5,3))", undefined)
->     ,("cast(5 as dec(5,3))", undefined)
->     ,("cast(5 as integer)", undefined)
->     ,("cast(5 as int)", undefined)
->     ,("cast(5 as smallint)", undefined)
->     ,("cast(5 as float(23))", undefined)
->     ,("cast(5 as float)", undefined)
->     ,("cast(5 as real)", undefined)
->     ,("cast(5 as double precision)", undefined)
-
->     ,("cast('01-01-99' as date)", undefined)
->     ,("cast('01-01-99' as time)", undefined)
->     ,("cast('01-01-99' as time(3))", undefined)
->     ,("cast('01-01-99' as timestamp(3))", undefined)
->     ,("cast('01-01-99' as timestamp with time zone)", undefined)
->     ,("cast('01-01-99' as time(3) with time zone)", undefined)
->     ]-}
-
-
-
-
 == 6.2 <field definition> (p173)
 
 <field definition>    ::=   <field name> <data type> [ <reference scope check> ]
 
-This is used when e.g. casting to a row type.
-
-
+This is used in row type names.
 
 == 6.3 <value expression primary> (p174)
 
@@ -1156,8 +1108,8 @@ This is used when e.g. casting to a row type.
 
 > parenthesizedValueExpression :: TestItem
 > parenthesizedValueExpression = Group "parenthesized value expression" $ map (uncurry TestValueExpr)
->     [("(3)", undefined)
->     ,("((3))", undefined)
+>     [("(3)", Parens (NumLit "3"))
+>     ,("((3))", Parens $ Parens (NumLit "3"))
 >     ]
 
 <nonparenthesized value expression primary>    ::= 
@@ -1278,7 +1230,7 @@ for or how it works
 > contextuallyTypeValueSpec = Group "contextually typed value specification" $ map (uncurry TestValueExpr)
 >     [("null", Iden "null")
 >     ,("array[]", Array (Iden "array") [])
->     --,("multiset[]", undefined)
+>     ,("multiset[]", MultisetCtor [])
 >     ,("default", Iden "default")
 >     ]
 
@@ -1547,10 +1499,11 @@ TODO: work out the precendence of the array element reference suffix
 
 > multisetElementReference :: TestItem
 > multisetElementReference = Group "multiset element reference" $ map (uncurry TestValueExpr)
->     [("element(something)", undefined)
+>     [("element(something)", App "element" [Iden "something"])
 >     ]
 
-TODO: work out how to parse this
+Not sure why this is called element reference, since it appears to be
+like unnest, and entirely unlike array element reference.
 
 6.25 <value expression> (p236)
 
@@ -1977,7 +1930,19 @@ operator is ||, same as the string concatenation operator.
 
 <multiset primary>    ::=   <multiset value function> | <value expression primary>
 
-TODO: multiset value expression
+> multisetValueExpression :: TestItem
+> multisetValueExpression = Group "multiset value expression" $ map (uncurry TestValueExpr)
+>    [("a multiset union b"
+>     ,MultisetBinOp (Iden "a") Union SQDefault (Iden "b"))
+>    ,("a multiset union all b"
+>     ,MultisetBinOp (Iden "a") Union All (Iden "b"))
+>    ,("a multiset union distinct b"
+>     ,MultisetBinOp (Iden "a") Union Distinct (Iden "b"))
+>    ,("a multiset except b"
+>     ,MultisetBinOp (Iden "a") Except SQDefault (Iden "b"))
+>    ,("a multiset intersect b"
+>     ,MultisetBinOp (Iden "a") Intersect SQDefault (Iden "b"))
+>    ]
 
 == 6.38 <multiset value function> (p289)
 
@@ -1985,7 +1950,10 @@ TODO: multiset value expression
 
 <multiset set function>    ::=   SET <left paren> <multiset value expression> <right paren>
 
-TODO: multiset value function
+> multisetValueFunction :: TestItem
+> multisetValueFunction = Group "multiset value function" $ map (uncurry TestValueExpr)
+>    [("set(a)", App "set" [Iden "a"])
+>    ]
 
 == 6.39 <multiset value constructor> (p290)
 
@@ -2004,7 +1972,18 @@ TODO: multiset value function
 
 <table value constructor by query>    ::=   TABLE <left paren> <query expression> <right paren>
 
-TODO: multiset value constructor
+table is just syntactic sugar for multiset (why does it exist?)
+
+> multisetValueConstructor :: TestItem
+> multisetValueConstructor = Group "multiset value constructor" $ map (uncurry TestValueExpr)
+>    [("multiset[a,b,c]", MultisetCtor[Iden "a", Iden "b", Iden "c"])
+>    ,("multiset(select * from t)", MultisetQueryCtor qe)
+>    ,("table(select * from t)", MultisetQueryCtor qe)
+>    ]
+>   where
+>     qe = makeSelect {qeSelectList = [(Star,Nothing)]
+>                     ,qeFrom = [TRSimple [Name "t"]]}
+
 
 = 7 Query expressions
 
@@ -2900,7 +2879,8 @@ Specify the precision of an interval data type.
 
 <interval leading field precision>    ::=   <unsigned integer>
 
-TODO: interval qualifier
+interval qualifier is covered in the typenames and the interval
+literals where it is used
 
 == 10.2 <language clause> (p469)
 

@@ -147,6 +147,9 @@
 >     | Escape ValueExpr Char
 >     | UEscape ValueExpr Char
 >     | Collate ValueExpr String
+>     | MultisetBinOp ValueExpr CombineOp SetQuantifier ValueExpr
+>     | MultisetCtor [ValueExpr]
+>     | MultisetQueryCtor QueryExpr
 >       deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | Represents an identifier name, which can be quoted or unquoted.
