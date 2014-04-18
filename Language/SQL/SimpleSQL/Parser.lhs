@@ -22,8 +22,8 @@
 > import qualified Text.Parsec as P (ParseError)
 > import Text.Parsec.Perm (permute,(<$?>), (<|?>))
 > import qualified Text.Parsec.Expr as E
-> import Data.List (intercalate)
-
+> import Data.List (intercalate,sort,groupBy)
+> import Data.Function (on)
 > import Language.SQL.SimpleSQL.Syntax
 
 The public API functions.
@@ -513,15 +513,13 @@ typename: used in casts. Special cases for the multi keyword typenames
 that SQL supports.
 
 > typeName :: Parser TypeName
-> typeName = (choice (multiWordParsers
->                    ++ [TypeName <$> identifierBlacklist blacklist])
->             >>= optionSuffix precision
->            ) <?> "typename"
+> typeName =
+>   (choice [multiWordParsers
+>           ,TypeName <$> identifierBlacklist blacklist]
+>    >>= optionSuffix precision
+>   ) <?> "typename"
 >   where
->     multiWordParsers =
->         flip map multiWordTypeNames
->         $ \ks -> (TypeName . unwords) <$> try (keywords ks)
->     multiWordTypeNames = map words
+>     multiWordParsers = (TypeName . unwords) <$> makeKeywordTree
 >         ["double precision"
 >         ,"character varying"
 >         ,"char varying"
@@ -559,6 +557,41 @@ todo: timestamp types:
 >     ctor [a] = Parens a
 >     ctor as = SpecialOp [Name "rowctor"] as
 
+== multi keyword helper
+
+This helper is to help parsing multiple options of multiple keywords
+with similar prefixes, e.g. parsing 'is null' and 'is not null'.
+
+use to left factor/ improve:
+typed literal and general identifiers
+not like, not in, not between operators
+help with factoring keyword functions and other app-likes
+the join keyword sequences
+fetch first/next
+row/rows only
+
+There is probably a simpler way of doing this but I am a bit
+thick.
+
+> makeKeywordTree :: [String] -> Parser [String]
+> makeKeywordTree sets = do
+>     reverse <$> parseTrees (sort $ map words sets)
+>     --  ?? <?> intercalate "," sets
+>   where
+>     parseTrees :: [[String]] -> Parser [String]
+>     parseTrees ws = do
+>       let gs :: [[[String]]]
+>           gs = groupBy ((==) `on` head) ws
+>       choice $ map parseGroup gs
+>     parseGroup :: [[String]] -> Parser [String]
+>     parseGroup l = do
+>         let k = head $ head l
+>         keyword_ k
+>         let tls = map tail l
+>             pr = (k:) <$> parseTrees tls
+>         if (or $ map null tls)
+>           then pr <|> return [k]
+>           else pr
 
 == operator parsing
 
@@ -568,6 +601,12 @@ can be symbols (a + b), single keywords (a and b) or multiple keywords
 (a is similar to b).
 
 TODO: carefully review the precedences and associativities.
+
+TODO: to fix the parsing completely, I think will need to parse
+without precedence and associativity and fix up afterwards, since SQL
+syntax is way too messy. It might be possible to avoid this if we
+wanted to avoid extensibility and to not be concerned with parse error
+messages, but both of these are considered too important.
 
 > opTable :: Bool -> [[E.Operator String () Identity ValueExpr]]
 > opTable bExpr =
@@ -598,21 +637,22 @@ TODO: carefully review the precedences and associativities.
 >          ,binarySym "|" E.AssocRight
 >          ,binaryKeyword "like" E.AssocNone
 >          ,binaryKeyword "overlaps" E.AssocNone]
->          ++ map (`binaryKeywords` E.AssocNone)
->          ["not like"
->          ,"is similar to"
->          ,"is not similar to"
->          ,"is distinct from"
->          ,"is not distinct from"]
->          ++ map postfixKeywords
->          ["is null"
->          ,"is not null"
->          ,"is true"
->          ,"is not true"
->          ,"is false"
->          ,"is not false"
->          ,"is unknown"
->          ,"is not unknown"]
+>          ++ [binaryKeywords $ makeKeywordTree
+>              ["not like"
+>              ,"is similar to"
+>              ,"is not similar to"
+>              ,"is distinct from"
+>              ,"is not distinct from"]
+>             ,postfixKeywords $ makeKeywordTree
+>              ["is null"
+>              ,"is not null"
+>              ,"is true"
+>              ,"is not true"
+>              ,"is false"
+>              ,"is not false"
+>              ,"is unknown"
+>              ,"is not unknown"]
+>             ]
 >          -- have to use try with inSuffix because of a conflict
 >          -- with 'in' in position function, and not between
 >          -- between also has a try in it to deal with 'not'
@@ -631,17 +671,20 @@ TODO: carefully review the precedences and associativities.
 >   where
 >     binarySym nm assoc = binary (symbol_ nm) nm assoc
 >     binaryKeyword nm assoc = binary (keyword_ nm) nm assoc
->     -- use try with the multi keywords because of shared
->     -- prefixes to the sets of keywords. Should left factor
->     -- somehow
->     binaryKeywords nm assoc = binary (try $ keywords_ (words nm)) nm assoc
+>     binaryKeywords p =
+>         E.Infix (do
+>             o <- p
+>             return (\a b -> BinOp a [Name $ unwords o] b))
+>             E.AssocNone
+>     postfixKeywords p =
+>       postfix' $ do
+>           o <- p
+>           return $ PostfixOp [Name $ unwords o]
 >     binary p nm assoc =
 >       E.Infix (p >> return (\a b -> BinOp a [Name nm] b)) assoc
 >     prefixKeyword nm = prefix (keyword_ nm) nm
 >     prefixSym nm = prefix (symbol_ nm) nm
 >     prefix p nm = prefix' (p >> return (PrefixOp [Name nm]))
->     postfixKeywords nm = postfix (try $ keywords_ (words nm)) nm
->     postfix p nm = postfix' (p >> return (PostfixOp [Name nm]))
 >     -- hack from here
 >     -- http://stackoverflow.com/questions/10475337/parsec-expr-repeated-prefix-postfix-operator-not-supported
 >     -- not implemented properly yet
@@ -815,11 +858,9 @@ allows offset and fetch in either order
 > fetch :: Parser ValueExpr
 > fetch = choice [ansiFetch, limit]
 >   where --todo: better left factoring
->     ansiFetch = keyword_ "fetch" >>
->         choice [keyword_ "first",keyword_ "next"]
->         *> valueExpr
->         <* choice [keyword_ "rows",keyword_ "row"]
->         <* keyword_ "only"
+>     fs = makeKeywordTree ["fetch first", "fetch next"]
+>     ro = makeKeywordTree ["rows only", "row only"]
+>     ansiFetch = fs *> valueExpr <* ro
 >     limit = keyword_ "limit" *> valueExpr
 
 == common table expressions
@@ -1069,9 +1110,6 @@ todo: work out the symbol parsing better
 >     return k) <?> k
 
 helper function to improve error messages
-
-> keywords :: [String] -> Parser [String]
-> keywords ks = mapM keyword ks <?> intercalate " " ks
 
 > keywords_ :: [String] -> Parser ()
 > keywords_ ks = mapM_ keyword_ ks <?> intercalate " " ks

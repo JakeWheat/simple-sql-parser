@@ -14,7 +14,8 @@ represent missing optional bits in the ast as nothing instead of the
 look at fixing the expression parsing completely
 represent natural and using/on in the syntax more close to the
    concrete syntax - don't combine in the ast
-
+review haddock in the syntax and update
+review syntax names and representation
 careful review of token parses wrt trailing delimiters/junk
 
 review places in the parse which should allow only a fixed set of
@@ -26,10 +27,12 @@ decide whether to represent numeric literals better, instead of a
 
 rough SQL 2003 todo, including tests to write:
 
+switch TypedLit to CSStringLit based on first char being underscore?
 idens: "", unicode, charset?, check dotted idens and contexts
 add missing type name support: lots of missing ones here, including
    simple stuff like lob variations, and new things like interval,
    row, ref, scope, array, multiset type names.
+  add tests for all the typenames cast and typed literal
 date and time literals
 multisets
 review window functions, window clause
@@ -43,13 +46,15 @@ filter in aggs
 within group in aggs
 rows review
 
-support needed MODULE syntax in identifiers - already covered?
-decide how to represent special identifiers including the session
+LNR: maybe leave until after next release
+
+LNR support needed MODULE syntax in identifiers - already covered?
+LNR decide how to represent special identifiers including the session
    variables or whatever they are called like current_user
-grouping - needs special syntax?
-next value for
-probably leave for now: subtypes, methods, new /routine, dereference
-double check associativity, precedence (value exprs, joins, set ops)
+LNR grouping - needs special syntax?
+LNR next value for
+LNR subtypes, methods, new /routine, dereference
+LNR double check associativity, precedence (value exprs, joins, set ops)
 position expressions
 length expressions
 extract expression
@@ -61,7 +66,7 @@ convert
 translate
 trim
 overlay
-specifictype
+LNR specifictype
 datetime value expressions
 intervals
 row value constructors, expressions review
@@ -80,21 +85,24 @@ between symmetric/asymmetric
 in predicate review
 escape for like
 escape for [not] similar to
-regular expression syntax?
+LNR regular expression syntax?
 normalized predicate
 overlaps predicate
 distinct from predicate
 member predicate
 submultiset predicate
 set predicate
-type predicate
+LNR type predicate
 additional stuff review:
 interval stuff
 aggregate functions: lots of missing bits
   especially: filter where, within group
 complete list of keywords/reserved keywords
-select into
-other language format identifiers for host params?
+LNR select into
+LNR other language format identifiers for host params?
+
+----
+above not marked LNR are for next release
 
 review areas where this parser is too permissive, e.g. value
    expressions allowed where column reference names only should be

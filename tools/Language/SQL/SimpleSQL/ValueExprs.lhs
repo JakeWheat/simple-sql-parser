@@ -132,8 +132,7 @@ Tests for parsing value expressions
 > unaryOperators :: TestItem
 > unaryOperators = Group "unaryOperators" $ map (uncurry TestValueExpr)
 >     [("not a", PrefixOp "not" $ Iden "a")
->      -- I think this is a missing feature or bug in parsec buildExpressionParser
->     --,("not not a", PrefixOp "not" $ PrefixOp "not" $ Iden "a")
+>     ,("not not a", PrefixOp "not" $ PrefixOp "not" $ Iden "a")
 >     ,("+a", PrefixOp "+" $ Iden "a")
 >     ,("-a", PrefixOp "-" $ Iden "a")
 >     ]

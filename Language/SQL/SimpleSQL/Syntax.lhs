@@ -139,7 +139,7 @@
 >                                   -- e.g. a[3]. The first
 >                                   -- valueExpr is the array, the
 >                                   -- second is the subscripts/ctor args
->     | ArrayCtor QueryExpr -- ^ this is used for the query expression version of array constructors, e.g. array(select * from t)>       deriving (Eq,Show,Read,Data,Typeable)
+>     | ArrayCtor QueryExpr -- ^ this is used for the query expression version of array constructors, e.g. array(select * from t)
 >     | CSStringLit String String
 >     | Escape ValueExpr Char
 >     | UEscape ValueExpr Char
