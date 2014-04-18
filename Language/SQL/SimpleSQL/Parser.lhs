@@ -119,7 +119,7 @@ which parses as a typed literal
 >     mkIt <$> stringToken
 >     <*> optionMaybe
 >         ((,) <$> identifierBlacklist blacklist
->              <*> optionMaybe (parens integer))
+>              <*> optionMaybe (parens unsignedInteger))
 >   where
 >     mkIt val Nothing = TypedLit (TypeName "interval") val
 >     mkIt val (Just (a,b)) = IntervalLit val a b
@@ -541,7 +541,7 @@ todo: timestamp types:
      | TIMESTAMParser [ <left paren> <timestamp precision> <right paren> ] [ WITH TIME ZONE ]
 
 
->     precision t = parens (commaSep integer) >>= makeWrap t
+>     precision t = parens (commaSep unsignedInteger) >>= makeWrap t
 >     makeWrap (TypeName t) [a] = return $ PrecTypeName t a
 >     makeWrap (TypeName t) [a,b] = return $ PrecScaleTypeName t a b
 >     makeWrap _ _ = fail "there must be one or two precision components"
@@ -574,8 +574,8 @@ There is probably a simpler way of doing this but I am a bit
 thick.
 
 > makeKeywordTree :: [String] -> Parser [String]
-> makeKeywordTree sets = do
->     reverse <$> parseTrees (sort $ map words sets)
+> makeKeywordTree sets =
+>     parseTrees (sort $ map words sets)
 >     --  ?? <?> intercalate "," sets
 >   where
 >     parseTrees :: [[String]] -> Parser [String]
@@ -584,14 +584,14 @@ thick.
 >           gs = groupBy ((==) `on` head) ws
 >       choice $ map parseGroup gs
 >     parseGroup :: [[String]] -> Parser [String]
->     parseGroup l = do
->         let k = head $ head l
+>     parseGroup l@((k:_):_) = do
 >         keyword_ k
 >         let tls = map tail l
 >             pr = (k:) <$> parseTrees tls
 >         if (or $ map null tls)
 >           then pr <|> return [k]
 >           else pr
+>     parseGroup _ = guard False >> error "impossible"
 
 == operator parsing
 
@@ -673,12 +673,12 @@ messages, but both of these are considered too important.
 >     binaryKeyword nm assoc = binary (keyword_ nm) nm assoc
 >     binaryKeywords p =
 >         E.Infix (do
->             o <- p
+>             o <- try p
 >             return (\a b -> BinOp a [Name $ unwords o] b))
 >             E.AssocNone
 >     postfixKeywords p =
 >       postfix' $ do
->           o <- p
+>           o <- try p
 >           return $ PostfixOp [Name $ unwords o]
 >     binary p nm assoc =
 >       E.Infix (p >> return (\a b -> BinOp a [Name nm] b)) assoc
@@ -979,8 +979,8 @@ whitespace parser which skips comments also
 > lexeme :: Parser a -> Parser a
 > lexeme p = p <* whitespace
 
-> integer :: Parser Integer
-> integer = read <$> lexeme (many1 digit) <?> "integer"
+> unsignedInteger :: Parser Integer
+> unsignedInteger = read <$> lexeme (many1 digit) <?> "integer"
 
 
 number literals

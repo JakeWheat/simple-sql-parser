@@ -40,15 +40,13 @@ which have been changed to try to improve the layout of the output.
 > valueExpr (IntervalLit v u p) =
 >     text "interval" <+> quotes (text v)
 >     <+> text u
->     <+> maybe empty (parens . text . show ) p
+>     <+> me (parens . text . show ) p
 > valueExpr (Iden i) = names i
 > valueExpr Star = text "*"
 > valueExpr Parameter = text "?"
 > valueExpr (HostParameter p i) =
 >     text (':':p)
->     <+> maybe empty
->         (\i' -> text "indicator" <+> text (':':i'))
->         i
+>     <+> me (\i' -> text "indicator" <+> text (':':i')) i
 
 > valueExpr (App f es) = names f <> parens (commaSep (map valueExpr es))
 
@@ -69,7 +67,7 @@ which have been changed to try to improve the layout of the output.
 >                     _ -> text "partition by"
 >                           <+> nest 13 (commaSep $ map valueExpr pb))
 >                 <+> orderBy od
->     <+> maybe empty frd fr)
+>     <+> me frd fr)
 >   where
 >     frd (FrameFrom rs fp) = rsd rs <+> fpd fp
 >     frd (FrameBetween rs fps fpe) =
@@ -120,7 +118,7 @@ which have been changed to try to improve the layout of the output.
 >     valueExpr e0 <+> names f <+> valueExpr e1
 
 > valueExpr (Case t ws els) =
->     sep $ [text "case" <+> maybe empty valueExpr t]
+>     sep $ [text "case" <+> me valueExpr t]
 >           ++ map w ws
 >           ++ maybeToList (fmap e els)
 >           ++ [text "end"]
@@ -231,9 +229,9 @@ which have been changed to try to improve the layout of the output.
 >       ,grpBy gb
 >       ,maybeValueExpr "having" hv
 >       ,orderBy od
->       ,maybe empty (\e -> text "offset" <+> valueExpr e <+> text "rows") off
->       ,maybe empty (\e -> text "fetch first" <+> valueExpr e
->                           <+> text "rows only") fe
+>       ,me (\e -> text "offset" <+> valueExpr e <+> text "rows") off
+>       ,me (\e -> text "fetch first" <+> valueExpr e
+>                  <+> text "rows only") fe
 >       ]
 > queryExpr (CombineQueryExpr q1 ct d c q2) =
 >   sep [queryExpr q1
@@ -264,12 +262,12 @@ which have been changed to try to improve the layout of the output.
 > alias :: Alias -> Doc
 > alias (Alias nm cols) =
 >     text "as" <+> name nm
->     <+> maybe empty (parens . commaSep . map name) cols
+>     <+> me (parens . commaSep . map name) cols
 
 > selectList :: [(ValueExpr,Maybe Name)] -> Doc
 > selectList is = commaSep $ map si is
 >   where
->     si (e,al) = valueExpr e <+> maybe empty als al
+>     si (e,al) = valueExpr e <+> me als al
 >     als al = text "as" <+> name al
 
 > from :: [TableRef] -> Doc
@@ -307,7 +305,7 @@ which have been changed to try to improve the layout of the output.
 >     joinCond (Just JoinNatural) = empty
 
 > maybeValueExpr :: String -> Maybe ValueExpr -> Doc
-> maybeValueExpr k = maybe empty
+> maybeValueExpr k = me
 >       (\e -> sep [text k
 >                  ,nest (length k + 1) $ valueExpr e])
 
@@ -342,3 +340,6 @@ which have been changed to try to improve the layout of the output.
 
 > commaSep :: [Doc] -> Doc
 > commaSep ds = sep $ punctuate comma ds
+
+> me :: (a -> Doc) -> Maybe a -> Doc
+> me = maybe empty

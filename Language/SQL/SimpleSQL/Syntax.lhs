@@ -127,12 +127,12 @@
 >                                           -- Maybe String is for the
 >                                           -- indicator, e.g. :var
 >                                           -- indicator :nl
->       | QuantifiedComparison
+>     | QuantifiedComparison
 >             ValueExpr
 >             [Name] -- operator
 >             CompPredQuantifier
 >             QueryExpr
->       | Match ValueExpr Bool -- true if unique
+>     | Match ValueExpr Bool -- true if unique
 >           QueryExpr
 >     | Array ValueExpr [ValueExpr] -- ^ represents an array
 >                                   -- access expression, or an array ctor
@@ -156,7 +156,6 @@
 >               | PrecTypeName String Integer
 >               | PrecScaleTypeName String Integer Integer
 >                 deriving (Eq,Show,Read,Data,Typeable)
-
 
 > -- | Used for 'expr in (value expression list)', and 'expr in
 > -- (subquery)' syntax.
