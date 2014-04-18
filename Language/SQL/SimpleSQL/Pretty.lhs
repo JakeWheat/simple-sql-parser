@@ -208,10 +208,53 @@ which have been changed to try to improve the layout of the output.
 > names ns = hcat $ punctuate (text ".") $ map name ns
 
 > typeName :: TypeName -> Doc
-> typeName (TypeName t) = text t
-> typeName (PrecTypeName t a) = text t <+> parens (text $ show a)
+> typeName (TypeName t) = names t
+> typeName (PrecTypeName t a) = names t <+> parens (text $ show a)
 > typeName (PrecScaleTypeName t a b) =
->     text t <+> parens (text (show a) <+> comma <+> text (show b))
+>     names t <+> parens (text (show a) <+> comma <+> text (show b))
+> typeName (LobTypeName t i m u) =
+>     names t
+>     <> parens (text (show i)
+>                 <> me (\x -> case x of
+>                            LobK -> text "K"
+>                            LobM -> text "M"
+>                            LobG -> text "G") m)
+>     <+> me (\x -> case x of
+>                    LobCharacters -> text "CHARACTERS"
+>                    LobCodeUnits -> text "CODE_UNITS"
+>                    LobOctets -> text "OCTETS") u
+> typeName (CharTypeName t i cs col) =
+>     names t
+>     <> me (\x -> parens (text $ show x)) i
+>     <+> (if null cs
+>          then empty
+>          else text "character set" <+> names cs)
+>     <+> me (\x -> text "collate" <+> name x) col
+> typeName (TimeTypeName t i tz) =
+>     names t
+>     <> me (\x -> parens (text $ show x)) i
+>     <+> text (if tz
+>               then "with time zone"
+>               else "without time zone")
+> typeName (RowTypeName cs) =
+>     text "row" <> parens (commaSep $ map f cs)
+>   where
+>     f (n,t) = name n <+> typeName t
+> typeName (IntervalTypeName f t) =
+>     text "interval"
+>     <+> it f
+>     <+> me (\x -> text "to" <+> it x) t
+>   where
+>     it (Itf n p) =
+>         text n
+>         <+> me (\(x,x1) -> parens (text (show x)
+>                               <+> me (\y -> (sep [comma,text (show y)])) x1)) p
+
+> typeName (ArrayType tn sz) =
+>     typeName tn <+> text "array" <+> me (text . show) sz
+
+> typeName (MultisetType tn) =
+>     typeName tn <+> text "multiset"
 
 
 = query expressions

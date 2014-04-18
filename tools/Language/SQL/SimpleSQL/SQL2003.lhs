@@ -21,10 +21,10 @@ large amount of the SQL.
 >     ,unicodeStringLiterals
 >     ,binaryStringLiterals
 >     ,numericLiterals
->     ,dateAndTimeLiterals
+>     --,dateAndTimeLiterals
 >     ,booleanLiterals
 >     --,identifiers
->     --,typeNames
+>     ,typeNameTests
 >     --,parenthesizedValueExpression
 >     ,targetSpecification
 >     ,contextuallyTypeValueSpec
@@ -657,11 +657,12 @@ TODO: separator stuff for all the string literals?
 
 <datetime value>    ::=   <unsigned integer>
 
-All these date literals are just like a restricted version of string
-literals. This parser doesn't check the format inside these literals
-at this time.
+TODO: interval literals
++ consider whether to support date and time literals better
+(e.g. parse the literal string), at the moment they are treated as
+normal typed literals
 
-> dateAndTimeLiterals :: TestItem
+> {-dateAndTimeLiterals :: TestItem
 > dateAndTimeLiterals = Group "date and time literals" $ map (uncurry TestValueExpr)
 >     [("date 'date literal'"
 >      ,TypedLit (TypeName "date") "date literal")
@@ -669,7 +670,7 @@ at this time.
 >      ,TypedLit (TypeName "time") "time literal")
 >     ,("timestamp 'timestamp literal'"
 >      ,TypedLit (TypeName "timestamp") "timestamp literal")
->     ]
+>     ]-}
 
 TODO: intervals + more date and time literals
 
@@ -924,9 +925,38 @@ TODO: module stuff
 
 <multiset type>    ::=   <data type> MULTISET
 
-TODO: review this list better and fill in lots of missing bits:
+create a list of type name variations:
 
-> typeNames :: TestItem
+> typeNames :: [(String,TypeName)]
+> typeNames =
+>     [-- example of every standard type name
+>       ("character", TypeName "character")
+>      -- 1 single prec + 1 with multiname
+>      -- 1 scale + with multiname
+>      -- lob prec + with multiname
+>      -- 1 with and without tz
+>      -- chars: (single/multiname) x prec x charset x collate
+>      -- single row field, two row field
+>      -- interval each type raw
+>      -- one type with single suff
+>      -- one type with double suff
+>      -- a to b with raw
+>      -- a to b with single suff
+>    ]
+
+Now test each variation in both cast expression and typed literal
+expression
+
+> typeNameTests :: TestItem
+> typeNameTests = Group "type names" $ map (uncurry TestValueExpr)
+>     $ concatMap makeTests typeNames
+>   where
+>     makeTests (ctn, stn) =
+>         [("cast('test' as " ++ ctn ++ ")", Cast (StringLit "test") stn)
+>         ,(ctn ++ " 'test'", TypedLit stn "test")
+>         ]
+
+> {-typeNames :: TestItem
 > typeNames = Group "type names" $ map (uncurry TestValueExpr)
 >     [("cast('test' as character(5))", undefined)
 >     ,("cast('test' as character)", undefined)
@@ -966,7 +996,7 @@ TODO: review this list better and fill in lots of missing bits:
 >     ,("cast('01-01-99' as timestamp(3))", undefined)
 >     ,("cast('01-01-99' as timestamp with time zone)", undefined)
 >     ,("cast('01-01-99' as time(3) with time zone)", undefined)
->     ]
+>     ]-}
 
 
 
@@ -975,7 +1005,7 @@ TODO: review this list better and fill in lots of missing bits:
 
 <field definition>    ::=   <field name> <data type> [ <reference scope check> ]
 
-This is used when e.g. casting to a row type. TODO
+This is used when e.g. casting to a row type.
 
 
 
@@ -1108,7 +1138,7 @@ for or how it works
 <default specification>    ::=   DEFAULT
 
 > contextuallyTypeValueSpec :: TestItem
-> contextuallyTypeValueSpec = Group "ontextually typed value specification" $ map (uncurry TestValueExpr)
+> contextuallyTypeValueSpec = Group "contextually typed value specification" $ map (uncurry TestValueExpr)
 >     [("null", Iden "null")
 >     ,("array[]", Array (Iden "array") [])
 >     --,("multiset[]", undefined)

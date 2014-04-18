@@ -121,7 +121,7 @@ which parses as a typed literal
 >         ((,) <$> identifierBlacklist blacklist
 >              <*> optionMaybe (parens unsignedInteger))
 >   where
->     mkIt val Nothing = TypedLit (TypeName "interval") val
+>     mkIt val Nothing = TypedLit (TypeName [Name "interval"]) val
 >     mkIt val (Just (a,b)) = IntervalLit val a b
 
 > characterSetLiteral :: Parser ValueExpr
@@ -514,12 +514,13 @@ that SQL supports.
 
 > typeName :: Parser TypeName
 > typeName =
->   (choice [multiWordParsers
->           ,TypeName <$> identifierBlacklist blacklist]
+>   (choice [try multiWordParsers
+>           ,mktn <$> identifierBlacklist blacklist]
 >    >>= optionSuffix precision
 >   ) <?> "typename"
 >   where
->     multiWordParsers = (TypeName . unwords) <$> makeKeywordTree
+>     mktn = TypeName . (:[]) . Name
+>     multiWordParsers = mktn . unwords <$> makeKeywordTree
 >         ["double precision"
 >         ,"character varying"
 >         ,"char varying"
