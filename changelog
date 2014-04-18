@@ -1,7 +1,6 @@
-0.4.0-dev (updated to 37dca6596bee307749bd74d01303c12235342c65)
+0.4.0-dev (updated to 7a847045163feb2339ab40ebe93afe2f1c9ad813)
 	completely remove dependency on haskell-src-exts
-	remove lots of 'try' from the parser, and add some other code
-	  which should start to improve the error messages
+	improve the error messages a great deal
 	fix some trailing whitespace issues in the keyword style functions,
 	  e.g. extract(day from x), dealing with trailing whitespace on
 	  the parens was fixed
@@ -18,8 +17,8 @@
 	fix corresponding bug where 'distinct' was being pretty printed in
 	  this case and 'all' was not since the assumed default was the
 	  wrong way round
-	replace Int with Integer in the Syntax
-	derive Data and Typeable in all the Syntax types
+	replace Int with Integer in the syntax
+	derive Data and Typeable in all the syntax types
 	remove support for parsing clauses after the from clause if there
 	  is no from clause
 	fix some trailing junk lexing issues with symbols and number
@@ -38,6 +37,21 @@
 	  the new collate postfix operator, this also changes the collation
 	  name to be an identifier instead of a string
 	support escape for string literals as a postfix operator
+	represent missing setquantifier as a literal default instead of as
+	  the actual default value (all in select, distinct in set
+	  operators)
+	same for sort directions in order by
+	parse schema/whatever qualified ids in various places: identifiers
+	  (replaces equivalent functionality using '.' operator), function,
+	  aggregate, window function names, explicit tables and functions in
+	  from clauses, typenames
+	support what appears to be 100% of sql 2003 typename syntax (phew)
+	support most multiset operations (missing some predicates only,
+	  likely to be added before next release)
+	support two double quotes in a quoted identifier to represent a
+	  quote character in the identifier
+	implement complete interval literals (fixed the handling of the
+	  interval qualifier)
 0.3.1 (commit 5cba9a1cac19d66166aed2876d809aef892ff59f)
 	update to work with ghc 7.8.1
 0.3.0 (commit 9e75fa93650b4f1a08d94f4225a243bcc50445ae)

@@ -1,38 +1,26 @@
 continue 2003 review and tests
-docs: how to run the tests
+
 touch up the expr hack as best as can
-left factor as much as possible (see below on notes)
-table expression in syntax:
-  QueryExpr = Select SelectList (Maybe TableExpr)
-  and the TableExpr contains all the other bits?
-finish off ansi 2003 support or specific subset
-start looking at error messages
-change the booleans in the ast to better types for less ambiguity
-represent missing optional bits in the ast as nothing instead of the
-   default
-look at fixing the expression parsing completely
+
 represent natural and using/on in the syntax more close to the
    concrete syntax - don't combine in the ast
-review haddock in the syntax and update
-review syntax names and representation
+
 careful review of token parses wrt trailing delimiters/junk
 
-decide how to handle character set literals and identifiers: don't
-   have any intention of actually supporting switching character sets
-   in the middle of parsing so maybe this would be better disabled?
+undo mess in the code created by adding lots of new support:
+much more documentation
+refactor crufty bits
+reorder the code
+reconsider the names and structure of the constructors in the syntax
+refactor the typename parser - it's a real mess
 
-review places in the parse which should allow only a fixed set of
-   identifiers (e.g. in interval literals)
+add documentation in Parser.lhs on the left factoring/error handling
+   approach
 
-decide whether to represent numeric literals better, instead of a
-   single string - break up into parts, or parse to a Decimal or
-   something
+create error message demonstration page for the website
 
-refactor the typename parsing
-
-reorder the parser and syntax (and the pretty)
-
-remove the IsString for Name and [Name]
+remove the IsString for Name and [Name], create some helper functions
+   if needed. These are only used in the tests
 
 fixes:
 
@@ -44,25 +32,51 @@ keyword tree support prefix mode so can start from already parsed
 do the final big left factor: typenames, interval lits, iden +
    suffixes
 
+left factor/try removal summary (needs updating):
+
+identifier starts:
+  interval literal
+  character set literal
+  typed literals, multikeywords
+  identifier
+  app, agg, window
+  keyword function
+issues in the special op internals
+not between + other ops: needs new expression parsing
+  not in also
+  in suffix also
+  lots of overlap with binary and postfix multi keyword operators
+  quantified comparison also
+issues in the typename parsing
+dot in identifiers and as operator
+issues in the symbol parser
+  hardcode all the symbols in the symbol parser/split?
+conflict with in suffix and in in position
+
+rules for changing the multi keyword parsing:
+  if a keyword must be followed by another
+    e.g. left join, want to refactor to produce 'expected "left join"'
+  if the keyword is optionally followed by another, e.g. with
+   recursive, then don't do this.
+
+
 rough SQL 2003 todo, including tests to write:
 
-idens: "", unicode
-date and time literals
-multisets
-review window functions, window clause
-review cases
-search/cycle, exclusions
-special operators
-from clause review
-table sample
-unnest
-filter in aggs
-within group in aggs
+now:
+implement the reservation of all keywords
+go through all? the functions
+go through almost all the predicates
+window functions missing bits, window clauses
+from: more tests, review missing
+  tablesample, unnest, etc.
+aggregates: where, filter + review
 rows review
-matching simple partial full
+match missing bit
+between symmetric
+case review
 
-
-LNR: maybe leave until after next release
+detail list from the grammar, LNR = maybe leave until after next
+   release, otherwise planned for next release
 
 LNR support needed MODULE syntax in identifiers - already covered?
 LNR decide how to represent special identifiers including the session
@@ -83,8 +97,6 @@ translate
 trim
 overlay
 LNR specifictype
-datetime value expressions
-intervals
 row value constructors, expressions review
 review table value constructor exactly what is allowed
 lots more tests for from clause variations
@@ -95,7 +107,7 @@ only spec
 join variations, including union join
 review group by
 window clauses
-all fields reference with alias 'select * as (a,b,c) ... '
+LNR all fields reference with alias 'select * as (a,b,c) ... '
 search or cycle clause
 between symmetric/asymmetric
 in predicate review
@@ -110,42 +122,49 @@ submultiset predicate
 set predicate
 LNR type predicate
 additional stuff review:
-interval stuff
-aggregate functions: lots of missing bits
-  especially: filter where, within group
-complete list of keywords/reserved keywords
+complete the list of keywords/reserved keywords and check everything
+   still works ok. The parser will reject all unquoted identifiers
+   which are the same as reserved or unreserved keywords.
 LNR select into
 LNR other language format identifiers for host params?
 
-----
-above not marked LNR are for next release
+
+
+---
+
+after next release
 
 review areas where this parser is too permissive, e.g. value
    expressions allowed where column reference names only should be
    allowed, such as group by, order by (perhaps there can be a flag or
    warnings or something), unqualified asterisk in select list
 
+fix the expression parser completely: the realistic way is to adjust
+   for precedence and associativity after parsing since the concrete
+   syntax is so messy. should also use this expression parser for
+   parsing joins and for set operations, maybe other areas.
 
-left factor/try removal:
+table expression in syntax:
+  QueryExpr = Select SelectList (Maybe TableExpr)
+  and the TableExpr contains all the other bits?
 
-character set literal: leading identifier
-typed literal: leading identifier
-special operators: needs some rewriting to remove try
-  + left factor with iden( patterns
-conflict with in suffix and in in position
-conflict with not prefix op and not between??
-multi word type names: left factor
-quantified comparison: left factor with normal comparison
-multi word operator names in expressions
-hardcode all the symbols in the symbol parser/split?
-left factor the not in 'not in' and 'not between', maybe others
-rules for changing the multi keyword parsing:
-  if a keyword must be followed by another
-    e.g. left join, want to refactor to produce 'expected "left join"'
-  if the keyword is optionally followed by another, e.g. with
-   recursive, then don't do this.
+change the booleans in the ast to better types for less ambiguity?
 
-future big feature summary:
+decide how to handle character set literals and identifiers: don't
+   have any intention of actually supporting switching character sets
+   in the middle of parsing so maybe this would be better disabled?
+
+review places in the parse which should allow only a fixed set of
+   identifiers (e.g. in interval literals), keep in mind other
+   dialects and extensibility
+
+decide whether to represent numeric literals better, instead of a
+   single string - break up into parts, or parse to a Decimal or
+   something
+
+
+= future big feature summary
+
 all ansi sql queries
 completely working expression tree parsing
 error messages, left factor
@@ -159,6 +178,8 @@ typesafe sql dbms wrapper support for haskell
 extensibility
 performance analysis
 
+try out uu-parsing or polyparse, especially wrt error message
+   improvements
 
 = stuff
 

@@ -962,7 +962,7 @@ allows offset and fetch in either order
 
 > fetch :: Parser ValueExpr
 > fetch = choice [ansiFetch, limit]
->   where --todo: better left factoring
+>   where
 >     fs = makeKeywordTree ["fetch first", "fetch next"]
 >     ro = makeKeywordTree ["rows only", "row only"]
 >     ansiFetch = fs *> valueExpr <* ro
@@ -1208,7 +1208,7 @@ todo: work out the symbol parsing better
 >          optionSuffix moreString (s0 ++ "'" ++ s)
 >         ,-- handle string in separate parts
 >          -- e.g. 'part 1' 'part 2'
->          do
+>          do --can this whitespace be factored out?
 >          try (whitespace <* nlquote)
 >          s <- manyTill anyChar nlquote
 >          optionSuffix moreString (s0 ++ s)
