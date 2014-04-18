@@ -215,14 +215,14 @@ which have been changed to try to improve the layout of the output.
 > typeName (LobTypeName t i m u) =
 >     names t
 >     <> parens (text (show i)
->                 <> me (\x -> case x of
+>                <> me (\x -> case x of
 >                            LobK -> text "K"
 >                            LobM -> text "M"
->                            LobG -> text "G") m)
->     <+> me (\x -> case x of
->                    LobCharacters -> text "CHARACTERS"
->                    LobCodeUnits -> text "CODE_UNITS"
->                    LobOctets -> text "OCTETS") u
+>                            LobG -> text "G") m
+>                <+> me (\x -> case x of
+>                        LobCharacters -> text "CHARACTERS"
+>                        LobCodeUnits -> text "CODE_UNITS"
+>                        LobOctets -> text "OCTETS") u)
 > typeName (CharTypeName t i cs col) =
 >     names t
 >     <> me (\x -> parens (text $ show x)) i
@@ -250,10 +250,10 @@ which have been changed to try to improve the layout of the output.
 >         <+> me (\(x,x1) -> parens (text (show x)
 >                               <+> me (\y -> (sep [comma,text (show y)])) x1)) p
 
-> typeName (ArrayType tn sz) =
->     typeName tn <+> text "array" <+> me (text . show) sz
+> typeName (ArrayTypeName tn sz) =
+>     typeName tn <+> text "array" <+> me (brackets . text . show) sz
 
-> typeName (MultisetType tn) =
+> typeName (MultisetTypeName tn) =
 >     typeName tn <+> text "multiset"
 
 

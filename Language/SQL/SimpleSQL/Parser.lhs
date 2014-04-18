@@ -136,7 +136,7 @@ which parses as a typed literal
 >         ] <* lookAhead quote
 
 > literal :: Parser ValueExpr
-> literal = number <|> stringValue <|> interval <|> try characterSetLiteral
+> literal = number <|> stringValue <|> try interval <|> try characterSetLiteral
 
 
 == Names
@@ -512,15 +512,93 @@ a match (select a from t)
 typename: used in casts. Special cases for the multi keyword typenames
 that SQL supports.
 
+TODO: this need heavy refactoring
+
 > typeName :: Parser TypeName
 > typeName =
->   (choice [try multiWordParsers
->           ,mktn <$> identifierBlacklist blacklist]
->    >>= optionSuffix precision
->   ) <?> "typename"
+>     (rowTypeName <|> intervalTypeName <|> otherTypeName)
+>     >>= tnSuffix
+>     <?> "typename"
 >   where
->     mktn = TypeName . (:[]) . Name
->     multiWordParsers = mktn . unwords <$> makeKeywordTree
+>     -- row type names - a little like create table
+>     rowTypeName =
+>         RowTypeName <$> (keyword_ "row" *> parens (commaSep1 rowField))
+>     rowField = (,) <$> name <*> typeName
+>     -- interval type names: interval a [to b]
+>     intervalTypeName =
+>         keyword_ "interval" *>
+>         choice
+>         [IntervalTypeName <$> intervalField
+>          <*> optionMaybe (keyword_ "to" *> intervalField)
+>         ,return $ TypeName [Name "interval"]]
+>     intervalField =
+>         Itf
+>         <$> identifierBlacklist blacklist
+>         <*> optionMaybe
+>             (parens ((,) <$> unsignedInteger
+>                          <*> optionMaybe (comma *> unsignedInteger)))
+>     -- other type names, which includes:
+>     -- precision, scale, lob scale and units, timezone, character
+>     -- set and collations
+>     otherTypeName = do
+>         tn <- (try multiWordParsers <|> names)
+>         choice [try $ timezone tn
+>                ,try (precscale tn) >>= optionSuffix charSuffix
+>                ,try $ lob tn
+>                ,optionSuffix charSuffix $ TypeName tn]
+>     timezone tn = do
+>         TimeTypeName tn
+>         <$> optionMaybe prec
+>         <*> choice [True <$ keywords_ ["with", "time","zone"]
+>                    ,False <$ keywords_ ["without", "time","zone"]]
+>     charSuffix (PrecTypeName t p) = chars t (Just p)
+>     charSuffix (TypeName t) = chars t Nothing
+>     charSuffix _ = fail ""
+>     chars tn p =
+>         ((,) <$> option [] charSet
+>              <*> optionMaybe tcollate)
+>           >>= uncurry mkit
+>         where
+>           mkit [] Nothing = fail ""
+>           mkit a b = return $ CharTypeName tn p a b
+>     lob tn = parens $ do
+>         (x,y) <- lobPrecToken
+>         z <- optionMaybe lobUnits
+>         return $ LobTypeName tn x y z
+>     precscale tn = parens (commaSep unsignedInteger) >>= makeWrap
+>                    where
+>                      makeWrap [a] = return $ PrecTypeName tn a
+>                      makeWrap [a,b] = return $ PrecScaleTypeName tn a b
+>                      makeWrap _ = fail "there must be one or two precision components"
+>     prec = parens unsignedInteger
+>     charSet = keywords_ ["character", "set"] *> names
+>     tcollate = keyword_ "collate" *> name
+>     lobPrecToken = lexeme $ do
+>         p <- read <$> many1 digit <?> "unsigned integer"
+>         x <- choice [Just LobK <$ keyword_ "k"
+>                     ,Just LobM <$ keyword_ "m"
+>                     ,Just LobG <$ keyword_ "g"
+>                     ,return Nothing]
+>         return (p,x)
+>     lobUnits = choice [LobCharacters <$ keyword_ "characters"
+>                       ,LobCodeUnits <$ keyword_ "code_units"
+>                       ,LobOctets <$ keyword_ "octets"]
+>     -- deal with multiset and array suffixes
+>     tnSuffix x =
+>         multisetSuffix x <|> arraySuffix x <|> return x
+>     multisetSuffix x =
+>         (MultisetTypeName x <$ keyword_ "multiset") >>= tnSuffix
+>     arraySuffix x =
+>         (keyword_ "array" >> ArrayTypeName x
+>                              <$> optionMaybe (brackets unsignedInteger)
+>         ) >>= tnSuffix
+>     -- special cases: there are a fixed set of multi word
+>     -- sql types, they all have to be listed here
+>     -- if it isn't in this list, the base of the
+>     -- typename must parse as a regular dotted identifier chain
+>     -- schema/etc. qualifiers are not supported for the multi word
+>     -- typenames
+>     multiWordParsers = (:[]) . Name . unwords <$> makeKeywordTree
 >         ["double precision"
 >         ,"character varying"
 >         ,"char varying"
@@ -534,18 +612,8 @@ that SQL supports.
 >         ,"nchar large object"
 >         ,"nchar varying"
 >         ,"bit varying"
+>         ,"binary large object"
 >         ]
-
-todo: timestamp types:
-
-    | TIME [ <left paren> <time precision> <right paren> ] [ WITH TIME ZONE ]
-     | TIMESTAMParser [ <left paren> <timestamp precision> <right paren> ] [ WITH TIME ZONE ]
-
-
->     precision t = parens (commaSep unsignedInteger) >>= makeWrap t
->     makeWrap (TypeName t) [a] = return $ PrecTypeName t a
->     makeWrap (TypeName t) [a,b] = return $ PrecScaleTypeName t a b
->     makeWrap _ _ = fail "there must be one or two precision components"
 
 
 == value expression parens, row ctor and scalar subquery
@@ -582,17 +650,21 @@ thick.
 >     parseTrees :: [[String]] -> Parser [String]
 >     parseTrees ws = do
 >       let gs :: [[[String]]]
->           gs = groupBy ((==) `on` head) ws
+>           gs = groupBy ((==) `on` safeHead) ws
 >       choice $ map parseGroup gs
 >     parseGroup :: [[String]] -> Parser [String]
 >     parseGroup l@((k:_):_) = do
 >         keyword_ k
->         let tls = map tail l
+>         let tls = catMaybes $ map safeTail l
 >             pr = (k:) <$> parseTrees tls
 >         if (or $ map null tls)
 >           then pr <|> return [k]
 >           else pr
 >     parseGroup _ = guard False >> error "impossible"
+>     safeHead (x:_) = Just x
+>     safeHead [] = Nothing
+>     safeTail (_:x) = Just x
+>     safeTail [] = Nothing
 
 == operator parsing
 

@@ -511,7 +511,7 @@ TODO: all the stuff with character set representations.
 <Unicode representation>    ::=   <character representation> | <Unicode escape value>
 
 > unicodeStringLiterals :: TestItem
-> unicodeStringLiterals = Group "national character string literals" $ map (uncurry TestValueExpr)
+> unicodeStringLiterals = Group "unicode string literals" $ map (uncurry TestValueExpr)
 >     [("U&'something'", CSStringLit "U&" "something")
 >     ,("u&'something' escape ="
 >      ,Escape (CSStringLit "u&" "something") '=')
@@ -929,20 +929,157 @@ create a list of type name variations:
 
 > typeNames :: [(String,TypeName)]
 > typeNames =
->     [-- example of every standard type name
->       ("character", TypeName "character")
->      -- 1 single prec + 1 with multiname
->      -- 1 scale + with multiname
->      -- lob prec + with multiname
->      -- 1 with and without tz
->      -- chars: (single/multiname) x prec x charset x collate
->      -- single row field, two row field
->      -- interval each type raw
->      -- one type with single suff
->      -- one type with double suff
->      -- a to b with raw
->      -- a to b with single suff
->    ]
+>     basicTypes
+>     ++ concatMap makeArray basicTypes
+>     ++ map makeMultiset basicTypes
+>   where
+>     makeArray (s,t) = [(s ++ " array", ArrayTypeName t Nothing)
+>                       ,(s ++ " array[5]", ArrayTypeName t (Just 5))]
+>     makeMultiset (s,t) = (s ++ " multiset", MultisetTypeName t)
+>     basicTypes =
+>         -- example of every standard type name
+>         map (\t -> (t,TypeName [Name t]))
+>         ["character"
+>         ,"char"
+>         ,"character varying"
+>         ,"char varying"
+>         ,"varchar"
+>         ,"character large object"
+>         ,"char large object"
+>         ,"clob"
+>         ,"national character"
+>         ,"national char"
+>         ,"nchar"
+>         ,"national character varying"
+>         ,"national char varying"
+>         ,"nchar varying"
+>         ,"national character large object"
+>         ,"nchar large object"
+>         ,"nclob"
+>         ,"binary large object"
+>         ,"blob"
+>         ,"numeric"
+>         ,"decimal"
+>         ,"dec"
+>         ,"smallint"
+>         ,"integer"
+>         ,"int"
+>         ,"bigint"
+>         ,"float"
+>         ,"real"
+>         ,"double precision"
+>         ,"boolean"
+>         ,"date"
+>         ,"time"
+>         ,"timestamp"]
+>         --interval -- not allowed without interval qualifier
+>         --row -- not allowed without row type body
+>         --ref -- todo
+>         --scope -- todo
+>         -- array -- not allowed on own
+>         -- multiset -- not allowed on own
+
+>          ++
+>          [-- 1 single prec + 1 with multiname
+>           ("char(5)", PrecTypeName [Name "char"] 5)
+>          ,("char varying(5)", PrecTypeName [Name "char varying"] 5)
+>          -- 1 scale
+>          ,("decimal(15,2)", PrecScaleTypeName [Name "decimal"] 15 2)
+>          -- lob prec + with multiname
+>          ,("blob(3M)", LobTypeName [Name "blob"] 3 (Just LobM) Nothing)
+>          ,("blob(4M characters) "
+>           ,LobTypeName [Name "blob"] 4 (Just LobM) (Just LobCharacters))
+>          ,("blob(5 code_units) "
+>           ,LobTypeName [Name "blob"] 5 Nothing (Just LobCodeUnits))
+>          ,("blob(6G octets) "
+>           ,LobTypeName [Name "blob"] 6 (Just LobG) (Just LobOctets))
+>          ,("national character large object(7K) "
+>           ,LobTypeName [Name "national character large object"] 7 (Just LobK) Nothing)
+>          -- 1 with and without tz
+>          ,("time with time zone"
+>           ,TimeTypeName [Name "time"] Nothing True)
+>          ,("datetime(3) without time zone"
+>           ,TimeTypeName [Name "datetime"] (Just 3) False)
+>          -- chars: (single/multiname) x prec x charset x collate
+>          -- 1111
+>          ,("char varying(5) character set something collate something_insensitive"
+>           ,CharTypeName [Name "char varying"] (Just 5)
+>            [Name "something"] (Just "something_insensitive"))
+>           -- 0111
+>          ,("char(5) character set something collate something_insensitive"
+>           ,CharTypeName [Name "char"] (Just 5)
+>            [Name "something"] (Just "something_insensitive"))
+
+>           -- 1011
+>          ,("char varying character set something collate something_insensitive"
+>           ,CharTypeName [Name "char varying"] Nothing
+>            [Name "something"] (Just "something_insensitive"))
+>           -- 0011
+>          ,("char character set something collate something_insensitive"
+>           ,CharTypeName [Name "char"] Nothing
+>            [Name "something"] (Just "something_insensitive"))
+
+>           -- 1101
+>          ,("char varying(5) collate something_insensitive"
+>           ,CharTypeName [Name "char varying"] (Just 5)
+>            [] (Just "something_insensitive"))
+>           -- 0101
+>          ,("char(5) collate something_insensitive"
+>           ,CharTypeName [Name "char"] (Just 5)
+>            [] (Just "something_insensitive"))
+>           -- 1001
+>          ,("char varying collate something_insensitive"
+>           ,CharTypeName [Name "char varying"] Nothing
+>            [] (Just "something_insensitive"))
+>           -- 0001
+>          ,("char collate something_insensitive"
+>           ,CharTypeName [Name "char"] Nothing
+>            [] (Just "something_insensitive"))
+
+>          -- 1110
+>          ,("char varying(5) character set something"
+>           ,CharTypeName [Name "char varying"] (Just 5)
+>            [Name "something"] Nothing)
+>           -- 0110
+>          ,("char(5) character set something"
+>           ,CharTypeName [Name "char"] (Just 5)
+>            [Name "something"] Nothing)
+>           -- 1010
+>          ,("char varying character set something"
+>           ,CharTypeName [Name "char varying"] Nothing
+>            [Name "something"] Nothing)
+>           -- 0010
+>          ,("char character set something"
+>           ,CharTypeName [Name "char"] Nothing
+>            [Name "something"] Nothing)
+>           -- 1100
+>          ,("char varying character set something"
+>           ,CharTypeName [Name "char varying"] Nothing
+>            [Name "something"] Nothing)
+
+>          -- single row field, two row field
+>          ,("row(a int)", RowTypeName [(Name "a", TypeName [Name "int"])])
+>          ,("row(a int,b char)"
+>           ,RowTypeName [(Name "a", TypeName [Name "int"])
+>                        ,(Name "b", TypeName [Name "char"])])
+>          -- interval each type raw
+>          ,("interval year"
+>           ,IntervalTypeName (Itf "year" Nothing) Nothing)
+>          -- one type with single suffix
+>          -- one type with double suffix
+>          ,("interval year(2)"
+>           ,IntervalTypeName (Itf "year" $ Just (2,Nothing)) Nothing)
+>          ,("interval second(2,5)"
+>           ,IntervalTypeName (Itf "second" $ Just (2,Just 5)) Nothing)
+>          -- a to b with raw
+>          -- a to b with single suffix
+>          ,("interval year to month"
+>           ,IntervalTypeName (Itf "year" Nothing)
+>                             (Just $ Itf "month" Nothing))
+>          ,("interval year(4) to second(2,3)"
+>           ,IntervalTypeName (Itf "year" $ Just (4,Nothing))
+>                             (Just $ Itf "second" $ Just (2, Just 3)))
+>          ]
 
 Now test each variation in both cast expression and typed literal
 expression

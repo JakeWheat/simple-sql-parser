@@ -161,17 +161,17 @@ TODO: add ref and scope, any others?
 >     = TypeName [Name]
 >     | PrecTypeName [Name] Integer
 >     | PrecScaleTypeName [Name] Integer Integer
->     | LobTypeName [Name] Int (Maybe LobMultiplier) (Maybe LobUnits)
+>     | LobTypeName [Name] Integer (Maybe LobMultiplier) (Maybe LobUnits)
 >       -- precision, characterset, collate
 >     | CharTypeName [Name] (Maybe Integer) [Name] (Maybe Name)
 >     | TimeTypeName [Name] (Maybe Integer) Bool -- true == with time zone
 >     | RowTypeName [(Name,TypeName)]
 >     | IntervalTypeName IntervalTypeField (Maybe IntervalTypeField)
->     | ArrayType TypeName (Maybe Integer)
->     | MultisetType TypeName
+>     | ArrayTypeName TypeName (Maybe Integer)
+>     | MultisetTypeName TypeName
 >       deriving (Eq,Show,Read,Data,Typeable)
 
-> data IntervalTypeField = Itf String (Maybe (Int, Maybe Int))
+> data IntervalTypeField = Itf String (Maybe (Integer, Maybe Integer))
 >                          deriving (Eq,Show,Read,Data,Typeable)
 
 > data LobMultiplier = LobK | LobM | LobG
