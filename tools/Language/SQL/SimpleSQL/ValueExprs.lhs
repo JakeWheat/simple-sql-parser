@@ -47,7 +47,7 @@ Tests for parsing value expressions
 > identifiers = Group "identifiers" $ map (uncurry TestValueExpr)
 >     [("iden1", Iden "iden1")
 >     --,("t.a", Iden2 "t" "a")
->     ,("\"quoted identifier\"", Iden $ QName "quoted identifier")
+>     ,("\"quoted identifier\"", Iden [QName "quoted identifier"])
 >     ]
 
 > star :: TestItem
@@ -65,9 +65,9 @@ Tests for parsing value expressions
 
 > dots :: TestItem
 > dots = Group "dot" $ map (uncurry TestValueExpr)
->     [("t.a", BinOp (Iden "t") "." (Iden "a"))
+>     [("t.a", Iden ["t","a"])
 >     ,("t.*", BinOp (Iden "t") "." Star)
->     ,("a.b.c", BinOp (BinOp (Iden "a") "." (Iden "b")) "." (Iden "c"))
+>     ,("a.b.c", Iden ["a","b","c"])
 >     ,("ROW(t.*,42)", App "ROW" [BinOp (Iden "t") "." Star, NumLit "42"])
 >     ]
 

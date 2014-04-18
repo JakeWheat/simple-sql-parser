@@ -21,7 +21,7 @@ expression
 >      ,ms [TRSimple "t", TRSimple "u"])
 
 >     ,("select a from s.t"
->      ,ms [TRQualified "s" "t"])
+>      ,ms [TRSimple ["s","t"]])
 
 these lateral queries make no sense but the syntax is valid
 

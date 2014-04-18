@@ -14,8 +14,9 @@ which have been changed to try to improve the layout of the output.
 > import Language.SQL.SimpleSQL.Syntax
 > import Text.PrettyPrint (render, vcat, text, (<>), (<+>), empty, parens,
 >                          nest, Doc, punctuate, comma, sep, quotes,
->                          doubleQuotes, brackets)
+>                          doubleQuotes, brackets,hcat)
 > import Data.Maybe (maybeToList, catMaybes)
+> import Data.List (intercalate)
 
 > -- | Convert a query expr ast to concrete syntax.
 > prettyQueryExpr :: QueryExpr -> String
@@ -40,7 +41,7 @@ which have been changed to try to improve the layout of the output.
 >     text "interval" <+> quotes (text v)
 >     <+> text u
 >     <+> maybe empty (parens . text . show ) p
-> valueExpr (Iden i) = name i
+> valueExpr (Iden i) = names i
 > valueExpr Star = text "*"
 > valueExpr Parameter = text "?"
 > valueExpr (HostParameter p i) =
@@ -49,10 +50,10 @@ which have been changed to try to improve the layout of the output.
 >         (\i' -> text "indicator" <+> text (':':i'))
 >         i
 
-> valueExpr (App f es) = name f <> parens (commaSep (map valueExpr es))
+> valueExpr (App f es) = names f <> parens (commaSep (map valueExpr es))
 
 > valueExpr (AggregateApp f d es od) =
->     name f
+>     names f
 >     <> parens ((case d of
 >                   Distinct -> text "distinct"
 >                   All -> text "all"
@@ -61,7 +62,7 @@ which have been changed to try to improve the layout of the output.
 >                <+> orderBy od)
 
 > valueExpr (WindowApp f es pb od fr) =
->     name f <> parens (commaSep $ map valueExpr es)
+>     names f <> parens (commaSep $ map valueExpr es)
 >     <+> text "over"
 >     <+> parens ((case pb of
 >                     [] -> empty
@@ -83,40 +84,40 @@ which have been changed to try to improve the layout of the output.
 >     fpd (Preceding e) = valueExpr e <+> text "preceding"
 >     fpd (Following e) = valueExpr e <+> text "following"
 
-> valueExpr (SpecialOp nm [a,b,c]) | nm `elem` [Name "between"
->                                               ,Name "not between"] =
+> valueExpr (SpecialOp nm [a,b,c]) | nm `elem` [[Name "between"]
+>                                              ,[Name "not between"]] =
 >   sep [valueExpr a
->       ,name nm <+> valueExpr b
->       ,nest (length (unname nm) + 1) $ text "and" <+> valueExpr c]
+>       ,names nm <+> valueExpr b
+>       ,nest (length (unnames nm) + 1) $ text "and" <+> valueExpr c]
 
-> valueExpr (SpecialOp (Name "rowctor") as) =
+> valueExpr (SpecialOp [Name "rowctor"] as) =
 >     parens $ commaSep $ map valueExpr as
 
 > valueExpr (SpecialOp nm es) =
->   name nm <+> parens (commaSep $ map valueExpr es)
+>   names nm <+> parens (commaSep $ map valueExpr es)
 
 > valueExpr (SpecialOpK nm fs as) =
->     name nm <> parens (sep $ catMaybes
+>     names nm <> parens (sep $ catMaybes
 >         (fmap valueExpr fs
 >          : map (\(n,e) -> Just (text n <+> valueExpr e)) as))
 
-> valueExpr (PrefixOp f e) = name f <+> valueExpr e
-> valueExpr (PostfixOp f e) = valueExpr e <+> name f
-> valueExpr e@(BinOp _ op _) | op `elem` [Name "and", Name "or"] =
+> valueExpr (PrefixOp f e) = names f <+> valueExpr e
+> valueExpr (PostfixOp f e) = valueExpr e <+> names f
+> valueExpr e@(BinOp _ op _) | op `elem` [[Name "and"], [Name "or"]] =
 >     -- special case for and, or, get all the ands so we can vcat them
 >     -- nicely
 >     case ands e of
 >       (e':es) -> vcat (valueExpr e'
->                        : map ((name op <+>) . valueExpr) es)
+>                        : map ((names op <+>) . valueExpr) es)
 >       [] -> empty -- shouldn't be possible
 >   where
 >     ands (BinOp a op' b) | op == op' = ands a ++ ands b
 >     ands x = [x]
 > -- special case for . we don't use whitespace
-> valueExpr (BinOp e0 (Name ".") e1) =
+> valueExpr (BinOp e0 [Name "."] e1) =
 >     valueExpr e0 <> text "." <> valueExpr e1
 > valueExpr (BinOp e0 f e1) =
->     valueExpr e0 <+> name f <+> valueExpr e1
+>     valueExpr e0 <+> names f <+> valueExpr e1
 
 > valueExpr (Case t ws els) =
 >     sep $ [text "case" <+> maybe empty valueExpr t]
@@ -146,7 +147,7 @@ which have been changed to try to improve the layout of the output.
 
 > valueExpr (QuantifiedComparison v c cp sq) =
 >     valueExpr v
->     <+> name c
+>     <+> names c
 >     <+> (text $ case cp of
 >              CPAny -> "any"
 >              CPSome -> "some"
@@ -197,9 +198,16 @@ which have been changed to try to improve the layout of the output.
 > unname (QName n) = "\"" ++ n ++ "\""
 > unname (Name n) = n
 
+> unnames :: [Name] -> String
+> unnames ns = intercalate "." $ map unname ns
+
+
 > name :: Name -> Doc
 > name (QName n) = doubleQuotes $ text n
 > name (Name n) = text n
+
+> names :: [Name] -> Doc
+> names ns = hcat $ punctuate (text ".") $ map name ns
 
 > typeName :: TypeName -> Doc
 > typeName (TypeName t) = text t
@@ -250,7 +258,7 @@ which have been changed to try to improve the layout of the output.
 > queryExpr (Values vs) =
 >     text "values"
 >     <+> nest 7 (commaSep (map (parens . commaSep . map valueExpr) vs))
-> queryExpr (Table t) = text "table" <+> name t
+> queryExpr (Table t) = text "table" <+> names t
 
 
 > alias :: Alias -> Doc
@@ -270,11 +278,10 @@ which have been changed to try to improve the layout of the output.
 >     sep [text "from"
 >         ,nest 5 $ vcat $ punctuate comma $ map tr ts]
 >   where
->     tr (TRSimple t) = name t
->     tr (TRQualified s t) = name s <> text "." <> name t
+>     tr (TRSimple t) = names t
 >     tr (TRLateral t) = text "lateral" <+> tr t
 >     tr (TRFunction f as) =
->         name f <> parens (commaSep $ map valueExpr as)
+>         names f <> parens (commaSep $ map valueExpr as)
 >     tr (TRAlias t a) = sep [tr t, alias a]
 >     tr (TRParens t) = parens $ tr t
 >     tr (TRQueryExpr q) = parens $ queryExpr q

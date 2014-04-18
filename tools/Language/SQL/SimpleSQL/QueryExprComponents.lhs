@@ -67,8 +67,8 @@ These are a few misc tests which don't fit anywhere else.
 
 >     ,("select a + b * c"
 >      ,makeSelect {qeSelectList =
->       [(BinOp (Iden (Name "a")) (Name "+")
->         (BinOp (Iden (Name "b")) (Name "*") (Iden (Name "c")))
+>       [(BinOp (Iden "a") "+"
+>         (BinOp (Iden "b") "*" (Iden "c"))
 >        ,Nothing)]})
 
 >     ]

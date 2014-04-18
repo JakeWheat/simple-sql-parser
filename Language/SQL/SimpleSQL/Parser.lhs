@@ -144,6 +144,12 @@ which parses as a typed literal
 > name = choice [QName <$> quotedIdentifier
 >               ,Name <$> identifierBlacklist blacklist]
 
+> names :: Parser [Name]
+> names = ((:[]) <$> name) >>= optionSuffix another
+>   where
+>     another n =
+>         (((n++) . (:[])) <$> try (symbol "." *> name)) >>= optionSuffix another
+
 == star
 
 used in select *, select x.*, and agg(*) variations, and some other
@@ -181,7 +187,7 @@ The parsing for the aggregate extensions is here as well:
 
 aggregate([all|distinct] args [order by orderitems])
 
-> aggOrApp :: Name -> Parser ValueExpr
+> aggOrApp :: [Name] -> Parser ValueExpr
 > aggOrApp n =
 >     makeApp n
 >     <$> parens ((,,) <$> (fromMaybe SQDefault <$> duplicates)
@@ -243,7 +249,7 @@ always used with the optionSuffix combinator.
 >     mkFrame rs c = c rs
 > windowSuffix _ = fail ""
 
-> app :: Name -> Parser ValueExpr
+> app :: [Name] -> Parser ValueExpr
 > app n = aggOrApp n >>= optionSuffix windowSuffix
 
 == iden prefix term
@@ -256,7 +262,7 @@ all the value expressions which start with an identifier
 > idenPrefixTerm =
 >     -- todo: work out how to left factor this
 >     try (TypedLit <$> typeName <*> stringToken)
->     <|> (name >>= iden)
+>     <|> (names >>= iden)
 >   where
 >     iden n = app n <|> return (Iden n)
 
@@ -308,7 +314,7 @@ operatorname(firstArg keyword0 arg0 keyword1 arg1 etc.)
 >               -- check we haven't parsed the first
 >               -- keyword as an identifier
 >               guard (case (e,kws) of
->                   (Iden (Name i), (k,_):_) | map toLower i == k -> False
+>                   (Iden [Name i], (k,_):_) | map toLower i == k -> False
 >                   _ -> True)
 >               return e
 >     fa <- case firstArg of
@@ -317,7 +323,7 @@ operatorname(firstArg keyword0 arg0 keyword1 arg1 etc.)
 >          SOKMandatory -> Just <$> pfa
 >     as <- mapM parseArg kws
 >     void closeParen
->     return $ SpecialOpK (Name opName) fa $ catMaybes as
+>     return $ SpecialOpK [Name opName] fa $ catMaybes as
 >   where
 >     parseArg (nm,mand) =
 >         let p = keyword_ nm >> valueExpr
@@ -389,7 +395,7 @@ in the source
 >                    ,"trailing" <$ keyword_ "trailing"
 >                    ,"both" <$ keyword_ "both"]
 >     mkTrim fa ch fr =
->       SpecialOpK (Name "trim") Nothing
+>       SpecialOpK [Name "trim"] Nothing
 >           $ catMaybes [Just (fa,StringLit ch)
 >                       ,Just ("from", fr)]
 
@@ -426,14 +432,14 @@ and operator. This is the call to valueExprB.
 
 > betweenSuffix :: Parser (ValueExpr -> ValueExpr)
 > betweenSuffix =
->     makeOp <$> (Name <$> opName)
+>     makeOp <$> Name <$> opName
 >            <*> valueExprB
 >            <*> (keyword_ "and" *> valueExprB)
 >   where
 >     opName = choice
 >              ["between" <$ keyword_ "between"
 >              ,"not between" <$ try (keyword_ "not" <* keyword_ "between")]
->     makeOp n b c = \a -> SpecialOp n [a,b,c]
+>     makeOp n b c = \a -> SpecialOp [n] [a,b,c]
 
 subquery expression:
 [exists|unique] (queryexpr)
@@ -453,7 +459,7 @@ a = any (select * from t)
 >     c <- comp
 >     cq <- compQuan
 >     q <- parens queryExpr
->     return $ \v -> QuantifiedComparison v c cq q
+>     return $ \v -> QuantifiedComparison v [c] cq q
 >   where
 >     comp = Name <$> choice (map symbol
 >            ["=", "<>", "<=", "<", ">", ">="])
@@ -481,7 +487,7 @@ a match (select a from t)
 > arrayCtor = keyword_ "array" >>
 >     choice
 >     [ArrayCtor <$> parens queryExpr
->     ,Array (Iden (Name "array")) <$> brackets (commaSep valueExpr)]
+>     ,Array (Iden [Name "array"]) <$> brackets (commaSep valueExpr)]
 
 > escape :: Parser (ValueExpr -> ValueExpr)
 > escape = do
@@ -545,7 +551,7 @@ todo: timestamp types:
 >     ,ctor <$> commaSep1 valueExpr]
 >   where
 >     ctor [a] = Parens a
->     ctor as = SpecialOp (Name "rowctor") as
+>     ctor as = SpecialOp [Name "rowctor"] as
 
 
 == operator parsing
@@ -624,12 +630,12 @@ TODO: carefully review the precedences and associativities.
 >     -- somehow
 >     binaryKeywords nm assoc = binary (try $ mapM_ keyword_ (words nm)) nm assoc
 >     binary p nm assoc =
->       E.Infix (p >> return (\a b -> BinOp a (Name nm) b)) assoc
+>       E.Infix (p >> return (\a b -> BinOp a [Name nm] b)) assoc
 >     prefixKeyword nm = prefix (keyword_ nm) nm
 >     prefixSym nm = prefix (symbol_ nm) nm
->     prefix p nm = prefix' (p >> return (PrefixOp (Name nm)))
+>     prefix p nm = prefix' (p >> return (PrefixOp [Name nm]))
 >     postfixKeywords nm = postfix (try $ mapM_ keyword_ (words nm)) nm
->     postfix p nm = postfix' (p >> return (PostfixOp (Name nm)))
+>     postfix p nm = postfix' (p >> return (PostfixOp [Name nm]))
 >     -- hack from here
 >     -- http://stackoverflow.com/questions/10475337/parsec-expr-repeated-prefix-postfix-operator-not-supported
 >     -- not implemented properly yet
@@ -705,12 +711,10 @@ tref
 >         ,TRLateral <$> (keyword_ "lateral"
 >                         *> nonJoinTref)
 >         ,do
->          n <- name
+>          n <- names
 >          choice [TRFunction n
 >                  <$> parens (commaSep valueExpr)
->                 ,do
->                  choice [TRQualified n <$> (symbol "." >> name)
->                         ,return $ TRSimple n]]]
+>                 ,return $ TRSimple n]]
 >         >>= optionSuffix aliasSuffix
 >     aliasSuffix j = option j (TRAlias j <$> alias)
 >     joinTrefSuffix t = (do
@@ -842,7 +846,7 @@ and union, etc..
 >         Select d sl f w g h od ofs fe
 >     values = keyword_ "values"
 >              >> Values <$> commaSep (parens (commaSep valueExpr))
->     table = keyword_ "table" >> Table <$> name
+>     table = keyword_ "table" >> Table <$> names
 
 local data type to help with parsing the bit after the select list,
 called 'table expression' in the ansi sql grammar. Maybe this should

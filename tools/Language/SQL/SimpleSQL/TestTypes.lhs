@@ -2,6 +2,7 @@
 This is the types used to define the tests as pure data. See the
 Tests.lhs module for the 'interpreter'.
 
+> {-# LANGUAGE FlexibleInstances #-}
 > module Language.SQL.SimpleSQL.TestTypes where
 
 > import Language.SQL.SimpleSQL.Syntax
@@ -24,3 +25,6 @@ hack to make the tests a bit simpler
 
 > instance IsString Name where
 >    fromString = Name
+
+> instance IsString [Name] where
+>    fromString = (:[]) . Name

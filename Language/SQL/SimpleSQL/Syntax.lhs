@@ -60,17 +60,17 @@
 >       ,ilUnits :: String -- ^ units
 >       ,ilPrecision :: Maybe Integer -- ^ precision
 >       }
->       -- | identifier without dots
->     | Iden Name
+>       -- | identifier with parts separated by dots
+>     | Iden [Name]
 >       -- | star, as in select *, t.*, count(*)
 >     | Star
 >       -- | function application (anything that looks like c style
 >       -- function application syntactically)
->     | App Name [ValueExpr]
+>     | App [Name] [ValueExpr]
 >       -- | aggregate application, which adds distinct or all, and
 >       -- order by, to regular function application
 >     | AggregateApp
->       {aggName :: Name -- ^ aggregate function name
+>       {aggName :: [Name] -- ^ aggregate function name
 >       ,aggDistinct :: SetQuantifier -- ^ distinct
 >       ,aggArgs :: [ValueExpr]-- ^ args
 >       ,aggOrderBy :: [SortSpec] -- ^ order by
@@ -79,7 +79,7 @@
 >       -- by b) to regular function application. Explicit frames are
 >       -- not currently supported
 >     | WindowApp
->       {wnName :: Name -- ^ window function name
+>       {wnName :: [Name] -- ^ window function name
 >       ,wnArgs :: [ValueExpr] -- ^ args
 >       ,wnPartition :: [ValueExpr] -- ^ partition by
 >       ,wnOrderBy :: [SortSpec] -- ^ order by
@@ -88,23 +88,23 @@
 >       -- | Infix binary operators. This is used for symbol operators
 >       -- (a + b), keyword operators (a and b) and multiple keyword
 >       -- operators (a is similar to b)
->     | BinOp ValueExpr Name ValueExpr
+>     | BinOp ValueExpr [Name] ValueExpr
 >       -- | Prefix unary operators. This is used for symbol
 >       -- operators, keyword operators and multiple keyword operators.
->     | PrefixOp Name ValueExpr
+>     | PrefixOp [Name] ValueExpr
 >       -- | Postfix unary operators. This is used for symbol
 >       -- operators, keyword operators and multiple keyword operators.
->     | PostfixOp Name ValueExpr
+>     | PostfixOp [Name] ValueExpr
 >       -- | Used for ternary, mixfix and other non orthodox
 >       -- operators. Currently used for row constructors, and for
 >       -- between.
->     | SpecialOp Name [ValueExpr]
+>     | SpecialOp [Name] [ValueExpr]
 >       -- | Used for the operators which look like functions
 >       -- except the arguments are separated by keywords instead
 >       -- of commas. The maybe is for the first unnamed argument
 >       -- if it is present, and the list is for the keyword argument
 >       -- pairs.
->     | SpecialOpK Name (Maybe ValueExpr) [(String,ValueExpr)]
+>     | SpecialOpK [Name] (Maybe ValueExpr) [(String,ValueExpr)]
 >       -- | case expression. both flavours supported
 >     | Case
 >       {caseTest :: Maybe ValueExpr -- ^ test value
@@ -129,7 +129,7 @@
 >                                           -- indicator :nl
 >       | QuantifiedComparison
 >             ValueExpr
->             Name -- operator
+>             [Name] -- operator
 >             CompPredQuantifier
 >             QueryExpr
 >       | Match ValueExpr Bool -- true if unique
@@ -254,7 +254,7 @@ This would make some things a bit cleaner?
 >       ,qeViews :: [(Alias,QueryExpr)]
 >       ,qeQueryExpression :: QueryExpr}
 >     | Values [[ValueExpr]]
->     | Table Name
+>     | Table [Name]
 >       deriving (Eq,Show,Read,Data,Typeable)
 
 TODO: add queryexpr parens to deal with e.g.
@@ -309,10 +309,8 @@ I'm not sure if this is valid syntax or not.
 >       deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | Represents a entry in the csv of tables in the from clause.
-> data TableRef = -- | from t
->                 TRSimple Name
->                 -- | from s.t
->               | TRQualified Name Name
+> data TableRef = -- | from t / from s.t
+>                 TRSimple [Name]
 >                 -- | from a join b
 >               | TRJoin TableRef JoinType TableRef (Maybe JoinCondition)
 >                 -- | from (a)
@@ -322,7 +320,7 @@ I'm not sure if this is valid syntax or not.
 >                 -- | from (query expr)
 >               | TRQueryExpr QueryExpr
 >                 -- | from function(args)
->               | TRFunction Name [ValueExpr]
+>               | TRFunction [Name] [ValueExpr]
 >                 -- | from lateral t
 >               | TRLateral TableRef
 >                 deriving (Eq,Show,Read,Data,Typeable)
