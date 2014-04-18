@@ -63,7 +63,8 @@ rules for changing the multi keyword parsing:
 rough SQL 2003 todo, including tests to write:
 
 now:
-implement the reservation of all keywords
+review the commented out reserved keyword entries and work out how to
+   fix
 go through all? the functions
 go through almost all the predicates
 window functions missing bits, window clauses

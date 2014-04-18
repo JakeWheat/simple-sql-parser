@@ -31,7 +31,7 @@ TODO: get all the commented out tests working
 
 >     -- table is a reservered keyword?
 >     --,"SELECT ROW(table.*) IS NULL FROM table;"
->     ,"SELECT ROW(tablex.*) IS NULL FROM table;"
+>     ,"SELECT ROW(tablex.*) IS NULL FROM tablex;"
 
 >     ,"SELECT true OR somefunc();"
 
