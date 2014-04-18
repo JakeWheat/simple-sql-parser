@@ -30,7 +30,7 @@ These are a few misc tests which don't fit anywhere else.
 
 > duplicates :: TestItem
 > duplicates = Group "duplicates" $ map (uncurry TestQueryExpr)
->     [("select a from t" ,ms All)
+>     [("select a from t" ,ms SQDefault)
 >     ,("select all a from t" ,ms All)
 >     ,("select distinct a from t", ms Distinct)
 >     ]
@@ -96,11 +96,11 @@ These are a few misc tests which don't fit anywhere else.
 > orderBy :: TestItem
 > orderBy = Group "orderBy" $ map (uncurry TestQueryExpr)
 >     [("select a from t order by a"
->      ,ms [SortSpec (Iden "a") Asc NullsOrderDefault])
+>      ,ms [SortSpec (Iden "a") DirDefault NullsOrderDefault])
 
 >     ,("select a from t order by a, b"
->      ,ms [SortSpec (Iden "a") Asc NullsOrderDefault
->          ,SortSpec (Iden "b") Asc NullsOrderDefault])
+>      ,ms [SortSpec (Iden "a") DirDefault NullsOrderDefault
+>          ,SortSpec (Iden "b") DirDefault NullsOrderDefault])
 
 >     ,("select a from t order by a asc"
 >      ,ms [SortSpec (Iden "a") Asc NullsOrderDefault])
@@ -144,10 +144,10 @@ These are a few misc tests which don't fit anywhere else.
 > combos :: TestItem
 > combos = Group "combos" $ map (uncurry TestQueryExpr)
 >     [("select a from t union select b from u"
->      ,CombineQueryExpr ms1 Union Distinct Respectively ms2)
+>      ,CombineQueryExpr ms1 Union SQDefault Respectively ms2)
 
 >     ,("select a from t intersect select b from u"
->      ,CombineQueryExpr ms1 Intersect Distinct Respectively ms2)
+>      ,CombineQueryExpr ms1 Intersect SQDefault Respectively ms2)
 
 >     ,("select a from t except all select b from u"
 >      ,CombineQueryExpr ms1 Except All Respectively ms2)
@@ -160,8 +160,8 @@ These are a few misc tests which don't fit anywhere else.
 >      -- TODO: union should be left associative. I think the others also
 >      -- so this needs to be fixed (new optionSuffix variation which
 >      -- handles this)
->      ,CombineQueryExpr ms1 Union Distinct Respectively
->        (CombineQueryExpr ms1 Union Distinct Respectively ms1))
+>      ,CombineQueryExpr ms1 Union SQDefault Respectively
+>        (CombineQueryExpr ms1 Union SQDefault Respectively ms1))
 >     ]
 >   where
 >     ms1 = makeSelect

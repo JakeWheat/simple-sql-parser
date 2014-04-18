@@ -114,6 +114,7 @@ multi word type names: left factor
 quantified comparison: left factor with normal comparison
 multi word operator names in expressions
 hardcode all the symbols in the symbol parser/split?
+left factor the not in 'not in' and 'not between', maybe others
 
 
 future big feature summary:

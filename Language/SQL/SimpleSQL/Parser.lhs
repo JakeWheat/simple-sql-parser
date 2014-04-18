@@ -184,11 +184,11 @@ aggregate([all|distinct] args [order by orderitems])
 > aggOrApp :: Name -> Parser ValueExpr
 > aggOrApp n =
 >     makeApp n
->     <$> parens ((,,) <$> duplicates
+>     <$> parens ((,,) <$> (fromMaybe SQDefault <$> duplicates)
 >                      <*> choice [commaSep valueExpr]
 >                      <*> (optionMaybe orderBy))
 >   where
->     makeApp i (Nothing,es,Nothing) = App i es
+>     makeApp i (SQDefault,es,Nothing) = App i es
 >     makeApp i (d,es,od) = AggregateApp i d es (fromMaybe [] od)
 
 > duplicates :: Parser (Maybe SetQuantifier)
@@ -602,7 +602,7 @@ TODO: carefully review the precedences and associativities.
 >          ,"is unknown"
 >          ,"is not unknown"]
 >          -- have to use try with inSuffix because of a conflict
->          -- with 'in' in position function
+>          -- with 'in' in position function, and not between
 >          -- between also has a try in it to deal with 'not'
 >          -- ambiguity
 >           ++ [E.Postfix $ try inSuffix,E.Postfix betweenSuffix]
@@ -780,8 +780,8 @@ pretty trivial.
 >   where
 >     ob = SortSpec
 >          <$> valueExpr
->          <*> option Asc (choice [Asc <$ keyword_ "asc"
->                                 ,Desc <$ keyword_ "desc"])
+>          <*> option DirDefault (choice [Asc <$ keyword_ "asc"
+>                                        ,Desc <$ keyword_ "desc"])
 >          <*> option NullsOrderDefault
 >              (keyword_ "nulls" >>
 >                     choice [NullsFirst <$ keyword "first"
@@ -833,7 +833,7 @@ and union, etc..
 >   where
 >     select = keyword_ "select" >>
 >         mkSelect
->         <$> (fromMaybe All <$> duplicates)
+>         <$> (fromMaybe SQDefault <$> duplicates)
 >         <*> selectList
 >         <*> optionMaybe tableExpression
 >     mkSelect d sl Nothing =
@@ -877,7 +877,7 @@ be in the public syntax?
 >          [Union <$ keyword_ "union"
 >          ,Intersect <$ keyword_ "intersect"
 >          ,Except <$ keyword_ "except"] <?> "set operator")
->      <*> (fromMaybe Distinct <$> duplicates)
+>      <*> (fromMaybe SQDefault <$> duplicates)
 >      <*> option Respectively
 >                 (Corresponding <$ keyword_ "corresponding")
 >      <*> queryExpr)

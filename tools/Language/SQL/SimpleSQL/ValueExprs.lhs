@@ -330,14 +330,14 @@ target_string
 >     [("count(*)",App "count" [Star])
 
 >     ,("sum(a order by a)"
->     ,AggregateApp "sum" Nothing [Iden "a"]
->                   [SortSpec (Iden "a") Asc NullsOrderDefault])
+>     ,AggregateApp "sum" SQDefault [Iden "a"]
+>                   [SortSpec (Iden "a") DirDefault NullsOrderDefault])
 
 >     ,("sum(all a)"
->     ,AggregateApp "sum" (Just All) [Iden "a"] [])
+>     ,AggregateApp "sum" All [Iden "a"] [])
 
 >     ,("count(distinct a)"
->     ,AggregateApp "count" (Just Distinct) [Iden "a"] [])
+>     ,AggregateApp "count" Distinct [Iden "a"] [])
 >     ]
 
 > windowFunctions :: TestItem
@@ -353,46 +353,46 @@ target_string
 
 >     ,("sum(a) over (order by b)"
 >      ,WindowApp "sum" [Iden "a"] []
->           [SortSpec (Iden "b") Asc NullsOrderDefault] Nothing)
+>           [SortSpec (Iden "b") DirDefault NullsOrderDefault] Nothing)
 
 >     ,("sum(a) over (order by b desc,c)"
 >      ,WindowApp "sum" [Iden "a"] []
 >           [SortSpec (Iden "b") Desc NullsOrderDefault
->           ,SortSpec (Iden "c") Asc NullsOrderDefault] Nothing)
+>           ,SortSpec (Iden "c") DirDefault NullsOrderDefault] Nothing)
 
 >     ,("sum(a) over (partition by b order by c)"
 >      ,WindowApp "sum" [Iden "a"] [Iden "b"]
->           [SortSpec (Iden "c") Asc NullsOrderDefault] Nothing)
+>           [SortSpec (Iden "c") DirDefault NullsOrderDefault] Nothing)
 
 >     ,("sum(a) over (partition by b order by c range unbounded preceding)"
 >      ,WindowApp "sum" [Iden "a"] [Iden "b"]
->       [SortSpec (Iden "c") Asc NullsOrderDefault]
+>       [SortSpec (Iden "c") DirDefault NullsOrderDefault]
 >       $ Just $ FrameFrom FrameRange UnboundedPreceding)
 
 >     ,("sum(a) over (partition by b order by c range 5 preceding)"
 >      ,WindowApp "sum" [Iden "a"] [Iden "b"]
->       [SortSpec (Iden "c") Asc NullsOrderDefault]
+>       [SortSpec (Iden "c") DirDefault NullsOrderDefault]
 >       $ Just $ FrameFrom FrameRange $ Preceding (NumLit "5"))
 
 >     ,("sum(a) over (partition by b order by c range current row)"
 >      ,WindowApp "sum" [Iden "a"] [Iden "b"]
->       [SortSpec (Iden "c") Asc NullsOrderDefault]
+>       [SortSpec (Iden "c") DirDefault NullsOrderDefault]
 >       $ Just $ FrameFrom FrameRange Current)
 
 >     ,("sum(a) over (partition by b order by c rows 5 following)"
 >      ,WindowApp "sum" [Iden "a"] [Iden "b"]
->       [SortSpec (Iden "c") Asc NullsOrderDefault]
+>       [SortSpec (Iden "c") DirDefault NullsOrderDefault]
 >       $ Just $ FrameFrom FrameRows $ Following (NumLit "5"))
 
 >     ,("sum(a) over (partition by b order by c range unbounded following)"
 >      ,WindowApp "sum" [Iden "a"] [Iden "b"]
->       [SortSpec (Iden "c") Asc NullsOrderDefault]
+>       [SortSpec (Iden "c") DirDefault NullsOrderDefault]
 >       $ Just $ FrameFrom FrameRange UnboundedFollowing)
 
 >     ,("sum(a) over (partition by b order by c \n\
 >       \range between 5 preceding and 5 following)"
 >      ,WindowApp "sum" [Iden "a"] [Iden "b"]
->       [SortSpec (Iden "c") Asc NullsOrderDefault]
+>       [SortSpec (Iden "c") DirDefault NullsOrderDefault]
 >       $ Just $ FrameBetween FrameRange
 >                             (Preceding (NumLit "5"))
 >                             (Following (NumLit "5")))

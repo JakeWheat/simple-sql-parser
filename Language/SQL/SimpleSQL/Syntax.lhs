@@ -71,7 +71,7 @@
 >       -- order by, to regular function application
 >     | AggregateApp
 >       {aggName :: Name -- ^ aggregate function name
->       ,aggDistinct :: Maybe SetQuantifier -- ^ distinct
+>       ,aggDistinct :: SetQuantifier -- ^ distinct
 >       ,aggArgs :: [ValueExpr]-- ^ args
 >       ,aggOrderBy :: [SortSpec] -- ^ order by
 >       }
@@ -265,7 +265,7 @@ I'm not sure if this is valid syntax or not.
 > -- expr values a little easier. It is defined like this:
 > --
 > -- > makeSelect :: QueryExpr
-> -- > makeSelect = Select {qeSetQuantifier = All
+> -- > makeSelect = Select {qeSetQuantifier = SQDefault
 > -- >                     ,qeSelectList = []
 > -- >                     ,qeFrom = []
 > -- >                     ,qeWhere = Nothing
@@ -276,7 +276,7 @@ I'm not sure if this is valid syntax or not.
 > -- >                     ,qeFetchFirst = Nothing}
 
 > makeSelect :: QueryExpr
-> makeSelect = Select {qeSetQuantifier = All
+> makeSelect = Select {qeSetQuantifier = SQDefault
 >                     ,qeSelectList = []
 >                     ,qeFrom = []
 >                     ,qeWhere = Nothing
@@ -290,10 +290,10 @@ I'm not sure if this is valid syntax or not.
 > -- | Represents the Distinct or All keywords, which can be used
 > -- before a select list, in an aggregate/window function
 > -- application, or in a query expression set operator.
-> data SetQuantifier = Distinct | All deriving (Eq,Show,Read,Data,Typeable)
+> data SetQuantifier = SQDefault | Distinct | All deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | The direction for a column in order by.
-> data Direction = Asc | Desc deriving (Eq,Show,Read,Data,Typeable)
+> data Direction = DirDefault | Asc | Desc deriving (Eq,Show,Read,Data,Typeable)
 > -- | Query expression set operators.
 > data CombineOp = Union | Except | Intersect deriving (Eq,Show,Read,Data,Typeable)
 > -- | Corresponding, an option for the set operators.

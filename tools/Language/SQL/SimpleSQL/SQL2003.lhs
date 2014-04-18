@@ -1794,7 +1794,7 @@ operator is ||, same as the string concatenation operator.
 >       ,ArrayCtor (makeSelect
 >                   {qeSelectList = [(Star,Nothing)]
 >                   ,qeFrom = [TRSimple "t"]
->                   ,qeOrderBy = [SortSpec (Iden "a") Asc NullsOrderDefault] }))
+>                   ,qeOrderBy = [SortSpec (Iden "a") DirDefault NullsOrderDefault] }))
 >     ]
 
 == 6.37 <multiset value expression> (p286)
@@ -2911,22 +2911,22 @@ TODO: review sort specifications
 > sortSpecificationList :: TestItem
 > sortSpecificationList = Group "sort specification list" $ map (uncurry TestQueryExpr)
 >     [("select * from t order by a"
->      ,qe {qeOrderBy = [SortSpec (Iden "a") Asc NullsOrderDefault]})
+>      ,qe {qeOrderBy = [SortSpec (Iden "a") DirDefault NullsOrderDefault]})
 >     ,("select * from t order by a,b"
->      ,qe {qeOrderBy = [SortSpec (Iden "a") Asc NullsOrderDefault
->                       ,SortSpec (Iden "b") Asc NullsOrderDefault]})
+>      ,qe {qeOrderBy = [SortSpec (Iden "a") DirDefault NullsOrderDefault
+>                       ,SortSpec (Iden "b") DirDefault NullsOrderDefault]})
 >     ,("select * from t order by a asc,b"
 >      ,qe {qeOrderBy = [SortSpec (Iden "a") Asc NullsOrderDefault
->                       ,SortSpec (Iden "b") Asc NullsOrderDefault]})
+>                       ,SortSpec (Iden "b") DirDefault NullsOrderDefault]})
 >     ,("select * from t order by a desc,b"
 >      ,qe {qeOrderBy = [SortSpec (Iden "a") Desc NullsOrderDefault
->                       ,SortSpec (Iden "b") Asc NullsOrderDefault]})
+>                       ,SortSpec (Iden "b") DirDefault NullsOrderDefault]})
 >     ,("select * from t order by a collate x desc,b"
 >      ,qe {qeOrderBy = [SortSpec (Collate (Iden "a") "x") Desc NullsOrderDefault
->                       ,SortSpec (Iden "b") Asc NullsOrderDefault]})
+>                       ,SortSpec (Iden "b") DirDefault NullsOrderDefault]})
 >     ,("select * from t order by 1,2"
->      ,qe {qeOrderBy = [SortSpec (NumLit "1") Asc NullsOrderDefault
->                       ,SortSpec (NumLit "2") Asc NullsOrderDefault]})
+>      ,qe {qeOrderBy = [SortSpec (NumLit "1") DirDefault NullsOrderDefault
+>                       ,SortSpec (NumLit "2") DirDefault NullsOrderDefault]})
 >     ]
 >   where
 >     qe = makeSelect

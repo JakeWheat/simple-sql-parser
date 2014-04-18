@@ -54,9 +54,9 @@ which have been changed to try to improve the layout of the output.
 > valueExpr (AggregateApp f d es od) =
 >     name f
 >     <> parens ((case d of
->                   Just Distinct -> text "distinct"
->                   Just All -> text "all"
->                   Nothing -> empty)
+>                   Distinct -> text "distinct"
+>                   All -> text "all"
+>                   SQDefault -> empty)
 >                <+> commaSep (map valueExpr es)
 >                <+> orderBy od)
 
@@ -214,7 +214,8 @@ which have been changed to try to improve the layout of the output.
 > queryExpr (Select d sl fr wh gb hv od off fe) =
 >   sep [text "select"
 >       ,case d of
->           All -> empty
+>           SQDefault -> empty
+>           All -> text "all"
 >           Distinct -> text "distinct"
 >       ,nest 7 $ sep [selectList sl]
 >       ,from fr
@@ -233,8 +234,9 @@ which have been changed to try to improve the layout of the output.
 >                 Intersect -> "intersect"
 >                 Except -> "except")
 >        <+> case d of
+>                SQDefault -> empty
 >                All -> text "all"
->                Distinct -> empty -- text "distinct"
+>                Distinct -> text "distinct"
 >        <+> case c of
 >                Corresponding -> text "corresponding"
 >                Respectively -> empty
@@ -320,7 +322,10 @@ which have been changed to try to improve the layout of the output.
 >   where
 >     f (SortSpec e d n) =
 >         valueExpr e
->         <+> (if d == Asc then empty else text "desc")
+>         <+> (case d of
+>                   Asc -> text "asc"
+>                   Desc -> text "desc"
+>                   DirDefault -> empty)
 >         <+> (case n of
 >                 NullsOrderDefault -> empty
 >                 NullsFirst -> text "nulls" <+> text "first"
