@@ -213,9 +213,16 @@ which have been changed to try to improve the layout of the output.
 > doubleUpQuotes ('\'':cs) = '\'':'\'':doubleUpQuotes cs
 > doubleUpQuotes (c:cs) = c:doubleUpQuotes cs
 
+> doubleUpDoubleQuotes :: String -> String
+> doubleUpDoubleQuotes [] = []
+> doubleUpDoubleQuotes ('"':cs) = '"':'"':doubleUpDoubleQuotes cs
+> doubleUpDoubleQuotes (c:cs) = c:doubleUpDoubleQuotes cs
+
+
 
 > unname :: Name -> String
-> unname (QName n) = "\"" ++ n ++ "\""
+> unname (QName n) = "\"" ++ doubleUpDoubleQuotes n ++ "\""
+> unname (UQName n) = "U&\"" ++ doubleUpDoubleQuotes n ++ "\""
 > unname (Name n) = n
 
 > unnames :: [Name] -> String
@@ -223,7 +230,9 @@ which have been changed to try to improve the layout of the output.
 
 
 > name :: Name -> Doc
-> name (QName n) = doubleQuotes $ text n
+> name (QName n) = doubleQuotes $ text $ doubleUpDoubleQuotes n
+> name (UQName n) =
+>     text "U&" <> doubleQuotes (text $ doubleUpDoubleQuotes n)
 > name (Name n) = text n
 
 > names :: [Name] -> Doc

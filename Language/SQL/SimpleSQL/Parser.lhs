@@ -143,6 +143,7 @@ which parses as a typed literal
 
 > name :: Parser Name
 > name = choice [QName <$> quotedIdentifier
+>               ,UQName <$> uquotedIdentifier
 >               ,Name <$> identifierBlacklist blacklist]
 
 > names :: Parser [Name]
@@ -1119,10 +1120,23 @@ make this choice.
 >     nonFirstChar = digit <|> firstChar <?> ""
 
 > quotedIdentifier :: Parser String
-> quotedIdentifier = char '"' *> manyTill anyChar doubleQuote
->                    <?> "identifier"
+> quotedIdentifier = quotedIdenHelper
 
-TODO: add "" inside quoted identifiers
+> quotedIdenHelper :: Parser String
+> quotedIdenHelper =
+>     lexeme (dq *> manyTill anyChar dq >>= optionSuffix moreIden)
+>     <?> "identifier"
+>   where
+>     moreIden s0 = do
+>          void dq
+>          s <- manyTill anyChar dq
+>          optionSuffix moreIden (s0 ++ "\"" ++ s)
+>     dq = char '"' <?> "double quote"
+
+> uquotedIdentifier :: Parser String
+> uquotedIdentifier =
+>   try (string "u&" <|> string "U&") *> quotedIdenHelper
+>   <?> "identifier"
 
 parses an identifier with a : prefix. The : isn't included in the
 return value
@@ -1162,9 +1176,6 @@ todo: work out the symbol parsing better
 
 > semi :: Parser Char
 > semi = lexeme (char ';') <?> "semicolon"
-
-> doubleQuote :: Parser Char
-> doubleQuote = lexeme (char '"') <?> "double quotes"
 
 > quote :: Parser Char
 > quote = lexeme (char '\'') <?> "single quote"

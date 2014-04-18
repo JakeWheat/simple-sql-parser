@@ -155,6 +155,7 @@
 > -- | Represents an identifier name, which can be quoted or unquoted.
 > data Name = Name String
 >           | QName String
+>           | UQName String
 >             deriving (Eq,Show,Read,Data,Typeable)
 
 TODO: add ref and scope, any others?

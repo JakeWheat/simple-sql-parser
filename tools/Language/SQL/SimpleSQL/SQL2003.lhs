@@ -805,9 +805,10 @@ TODO: language identifiers have different rules to generic identifiers
 >     ,("t1",Iden [Name "t1"])
 >     ,("a.b",Iden [Name "a", Name "b"])
 >     ,("a.b.c",Iden [Name "a", Name "b", Name "c"])
->      -- TODO: quoted idens
->      -- double double quotes in quoted idens
->      -- unicode idens syntax (needs escape?)
+>     ,("\"quoted iden\"", Iden [QName "quoted iden"])
+>     ,("\"quoted \"\" iden\"", Iden [QName "quoted \" iden"])
+>     ,("U&\"quoted iden\"", Iden [UQName "quoted iden"])
+>     ,("U&\"quoted \"\" iden\"", Iden [UQName "quoted \" iden"])
 >     ]
 
 TODO: module stuff
