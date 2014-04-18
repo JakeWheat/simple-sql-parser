@@ -284,6 +284,11 @@ which have been changed to try to improve the layout of the output.
 > typeName (MultisetTypeName tn) =
 >     typeName tn <+> text "multiset"
 
+> typeName (RefTypeName rt sc) =
+>     text "ref"
+>     <> parens (names rt)
+>     <+> me (\x -> text "scope" <+> names x) sc
+
 > intervalTypeField :: IntervalTypeField -> Doc
 > intervalTypeField (Itf n p) =
 >     text n

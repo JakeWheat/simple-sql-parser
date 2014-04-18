@@ -987,8 +987,7 @@ create a list of type name variations:
 >         ,"timestamp"]
 >         --interval -- not allowed without interval qualifier
 >         --row -- not allowed without row type body
->         --ref -- todo
->         --scope -- todo
+>         --ref -- not allowed without reference type
 >         -- array -- not allowed on own
 >         -- multiset -- not allowed on own
 
@@ -1092,6 +1091,8 @@ create a list of type name variations:
 >          ,("interval year(4) to second(2,3)"
 >           ,IntervalTypeName (Itf "year" $ Just (4,Nothing))
 >                             (Just $ Itf "second" $ Just (2, Just 3)))
+>          ,("ref (t)", RefTypeName [Name "t"] Nothing)
+>          ,("ref (t) scope q", RefTypeName [Name "t"] (Just [Name "q"]))
 >          ]
 
 Now test each variation in both cast expression and typed literal

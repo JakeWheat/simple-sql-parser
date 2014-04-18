@@ -530,7 +530,7 @@ TODO: this need heavy refactoring
 
 > typeName :: Parser TypeName
 > typeName =
->     (rowTypeName <|> intervalTypeName <|> otherTypeName)
+>     (rowTypeName <|> intervalTypeName <|> ref <|> otherTypeName)
 >     >>= tnSuffix
 >     <?> "typename"
 >   where
@@ -542,6 +542,11 @@ TODO: this need heavy refactoring
 >     intervalTypeName =
 >         keyword_ "interval" >>
 >         uncurry IntervalTypeName <$> intervalQualifier
+>     ref =
+>         keyword_ "ref" >>
+>         RefTypeName
+>         <$> parens (names)
+>         <*> optionMaybe (keyword_ "scope" *> names)
 >     -- other type names, which includes:
 >     -- precision, scale, lob scale and units, timezone, character
 >     -- set and collations
