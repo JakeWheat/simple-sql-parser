@@ -37,6 +37,22 @@ Both the left factoring and error message work are greatly complicated
 by the large number of shared prefixes of the various elements in SQL
 syntax.
 
+TOC:
+
+Names - parsing identifiers
+Typenames
+Value expressions
+  Simple literals
+  star, param
+  parens expression, row constructor and scalar subquery
+  case, cast, exists, unique, array/ multiset constructor
+  typed literal, app, special function, aggregate, window function
+  suffixes: in, between, quantified comparison, match, array subscript,
+    escape, collate
+  operators
+  value expression top level
+  helpers
+
 > {-# LANGUAGE TupleSections #-}
 > -- | This is the module with the parser functions.
 > module Language.SQL.SimpleSQL.Parser
@@ -401,7 +417,7 @@ TODO: this code needs heavy refactoring
 
 = Value expressions
 
-== literals
+== simple literals
 
 See the stringToken lexer below for notes on string literal syntax.
 
@@ -410,27 +426,6 @@ See the stringToken lexer below for notes on string literal syntax.
 
 > number :: Parser ValueExpr
 > number = NumLit <$> numberLiteral
-
-parse SQL interval literals, something like
-interval '5' day (3)
-or
-interval '5' month
-
-wrap the whole lot in try, in case we get something like this:
-interval '3 days'
-which parses as a typed literal
-
-> interval :: Parser ValueExpr
-> interval = keyword_ "interval" >> do
->     s <- optionMaybe $ choice [True <$ symbol_ "+"
->                               ,False <$ symbol_ "-"]
->     lit <- stringToken
->     q <- optionMaybe intervalQualifier
->     mkIt s lit q
->   where
->     mkIt Nothing val Nothing = return $ TypedLit (TypeName [Name "interval"]) val
->     mkIt s val (Just (a,b)) = return $ IntervalLit s val a b
->     mkIt (Just {}) _val Nothing = fail "cannot use sign without interval qualifier"
 
 > characterSetLiteral :: Parser ValueExpr
 > characterSetLiteral =
@@ -443,10 +438,14 @@ which parses as a typed literal
 >         ,string "U&"
 >         ] <* lookAhead quote
 
+TODO: remove try and relocate some
+
 > literal :: Parser ValueExpr
 > literal = number <|> stringValue <|> try interval <|> try characterSetLiteral
 
-== star
+== star, param, host param
+
+=== star
 
 used in select *, select x.*, and agg(*) variations, and some other
 places as well. Because it is quite general, the parser doesn't
@@ -458,6 +457,7 @@ in any value expression context.
 
 == parameter
 
+unnamed parameter
 use in e.g. select * from t where a = ?
 
 > parameter :: Parser ValueExpr
@@ -473,81 +473,117 @@ select x from t where x > :param
 >     <$> hostParameterToken
 >     <*> optionMaybe (keyword "indicator" *> hostParameterToken)
 
-== function application, aggregates and windows
+== parens
 
-this represents anything which syntactically looks like regular C
-function application: an identifier, parens with comma sep value
-expression arguments.
+value expression parens, row ctor and scalar subquery
 
-The parsing for the aggregate extensions is here as well:
-
-aggregate([all|distinct] args [order by orderitems])
-
-TODO: try to refactor the parser to not allow distinct/all or order by
-if there are no value exprs
-
-> aggOrApp :: [Name] -> Parser ValueExpr
-> aggOrApp n =
->     makeApp n
->     <$> parens ((,,) <$> (fromMaybe SQDefault <$> duplicates)
->                      <*> choice [commaSep valueExpr]
->                      <*> (optionMaybe orderBy))
+> parensTerm :: Parser ValueExpr
+> parensTerm = parens $ choice
+>     [SubQueryExpr SqSq <$> queryExpr
+>     ,ctor <$> commaSep1 valueExpr]
 >   where
->     makeApp i (SQDefault,es,Nothing) = App i es
->     makeApp i (d,es,od) = AggregateApp i d es (fromMaybe [] od)
+>     ctor [a] = Parens a
+>     ctor as = SpecialOp [Name "rowctor"] as
 
-parse a window call as a suffix of a regular function call
-this looks like this:
-functionname(args) over ([partition by ids] [order by orderitems])
+== case, cast, exists, unique, array/multiset constructor, interval
 
-No support for explicit frames yet.
+All of these start with a fixed keyword which is reserved.
 
-The convention in this file is that the 'Suffix', erm, suffix on
-parser names means that they have been left factored. These are almost
-always used with the optionSuffix combinator.
+=== case expression
 
-> windowSuffix :: ValueExpr -> Parser ValueExpr
-> windowSuffix (App f es) =
->     keyword_ "over"
->     *> parens (WindowApp f es
->                <$> option [] partitionBy
->                <*> option [] orderBy
->                <*> optionMaybe frameClause)
+> caseValue :: Parser ValueExpr
+> caseValue =
+>     Case <$> (keyword_ "case" *> optionMaybe valueExpr)
+>          <*> many1 whenClause
+>          <*> optionMaybe elseClause
+>          <* keyword_ "end"
 >   where
->     partitionBy = keywords_ ["partition","by"] >> commaSep1 valueExpr
->     frameClause =
->         mkFrame <$> choice [FrameRows <$ keyword_ "rows"
->                            ,FrameRange <$ keyword_ "range"]
->                 <*> frameStartEnd
->     frameStartEnd =
->         choice
->         [keyword_ "between" >>
->          mkFrameBetween <$> frameLimit True
->                         <*> (keyword_ "and" *> frameLimit True)
->         ,mkFrameFrom <$> frameLimit False]
->     -- use the bexpression style from the between parsing for frame between
->     frameLimit useB =
->         choice
->         [Current <$ keywords_ ["current", "row"]
->          -- todo: create an automatic left factor for stuff like
->          -- this
->         ,keyword_ "unbounded" >>
->          choice [UnboundedPreceding <$ keyword_ "preceding"
->                 ,UnboundedFollowing <$ keyword_ "following"]
->         ,do
->          e <- if useB then valueExprB else valueExpr
->          choice [Preceding e <$ keyword_ "preceding"
->                 ,Following e <$ keyword_ "following"]
->         ]
->     mkFrameBetween s e rs = FrameBetween rs s e
->     mkFrameFrom s rs = FrameFrom rs s
->     mkFrame rs c = c rs
-> windowSuffix _ = fail ""
+>    whenClause = (,) <$> (keyword_ "when" *> commaSep1 valueExpr)
+>                     <*> (keyword_ "then" *> valueExpr)
+>    elseClause = keyword_ "else" *> valueExpr
 
-> app :: [Name] -> Parser ValueExpr
-> app n = aggOrApp n >>= optionSuffix windowSuffix
+=== cast
 
-== iden prefix term
+cast: cast(expr as type)
+
+> cast :: Parser ValueExpr
+> cast = keyword_ "cast" >>
+>        parens (Cast <$> valueExpr
+>                     <*> (keyword_ "as" *> typeName))
+
+=== exists, unique
+
+subquery expression:
+[exists|unique] (queryexpr)
+
+> subquery :: Parser ValueExpr
+> subquery = SubQueryExpr <$> sqkw <*> parens queryExpr
+>   where
+>     sqkw = choice
+>            [SqExists <$ keyword_ "exists"
+>            ,SqUnique <$ keyword_ "unique"]
+
+=== array/multiset constructor
+
+> arrayCtor :: Parser ValueExpr
+> arrayCtor = keyword_ "array" >>
+>     choice
+>     [ArrayCtor <$> parens queryExpr
+>     ,Array (Iden [Name "array"]) <$> brackets (commaSep valueExpr)]
+
+As far as I can tell, table(query expr) is just syntax sugar for
+multiset(query expr). It must be there for compatibility or something.
+
+> multisetCtor :: Parser ValueExpr
+> multisetCtor =
+>     choice
+>     [keyword_ "multiset" >>
+>      choice
+>      [MultisetQueryCtor <$> parens queryExpr
+>      ,MultisetCtor <$> brackets (commaSep valueExpr)]
+>     ,keyword_ "table" >>
+>      MultisetQueryCtor <$> parens queryExpr]
+
+=== interval
+
+interval literals are a special case and we follow the grammar less
+permissively here
+
+parse SQL interval literals, something like
+interval '5' day (3)
+or
+interval '5' month
+
+if the literal looks like this:
+interval 'something'
+
+then it is parsed as a regular typed literal. It must have a
+interval-datetime-field suffix to parse as an intervallit
+
+> interval :: Parser ValueExpr
+> interval = keyword_ "interval" >> do
+>     s <- optionMaybe $ choice [True <$ symbol_ "+"
+>                               ,False <$ symbol_ "-"]
+>     lit <- stringToken
+>     q <- optionMaybe intervalQualifier
+>     mkIt s lit q
+>   where
+>     mkIt Nothing val Nothing = return $ TypedLit (TypeName [Name "interval"]) val
+>     mkIt s val (Just (a,b)) = return $ IntervalLit s val a b
+>     mkIt (Just {}) _val Nothing = fail "cannot use sign without interval qualifier"
+
+
+
+== typed literal, app, special, aggregate, window, iden
+
+All of these start with identifiers (some of the special functions
+start with reserved keywords).
+
+they are all variations on suffixes on the basic identifier parser
+
+The windows is a suffix on the app parser
+
+=== iden prefix term
 
 all the value expressions which start with an identifier
 
@@ -561,32 +597,14 @@ all the value expressions which start with an identifier
 >   where
 >     iden n = app n <|> return (Iden n)
 
-== case expression
+typed literal
 
-> caseValue :: Parser ValueExpr
-> caseValue =
->     Case <$> (keyword_ "case" *> optionMaybe valueExpr)
->          <*> many1 whenClause
->          <*> optionMaybe elseClause
->          <* keyword_ "end"
->   where
->    whenClause = (,) <$> (keyword_ "when" *> commaSep1 valueExpr)
->                     <*> (keyword_ "then" *> valueExpr)
->    elseClause = keyword_ "else" *> valueExpr
-
-== miscellaneous keyword operators
+=== special
 
 These are keyword operators which don't look like normal prefix,
 postfix or infix binary operators. They mostly look like function
 application but with keywords in the argument list instead of commas
 to separate the arguments.
-
-cast: cast(expr as type)
-
-> cast :: Parser ValueExpr
-> cast = keyword_ "cast" >>
->        parens (Cast <$> valueExpr
->                     <*> (keyword_ "as" *> typeName))
 
 the special op keywords
 parse an operator which is
@@ -694,6 +712,91 @@ in the source
 >           $ catMaybes [Just (fa,StringLit ch)
 >                       ,Just ("from", fr)]
 
+
+=== app, aggregate, window
+
+this represents anything which syntactically looks like regular C
+function application: an identifier, parens with comma sep value
+expression arguments.
+
+The parsing for the aggregate extensions is here as well:
+
+aggregate([all|distinct] args [order by orderitems])
+
+TODO: try to refactor the parser to not allow distinct/all or order by
+if there are no value exprs
+
+> aggOrApp :: [Name] -> Parser ValueExpr
+> aggOrApp n =
+>     makeApp n
+>     <$> parens ((,,) <$> (fromMaybe SQDefault <$> duplicates)
+>                      <*> choice [commaSep valueExpr]
+>                      <*> (optionMaybe orderBy))
+>   where
+>     makeApp i (SQDefault,es,Nothing) = App i es
+>     makeApp i (d,es,od) = AggregateApp i d es (fromMaybe [] od)
+
+> app :: [Name] -> Parser ValueExpr
+> app n = aggOrApp n >>= optionSuffix windowSuffix
+
+==== window suffix
+
+parse a window call as a suffix of a regular function call
+this looks like this:
+functionname(args) over ([partition by ids] [order by orderitems])
+
+No support for explicit frames yet.
+
+The convention in this file is that the 'Suffix', erm, suffix on
+parser names means that they have been left factored. These are almost
+always used with the optionSuffix combinator.
+
+> windowSuffix :: ValueExpr -> Parser ValueExpr
+> windowSuffix (App f es) =
+>     keyword_ "over"
+>     *> parens (WindowApp f es
+>                <$> option [] partitionBy
+>                <*> option [] orderBy
+>                <*> optionMaybe frameClause)
+>   where
+>     partitionBy = keywords_ ["partition","by"] >> commaSep1 valueExpr
+>     frameClause =
+>         mkFrame <$> choice [FrameRows <$ keyword_ "rows"
+>                            ,FrameRange <$ keyword_ "range"]
+>                 <*> frameStartEnd
+>     frameStartEnd =
+>         choice
+>         [keyword_ "between" >>
+>          mkFrameBetween <$> frameLimit True
+>                         <*> (keyword_ "and" *> frameLimit True)
+>         ,mkFrameFrom <$> frameLimit False]
+>     -- use the bexpression style from the between parsing for frame between
+>     frameLimit useB =
+>         choice
+>         [Current <$ keywords_ ["current", "row"]
+>          -- todo: create an automatic left factor for stuff like
+>          -- this
+>         ,keyword_ "unbounded" >>
+>          choice [UnboundedPreceding <$ keyword_ "preceding"
+>                 ,UnboundedFollowing <$ keyword_ "following"]
+>         ,do
+>          e <- if useB then valueExprB else valueExpr
+>          choice [Preceding e <$ keyword_ "preceding"
+>                 ,Following e <$ keyword_ "following"]
+>         ]
+>     mkFrameBetween s e rs = FrameBetween rs s e
+>     mkFrameFrom s rs = FrameFrom rs s
+>     mkFrame rs c = c rs
+> windowSuffix _ = fail ""
+
+
+
+== suffixes
+
+These are all generic suffixes on any value expr
+
+=== in
+
 in: two variations:
 a in (expr0, expr1, ...)
 a in (queryexpr)
@@ -711,6 +814,7 @@ this is parsed as a postfix operator which is why it is in this form
 >                   ,False <$ keywords_ ["not","in"]]
 >     mkIn i v = \e -> In i e v
 
+=== between
 
 between:
 expr between expr and expr
@@ -736,16 +840,7 @@ and operator. This is the call to valueExprB.
 >              ,"not between" <$ try (keywords_ ["not","between"])]
 >     makeOp n b c = \a -> SpecialOp [n] [a,b,c]
 
-subquery expression:
-[exists|unique] (queryexpr)
-
-> subquery :: Parser ValueExpr
-> subquery = SubQueryExpr <$> sqkw <*> parens queryExpr
->   where
->     sqkw = choice
->            [SqExists <$ keyword_ "exists"
->            ,SqUnique <$ keyword_ "unique"]
-
+=== quantified comparison
 
 a = any (select * from t)
 
@@ -763,6 +858,8 @@ a = any (select * from t)
 >                ,CPSome <$ keyword_ "some"
 >                ,CPAll <$ keyword_ "all"]
 
+=== match
+
 a match (select a from t)
 
 > matchPredicate :: Parser (ValueExpr -> ValueExpr)
@@ -772,28 +869,14 @@ a match (select a from t)
 >     q <- parens queryExpr
 >     return $ \v -> Match v u q
 
+=== array subscript
 
 > arrayPostfix :: Parser (ValueExpr -> ValueExpr)
 > arrayPostfix = do
 >     es <- brackets (commaSep valueExpr)
 >     return $ \v -> Array v es
 
-> arrayCtor :: Parser ValueExpr
-> arrayCtor = keyword_ "array" >>
->     choice
->     [ArrayCtor <$> parens queryExpr
->     ,Array (Iden [Name "array"]) <$> brackets (commaSep valueExpr)]
-
-> multisetCtor :: Parser ValueExpr
-> multisetCtor =
->     choice
->     [keyword_ "multiset" >>
->      choice
->      [MultisetQueryCtor <$> parens queryExpr
->      ,MultisetCtor <$> brackets (commaSep valueExpr)]
->     ,keyword_ "table" >>
->      MultisetQueryCtor <$> parens queryExpr]
-
+=== escape
 
 > escape :: Parser (ValueExpr -> ValueExpr)
 > escape = do
@@ -803,23 +886,16 @@ a match (select a from t)
 >     c <- anyChar
 >     return $ \v -> ctor v c
 
+=== collate
+
 > collate :: Parser (ValueExpr -> ValueExpr)
 > collate = do
 >           keyword_ "collate"
 >           i <- names
 >           return $ \v -> Collate v i
 
-== value expression parens, row ctor and scalar subquery
 
-> parensTerm :: Parser ValueExpr
-> parensTerm = parens $ choice
->     [SubQueryExpr SqSq <$> queryExpr
->     ,ctor <$> commaSep1 valueExpr]
->   where
->     ctor [a] = Parens a
->     ctor as = SpecialOp [Name "rowctor"] as
-
-== operator parsing
+==  operators
 
 The 'regular' operators in this parsing and in the abstract syntax are
 unary prefix, unary postfix and binary infix operators. The operators
@@ -832,7 +908,7 @@ TODO: to fix the parsing completely, I think will need to parse
 without precedence and associativity and fix up afterwards, since SQL
 syntax is way too messy. It might be possible to avoid this if we
 wanted to avoid extensibility and to not be concerned with parse error
-messages, but both of these are considered too important.
+messages, but both of these are too important.
 
 > opTable :: Bool -> [[E.Operator String () Identity ValueExpr]]
 > opTable bExpr =
@@ -930,10 +1006,7 @@ messages, but both of these are considered too important.
 >     prefix'  p = E.Prefix  . chainl1 p $ return       (.)
 >     postfix' p = E.Postfix . chainl1 p $ return (flip (.))
 
-== value expressions
-
-TODO:
-left factor stuff which starts with identifier
+== value expression top level
 
 This parses most of the value exprs.The order of the parsers and use
 of try is carefully done to make everything work. It is a little
@@ -946,14 +1019,14 @@ fragile and could at least do with some heavy explanation.
 > term = choice [literal
 >               ,parameter
 >               ,hostParameter
+>               ,star
+>               ,parensTerm
 >               ,caseValue
 >               ,cast
 >               ,arrayCtor
 >               ,multisetCtor
->               ,specialOpKs
->               ,parensTerm
 >               ,subquery
->               ,star
+>               ,specialOpKs
 >               ,idenPrefixTerm]
 >        <?> "value expression"
 
@@ -962,8 +1035,7 @@ expose the b expression for window frame clause range between
 > valueExprB :: Parser ValueExpr
 > valueExprB = E.buildExpressionParser (opTable True) term
 
-
-== helpers for value exprs
+== helper parsers
 
 > intervalQualifier :: Parser (IntervalTypeField,Maybe IntervalTypeField)
 > intervalQualifier =
@@ -989,7 +1061,6 @@ use a data type for the datetime field?
 > duplicates = optionMaybe $
 >     choice [All <$ keyword_ "all"
 >            ,Distinct <$ keyword "distinct"]
-
 
 -------------------------------------------------
 
