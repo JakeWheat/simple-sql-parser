@@ -1,44 +1,8 @@
 
-Notes about the parser:
+= TOC:
 
-The lexers appear at the bottom of the file. There tries to be a clear
-separation between the lexers and the other parser which only use the
-lexers, this isn't 100% complete at the moment and needs fixing.
-
-Left factoring:
-
-The parsing code is aggressively left factored, and try is avoided as
-much as possible. Use of try often makes the code hard to follow, so
-this has helped the readability of the code a bit. More importantly,
-debugging the parser and generating good parse error messages is aided
-greatly by left factoring. Apparently it can also help the speed but
-this hasn't been looked into.
-
-Error messages:
-
-A lot of care has been given to generating good error messages. There
-are a few utils below which partially help in this area. There is also
-a plan to write a really simple expression parser which doesn't do
-precedence and associativity, and the fix these with a pass over the
-ast. I don't think there is any other way to sanely handle the common
-prefixes between many infix and postfix multiple keyword operators,
-and some other ambiguities also. This should help a lot in generating
-good error message also.
-
-There is a set of crafted bad expressions in ErrorMessages.lhs, these
-are used to guage the quality of the error messages and monitor
-regressions by hand. The use of <?> is limited as much as possible,
-since unthinking liberal sprinkling of it seems to make the error
-messages much worse, and also has a similar problem to gratuitous use
-of try - you can't easily tell which appearances are important and
-which aren't.
-
-Both the left factoring and error message work are greatly complicated
-by the large number of shared prefixes of the various elements in SQL
-syntax.
-
-TOC:
-
+notes
+Public api
 Names - parsing identifiers
 Typenames
 Value expressions
@@ -60,7 +24,155 @@ query expressions
   common table expressions
   query expression
   set operations
+lexers
 utilities
+
+= Notes about the code
+
+The lexers appear at the bottom of the file. There tries to be a clear
+separation between the lexers and the other parser which only use the
+lexers, this isn't 100% complete at the moment and needs fixing.
+
+== Left factoring
+
+The parsing code is aggressively left factored, and try is avoided as
+much as possible. Try is avoided because:
+
+* when it is overused it makes the code hard to follow
+* when it is overused it makes the parsing code harder to debug
+* it makes the parser error messages much worse
+
+The code could be made a bit simpler with a few extra 'trys', but this
+isn't done because of the impact on the parser error
+messages. Apparently it can also help the speed but this hasn't been
+looked into.
+
+== Parser rrror messages
+
+A lot of care has been given to generating good parser error messages
+for invalid syntax. There are a few utils below which partially help
+in this area.
+
+There is a set of crafted bad expressions in ErrorMessages.lhs, these
+are used to guage the quality of the error messages and monitor
+regressions by hand. The use of <?> is limited as much as possible:
+each instance should justify itself by improving an actual error
+message.
+
+There is also a plan to write a really simple expression parser which
+doesn't do precedence and associativity, and the fix these with a pass
+over the ast. I don't think there is any other way to sanely handle
+the common prefixes between many infix and postfix multiple keyword
+operators, and some other ambiguities also. This should help a lot in
+generating good error messages also.
+
+Both the left factoring and error message work are greatly complicated
+by the large number of shared prefixes of the various elements in SQL
+syntax.
+
+== Main left factoring issues
+
+There are three big areas which are tricky to left factor:
+
+* typenames
+* value expressions which can start with an identifier
+* infix and suffix operators
+
+=== typenames
+
+There are a number of variations of typename syntax. The standard
+deals with this by switching on the name of the type which is parsed
+first. This code doesn't do this currently, but might in the
+future. Taking the approach in the standard grammar will limit the
+extensibility of the parser and might affect the ease of adapting to
+support other sql dialects.
+
+=== identifier value expressions
+
+There are a lot of value expression nodes which start with
+identifiers, and can't be distinguished the tokens after the initial
+identifier are parsed. Using try to implement these variations is very
+simple but makes the code much harder to debug and makes the parser
+error messages really bad.
+
+Here is a list of these nodes:
+
+* identifiers
+* function application
+* aggregate application
+* window application
+* typed literal: typename 'literal string'
+* interval literal which is like the typed literal with some extras
+
+There is further ambiguity e.g. with typed literals with precision,
+functions, aggregates, etc. - these are an identifier, followed by
+parens comma separated value expressions or something similar, and it
+is only later that we can find a token which tells us which flavour it
+is.
+
+There is also a set of nodes which start with an identifier/keyword
+but can commit since no other syntax can start the same way:
+
+* case
+* cast
+* exists, unique subquery
+* array constructor
+* multiset constructor
+* all the special syntax functions: extract, position, substring,
+  convert, translate, overlay, trim, etc.
+
+The interval literal mentioned above is treated in this group at the
+moment: if we see 'interval' we parse it either as a full interval
+literal or a typed literal only.
+
+Some items in this list might have to be fixed in the future, e.g. to
+support standard 'substring(a from 3 for 5)' as well as regular
+function substring syntax 'substring(a,3,5) at the same time.
+
+The work in left factoring all this is mostly done, but there is still
+a substantial bit to complete and this is by far the most difficult
+bit. At the moment, the work around is to use try, the downsides of
+which is the poor parsing error messages.
+
+=== infix and suffix operators
+
+== permissiveness
+
+The parser is very permissive in many ways. This departs from the
+standard which is able to eliminate a number of possibilities just in
+the grammar, which this parser allows. This is done for a number of
+reasons:
+
+* it makes the parser simple - less variations
+* it should allow for dialects and extensibility more easily in the
+  future (e.g. new infix binary operators with custom precedence)
+* many things which are effectively checked in the grammar in the
+  standard, can be checked using a typechecker or other simple static
+  analysis
+
+To use this code as a front end for a sql engine, or as a sql validity
+checker, you will need to do a lot of checks on the ast. A
+typechecker/static checker plus annotation to support being a compiler
+front end is planned but not likely to happen too soon.
+
+Some of the areas this affects:
+
+typenames: the variation of the type name should switch on the actual
+name given according to the standard, but this code only does this for
+the special case of interval type names. E.g. you can write 'int
+collate C' or 'int(15,2)' and this will parse as a character type name
+or a precision scale type name instead of being rejected.
+
+value expressions: every variation on value expressions uses the same
+parser/syntax. This means we don't try to stop non boolean valued
+expressions in boolean valued contexts in the parser. Another area
+this affects is that we allow general value expressions in group by,
+whereas the standard only allows column names with optional collation.
+
+These are all areas which are specified (roughly speaking) in the
+syntax rather than the semantics in the standard, and we are not
+fixing them in the syntax but leaving them till the semantic checking
+(which doesn't exist in this code at this time).
 
 > {-# LANGUAGE TupleSections #-}
 > -- | This is the module with the parser functions.
@@ -454,9 +566,8 @@ See the stringToken lexer below for notes on string literal syntax.
 === star
 
 used in select *, select x.*, and agg(*) variations, and some other
-places as well. Because it is quite general, the parser doesn't
-attempt to check that the star is in a valid context, it parses it OK
-in any value expression context.
+places as well. The parser doesn't attempt to check that the star is
+in a valid context, it parses it OK in any value expression context.
 
 > star :: Parser ValueExpr
 > star = Star <$ symbol "*"
@@ -488,7 +599,8 @@ value expression parens, row ctor and scalar subquery
 
 == case, cast, exists, unique, array/multiset constructor, interval
 
-All of these start with a fixed keyword which is reserved.
+All of these start with a fixed keyword which is reserved, so no other
+syntax can start with the same keyword.
 
 === case expression
 
@@ -1037,6 +1149,8 @@ expose the b expression for window frame clause range between
 
 == helper parsers
 
+This is used in interval literals and in interval type names.
+
 > intervalQualifier :: Parser (IntervalTypeField,Maybe IntervalTypeField)
 > intervalQualifier =
 >     (,) <$> intervalField
@@ -1049,13 +1163,16 @@ expose the b expression for window frame clause range between
 >             (parens ((,) <$> unsignedInteger
 >                          <*> optionMaybe (comma *> unsignedInteger)))
 
-TODO: use this in extract
+TODO: use datetime field in extract also
 use a data type for the datetime field?
 
 > datetimeField :: Parser String
 > datetimeField = choice (map keyword ["year","month","day"
 >                                     ,"hour","minute","second"])
 >                 <?> "datetime field"
+
+This is used in multiset operations (value expr), selects (query expr)
+and set operations (query expr).
 
 > duplicates :: Parser (Maybe SetQuantifier)
 > duplicates = optionMaybe $
@@ -1100,7 +1217,7 @@ tref
 >                  <$> parens (commaSep valueExpr)
 >                 ,return $ TRSimple n]]
 >         >>= optionSuffix aliasSuffix
->     aliasSuffix j = option j (TRAlias j <$> alias)
+>     aliasSuffix j = option j (TRAlias j <$> fromAlias)
 >     joinTrefSuffix t =
 >         (TRJoin t <$> option False (True <$ keyword_ "natural")
 >                   <*> joinType
@@ -1108,7 +1225,8 @@ tref
 >                   <*> optionMaybe joinCondition)
 >         >>= optionSuffix joinTrefSuffix
 
-TODO: factor the join stuff to produce better error messages
+TODO: factor the join stuff to produce better error messages (and make
+it more readable)
 
 > joinType :: Parser JoinType
 > joinType = choice
@@ -1126,13 +1244,12 @@ TODO: factor the join stuff to produce better error messages
 >     ,JInner <$ keyword_ "join"]
 
 > joinCondition :: Parser JoinCondition
-> joinCondition =
->     choice [keyword_ "on" >> JoinOn <$> valueExpr
->            ,keyword_ "using" >> JoinUsing <$> parens (commaSep1 name)
->            ]
+> joinCondition = choice
+>     [keyword_ "on" >> JoinOn <$> valueExpr
+>     ,keyword_ "using" >> JoinUsing <$> parens (commaSep1 name)]
 
-> alias :: Parser Alias
-> alias = Alias <$> tableAlias <*> columnAliases
+> fromAlias :: Parser Alias
+> fromAlias = Alias <$> tableAlias <*> columnAliases
 >   where
 >     tableAlias = optional (keyword_ "as") *> name
 >     columnAliases = optionMaybe $ parens $ commaSep1 name
@@ -1146,11 +1263,9 @@ pretty trivial.
 > whereClause = keyword_ "where" *> valueExpr
 
 > groupByClause :: Parser [GroupingExpr]
-> groupByClause = keywords_ ["group","by"]
->            *> commaSep1 groupingExpression
+> groupByClause = keywords_ ["group","by"] *> commaSep1 groupingExpression
 >   where
->     groupingExpression =
->       choice
+>     groupingExpression = choice
 >       [keyword_ "cube" >>
 >        Cube <$> parens (commaSep groupingExpression)
 >       ,keyword_ "rollup" >>
@@ -1204,9 +1319,8 @@ allows offset and fetch in either order
 >     With <$> option False (True <$ keyword_ "recursive")
 >          <*> commaSep1 withQuery <*> queryExpr
 >   where
->     withQuery =
->         (,) <$> (alias <* keyword_ "as")
->             <*> parens queryExpr
+>     withQuery = (,) <$> (fromAlias <* keyword_ "as")
+>                     <*> parens queryExpr
 
 == query expression
 
@@ -1214,10 +1328,9 @@ This parser parses any query expression variant: normal select, cte,
 and union, etc..
 
 > queryExpr :: Parser QueryExpr
-> queryExpr =
->   choice [with
->          ,choice [values,table, select]
->           >>= optionSuffix queryExprSuffix]
+> queryExpr = choice
+>     [with
+>     ,choice [values,table, select] >>= optionSuffix queryExprSuffix]
 >   where
 >     select = keyword_ "select" >>
 >         mkSelect
@@ -1247,45 +1360,44 @@ be in the public syntax?
 >       ,_teFetchFirst :: Maybe ValueExpr}
 
 > tableExpression :: Parser TableExpression
-> tableExpression =
->    mkTe <$> from
->         <*> optionMaybe whereClause
->         <*> option [] groupByClause
->         <*> optionMaybe having
->         <*> option [] orderBy
->         <*> offsetFetch
+> tableExpression = mkTe <$> from
+>                        <*> optionMaybe whereClause
+>                        <*> option [] groupByClause
+>                        <*> optionMaybe having
+>                        <*> option [] orderBy
+>                        <*> offsetFetch
 >  where
 >     mkTe f w g h od (ofs,fe) =
 >         TableExpression f w g h od ofs fe
 
 > queryExprSuffix :: QueryExpr -> Parser QueryExpr
-> queryExprSuffix qe =
->     (CombineQueryExpr qe
->      <$> (choice
->          [Union <$ keyword_ "union"
->          ,Intersect <$ keyword_ "intersect"
->          ,Except <$ keyword_ "except"] <?> "set operator")
->      <*> (fromMaybe SQDefault <$> duplicates)
->      <*> option Respectively
->                 (Corresponding <$ keyword_ "corresponding")
->      <*> queryExpr)
->     >>= optionSuffix queryExprSuffix
+> queryExprSuffix qe = cqSuffix >>= optionSuffix queryExprSuffix
+>   where
+>     cqSuffix = CombineQueryExpr qe
+>                <$> setOp
+>                <*> (fromMaybe SQDefault <$> duplicates)
+>                <*> corr
+>                <*> queryExpr
+>     setOp = choice [Union <$ keyword_ "union"
+>                    ,Intersect <$ keyword_ "intersect"
+>                    ,Except <$ keyword_ "except"]
+>             <?> "set operator"
+>     corr = option Respectively (Corresponding <$ keyword_ "corresponding")
+
 
 wrapper for query expr which ignores optional trailing semicolon.
 
 > topLevelQueryExpr :: Parser QueryExpr
-> topLevelQueryExpr =
->      queryExpr >>= optionSuffix ((semi *>) . return)
+> topLevelQueryExpr = queryExpr >>= optionSuffix ((semi *>) . return)
 
 wrapper to parse a series of query exprs from a single source. They
 must be separated by semicolon, but for the last expression, the
 trailing semicolon is optional.
 
 > queryExprs :: Parser [QueryExpr]
-> queryExprs =
->     (:[]) <$> queryExpr
->     >>= optionSuffix ((semi *>) . return)
->     >>= optionSuffix (\p -> (p++) <$> queryExprs)
+> queryExprs = (:[]) <$> queryExpr
+>              >>= optionSuffix ((semi *>) . return)
+>              >>= optionSuffix (\p -> (p++) <$> queryExprs)
 
 ----------------------------------------------
 
@@ -1373,15 +1485,15 @@ making a decision on how to represent numbers, the client code can
 make this choice.
 
 > numberLiteral :: Parser String
-> numberLiteral = lexeme (
->     (choice [int
->             >>= optionSuffix dot
->             >>= optionSuffix fracts
->             >>= optionSuffix expon
->            ,fract "" >>= optionSuffix expon])
->     <* notFollowedBy (alphaNum <|> char '.'))
+> numberLiteral =
+>     lexeme (numToken <* notFollowedBy (alphaNum <|> char '.'))
 >     <?> "number literal"
 >   where
+>     numToken = choice [int
+>                        >>= optionSuffix dot
+>                        >>= optionSuffix fracts
+>                        >>= optionSuffix expon
+>                       ,fract "" >>= optionSuffix expon]
 >     int = many1 digit
 >     fract p = dot p >>= fracts
 >     dot p = (p++) <$> string "."
@@ -1480,6 +1592,10 @@ todo: work out the symbol parsing better
 >         ,-- handle string in separate parts
 >          -- e.g. 'part 1' 'part 2'
 >          do --can this whitespace be factored out?
+>             -- since it will be parsed twice when there is no more literal
+>             -- yes: split the adjacent quote and multiline literal
+>             -- into two different suffixes
+>             -- won't need to call lexeme at the top level anymore after this
 >          try (whitespace <* nlquote)
 >          s <- manyTill anyChar nlquote
 >          optionSuffix moreString (s0 ++ s)
@@ -1552,7 +1668,10 @@ an optional alias, e.g. select a a from t. If we write select a from
 t, we have to make sure the from isn't parsed as an alias. I'm not
 sure what other places strictly need the blacklist, and in theory it
 could be tuned differently for each place the identifierString/
-identifier parsers are used to only blacklist the bare minimum.
+identifier parsers are used to only blacklist the bare
+minimum. Something like this might be needed for dialect support, even
+if it is pretty silly to use a keyword as an unquoted identifier when
+there is a effing quoting syntax as well.
 
 The standard has a weird mix of reserved keywords and unreserved
 keywords (I'm not sure what exactly being an unreserved keyword
@@ -2082,8 +2201,7 @@ means).
 >     {peErrorString = show e
 >     ,peFilename = sourceName p
 >     ,pePosition = (sourceLine p, sourceColumn p)
->     ,peFormattedError = formatError src e
->     }
+>     ,peFormattedError = formatError src e}
 >   where
 >     p = errorPos e
 
