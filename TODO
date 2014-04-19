@@ -2,9 +2,6 @@ continue 2003 review and tests
 
 touch up the expr hack as best as can
 
-represent natural and using/on in the syntax more close to the
-   concrete syntax - don't combine in the ast
-
 careful review of token parses wrt trailing delimiters/junk
 
 undo mess in the code created by adding lots of new support:
@@ -18,9 +15,6 @@ add documentation in Parser.lhs on the left factoring/error handling
    approach
 
 create error message demonstration page for the website
-
-remove the IsString for Name and [Name], create some helper functions
-   if needed. These are only used in the tests
 
 fixes:
 

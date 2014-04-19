@@ -147,7 +147,7 @@
 >     | CSStringLit String String
 >     | Escape ValueExpr Char
 >     | UEscape ValueExpr Char
->     | Collate ValueExpr String
+>     | Collate ValueExpr [Name]
 >     | MultisetBinOp ValueExpr CombineOp SetQuantifier ValueExpr
 >     | MultisetCtor [ValueExpr]
 >     | MultisetQueryCtor QueryExpr
@@ -168,7 +168,7 @@ TODO: add ref and scope, any others?
 >     | PrecScaleTypeName [Name] Integer Integer
 >     | LobTypeName [Name] Integer (Maybe LobMultiplier) (Maybe LobUnits)
 >       -- precision, characterset, collate
->     | CharTypeName [Name] (Maybe Integer) [Name] (Maybe Name)
+>     | CharTypeName [Name] (Maybe Integer) [Name] [Name]
 >     | TimeTypeName [Name] (Maybe Integer) Bool -- true == with time zone
 >     | RowTypeName [(Name,TypeName)]
 >     | IntervalTypeName IntervalTypeField (Maybe IntervalTypeField)

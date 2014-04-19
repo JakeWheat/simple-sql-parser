@@ -207,7 +207,7 @@ which have been changed to try to improve the layout of the output.
 >     valueExpr v <+> text "uescape" <+> text [e]
 
 > valueExpr (Collate v c) =
->     valueExpr v <+> text "collate" <+> text c
+>     valueExpr v <+> text "collate" <+> names c
 
 
 > doubleUpQuotes :: String -> String
@@ -262,7 +262,9 @@ which have been changed to try to improve the layout of the output.
 >     <+> (if null cs
 >          then empty
 >          else text "character set" <+> names cs)
->     <+> me (\x -> text "collate" <+> name x) col
+>     <+> (if null col
+>          then empty
+>          else text "collate" <+> names col)
 > typeName (TimeTypeName t i tz) =
 >     names t
 >     <> me (\x -> parens (text $ show x)) i

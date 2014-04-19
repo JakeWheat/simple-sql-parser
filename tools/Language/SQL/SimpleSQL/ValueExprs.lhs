@@ -246,7 +246,7 @@ keyword special operators
 >     ,("substring(x from 1 for 2 collate C)"
 >      ,SpecialOpK [Name "substring"] (Just $ Iden [Name "x"])
 >           [("from", NumLit "1")
->           ,("for", Collate (NumLit "2") "C")])
+>           ,("for", Collate (NumLit "2") [Name "C"])])
 
 this doesn't work because of a overlap in the 'in' parser
 
@@ -315,7 +315,7 @@ target_string
 >     ,("trim(both 'z' from target_string collate C)"
 >      ,SpecialOpK [Name "trim"] Nothing
 >           [("both", StringLit "z")
->           ,("from", Collate (Iden [Name "target_string"]) "C")])
+>           ,("from", Collate (Iden [Name "target_string"]) [Name "C"])])
 
 >     ,("trim(leading from target_string)"
 >      ,SpecialOpK [Name "trim"] Nothing

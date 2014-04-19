@@ -1015,58 +1015,58 @@ create a list of type name variations:
 >          -- 1111
 >          ,("char varying(5) character set something collate something_insensitive"
 >           ,CharTypeName [Name "char varying"] (Just 5)
->            [Name "something"] (Just (Name "something_insensitive")))
+>            [Name "something"] [Name "something_insensitive"])
 >           -- 0111
 >          ,("char(5) character set something collate something_insensitive"
 >           ,CharTypeName [Name "char"] (Just 5)
->            [Name "something"] (Just (Name "something_insensitive")))
+>            [Name "something"] [Name "something_insensitive"])
 
 >           -- 1011
 >          ,("char varying character set something collate something_insensitive"
 >           ,CharTypeName [Name "char varying"] Nothing
->            [Name "something"] (Just (Name "something_insensitive")))
+>            [Name "something"] [Name "something_insensitive"])
 >           -- 0011
 >          ,("char character set something collate something_insensitive"
 >           ,CharTypeName [Name "char"] Nothing
->            [Name "something"] (Just (Name "something_insensitive")))
+>            [Name "something"] [Name "something_insensitive"])
 
 >           -- 1101
 >          ,("char varying(5) collate something_insensitive"
 >           ,CharTypeName [Name "char varying"] (Just 5)
->            [] (Just (Name "something_insensitive")))
+>            [] [Name "something_insensitive"])
 >           -- 0101
 >          ,("char(5) collate something_insensitive"
 >           ,CharTypeName [Name "char"] (Just 5)
->            [] (Just (Name "something_insensitive")))
+>            [] [Name "something_insensitive"])
 >           -- 1001
 >          ,("char varying collate something_insensitive"
 >           ,CharTypeName [Name "char varying"] Nothing
->            [] (Just (Name "something_insensitive")))
+>            [] [Name "something_insensitive"])
 >           -- 0001
 >          ,("char collate something_insensitive"
 >           ,CharTypeName [Name "char"] Nothing
->            [] (Just (Name "something_insensitive")))
+>            [] [Name "something_insensitive"])
 
 >          -- 1110
 >          ,("char varying(5) character set something"
 >           ,CharTypeName [Name "char varying"] (Just 5)
->            [Name "something"] Nothing)
+>            [Name "something"] [])
 >           -- 0110
 >          ,("char(5) character set something"
 >           ,CharTypeName [Name "char"] (Just 5)
->            [Name "something"] Nothing)
+>            [Name "something"] [])
 >           -- 1010
 >          ,("char varying character set something"
 >           ,CharTypeName [Name "char varying"] Nothing
->            [Name "something"] Nothing)
+>            [Name "something"] [])
 >           -- 0010
 >          ,("char character set something"
 >           ,CharTypeName [Name "char"] Nothing
->            [Name "something"] Nothing)
+>            [Name "something"] [])
 >           -- 1100
 >          ,("char varying character set something"
 >           ,CharTypeName [Name "char varying"] Nothing
->            [Name "something"] Nothing)
+>            [Name "something"] [])
 
 >          -- single row field, two row field
 >          ,("row(a int)", RowTypeName [(Name "a", TypeName [Name "int"])])
@@ -2278,10 +2278,10 @@ groups, and not general value expressions.
 >       ,q1 {qeGroupBy = qeGroupBy q1 ++ [SimpleGroup $ Iden [Name "c"]]})
 >     ,("select a, sum(b),c from t group by a,c collate x"
 >       ,q1 {qeGroupBy = qeGroupBy q1
->                        ++ [SimpleGroup $ Collate (Iden [Name "c"]) "x"]})
+>                        ++ [SimpleGroup $ Collate (Iden [Name "c"]) [Name "x"]]})
 >     ,("select a, sum(b),c from t group by a,c collate x having sum(b) > 100"
 >       ,q1 {qeGroupBy = qeGroupBy q1
->                        ++ [SimpleGroup $ Collate (Iden [Name "c"]) "x"]
+>                        ++ [SimpleGroup $ Collate (Iden [Name "c"]) [Name "x"]]
 >           ,qeHaving = Just (BinOp (App [Name "sum"] [Iden [Name "b"]])
 >                                   [Name ">"] (NumLit "100"))})
 >     ]
@@ -2987,7 +2987,7 @@ Specify a default collating sequence.
 > collateClause :: TestItem
 > collateClause = Group "collate clause" $ map (uncurry TestValueExpr)
 >     [("a collate my_collation"
->      ,Collate (Iden [Name "a"]) "my_collation")]
+>      ,Collate (Iden [Name "a"]) [Name "my_collation"])]
 
 10.8 <constraint name definition> and <constraint characteristics> (p501)
 
@@ -3083,7 +3083,7 @@ TODO: review sort specifications
 >      ,qe {qeOrderBy = [SortSpec (Iden [Name "a"]) Desc NullsOrderDefault
 >                       ,SortSpec (Iden [Name "b"]) DirDefault NullsOrderDefault]})
 >     ,("select * from t order by a collate x desc,b"
->      ,qe {qeOrderBy = [SortSpec (Collate (Iden [Name "a"]) "x") Desc NullsOrderDefault
+>      ,qe {qeOrderBy = [SortSpec (Collate (Iden [Name "a"]) [Name "x"]) Desc NullsOrderDefault
 >                       ,SortSpec (Iden [Name "b"]) DirDefault NullsOrderDefault]})
 >     ,("select * from t order by 1,2"
 >      ,qe {qeOrderBy = [SortSpec (NumLit "1") DirDefault NullsOrderDefault

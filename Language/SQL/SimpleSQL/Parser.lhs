@@ -1,4 +1,42 @@
 
+Notes about the parser:
+
+The lexers appear at the bottom of the file. There tries to be a clear
+separation between the lexers and the other parser which only use the
+lexers, this isn't 100% complete at the moment and needs fixing.
+
+Left factoring:
+
+The parsing code is aggressively left factored, and try is avoided as
+much as possible. Use of try often makes the code hard to follow, so
+this has helped the readability of the code a bit. More importantly,
+debugging the parser and generating good parse error messages is aided
+greatly by left factoring. Apparently it can also help the speed but
+this hasn't been looked into.
+
+Error messages:
+
+A lot of care has been given to generating good error messages. There
+are a few utils below which partially help in this area. There is also
+a plan to write a really simple expression parser which doesn't do
+precedence and associativity, and the fix these with a pass over the
+ast. I don't think there is any other way to sanely handle the common
+prefixes between many infix and postfix multiple keyword operators,
+and some other ambiguities also. This should help a lot in generating
+good error message also.
+
+There is a set of crafted bad expressions in ErrorMessages.lhs, these
+are used to guage the quality of the error messages and monitor
+regressions by hand. The use of <?> is limited as much as possible,
+since unthinking liberal sprinkling of it seems to make the error
+messages much worse, and also has a similar problem to gratuitous use
+of try - you can't easily tell which appearances are important and
+which aren't.
+
+Both the left factoring and error message work are greatly complicated
+by the large number of shared prefixes of the various elements in SQL
+syntax.
+
 > {-# LANGUAGE TupleSections #-}
 > -- | This is the module with the parser functions.
 > module Language.SQL.SimpleSQL.Parser
@@ -26,7 +64,7 @@
 > import Data.Function (on)
 > import Language.SQL.SimpleSQL.Syntax
 
-The public API functions.
+= Public API
 
 > -- | Parses a query expr, trailing semicolon optional.
 > parseQueryExpr :: FilePath
@@ -93,7 +131,275 @@ converts the error return to the nice wrapper
 
 ------------------------------------------------
 
-= value expressions
+= Names
+
+Names represent identifiers and a few other things. The parser here
+handles regular identifiers, dotten chain identifiers, quoted
+identifiers and unicode quoted identifiers.
+
+Dots: dots in identifier chains are parsed here and represented in the
+Iden constructor usually. If parts of the chains are non identifier
+value expressions, then this is represented by a BinOp "."
+instead. Dotten chain identifiers which appear in other contexts (such
+as function names, table names, are represented as [Name] only.
+
+Identifier grammar:
+
+unquoted:
+underscore <|> letter : many (underscore <|> alphanum
+
+example
+_example123
+
+quoted:
+
+double quote, many (non quote character or two double quotes
+together), double quote
+
+"example quoted"
+"example with "" quote"
+
+unicode quoted is the same as quoted in this parser, except it starts
+with U& or u&
+
+u&"example quoted"
+
+> name :: Parser Name
+> name = choice [QName <$> quotedIdentifier
+>               ,UQName <$> uquotedIdentifier
+>               ,Name <$> identifierBlacklist blacklist]
+
+> names :: Parser [Name]
+> names = ((:[]) <$> name) >>= optionSuffix another
+>   where
+>     another n =
+>         (((n++) . (:[])) <$> try (symbol "." *> name)) >>= optionSuffix another
+
+= Type Names
+
+Typenames are used in casts, and also in the typed literal syntax,
+which is a typename followed by a string literal.
+
+Here are the grammar notes:
+
+== simple type name
+
+just an identifier chain or a multi word identifier (this is a fixed
+list of possibilities, e.g. as 'character varying', see below in the
+parser code for the exact list).
+
+<simple-type-name> ::= <identifier-chain>
+     | multiword-type-identifier
+
+== Precision type name
+
+<precision-type-name> ::= <simple-type-name> <left paren> <unsigned-int> <right paren>
+
+e.g. char(5)
+
+note: above and below every where a simple type name can appear, this
+means a single identifier/quoted or a dotted chain, or a multi word
+identifier
+
+== Precision scale type name
+
+<precision-type-name> ::= <simple-type-name> <left paren> <unsigned-int> <comma> <unsigned-int> <right paren>
+
+e.g. decimal(15,2)
+
+== Lob type name
+
+this is a variation on the precision type name with some extra info on
+the units:
+
+<lob-type-name> ::=
+   <simple-type-name> <left paren> <unsigned integer> [ <multiplier> ] [ <char length units> ] <right paren>
+
+<multiplier>    ::=   K | M | G
+<char length units>    ::=   CHARACTERS | CODE_UNITS | OCTETS
+
+(if both multiplier and char length units are missing, then this will
+parse as a precision type name)
+
+e.g.
+clob(5M octets)
+
+== char type name
+
+this is a simple type with optional precision which allows the
+character set or the collation to appear as a suffix:
+
+<char type name> ::=
+    <simple type name>
+    [ <left paren> <unsigned-int> <right paren> ]
+    [ CHARACTER SET <identifier chain> ]
+    [ COLLATE <identifier chain> ]
+
+e.g.
+
+char(5) character set my_charset collate my_collation
+
+= Time typename
+
+this is typename with optional precision and either 'with time zone'
+or 'without time zone' suffix, e.g.:
+
+<datetime type> ::=
+    [ <left paren> <unsigned-int> <right paren> ]
+    <with or without time zone>
+<with or without time zone> ::= WITH TIME ZONE | WITHOUT TIME ZONE
+    WITH TIME ZONE | WITHOUT TIME ZONE
+
+= row type name
+
+<row type> ::=
+    ROW <left paren> <field definition> [ { <comma> <field definition> }... ] <right paren>
+
+<field definition> ::= <identifier> <type name>
+
+e.g.
+row(a int, b char(5))
+
+= interval type name
+
+<interval type> ::= INTERVAL <interval datetime field> [TO <interval datetime field>]
+
+<interval datetime field> ::=
+  <datetime field> [ <left paren> <unsigned int> [ <comma> <unsigned int> ] <right paren> ]
+
+= array type name
+
+<array type> ::= <data type> ARRAY [ <left bracket> <unsigned integer> <right bracket> ]
+
+= multiset type name
+
+<multiset type>    ::=   <data type> MULTISET
+
+A type name will parse into the 'smallest' constructor it will fit in
+syntactically, e.g. a clob(5) will parse to a precision type name, not
+a lob type name.
+
+TODO: this code needs heavy refactoring
+
+> typeName :: Parser TypeName
+> typeName =
+>     (rowTypeName <|> intervalTypeName <|> ref <|> otherTypeName)
+>     >>= tnSuffix
+>     <?> "typename"
+>   where
+>     -- row type names - a little like create table
+>     rowTypeName =
+>         RowTypeName <$> (keyword_ "row" *> parens (commaSep1 rowField))
+>     rowField = (,) <$> name <*> typeName
+>     -- interval type names: interval a [to b]
+>     intervalTypeName =
+>         keyword_ "interval" >>
+>         uncurry IntervalTypeName <$> intervalQualifier
+>     ref =
+>         keyword_ "ref" >>
+>         RefTypeName
+>         <$> parens (names)
+>         <*> optionMaybe (keyword_ "scope" *> names)
+>     -- other type names, which includes:
+>     -- precision, scale, lob scale and units, timezone, character
+>     -- set and collations
+>     otherTypeName = do
+>         tn <- (try reservedTypeNames <|> names)
+>         choice [try $ timezone tn
+>                ,try (precscale tn) >>= optionSuffix charSuffix
+>                ,try $ lob tn
+>                ,optionSuffix charSuffix $ TypeName tn]
+>     timezone tn = do
+>         TimeTypeName tn
+>         <$> optionMaybe prec
+>         <*> choice [True <$ keywords_ ["with", "time","zone"]
+>                    ,False <$ keywords_ ["without", "time","zone"]]
+>     charSuffix (PrecTypeName t p) = chars t (Just p)
+>     charSuffix (TypeName t) = chars t Nothing
+>     charSuffix _ = fail ""
+>     chars tn p =
+>         ((,) <$> option [] charSet
+>              <*> option [] tcollate)
+>           >>= uncurry mkit
+>         where
+>           mkit [] [] = fail ""
+>           mkit a b = return $ CharTypeName tn p a b
+>     lob tn = parens $ do
+>         (x,y) <- lobPrecToken
+>         z <- optionMaybe lobUnits
+>         return $ LobTypeName tn x y z
+>     precscale tn = parens (commaSep unsignedInteger) >>= makeWrap
+>                    where
+>                      makeWrap [a] = return $ PrecTypeName tn a
+>                      makeWrap [a,b] = return $ PrecScaleTypeName tn a b
+>                      makeWrap _ = fail "there must be one or two precision components"
+>     prec = parens unsignedInteger
+>     charSet = keywords_ ["character", "set"] *> names
+>     tcollate = keyword_ "collate" *> names
+>     lobPrecToken = lexeme $ do
+>         p <- read <$> many1 digit <?> "unsigned integer"
+>         x <- choice [Just LobK <$ keyword_ "k"
+>                     ,Just LobM <$ keyword_ "m"
+>                     ,Just LobG <$ keyword_ "g"
+>                     ,return Nothing]
+>         return (p,x)
+>     lobUnits = choice [LobCharacters <$ keyword_ "characters"
+>                       ,LobCodeUnits <$ keyword_ "code_units"
+>                       ,LobOctets <$ keyword_ "octets"]
+>     -- deal with multiset and array suffixes
+>     tnSuffix x =
+>         multisetSuffix x <|> arraySuffix x <|> return x
+>     multisetSuffix x =
+>         (MultisetTypeName x <$ keyword_ "multiset") >>= tnSuffix
+>     arraySuffix x =
+>         (keyword_ "array" >> ArrayTypeName x
+>                              <$> optionMaybe (brackets unsignedInteger)
+>         ) >>= tnSuffix
+>     -- this parser handles the fixed set of multi word
+>     -- type names, plus all the type names which are
+>     -- reserved words
+>     reservedTypeNames = (:[]) . Name . unwords <$> makeKeywordTree
+>         ["double precision"
+>         ,"character varying"
+>         ,"char varying"
+>         ,"character large object"
+>         ,"char large object"
+>         ,"national character"
+>         ,"national char"
+>         ,"national character varying"
+>         ,"national char varying"
+>         ,"national character large object"
+>         ,"nchar large object"
+>         ,"nchar varying"
+>         ,"bit varying"
+>         ,"binary large object"
+>         -- reserved keyword typenames:
+>         ,"array"
+>         ,"bigint"
+>         ,"binary"
+>         ,"blob"
+>         ,"boolean"
+>         ,"char"
+>         ,"character"
+>         ,"clob"
+>         ,"date"
+>         ,"dec"
+>         ,"decimal"
+>         ,"double"
+>         ,"float"
+>         ,"int"
+>         ,"integer"
+>         ,"nchar"
+>         ,"nclob"
+>         ,"numeric"
+>         ,"real"
+>         ,"smallint"
+>         ,"time"
+>         ,"timestamp"
+>         ,"varchar"
+>         ]
+
+= Value expressions
 
 == literals
 
@@ -139,20 +445,6 @@ which parses as a typed literal
 
 > literal :: Parser ValueExpr
 > literal = number <|> stringValue <|> try interval <|> try characterSetLiteral
-
-
-== Names
-
-> name :: Parser Name
-> name = choice [QName <$> quotedIdentifier
->               ,UQName <$> uquotedIdentifier
->               ,Name <$> identifierBlacklist blacklist]
-
-> names :: Parser [Name]
-> names = ((:[]) <$> name) >>= optionSuffix another
->   where
->     another n =
->         (((n++) . (:[])) <$> try (symbol "." *> name)) >>= optionSuffix another
 
 == star
 
@@ -203,11 +495,6 @@ if there are no value exprs
 >   where
 >     makeApp i (SQDefault,es,Nothing) = App i es
 >     makeApp i (d,es,od) = AggregateApp i d es (fromMaybe [] od)
-
-> duplicates :: Parser (Maybe SetQuantifier)
-> duplicates = optionMaybe $
->     choice [All <$ keyword_ "all"
->            ,Distinct <$ keyword "distinct"]
 
 parse a window call as a suffix of a regular function call
 this looks like this:
@@ -519,155 +806,8 @@ a match (select a from t)
 > collate :: Parser (ValueExpr -> ValueExpr)
 > collate = do
 >           keyword_ "collate"
->           i <- identifierBlacklist blacklist
+>           i <- names
 >           return $ \v -> Collate v i
-
-
-typename: used in casts. Special cases for the multi keyword typenames
-that SQL supports.
-
-TODO: this need heavy refactoring
-
-> typeName :: Parser TypeName
-> typeName =
->     (rowTypeName <|> intervalTypeName <|> ref <|> otherTypeName)
->     >>= tnSuffix
->     <?> "typename"
->   where
->     -- row type names - a little like create table
->     rowTypeName =
->         RowTypeName <$> (keyword_ "row" *> parens (commaSep1 rowField))
->     rowField = (,) <$> name <*> typeName
->     -- interval type names: interval a [to b]
->     intervalTypeName =
->         keyword_ "interval" >>
->         uncurry IntervalTypeName <$> intervalQualifier
->     ref =
->         keyword_ "ref" >>
->         RefTypeName
->         <$> parens (names)
->         <*> optionMaybe (keyword_ "scope" *> names)
->     -- other type names, which includes:
->     -- precision, scale, lob scale and units, timezone, character
->     -- set and collations
->     otherTypeName = do
->         tn <- (try multiWordParsers <|> names)
->         choice [try $ timezone tn
->                ,try (precscale tn) >>= optionSuffix charSuffix
->                ,try $ lob tn
->                ,optionSuffix charSuffix $ TypeName tn]
->     timezone tn = do
->         TimeTypeName tn
->         <$> optionMaybe prec
->         <*> choice [True <$ keywords_ ["with", "time","zone"]
->                    ,False <$ keywords_ ["without", "time","zone"]]
->     charSuffix (PrecTypeName t p) = chars t (Just p)
->     charSuffix (TypeName t) = chars t Nothing
->     charSuffix _ = fail ""
->     chars tn p =
->         ((,) <$> option [] charSet
->              <*> optionMaybe tcollate)
->           >>= uncurry mkit
->         where
->           mkit [] Nothing = fail ""
->           mkit a b = return $ CharTypeName tn p a b
->     lob tn = parens $ do
->         (x,y) <- lobPrecToken
->         z <- optionMaybe lobUnits
->         return $ LobTypeName tn x y z
->     precscale tn = parens (commaSep unsignedInteger) >>= makeWrap
->                    where
->                      makeWrap [a] = return $ PrecTypeName tn a
->                      makeWrap [a,b] = return $ PrecScaleTypeName tn a b
->                      makeWrap _ = fail "there must be one or two precision components"
->     prec = parens unsignedInteger
->     charSet = keywords_ ["character", "set"] *> names
->     tcollate = keyword_ "collate" *> name
->     lobPrecToken = lexeme $ do
->         p <- read <$> many1 digit <?> "unsigned integer"
->         x <- choice [Just LobK <$ keyword_ "k"
->                     ,Just LobM <$ keyword_ "m"
->                     ,Just LobG <$ keyword_ "g"
->                     ,return Nothing]
->         return (p,x)
->     lobUnits = choice [LobCharacters <$ keyword_ "characters"
->                       ,LobCodeUnits <$ keyword_ "code_units"
->                       ,LobOctets <$ keyword_ "octets"]
->     -- deal with multiset and array suffixes
->     tnSuffix x =
->         multisetSuffix x <|> arraySuffix x <|> return x
->     multisetSuffix x =
->         (MultisetTypeName x <$ keyword_ "multiset") >>= tnSuffix
->     arraySuffix x =
->         (keyword_ "array" >> ArrayTypeName x
->                              <$> optionMaybe (brackets unsignedInteger)
->         ) >>= tnSuffix
->     -- special cases: there are a fixed set of multi word
->     -- sql types, they all have to be listed here
->     -- if it isn't in this list, the base of the
->     -- typename must parse as a regular dotted identifier chain
->     -- schema/etc. qualifiers are not supported for the multi word
->     -- typenames
->     multiWordParsers = (:[]) . Name . unwords <$> makeKeywordTree
->         ["double precision"
->         ,"character varying"
->         ,"char varying"
->         ,"character large object"
->         ,"char large object"
->         ,"national character"
->         ,"national char"
->         ,"national character varying"
->         ,"national char varying"
->         ,"national character large object"
->         ,"nchar large object"
->         ,"nchar varying"
->         ,"bit varying"
->         ,"binary large object"
->         -- put all the typenames which are also reserved keywords here
->         ,"array"
->         ,"bigint"
->         ,"binary"
->         ,"blob"
->         ,"boolean"
->         ,"char"
->         ,"character"
->         ,"clob"
->         ,"date"
->         ,"dec"
->         ,"decimal"
->         ,"double"
->         ,"float"
->         ,"int"
->         ,"integer"
->         ,"nchar"
->         ,"nclob"
->         ,"numeric"
->         ,"real"
->         ,"smallint"
->         ,"time"
->         ,"timestamp"
->         ,"varchar"
->         ]
-
-> intervalQualifier :: Parser (IntervalTypeField,Maybe IntervalTypeField)
-> intervalQualifier =
->     (,) <$> intervalField
->         <*> optionMaybe (keyword_ "to" *> intervalField)
->   where
->     intervalField =
->         Itf
->         <$> datetimeField
->         <*> optionMaybe
->             (parens ((,) <$> unsignedInteger
->                          <*> optionMaybe (comma *> unsignedInteger)))
-
-TODO: use this in extract
-use a data type for the datetime field?
-
-> datetimeField :: Parser String
-> datetimeField = choice (map keyword ["year","month","day"
->                                     ,"hour","minute","second"])
->                 <?> "datetime field"
 
 == value expression parens, row ctor and scalar subquery
 
@@ -678,46 +818,6 @@ use a data type for the datetime field?
 >   where
 >     ctor [a] = Parens a
 >     ctor as = SpecialOp [Name "rowctor"] as
-
-== multi keyword helper
-
-This helper is to help parsing multiple options of multiple keywords
-with similar prefixes, e.g. parsing 'is null' and 'is not null'.
-
-use to left factor/ improve:
-typed literal and general identifiers
-not like, not in, not between operators
-help with factoring keyword functions and other app-likes
-the join keyword sequences
-fetch first/next
-row/rows only
-
-There is probably a simpler way of doing this but I am a bit
-thick.
-
-> makeKeywordTree :: [String] -> Parser [String]
-> makeKeywordTree sets =
->     parseTrees (sort $ map words sets)
->     --  ?? <?> intercalate "," sets
->   where
->     parseTrees :: [[String]] -> Parser [String]
->     parseTrees ws = do
->       let gs :: [[[String]]]
->           gs = groupBy ((==) `on` safeHead) ws
->       choice $ map parseGroup gs
->     parseGroup :: [[String]] -> Parser [String]
->     parseGroup l@((k:_):_) = do
->         keyword_ k
->         let tls = catMaybes $ map safeTail l
->             pr = (k:) <$> parseTrees tls
->         if (or $ map null tls)
->           then pr <|> return [k]
->           else pr
->     parseGroup _ = guard False >> error "impossible"
->     safeHead (x:_) = Just x
->     safeHead [] = Nothing
->     safeTail (_:x) = Just x
->     safeTail [] = Nothing
 
 == operator parsing
 
@@ -861,6 +961,34 @@ expose the b expression for window frame clause range between
 
 > valueExprB :: Parser ValueExpr
 > valueExprB = E.buildExpressionParser (opTable True) term
+
+
+== helpers for value exprs
+
+> intervalQualifier :: Parser (IntervalTypeField,Maybe IntervalTypeField)
+> intervalQualifier =
+>     (,) <$> intervalField
+>         <*> optionMaybe (keyword_ "to" *> intervalField)
+>   where
+>     intervalField =
+>         Itf
+>         <$> datetimeField
+>         <*> optionMaybe
+>             (parens ((,) <$> unsignedInteger
+>                          <*> optionMaybe (comma *> unsignedInteger)))
+
+TODO: use this in extract
+use a data type for the datetime field?
+
+> datetimeField :: Parser String
+> datetimeField = choice (map keyword ["year","month","day"
+>                                     ,"hour","minute","second"])
+>                 <?> "datetime field"
+
+> duplicates :: Parser (Maybe SetQuantifier)
+> duplicates = optionMaybe $
+>     choice [All <$ keyword_ "all"
+>            ,Distinct <$ keyword "distinct"]
 
 
 -------------------------------------------------
@@ -1087,6 +1215,48 @@ trailing semicolon is optional.
 >     (:[]) <$> queryExpr
 >     >>= optionSuffix ((semi *>) . return)
 >     >>= optionSuffix (\p -> (p++) <$> queryExprs)
+
+----------------------------------------------
+
+= multi keyword helper
+
+This helper is to help parsing multiple options of multiple keywords
+with similar prefixes, e.g. parsing 'is null' and 'is not null'.
+
+use to left factor/ improve:
+typed literal and general identifiers
+not like, not in, not between operators
+help with factoring keyword functions and other app-likes
+the join keyword sequences
+fetch first/next
+row/rows only
+
+There is probably a simpler way of doing this but I am a bit
+thick.
+
+> makeKeywordTree :: [String] -> Parser [String]
+> makeKeywordTree sets =
+>     parseTrees (sort $ map words sets)
+>     --  ?? <?> intercalate "," sets
+>   where
+>     parseTrees :: [[String]] -> Parser [String]
+>     parseTrees ws = do
+>       let gs :: [[[String]]]
+>           gs = groupBy ((==) `on` safeHead) ws
+>       choice $ map parseGroup gs
+>     parseGroup :: [[String]] -> Parser [String]
+>     parseGroup l@((k:_):_) = do
+>         keyword_ k
+>         let tls = catMaybes $ map safeTail l
+>             pr = (k:) <$> parseTrees tls
+>         if (or $ map null tls)
+>           then pr <|> return [k]
+>           else pr
+>     parseGroup _ = guard False >> error "impossible"
+>     safeHead (x:_) = Just x
+>     safeHead [] = Nothing
+>     safeTail (_:x) = Just x
+>     safeTail [] = Nothing
 
 ------------------------------------------------
 
