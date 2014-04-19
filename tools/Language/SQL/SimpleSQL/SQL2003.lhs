@@ -46,6 +46,7 @@ large amount of the SQL.
 >     ,uniquePredicate
 >     ,matchPredicate
 >     ,collateClause
+>     ,aggregateFunctions
 >     ,sortSpecificationList
 >     ]
 
@@ -3051,7 +3052,73 @@ Specify a value computed from a collection of rows.
 
 <inverse distribution function type>    ::=   PERCENTILE_CONT | PERCENTILE_DISC
 
-TODO: aggregate functions
+> aggregateFunctions :: TestItem
+> aggregateFunctions = Group "aggregate functions" $ map (uncurry TestValueExpr) $
+>     [("count(*)",App [Name "count"] [Star])
+>     ,("count(*) filter (where something > 5)"
+>      ,AggregateApp [Name "count"] SQDefault [Star] [] fil)
+
+gsf
+
+>     ,("count(a)",App [Name "count"] [Iden [Name "a"]])
+>     ,("count(distinct a)"
+>      ,AggregateApp [Name "count"]
+>                    Distinct
+>                    [Iden [Name "a"]] [] Nothing)
+>     ,("count(all a)"
+>      ,AggregateApp [Name "count"]
+>                    All
+>                    [Iden [Name "a"]] [] Nothing)
+>     ,("count(all a) filter (where something > 5)"
+>      ,AggregateApp [Name "count"]
+>                    All
+>                    [Iden [Name "a"]] [] fil)
+>     ] ++ concatMap mkSimpleAgg
+>          ["avg","max","min","sum"
+>          ,"every", "any", "some"
+>          ,"stddev_pop","stddev_samp","var_samp","var_pop"
+>          ,"collect","fusion","intersection"]
+
+bsf
+
+>     ++ concatMap mkBsf
+>          ["COVAR_POP","COVAR_SAMP","CORR","REGR_SLOPE"
+>           ,"REGR_INTERCEPT","REGR_COUNT","REGR_R2"
+>           ,"REGR_AVGX","REGR_AVGY"
+>           ,"REGR_SXX","REGR_SYY","REGR_SXY"]
+
+osf
+
+>     ++
+>     [("rank(a,c) within group (order by b)"
+>      ,AggregateAppGroup [Name "rank"]
+>           [Iden [Name "a"], Iden [Name "c"]]
+>           ob)]
+>     ++ map mkGp ["dense_rank","percent_rank"
+>                 ,"cume_dist", "percentile_cont"
+>                 ,"percentile_disc"]
+
+>   where
+>     fil = Just $ BinOp (Iden [Name "something"]) [Name ">"] (NumLit "5")
+>     ob = [SortSpec (Iden [Name "b"]) DirDefault NullsOrderDefault]
+>     mkGp nm = (nm ++ "(a) within group (order by b)"
+>               ,AggregateAppGroup [Name nm]
+>                [Iden [Name "a"]]
+>                ob)
+
+>     mkSimpleAgg nm =
+>         [(nm ++ "(a)",App [Name nm] [Iden [Name "a"]])
+>         ,(nm ++ "(distinct a)"
+>          ,AggregateApp [Name nm]
+>                        Distinct
+>                        [Iden [Name "a"]] [] Nothing)]
+>     mkBsf nm =
+>         [(nm ++ "(a,b)",App [Name nm] [Iden [Name "a"],Iden [Name "b"]])
+>         ,(nm ++"(a,b) filter (where something > 5)"
+>           ,AggregateApp [Name nm]
+>                         SQDefault
+>                         [Iden [Name "a"],Iden [Name "b"]] [] fil)]
+
 
 == 10.10 <sort specification list> (p515)
 

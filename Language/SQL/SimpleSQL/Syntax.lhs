@@ -78,6 +78,13 @@
 >       ,aggDistinct :: SetQuantifier -- ^ distinct
 >       ,aggArgs :: [ValueExpr]-- ^ args
 >       ,aggOrderBy :: [SortSpec] -- ^ order by
+>       ,aggFilter :: Maybe ValueExpr -- ^ filter
+>       }
+>       -- | aggregates with within group
+>     | AggregateAppGroup
+>       {aggName :: [Name] -- ^ aggregate function name
+>       ,aggArgs :: [ValueExpr] -- ^ args
+>       ,aggGroup :: [SortSpec] -- ^ within group
 >       }
 >       -- | window application, which adds over (partition by a order
 >       -- by b) to regular function application. Explicit frames are

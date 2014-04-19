@@ -331,13 +331,13 @@ target_string
 
 >     ,("sum(a order by a)"
 >     ,AggregateApp [Name "sum"] SQDefault [Iden [Name "a"]]
->                   [SortSpec (Iden [Name "a"]) DirDefault NullsOrderDefault])
+>                   [SortSpec (Iden [Name "a"]) DirDefault NullsOrderDefault] Nothing)
 
 >     ,("sum(all a)"
->     ,AggregateApp [Name "sum"] All [Iden [Name "a"]] [])
+>     ,AggregateApp [Name "sum"] All [Iden [Name "a"]] [] Nothing)
 
 >     ,("count(distinct a)"
->     ,AggregateApp [Name "count"] Distinct [Iden [Name "a"]] [])
+>     ,AggregateApp [Name "count"] Distinct [Iden [Name "a"]] [] Nothing)
 >     ]
 
 > windowFunctions :: TestItem

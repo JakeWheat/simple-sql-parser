@@ -846,10 +846,35 @@ if there are no value exprs
 >                      <*> (optionMaybe orderBy))
 >   where
 >     makeApp i (SQDefault,es,Nothing) = App i es
->     makeApp i (d,es,od) = AggregateApp i d es (fromMaybe [] od)
+>     makeApp i (d,es,od) = AggregateApp i d es (fromMaybe [] od) Nothing
 
 > app :: [Name] -> Parser ValueExpr
-> app n = aggOrApp n >>= optionSuffix windowSuffix
+> app n = aggOrApp n >>= \a -> choice
+>         [windowSuffix a
+>         ,filterSuffix a
+>         ,withinGroupSuffix a
+>         ,return a]
+
+> filterSuffix :: ValueExpr -> Parser ValueExpr
+> filterSuffix (App nm es) =
+>     filterSuffix (AggregateApp nm SQDefault es [] Nothing)
+> filterSuffix agg@(AggregateApp {}) =
+>     filterSuffix' agg
+> filterSuffix _ = fail ""
+
+> filterSuffix' :: ValueExpr -> Parser ValueExpr
+> filterSuffix' agg =
+>     keyword_ "filter" >>
+>     rep <$> parens(keyword_ "where" *> (Just <$> valueExpr))
+>   where
+>     rep f = agg {aggFilter = f}
+
+
+
+> withinGroupSuffix :: ValueExpr -> Parser ValueExpr
+> withinGroupSuffix (App nm es) = keywords_ ["within", "group"] >>
+>     AggregateAppGroup nm es <$> parens orderBy
+> withinGroupSuffix _ = fail ""
 
 ==== window suffix
 
@@ -1934,11 +1959,11 @@ means).
 > reservedWord :: [String]
 > reservedWord =
 >     ["add"
->     ,"all"
+>     --,"all"
 >     ,"allocate"
 >     ,"alter"
 >     ,"and"
->     ,"any"
+>     --,"any"
 >     ,"are"
 >     ,"array"
 >     ,"as"
@@ -2101,15 +2126,15 @@ means).
 >     ,"ref"
 >     ,"references"
 >     ,"referencing"
->     ,"regr_avgx"
->     ,"regr_avgy"
->     ,"regr_count"
->     ,"regr_intercept"
->     ,"regr_r2"
->     ,"regr_slope"
->     ,"regr_sxx"
->     ,"regr_sxy"
->     ,"regr_syy"
+>     --,"regr_avgx"
+>     --,"regr_avgy"
+>     --,"regr_count"
+>     --,"regr_intercept"
+>     --,"regr_r2"
+>     --,"regr_slope"
+>     --,"regr_sxx"
+>     --,"regr_sxy"
+>     --,"regr_syy"
 >     ,"release"
 >     ,"result"
 >     ,"return"
@@ -2130,7 +2155,7 @@ means).
 >     --,"set"
 >     ,"similar"
 >     ,"smallint"
->     ,"some"
+>     --,"some"
 >     ,"specific"
 >     ,"specifictype"
 >     ,"sql"
@@ -2166,8 +2191,8 @@ means).
 >     ,"using"
 >     --,"value"
 >     ,"values"
->     ,"var_pop"
->     ,"var_samp"
+>     --,"var_pop"
+>     --,"var_samp"
 >     ,"varchar"
 >     ,"varying"
 >     ,"when"

@@ -52,7 +52,7 @@ which have been changed to try to improve the layout of the output.
 
 > valueExpr (App f es) = names f <> parens (commaSep (map valueExpr es))
 
-> valueExpr (AggregateApp f d es od) =
+> valueExpr (AggregateApp f d es od fil) =
 >     names f
 >     <> parens ((case d of
 >                   Distinct -> text "distinct"
@@ -60,6 +60,15 @@ which have been changed to try to improve the layout of the output.
 >                   SQDefault -> empty)
 >                <+> commaSep (map valueExpr es)
 >                <+> orderBy od)
+>     <+> me (\x -> text "filter"
+>                   <+> parens (text "where" <+> valueExpr x)) fil
+
+> valueExpr (AggregateAppGroup f es od) =
+>     names f
+>     <> parens (commaSep (map valueExpr es))
+>     <+> if null od
+>         then empty
+>         else text "within group" <+> parens(orderBy od)
 
 > valueExpr (WindowApp f es pb od fr) =
 >     names f <> parens (commaSep $ map valueExpr es)
