@@ -42,16 +42,25 @@ TOC:
 Names - parsing identifiers
 Typenames
 Value expressions
-  Simple literals
+  simple literals
   star, param
   parens expression, row constructor and scalar subquery
   case, cast, exists, unique, array/ multiset constructor
   typed literal, app, special function, aggregate, window function
-  suffixes: in, between, quantified comparison, match, array subscript,
-    escape, collate
+  suffixes: in, between, quantified comparison, match predicate, array
+    subscript, escape, collate
   operators
   value expression top level
   helpers
+query expressions
+  select lists
+  from clause
+  other table expression clauses:
+    where, group by, having, order by, offset and fetch
+  common table expressions
+  query expression
+  set operations
+utilities
 
 > {-# LANGUAGE TupleSections #-}
 > -- | This is the module with the parser functions.
@@ -364,10 +373,10 @@ TODO: this code needs heavy refactoring
 >                       ,LobOctets <$ keyword_ "octets"]
 >     -- deal with multiset and array suffixes
 >     tnSuffix x =
->         multisetSuffix x <|> arraySuffix x <|> return x
+>         multisetSuffix x <|> arrayTNSuffix x <|> return x
 >     multisetSuffix x =
 >         (MultisetTypeName x <$ keyword_ "multiset") >>= tnSuffix
->     arraySuffix x =
+>     arrayTNSuffix x =
 >         (keyword_ "array" >> ArrayTypeName x
 >                              <$> optionMaybe (brackets unsignedInteger)
 >         ) >>= tnSuffix
@@ -421,27 +430,24 @@ TODO: this code needs heavy refactoring
 
 See the stringToken lexer below for notes on string literal syntax.
 
-> stringValue :: Parser ValueExpr
-> stringValue = StringLit <$> stringToken
+> stringLit :: Parser ValueExpr
+> stringLit = StringLit <$> stringToken
 
-> number :: Parser ValueExpr
-> number = NumLit <$> numberLiteral
+> numberLit :: Parser ValueExpr
+> numberLit = NumLit <$> numberLiteral
 
-> characterSetLiteral :: Parser ValueExpr
-> characterSetLiteral =
+> characterSetLit :: Parser ValueExpr
+> characterSetLit =
 >     CSStringLit <$> shortCSPrefix <*> stringToken
 >   where
->     shortCSPrefix =
->         choice
+>     shortCSPrefix = try $ choice
 >         [(:[]) <$> oneOf "nNbBxX"
 >         ,string "u&"
 >         ,string "U&"
 >         ] <* lookAhead quote
 
-TODO: remove try and relocate some
-
-> literal :: Parser ValueExpr
-> literal = number <|> stringValue <|> try interval <|> try characterSetLiteral
+> simpleLiteral :: Parser ValueExpr
+> simpleLiteral = numberLit <|> stringLit <|> characterSetLit
 
 == star, param, host param
 
@@ -457,28 +463,23 @@ in any value expression context.
 
 == parameter
 
-unnamed parameter
+unnamed parameter or named parameter
 use in e.g. select * from t where a = ?
-
-> parameter :: Parser ValueExpr
-> parameter = Parameter <$ questionMark
-
-named parameter:
-
 select x from t where x > :param
 
-> hostParameter :: Parser ValueExpr
-> hostParameter =
->     HostParameter
->     <$> hostParameterToken
->     <*> optionMaybe (keyword "indicator" *> hostParameterToken)
+> parameter :: Parser ValueExpr
+> parameter = choice
+>     [Parameter <$ questionMark
+>     ,HostParameter
+>      <$> hostParameterToken
+>      <*> optionMaybe (keyword "indicator" *> hostParameterToken)]
 
 == parens
 
 value expression parens, row ctor and scalar subquery
 
-> parensTerm :: Parser ValueExpr
-> parensTerm = parens $ choice
+> parensExpr :: Parser ValueExpr
+> parensExpr = parens $ choice
 >     [SubQueryExpr SqSq <$> queryExpr
 >     ,ctor <$> commaSep1 valueExpr]
 >   where
@@ -491,8 +492,8 @@ All of these start with a fixed keyword which is reserved.
 
 === case expression
 
-> caseValue :: Parser ValueExpr
-> caseValue =
+> caseExpr :: Parser ValueExpr
+> caseExpr =
 >     Case <$> (keyword_ "case" *> optionMaybe valueExpr)
 >          <*> many1 whenClause
 >          <*> optionMaybe elseClause
@@ -560,19 +561,20 @@ interval 'something'
 then it is parsed as a regular typed literal. It must have a
 interval-datetime-field suffix to parse as an intervallit
 
-> interval :: Parser ValueExpr
-> interval = keyword_ "interval" >> do
+It uses try because of a conflict with interval type names: todo, fix
+this
+
+> intervalLit :: Parser ValueExpr
+> intervalLit = try (keyword_ "interval" >> do
 >     s <- optionMaybe $ choice [True <$ symbol_ "+"
 >                               ,False <$ symbol_ "-"]
 >     lit <- stringToken
 >     q <- optionMaybe intervalQualifier
->     mkIt s lit q
+>     mkIt s lit q)
 >   where
 >     mkIt Nothing val Nothing = return $ TypedLit (TypeName [Name "interval"]) val
 >     mkIt s val (Just (a,b)) = return $ IntervalLit s val a b
 >     mkIt (Just {}) _val Nothing = fail "cannot use sign without interval qualifier"
-
-
 
 == typed literal, app, special, aggregate, window, iden
 
@@ -589,15 +591,13 @@ all the value expressions which start with an identifier
 
 (todo: really put all of them here instead of just some of them)
 
-> idenPrefixTerm :: Parser ValueExpr
-> idenPrefixTerm =
+> idenExpr :: Parser ValueExpr
+> idenExpr =
 >     -- todo: work out how to left factor this
 >     try (TypedLit <$> typeName <*> stringToken)
 >     <|> (names >>= iden)
 >   where
 >     iden n = app n <|> return (Iden n)
-
-typed literal
 
 === special
 
@@ -844,8 +844,8 @@ and operator. This is the call to valueExprB.
 
 a = any (select * from t)
 
-> quantifiedComparison :: Parser (ValueExpr -> ValueExpr)
-> quantifiedComparison = do
+> quantifiedComparisonSuffix :: Parser (ValueExpr -> ValueExpr)
+> quantifiedComparisonSuffix = do
 >     c <- comp
 >     cq <- compQuan
 >     q <- parens queryExpr
@@ -862,8 +862,8 @@ a = any (select * from t)
 
 a match (select a from t)
 
-> matchPredicate :: Parser (ValueExpr -> ValueExpr)
-> matchPredicate = do
+> matchPredicateSuffix :: Parser (ValueExpr -> ValueExpr)
+> matchPredicateSuffix = do
 >     keyword_ "match"
 >     u <- option False (True <$ keyword_ "unique")
 >     q <- parens queryExpr
@@ -871,15 +871,15 @@ a match (select a from t)
 
 === array subscript
 
-> arrayPostfix :: Parser (ValueExpr -> ValueExpr)
-> arrayPostfix = do
+> arraySuffix :: Parser (ValueExpr -> ValueExpr)
+> arraySuffix = do
 >     es <- brackets (commaSep valueExpr)
 >     return $ \v -> Array v es
 
 === escape
 
-> escape :: Parser (ValueExpr -> ValueExpr)
-> escape = do
+> escapeSuffix :: Parser (ValueExpr -> ValueExpr)
+> escapeSuffix = do
 >     ctor <- choice
 >             [Escape <$ keyword_ "escape"
 >             ,UEscape <$ keyword_ "uescape"]
@@ -888,11 +888,11 @@ a match (select a from t)
 
 === collate
 
-> collate :: Parser (ValueExpr -> ValueExpr)
-> collate = do
->           keyword_ "collate"
->           i <- names
->           return $ \v -> Collate v i
+> collateSuffix:: Parser (ValueExpr -> ValueExpr)
+> collateSuffix = do
+>     keyword_ "collate"
+>     i <- names
+>     return $ \v -> Collate v i
 
 
 ==  operators
@@ -915,13 +915,13 @@ messages, but both of these are too important.
 >         [-- parse match and quantified comparisons as postfix ops
 >           -- todo: left factor the quantified comparison with regular
 >           -- binary comparison, somehow
->          [E.Postfix $ try quantifiedComparison
->          ,E.Postfix matchPredicate
+>          [E.Postfix $ try quantifiedComparisonSuffix
+>          ,E.Postfix matchPredicateSuffix
 >          ]
 >         ,[binarySym "." E.AssocLeft]
->         ,[postfix' arrayPostfix
->          ,postfix' escape
->          ,postfix' collate]
+>         ,[postfix' arraySuffix
+>          ,postfix' escapeSuffix
+>          ,postfix' collateSuffix]
 >         ,[prefixSym "+", prefixSym "-"]
 >         ,[binarySym "^" E.AssocLeft]
 >         ,[binarySym "*" E.AssocLeft
@@ -1016,18 +1016,18 @@ fragile and could at least do with some heavy explanation.
 > valueExpr = E.buildExpressionParser (opTable False) term
 
 > term :: Parser ValueExpr
-> term = choice [literal
+> term = choice [simpleLiteral
 >               ,parameter
->               ,hostParameter
 >               ,star
->               ,parensTerm
->               ,caseValue
+>               ,parensExpr
+>               ,caseExpr
 >               ,cast
 >               ,arrayCtor
 >               ,multisetCtor
 >               ,subquery
+>               ,intervalLit
 >               ,specialOpKs
->               ,idenPrefixTerm]
+>               ,idenExpr]
 >        <?> "value expression"
 
 expose the b expression for window frame clause range between
