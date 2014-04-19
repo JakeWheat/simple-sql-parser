@@ -35,47 +35,47 @@ these lateral queries make no sense but the syntax is valid
 >      ,ms [TRSimple "a", TRLateral $ TRSimple "b"])
 
 >     ,("select a from a natural join lateral b"
->      ,ms [TRJoin (TRSimple "a") JInner
+>      ,ms [TRJoin (TRSimple "a") True JInner
 >                  (TRLateral $ TRSimple "b")
->                  (Just JoinNatural)])
+>                  Nothing])
 
 >     -- the lateral binds on the outside of the join which is incorrect
 >     ,("select a from lateral a natural join lateral b"
->      ,ms [TRJoin (TRLateral $ TRSimple "a") JInner
+>      ,ms [TRJoin (TRLateral $ TRSimple "a") True JInner
 >                  (TRLateral $ TRSimple "b")
->                  (Just JoinNatural)])
+>                  Nothing])
 
 
 >     ,("select a from t inner join u on expr"
->      ,ms [TRJoin (TRSimple "t") JInner (TRSimple "u")
+>      ,ms [TRJoin (TRSimple "t") False JInner (TRSimple "u")
 >                        (Just $ JoinOn $ Iden "expr")])
 
 >     ,("select a from t join u on expr"
->      ,ms [TRJoin (TRSimple "t") JInner (TRSimple "u")
+>      ,ms [TRJoin (TRSimple "t") False JInner (TRSimple "u")
 >                        (Just $ JoinOn $ Iden "expr")])
 
 >     ,("select a from t left join u on expr"
->      ,ms [TRJoin (TRSimple "t") JLeft (TRSimple "u")
+>      ,ms [TRJoin (TRSimple "t") False JLeft (TRSimple "u")
 >                        (Just $ JoinOn $ Iden "expr")])
 
 >     ,("select a from t right join u on expr"
->      ,ms [TRJoin (TRSimple "t") JRight (TRSimple "u")
+>      ,ms [TRJoin (TRSimple "t") False JRight (TRSimple "u")
 >                        (Just $ JoinOn $ Iden "expr")])
 
 >     ,("select a from t full join u on expr"
->      ,ms [TRJoin (TRSimple "t") JFull (TRSimple "u")
+>      ,ms [TRJoin (TRSimple "t") False JFull (TRSimple "u")
 >                        (Just $ JoinOn $ Iden "expr")])
 
 >     ,("select a from t cross join u"
->      ,ms [TRJoin (TRSimple "t")
+>      ,ms [TRJoin (TRSimple "t") False
 >                        JCross (TRSimple "u") Nothing])
 
 >     ,("select a from t natural inner join u"
->      ,ms [TRJoin (TRSimple "t") JInner (TRSimple "u")
->                        (Just JoinNatural)])
+>      ,ms [TRJoin (TRSimple "t") True JInner (TRSimple "u")
+>                        Nothing])
 
 >     ,("select a from t inner join u using(a,b)"
->      ,ms [TRJoin (TRSimple "t") JInner (TRSimple "u")
+>      ,ms [TRJoin (TRSimple "t") False JInner (TRSimple "u")
 >                        (Just $ JoinUsing ["a", "b"])])
 
 >     ,("select a from (select a from t)"
@@ -92,15 +92,15 @@ these lateral queries make no sense but the syntax is valid
 
 >     ,("select a from (t cross join u) as u"
 >      ,ms [TRAlias (TRParens $
->                    TRJoin (TRSimple "t") JCross (TRSimple "u") Nothing)
+>                    TRJoin (TRSimple "t") False JCross (TRSimple "u") Nothing)
 >                           (Alias "u" Nothing)])
 >      -- todo: not sure if the associativity is correct
 
 >     ,("select a from t cross join u cross join v",
 >        ms [TRJoin
->            (TRJoin (TRSimple "t")
+>            (TRJoin (TRSimple "t") False
 >                    JCross (TRSimple "u") Nothing)
->            JCross (TRSimple "v") Nothing])
+>            False JCross (TRSimple "v") Nothing])
 >     ]
 >   where
 >     ms f = makeSelect {qeSelectList = [(Iden "a",Nothing)]

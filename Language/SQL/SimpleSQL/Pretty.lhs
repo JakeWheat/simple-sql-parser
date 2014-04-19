@@ -366,15 +366,13 @@ which have been changed to try to improve the layout of the output.
 >     tr (TRAlias t a) = sep [tr t, alias a]
 >     tr (TRParens t) = parens $ tr t
 >     tr (TRQueryExpr q) = parens $ queryExpr q
->     tr (TRJoin t0 jt t1 jc) =
+>     tr (TRJoin t0 b jt t1 jc) =
 >        sep [tr t0
->            ,joinText jt jc <+> tr t1
+>            ,if b then text "natural" else empty
+>            ,joinText jt <+> tr t1
 >            ,joinCond jc]
->     joinText jt jc =
->       sep [case jc of
->               Just JoinNatural -> text "natural"
->               _ -> empty
->           ,case jt of
+>     joinText jt =
+>       sep [case jt of
 >               JInner -> text "inner"
 >               JLeft -> text "left"
 >               JRight -> text "right"
@@ -385,7 +383,6 @@ which have been changed to try to improve the layout of the output.
 >     joinCond (Just (JoinUsing es)) =
 >         text "using" <+> parens (commaSep $ map name es)
 >     joinCond Nothing = empty
->     joinCond (Just JoinNatural) = empty
 
 > maybeValueExpr :: String -> Maybe ValueExpr -> Doc
 > maybeValueExpr k = me

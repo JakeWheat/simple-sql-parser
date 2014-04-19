@@ -221,11 +221,14 @@ sure which sql version they were introduced, 1999 or 2003 I think).
 >      \ORDER BY GROUP, WEEK, DAY_WEEK, MONTH, REGION"-}
 >      -- as group - needs more subtle keyword blacklisting
 
+>     -- decimal as a function not allowed due to the reserved keyword
+>     -- handling: todo, review if this is ansi standard function or
+>     -- if there are places where reserved keywords can still be used
 >     ,"SELECT MONTH(SALES_DATE) AS MONTH,\n\
 >      \REGION,\n\
 >      \SUM(SALES) AS UNITS_SOLD,\n\
 >      \MAX(SALES) AS BEST_SALE,\n\
->      \CAST(ROUND(AVG(DECIMAL(SALES)),2) AS DECIMAL(5,2)) AS AVG_UNITS_SOLD\n\
+>      \CAST(ROUND(AVG(DECIMALx(SALES)),2) AS DECIMAL(5,2)) AS AVG_UNITS_SOLD\n\
 >      \FROM SALES\n\
 >      \GROUP BY CUBE(MONTH(SALES_DATE),REGION)\n\
 >      \ORDER BY MONTH, REGION"

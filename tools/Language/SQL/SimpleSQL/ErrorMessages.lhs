@@ -72,12 +72,12 @@ expression parts.
 >     ,"'bad"
 >     ,"bad'"
 
->     ,"interval '5' ays"
->     ,"interval '5' days (4.4)"
->     ,"interval '5' days (a)"
->     ,"intervala '5' days"
->     ,"interval 'x' days (3"
->     ,"interval 'x' days 3)"
+>     ,"interval '5' ay"
+>     ,"interval '5' day (4.4)"
+>     ,"interval '5' day (a)"
+>     ,"intervala '5' day"
+>     ,"interval 'x' day (3"
+>     ,"interval 'x' day 3)"
 
 >     ,"1badiden"
 >     ,"$"

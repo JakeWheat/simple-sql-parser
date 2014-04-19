@@ -104,6 +104,8 @@ queries section
 
 >     ,"SELECT x FROM test1 GROUP BY x;"
 >     ,"SELECT x, sum(y) FROM test1 GROUP BY x;"
+>     -- s.date changed to s.datex because of reserved keyword
+>     -- handling, not sure if this is correct or not for ansi sql
 >     ,"SELECT product_id, p.name, (sum(s.units) * p.price) AS sales\n\
 >      \    FROM products p LEFT JOIN sales s USING (product_id)\n\
 >      \    GROUP BY product_id, p.name, p.price;"
@@ -112,7 +114,7 @@ queries section
 >     ,"SELECT x, sum(y) FROM test1 GROUP BY x HAVING x < 'c';"
 >     ,"SELECT product_id, p.name, (sum(s.units) * (p.price - p.cost)) AS profit\n\
 >      \    FROM products p LEFT JOIN sales s USING (product_id)\n\
->      \    WHERE s.date > CURRENT_DATE - INTERVAL '4 weeks'\n\
+>      \    WHERE s.datex > CURRENT_DATE - INTERVAL '4 weeks'\n\
 >      \    GROUP BY product_id, p.name, p.price, p.cost\n\
 >      \    HAVING sum(p.price * s.units) > 5000;"
 

@@ -551,13 +551,11 @@ TODO: this need heavy refactoring
 >     -- precision, scale, lob scale and units, timezone, character
 >     -- set and collations
 >     otherTypeName = do
->         tn <- (try multiWordParsers <|> names <|> baseTypeName)
+>         tn <- (try multiWordParsers <|> names)
 >         choice [try $ timezone tn
 >                ,try (precscale tn) >>= optionSuffix charSuffix
 >                ,try $ lob tn
 >                ,optionSuffix charSuffix $ TypeName tn]
->     -- fix this hack, needs left factoring better or something
->     baseTypeName = (:[]) . Name <$> identifier
 >     timezone tn = do
 >         TimeTypeName tn
 >         <$> optionMaybe prec
@@ -625,6 +623,30 @@ TODO: this need heavy refactoring
 >         ,"nchar varying"
 >         ,"bit varying"
 >         ,"binary large object"
+>         -- put all the typenames which are also reserved keywords here
+>         ,"array"
+>         ,"bigint"
+>         ,"binary"
+>         ,"blob"
+>         ,"boolean"
+>         ,"char"
+>         ,"character"
+>         ,"clob"
+>         ,"date"
+>         ,"dec"
+>         ,"decimal"
+>         ,"double"
+>         ,"float"
+>         ,"int"
+>         ,"integer"
+>         ,"nchar"
+>         ,"nclob"
+>         ,"numeric"
+>         ,"real"
+>         ,"smallint"
+>         ,"time"
+>         ,"timestamp"
+>         ,"varchar"
 >         ]
 
 > intervalQualifier :: Parser (IntervalTypeField,Maybe IntervalTypeField)
@@ -644,7 +666,7 @@ use a data type for the datetime field?
 
 > datetimeField :: Parser String
 > datetimeField = choice (map keyword ["year","month","day"
->                                 ,"hour","minute","second"])
+>                                     ,"hour","minute","second"])
 >                 <?> "datetime field"
 
 == value expression parens, row ctor and scalar subquery
@@ -880,11 +902,11 @@ tref
 >                 ,return $ TRSimple n]]
 >         >>= optionSuffix aliasSuffix
 >     aliasSuffix j = option j (TRAlias j <$> alias)
->     joinTrefSuffix t = (do
->          nat <- option False (True <$ keyword_ "natural")
->          TRJoin t <$> joinType
+>     joinTrefSuffix t =
+>         (TRJoin t <$> option False (True <$ keyword_ "natural")
+>                   <*> joinType
 >                   <*> nonJoinTref
->                   <*> optionMaybe (joinCondition nat))
+>                   <*> optionMaybe joinCondition)
 >         >>= optionSuffix joinTrefSuffix
 
 TODO: factor the join stuff to produce better error messages
@@ -904,10 +926,9 @@ TODO: factor the join stuff to produce better error messages
 >            <* keyword_ "join"
 >     ,JInner <$ keyword_ "join"]
 
-> joinCondition :: Bool -> Parser JoinCondition
-> joinCondition nat =
->     choice [guard nat >> return JoinNatural
->            ,keyword_ "on" >> JoinOn <$> valueExpr
+> joinCondition :: Parser JoinCondition
+> joinCondition =
+>     choice [keyword_ "on" >> JoinOn <$> valueExpr
 >            ,keyword_ "using" >> JoinUsing <$> parens (commaSep1 name)
 >            ]
 
@@ -1296,8 +1317,8 @@ The standard has a weird mix of reserved keywords and unreserved
 keywords (I'm not sure what exactly being an unreserved keyword
 means).
 
-> nonReservedWord :: [String]
-> nonReservedWord =
+> _nonReservedWord :: [String]
+> _nonReservedWord =
 >     ["a"
 >     ,"abs"
 >     ,"absolute"
@@ -1605,11 +1626,11 @@ means).
 >     ,"current_user"
 >     ,"cursor"
 >     ,"cycle"
->     --,"date"
+>     ,"date"
 >     --,"day"
 >     ,"deallocate"
 >     ,"dec"
->     --,"decimal"
+>     ,"decimal"
 >     ,"declare"
 >     --,"default"
 >     ,"delete"

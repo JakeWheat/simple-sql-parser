@@ -340,8 +340,8 @@ I'm not sure if this is valid syntax or not.
 > -- | Represents a entry in the csv of tables in the from clause.
 > data TableRef = -- | from t / from s.t
 >                 TRSimple [Name]
->                 -- | from a join b
->               | TRJoin TableRef JoinType TableRef (Maybe JoinCondition)
+>                 -- | from a join b, the bool is true if natural was used
+>               | TRJoin TableRef Bool JoinType TableRef (Maybe JoinCondition)
 >                 -- | from (a)
 >               | TRParens TableRef
 >                 -- | from a as b(c,d)
@@ -367,5 +367,4 @@ I'm not sure if this is valid syntax or not.
 > -- | The join condition.
 > data JoinCondition = JoinOn ValueExpr -- ^ on expr
 >                    | JoinUsing [Name] -- ^ using (column list)
->                    | JoinNatural -- ^ natural join was used
 >                      deriving (Eq,Show,Read,Data,Typeable)
