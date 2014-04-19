@@ -158,6 +158,7 @@
 >     | MultisetBinOp ValueExpr CombineOp SetQuantifier ValueExpr
 >     | MultisetCtor [ValueExpr]
 >     | MultisetQueryCtor QueryExpr
+>     | NextValueFor [Name]
 >       deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | Represents an identifier name, which can be quoted or unquoted.
@@ -190,7 +191,6 @@ TODO: add ref and scope, any others?
 > data LobMultiplier = LobK | LobM | LobG
 >                      deriving (Eq,Show,Read,Data,Typeable)
 > data LobUnits = LobCharacters
->               | LobCodeUnits
 >               | LobOctets
 >                 deriving (Eq,Show,Read,Data,Typeable)
 

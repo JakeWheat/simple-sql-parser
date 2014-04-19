@@ -1,5 +1,11 @@
 continue 2003 review and tests
 
+1. start replacing the 2003 stuff with 2011
+2. create an error message document for the website
+   - base of error messages but add some more variations
+3. start thinking about tests for invalid syntax
+
+
 touch up the expr hack as best as can
 
 careful review of token parses wrt trailing delimiters/junk
@@ -56,6 +62,8 @@ rules for changing the multi keyword parsing:
 
 rough SQL 2003 todo, including tests to write:
 
+switch to SQL 2011
+
 now:
 review the commented out reserved keyword entries and work out how to
    fix
@@ -64,7 +72,6 @@ go through almost all the predicates
 window functions missing bits, window clauses
 from: more tests, review missing
   tablesample, unnest, etc.
-aggregates: where, filter + review
 rows review
 match missing bit
 between symmetric

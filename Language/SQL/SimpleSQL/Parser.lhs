@@ -38,9 +38,9 @@ lexers, this isn't 100% complete at the moment and needs fixing.
 The parsing code is aggressively left factored, and try is avoided as
 much as possible. Try is avoided because:
 
-* when it is overused it makes the code hard to follow
-* when it is overused it makes the parsing code harder to debug
-* it makes the parser error messages much worse
+ * when it is overused it makes the code hard to follow
+ * when it is overused it makes the parsing code harder to debug
+ * it makes the parser error messages much worse
 
 The code could be made a bit simpler with a few extra 'trys', but this
 isn't done because of the impact on the parser error
@@ -74,9 +74,9 @@ syntax.
 
 There are three big areas which are tricky to left factor:
 
-* typenames
-* value expressions which can start with an identifier
-* infix and suffix operators
+ * typenames
+ * value expressions which can start with an identifier
+ * infix and suffix operators
 
 === typenames
 
@@ -97,12 +97,12 @@ error messages really bad.
 
 Here is a list of these nodes:
 
-* identifiers
-* function application
-* aggregate application
-* window application
-* typed literal: typename 'literal string'
-* interval literal which is like the typed literal with some extras
+ * identifiers
+ * function application
+ * aggregate application
+ * window application
+ * typed literal: typename 'literal string'
+ * interval literal which is like the typed literal with some extras
 
 There is further ambiguity e.g. with typed literals with precision,
 functions, aggregates, etc. - these are an identifier, followed by
@@ -113,12 +113,12 @@ is.
 There is also a set of nodes which start with an identifier/keyword
 but can commit since no other syntax can start the same way:
 
-* case
-* cast
-* exists, unique subquery
-* array constructor
-* multiset constructor
-* all the special syntax functions: extract, position, substring,
+ * case
+ * cast
+ * exists, unique subquery
+ * array constructor
+ * multiset constructor
+ * all the special syntax functions: extract, position, substring,
   convert, translate, overlay, trim, etc.
 
 The interval literal mentioned above is treated in this group at the
@@ -143,10 +143,10 @@ standard which is able to eliminate a number of possibilities just in
 the grammar, which this parser allows. This is done for a number of
 reasons:
 
-* it makes the parser simple - less variations
-* it should allow for dialects and extensibility more easily in the
+ * it makes the parser simple - less variations
+ * it should allow for dialects and extensibility more easily in the
   future (e.g. new infix binary operators with custom precedence)
-* many things which are effectively checked in the grammar in the
+ * many things which are effectively checked in the grammar in the
   standard, can be checked using a typechecker or other simple static
   analysis
 
@@ -481,7 +481,6 @@ TODO: this code needs heavy refactoring
 >                     ,return Nothing]
 >         return (p,x)
 >     lobUnits = choice [LobCharacters <$ keyword_ "characters"
->                       ,LobCodeUnits <$ keyword_ "code_units"
 >                       ,LobOctets <$ keyword_ "octets"]
 >     -- deal with multiset and array suffixes
 >     tnSuffix x =
@@ -656,6 +655,10 @@ multiset(query expr). It must be there for compatibility or something.
 >      ,MultisetCtor <$> brackets (commaSep valueExpr)]
 >     ,keyword_ "table" >>
 >      MultisetQueryCtor <$> parens queryExpr]
+
+> nextValueFor :: Parser ValueExpr
+> nextValueFor = keywords_ ["next","value","for"] >>
+>     NextValueFor <$> names
 
 === interval
 
@@ -1161,6 +1164,7 @@ fragile and could at least do with some heavy explanation.
 >               ,cast
 >               ,arrayCtor
 >               ,multisetCtor
+>               ,nextValueFor
 >               ,subquery
 >               ,intervalLit
 >               ,specialOpKs
@@ -1740,7 +1744,7 @@ means).
 >     ,"class_origin"
 >     ,"coalesce"
 >     ,"cobol"
->     ,"code_units"
+>     --,"code_units"
 >     ,"collation"
 >     ,"collation_catalog"
 >     ,"collation_name"
@@ -2002,13 +2006,13 @@ means).
 >     ,"cube"
 >     ,"current"
 >     --,"current_date"
->     ,"current_default_transform_group"
->     ,"current_path"
->     ,"current_role"
+>     --,"current_default_transform_group"
+>     --,"current_path"
+>     --,"current_role"
 >     ,"current_time"
 >     ,"current_timestamp"
 >     ,"current_transform_group_for_type"
->     ,"current_user"
+>     --,"current_user"
 >     ,"cursor"
 >     ,"cycle"
 >     ,"date"
@@ -2052,7 +2056,7 @@ means).
 >     ,"global"
 >     ,"grant"
 >     ,"group"
->     ,"grouping"
+>     --,"grouping"
 >     ,"having"
 >     ,"hold"
 >     --,"hour"
@@ -2088,7 +2092,7 @@ means).
 >     ,"method"
 >     --,"minute"
 >     ,"modifies"
->     ,"module"
+>     --,"module"
 >     --,"month"
 >     ,"multiset"
 >     ,"national"
@@ -2151,7 +2155,7 @@ means).
 >     --,"second"
 >     ,"select"
 >     ,"sensitive"
->     ,"session_user"
+>     --,"session_user"
 >     --,"set"
 >     ,"similar"
 >     ,"smallint"
@@ -2167,7 +2171,7 @@ means).
 >     ,"submultiset"
 >     ,"symmetric"
 >     ,"system"
->     ,"system_user"
+>     --,"system_user"
 >     ,"table"
 >     ,"then"
 >     ,"time"
@@ -2187,7 +2191,7 @@ means).
 >     ,"unnest"
 >     ,"update"
 >     ,"upper"
->     ,"user"
+>     --,"user"
 >     ,"using"
 >     --,"value"
 >     ,"values"

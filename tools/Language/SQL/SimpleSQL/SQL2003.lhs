@@ -15,7 +15,8 @@ large amount of the SQL.
 
 > sql2003Tests :: TestItem
 > sql2003Tests = Group "sql2003Tests"
->     [stringLiterals
+>     [Group "literals" [
+>      stringLiterals
 >     ,nationalCharacterStringLiterals
 >     ,unicodeStringLiterals
 >     ,binaryStringLiterals
@@ -23,31 +24,71 @@ large amount of the SQL.
 >     ,intervalLiterals
 >     ,booleanLiterals
 >     ,identifiers
->     ,typeNameTests
+>      ],Group "value expressions"
+>     [typeNameTests
 >     ,parenthesizedValueExpression
+>     ,someGeneralValues
 >     ,targetSpecification
 >     ,contextuallyTypeValueSpec
->     --,nextValueExpression
+>     ,moduleColumnRef
+>     ,groupingOperation
+>     --,windowFunction
+>     --,caseExpression
+>     --,castSpecification
+>     ,nextValueExpression
+>     -- subtype treatment, method invoc, static m i, new spec, attrib/method ref, deref, method ref, ref res
 >     ,arrayElementReference
 >     ,multisetElementReference
->     --,numericValueExpression
+>     ,numericValueExpression
+>     --,numericValueFunction
+>     --,stringValueExpression
+>     --,stringValueFunction
+>     --,datetimeValueExpression
+>     --,datetimeValueFunction
+>     --,intervalValueExpression
+>     --,intervalValueFunction
 >     --,booleanValueExpression
+>     --arrayValueExpression
 >     ,arrayValueConstructor
 >     ,multisetValueExpression
 >     ,multisetValueFunction
 >     ,multisetValueConstructor
+>     ],Group "query expressions"
+>     [
+>     -- rowValueConstructor
+>     --,rowValueExpression
 >     --,tableValueConstructor
 >     --,fromClause
+>     --,joinedTable
 >     --,whereClause
->     ,groupbyClause
+>      groupbyClause
+>     --,havingClause
+>     --,windowClause
 >     --,querySpecification
->     --,queryExpressions
->     ,quantifiedComparisonPredicate
+>     --,querySpecifications
+>     --,setOperations
+>     --,withExpressions
+>     ],Group "predicates"
+>     [--comparisonPredicate
+>     --,betweenPredicate
+>     --,inPredicate
+>     --,likePredicate
+>     --,similarPredicae
+>     --,nullPredicate
+>      quantifiedComparisonPredicate
+>     --,existsPredicate
 >     ,uniquePredicate
+>     --,normalizedPredicate
 >     ,matchPredicate
+>     --,overlapsPredicate
+>     --,distinctPredicate
+>     --,memberPredicate
+>     --,submultisetPredicate
+>     --,setPredicate
 >     ,collateClause
 >     ,aggregateFunctions
 >     ,sortSpecificationList
+>     ]
 >     ]
 
 = 5 Lexical Elements
@@ -1001,8 +1042,6 @@ create a list of type name variations:
 >          ,("blob(3M)", LobTypeName [Name "blob"] 3 (Just LobM) Nothing)
 >          ,("blob(4M characters) "
 >           ,LobTypeName [Name "blob"] 4 (Just LobM) (Just LobCharacters))
->          ,("blob(5 code_units) "
->           ,LobTypeName [Name "blob"] 5 Nothing (Just LobCodeUnits))
 >          ,("blob(6G octets) "
 >           ,LobTypeName [Name "blob"] 6 (Just LobG) (Just LobOctets))
 >          ,("national character large object(7K) "
@@ -1172,7 +1211,19 @@ This is used in row type names.
      |     USER 
      |     VALUE
 
-TODO: review how the special keywords are parsed and add tests for these
+
+> someGeneralValues :: TestItem
+> someGeneralValues = Group "some general values" $ map (uncurry TestValueExpr) $
+>     map mkIden ["CURRENT_DEFAULT_TRANSFORM_GROUP"
+>                ,"CURRENT_PATH"
+>                ,"CURRENT_ROLE"
+>                ,"CURRENT_USER"
+>                ,"SESSION_USER"
+>                ,"SYSTEM_USER"
+>                ,"USER"
+>                ,"VALUE"]
+>   where
+>     mkIden nm = (nm,Iden [Name nm])
 
 <simple value specification>    ::= 
          <literal>
@@ -1269,8 +1320,11 @@ already covered above in the identifiers and names section
          <basic identifier chain>
      |     MODULE <period> <qualified identifier> <period> <column name>
 
-TODO: work out the exact syntax and add
-
+> moduleColumnRef :: TestItem
+> moduleColumnRef = Group "module column ref" $ map (uncurry TestValueExpr)
+>     [("MODULE.something.something", Iden [Name "MODULE"
+>                                          ,Name "something"
+>                                          ,Name "something"])]
 
 
 == 6.8 <SQL parameter reference> (p190)
@@ -1304,7 +1358,19 @@ ORDER BY department, job, "Total Empl", "Average Sal";
 
 TODO: de-oracle the syntax and add as test case
 
-
+> groupingOperation :: TestItem
+> groupingOperation = Group "grouping operation" $ map (uncurry TestQueryExpr)
+>     [("SELECT SalesQuota, SUM(SalesYTD) TotalSalesYTD,\n\
+>       \   GROUPING(SalesQuota) AS Grouping\n\
+>       \FROM Sales.SalesPerson\n\
+>       \GROUP BY ROLLUP(SalesQuota);"
+>      ,makeSelect
+>       {qeSelectList = [(Iden [Name "SalesQuota"],Nothing)
+>                       ,(App [Name "SUM"] [Iden [Name "SalesYTD"]],Just (Name "TotalSalesYTD"))
+>                       ,(App [Name "GROUPING"] [Iden [Name "SalesQuota"]],Just (Name "Grouping"))]
+>       ,qeFrom = [TRSimple [Name "Sales",Name "SalesPerson"]]
+>       ,qeGroupBy = [Rollup [SimpleGroup (Iden [Name "SalesQuota"])]]})
+>     ]
 
 == 6.10 <window function> (p193)
 
@@ -1323,6 +1389,10 @@ TODO: de-oracle the syntax and add as test case
 
 TODO: window functions
 
+> windowFunctions :: TestItem
+> windowFunctions = Group "window functions" $ map (uncurry TestValueExpr)
+>     [
+>     ]
 
 
 == 6.11 <case expression> (p197)
@@ -1371,7 +1441,10 @@ TODO: window functions
 
 TODO: case expressions plus the 'abbreviations'
 
-
+> caseExpression :: TestItem
+> caseExpression = Group "case expression" $ map (uncurry TestValueExpr)
+>     [
+>     ]
 
 == 6.12 <cast specification> (p200)
 
@@ -1391,7 +1464,7 @@ This is already covered above
 
 > nextValueExpression :: TestItem
 > nextValueExpression = Group "next value expression" $ map (uncurry TestValueExpr)
->     [("next value for a.b", undefined)
+>     [("next value for a.b", NextValueFor [Name "a", Name "b"])
 >     ]
 
 
@@ -1569,13 +1642,16 @@ Specify a numeric value.
 
 > numericValueExpression :: TestItem
 > numericValueExpression = Group "numeric value expression" $ map (uncurry TestValueExpr)
->     [("a + b", undefined)
->     ,("a - b", undefined)
->     ,("a * b", undefined)
->     ,("a / b", undefined)
->     ,("+a", undefined)
->     ,("-a", undefined)
+>     [("a + b", binOp "+")
+>     ,("a - b", binOp "-")
+>     ,("a * b", binOp "*")
+>     ,("a / b", binOp "/")
+>     ,("+a", prefOp "+")
+>     ,("-a", prefOp "-")
 >     ]
+>   where
+>     binOp o = BinOp (Iden [Name "a"]) [Name o] (Iden [Name "b"])
+>     prefOp o = PrefixOp [Name o] (Iden [Name "a"])
 
 == 6.27 <numeric value function> (p242)
 
@@ -1600,11 +1676,21 @@ Specify a function yielding a value of type numeric.
          <string position expression>
      |     <blob position expression>
 
+> numericValueFunction :: TestItem
+> numericValueFunction = Group "numeric value function" $ map (uncurry TestValueExpr)
+>     [
+
+
 <string position expression>    ::= 
          POSITION <left paren> <string value expression> IN <string value expression> [ USING <char length units> ] <right paren>
 
 <blob position expression>    ::= 
          POSITION <left paren> <blob value expression> IN <blob value expression> <right paren>
+
+>      ("position (a in b)",undefined)
+>     ,("position (a in b using characters)",undefined)
+>     ,("position (a in b using octets)",undefined)
+
 
 TODO: position expressions
 
@@ -1662,6 +1748,9 @@ TODO: extract expression
 <width bucket count>    ::=   <numeric value expression>
 
 TODO: lots more expressions above
+
+>     ]
+
 
 == 6.28 <string value expression> (p251)
 
@@ -3160,9 +3249,3 @@ TODO: review sort specifications
 >     qe = makeSelect
 >          {qeSelectList = [(Star,Nothing)]
 >          ,qeFrom = [TRSimple [Name "t"]]}
-
-TODO: what happened to the collation in order by?
-Answer: sort used to be a column reference with an optional
-collate. Since it is now a value expression, the collate doesn't need
-to be mentioned here.
-

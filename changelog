@@ -1,4 +1,4 @@
-0.4.0-dev (updated to 7a847045163feb2339ab40ebe93afe2f1c9ad813)
+0.4.0-dev (updated to 705724197463cd19dd8749dfd51e2eb8f1d02b8e)
 	completely remove dependency on haskell-src-exts
 	improve the error messages a great deal
 	fix some trailing whitespace issues in the keyword style functions,
@@ -52,6 +52,11 @@
 	  quote character in the identifier
 	implement complete interval literals (fixed the handling of the
 	  interval qualifier)
+	make most of the standard reserved words actually reserved (still
+	  some gaps)
+	change the natural in join abstract syntax to match the concrete
+	  syntax instead of combining natural, on and using into one field
+	support filter and within group for aggregates
 0.3.1 (commit 5cba9a1cac19d66166aed2876d809aef892ff59f)
 	update to work with ghc 7.8.1
 0.3.0 (commit 9e75fa93650b4f1a08d94f4225a243bcc50445ae)

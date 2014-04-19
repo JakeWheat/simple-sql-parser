@@ -218,6 +218,9 @@ which have been changed to try to improve the layout of the output.
 > valueExpr (Collate v c) =
 >     valueExpr v <+> text "collate" <+> names c
 
+> valueExpr (NextValueFor ns) =
+>     text "next value for" <+> names ns
+
 
 > doubleUpQuotes :: String -> String
 > doubleUpQuotes [] = []
@@ -263,7 +266,6 @@ which have been changed to try to improve the layout of the output.
 >                            LobG -> text "G") m
 >                <+> me (\x -> case x of
 >                        LobCharacters -> text "CHARACTERS"
->                        LobCodeUnits -> text "CODE_UNITS"
 >                        LobOctets -> text "OCTETS") u)
 > typeName (CharTypeName t i cs col) =
 >     names t
