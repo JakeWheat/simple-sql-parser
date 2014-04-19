@@ -8,7 +8,6 @@ We are only interested in the query syntax, goes through sections 5-10
 The goal is to create some coverage tests to get close to supporting a
 large amount of the SQL.
 
-> {-# LANGUAGE OverloadedStrings #-}
 > module Language.SQL.SimpleSQL.SQL2003 (sql2003Tests) where
 
 > import Language.SQL.SimpleSQL.TestTypes
@@ -486,7 +485,7 @@ The <quote symbol> rule consists of two immediately adjacent <quote> marks with 
 >     ,("''"
 >      ,StringLit "")
 >     ,("_francais 'français'"
->      ,TypedLit (TypeName "_francais") "français")
+>      ,TypedLit (TypeName [Name "_francais"]) "français")
 >     ]
 
 TODO: all the stuff with character set representations. (?)
@@ -576,19 +575,19 @@ TODO: separator stuff for all the string literals?
 >     ,("11.11E+23", NumLit "11.11E+23")
 >     ,("11.11E-23", NumLit "11.11E-23")
 
->     ,("+11E23", PrefixOp "+" $ NumLit "11E23")
->     ,("+11E+23", PrefixOp "+" $ NumLit "11E+23")
->     ,("+11E-23", PrefixOp "+" $ NumLit "11E-23")
->     ,("+11.11E23", PrefixOp "+" $ NumLit "11.11E23")
->     ,("+11.11E+23", PrefixOp "+" $ NumLit "11.11E+23")
->     ,("+11.11E-23", PrefixOp "+" $ NumLit "11.11E-23")
+>     ,("+11E23", PrefixOp [Name "+"] $ NumLit "11E23")
+>     ,("+11E+23", PrefixOp [Name "+"] $ NumLit "11E+23")
+>     ,("+11E-23", PrefixOp [Name "+"] $ NumLit "11E-23")
+>     ,("+11.11E23", PrefixOp [Name "+"] $ NumLit "11.11E23")
+>     ,("+11.11E+23", PrefixOp [Name "+"] $ NumLit "11.11E+23")
+>     ,("+11.11E-23", PrefixOp [Name "+"] $ NumLit "11.11E-23")
 
->     ,("-11E23", PrefixOp "-" $ NumLit "11E23")
->     ,("-11E+23", PrefixOp "-" $ NumLit "11E+23")
->     ,("-11E-23", PrefixOp "-" $ NumLit "11E-23")
->     ,("-11.11E23", PrefixOp "-" $ NumLit "11.11E23")
->     ,("-11.11E+23", PrefixOp "-" $ NumLit "11.11E+23")
->     ,("-11.11E-23", PrefixOp "-" $ NumLit "11.11E-23")
+>     ,("-11E23", PrefixOp [Name "-"] $ NumLit "11E23")
+>     ,("-11E+23", PrefixOp [Name "-"] $ NumLit "11E+23")
+>     ,("-11E-23", PrefixOp [Name "-"] $ NumLit "11E-23")
+>     ,("-11.11E23", PrefixOp [Name "-"] $ NumLit "11.11E23")
+>     ,("-11.11E+23", PrefixOp [Name "-"] $ NumLit "11.11E+23")
+>     ,("-11.11E-23", PrefixOp [Name "-"] $ NumLit "11.11E-23")
 
 >     ,("11.11e23", NumLit "11.11e23")
 
@@ -665,7 +664,7 @@ normal typed literals
 
 > intervalLiterals :: TestItem
 > intervalLiterals = Group "intervalLiterals literals" $ map (uncurry TestValueExpr)
->     [("interval '1'", TypedLit (TypeName "interval") "1")
+>     [("interval '1'", TypedLit (TypeName [Name "interval"]) "1")
 >     ,("interval '1' day"
 >      ,IntervalLit Nothing "1" (Itf "day" Nothing) Nothing)
 >     ,("interval '1' day(3)"
@@ -689,9 +688,9 @@ normal typed literals
 
 > booleanLiterals :: TestItem
 > booleanLiterals = Group "boolean literals" $ map (uncurry TestValueExpr)
->     [("true", Iden "true")
->     ,("false", Iden "false")
->     ,("unknown", Iden "unknown")
+>     [("true", Iden [Name "true"])
+>     ,("false", Iden [Name "false"])
+>     ,("unknown", Iden [Name "unknown"])
 >     ]
 
 so is unknown effectively an alias for null with a cast or is it
@@ -1016,37 +1015,37 @@ create a list of type name variations:
 >          -- 1111
 >          ,("char varying(5) character set something collate something_insensitive"
 >           ,CharTypeName [Name "char varying"] (Just 5)
->            [Name "something"] (Just "something_insensitive"))
+>            [Name "something"] (Just (Name "something_insensitive")))
 >           -- 0111
 >          ,("char(5) character set something collate something_insensitive"
 >           ,CharTypeName [Name "char"] (Just 5)
->            [Name "something"] (Just "something_insensitive"))
+>            [Name "something"] (Just (Name "something_insensitive")))
 
 >           -- 1011
 >          ,("char varying character set something collate something_insensitive"
 >           ,CharTypeName [Name "char varying"] Nothing
->            [Name "something"] (Just "something_insensitive"))
+>            [Name "something"] (Just (Name "something_insensitive")))
 >           -- 0011
 >          ,("char character set something collate something_insensitive"
 >           ,CharTypeName [Name "char"] Nothing
->            [Name "something"] (Just "something_insensitive"))
+>            [Name "something"] (Just (Name "something_insensitive")))
 
 >           -- 1101
 >          ,("char varying(5) collate something_insensitive"
 >           ,CharTypeName [Name "char varying"] (Just 5)
->            [] (Just "something_insensitive"))
+>            [] (Just (Name "something_insensitive")))
 >           -- 0101
 >          ,("char(5) collate something_insensitive"
 >           ,CharTypeName [Name "char"] (Just 5)
->            [] (Just "something_insensitive"))
+>            [] (Just (Name "something_insensitive")))
 >           -- 1001
 >          ,("char varying collate something_insensitive"
 >           ,CharTypeName [Name "char varying"] Nothing
->            [] (Just "something_insensitive"))
+>            [] (Just (Name "something_insensitive")))
 >           -- 0001
 >          ,("char collate something_insensitive"
 >           ,CharTypeName [Name "char"] Nothing
->            [] (Just "something_insensitive"))
+>            [] (Just (Name "something_insensitive")))
 
 >          -- 1110
 >          ,("char varying(5) character set something"
@@ -1243,10 +1242,10 @@ for or how it works
 
 > contextuallyTypeValueSpec :: TestItem
 > contextuallyTypeValueSpec = Group "contextually typed value specification" $ map (uncurry TestValueExpr)
->     [("null", Iden "null")
->     ,("array[]", Array (Iden "array") [])
+>     [("null", Iden [Name "null"])
+>     ,("array[]", Array (Iden [Name "array"]) [])
 >     ,("multiset[]", MultisetCtor [])
->     ,("default", Iden "default")
+>     ,("default", Iden [Name "default"])
 >     ]
 
 todo: trigraphs?
@@ -1494,15 +1493,15 @@ TODO: reference resolution
 > arrayElementReference :: TestItem
 > arrayElementReference = Group "array element reference" $ map (uncurry TestValueExpr)
 >     [("something[3]"
->      ,Array (Iden "something") [NumLit "3"])
+>      ,Array (Iden [Name "something"]) [NumLit "3"])
 >     ,("(something(a))[x]"
->       ,Array (Parens (App "something" [Iden "a"]))
->         [Iden "x"])
+>       ,Array (Parens (App [Name "something"] [Iden [Name "a"]]))
+>         [Iden [Name "x"]])
 >     ,("(something(a))[x][y] "
 >       ,Array (
->         Array (Parens (App "something" [Iden "a"]))
->         [Iden "x"])
->         [Iden "y"])
+>         Array (Parens (App [Name "something"] [Iden [Name "a"]]))
+>         [Iden [Name "x"]])
+>         [Iden [Name "y"]])
 >     ]
 
 TODO: work out the precendence of the array element reference suffix
@@ -1514,7 +1513,7 @@ TODO: work out the precendence of the array element reference suffix
 
 > multisetElementReference :: TestItem
 > multisetElementReference = Group "multiset element reference" $ map (uncurry TestValueExpr)
->     [("element(something)", App "element" [Iden "something"])
+>     [("element(something)", App [Name "element"] [Iden [Name "something"]])
 >     ]
 
 Not sure why this is called element reference, since it appears to be
@@ -1916,20 +1915,20 @@ operator is ||, same as the string concatenation operator.
 > arrayValueConstructor :: TestItem
 > arrayValueConstructor = Group "array value constructor" $ map (uncurry TestValueExpr)
 >     [("array[1,2,3]"
->      ,Array (Iden "array")
+>      ,Array (Iden [Name "array"])
 >       [NumLit "1", NumLit "2", NumLit "3"])
 >     ,("array[a,b,c]"
->      ,Array (Iden "array")
->       [Iden "a", Iden "b", Iden "c"])
+>      ,Array (Iden [Name "array"])
+>       [Iden [Name "a"], Iden [Name "b"], Iden [Name "c"]])
 >     ,("array(select * from t)"
 >       ,ArrayCtor (makeSelect
 >                   {qeSelectList = [(Star,Nothing)]
->                   ,qeFrom = [TRSimple "t"]}))
+>                   ,qeFrom = [TRSimple [Name "t"]]}))
 >     ,("array(select * from t order by a)"
 >       ,ArrayCtor (makeSelect
 >                   {qeSelectList = [(Star,Nothing)]
->                   ,qeFrom = [TRSimple "t"]
->                   ,qeOrderBy = [SortSpec (Iden "a") DirDefault NullsOrderDefault] }))
+>                   ,qeFrom = [TRSimple [Name "t"]]
+>                   ,qeOrderBy = [SortSpec (Iden [Name "a"]) DirDefault NullsOrderDefault] }))
 >     ]
 
 == 6.37 <multiset value expression> (p286)
@@ -1948,15 +1947,15 @@ operator is ||, same as the string concatenation operator.
 > multisetValueExpression :: TestItem
 > multisetValueExpression = Group "multiset value expression" $ map (uncurry TestValueExpr)
 >    [("a multiset union b"
->     ,MultisetBinOp (Iden "a") Union SQDefault (Iden "b"))
+>     ,MultisetBinOp (Iden [Name "a"]) Union SQDefault (Iden [Name "b"]))
 >    ,("a multiset union all b"
->     ,MultisetBinOp (Iden "a") Union All (Iden "b"))
+>     ,MultisetBinOp (Iden [Name "a"]) Union All (Iden [Name "b"]))
 >    ,("a multiset union distinct b"
->     ,MultisetBinOp (Iden "a") Union Distinct (Iden "b"))
+>     ,MultisetBinOp (Iden [Name "a"]) Union Distinct (Iden [Name "b"]))
 >    ,("a multiset except b"
->     ,MultisetBinOp (Iden "a") Except SQDefault (Iden "b"))
+>     ,MultisetBinOp (Iden [Name "a"]) Except SQDefault (Iden [Name "b"]))
 >    ,("a multiset intersect b"
->     ,MultisetBinOp (Iden "a") Intersect SQDefault (Iden "b"))
+>     ,MultisetBinOp (Iden [Name "a"]) Intersect SQDefault (Iden [Name "b"]))
 >    ]
 
 == 6.38 <multiset value function> (p289)
@@ -1967,7 +1966,7 @@ operator is ||, same as the string concatenation operator.
 
 > multisetValueFunction :: TestItem
 > multisetValueFunction = Group "multiset value function" $ map (uncurry TestValueExpr)
->    [("set(a)", App "set" [Iden "a"])
+>    [("set(a)", App [Name "set"] [Iden [Name "a"]])
 >    ]
 
 == 6.39 <multiset value constructor> (p290)
@@ -1991,7 +1990,7 @@ table is just syntactic sugar for multiset (why does it exist?)
 
 > multisetValueConstructor :: TestItem
 > multisetValueConstructor = Group "multiset value constructor" $ map (uncurry TestValueExpr)
->    [("multiset[a,b,c]", MultisetCtor[Iden "a", Iden "b", Iden "c"])
+>    [("multiset[a,b,c]", MultisetCtor[Iden [Name "a"], Iden [Name "b"], Iden [Name "c"]])
 >    ,("multiset(select * from t)", MultisetQueryCtor qe)
 >    ,("table(select * from t)", MultisetQueryCtor qe)
 >    ]
@@ -2276,23 +2275,23 @@ groups, and not general value expressions.
 > groupbyClause = Group "group by clause" $ map (uncurry TestQueryExpr)
 >     [("select a, sum(b) from t group by a",q)
 >     ,("select a, sum(b),c from t group by a,c"
->       ,q1 {qeGroupBy = qeGroupBy q1 ++ [SimpleGroup $ Iden "c"]})
+>       ,q1 {qeGroupBy = qeGroupBy q1 ++ [SimpleGroup $ Iden [Name "c"]]})
 >     ,("select a, sum(b),c from t group by a,c collate x"
 >       ,q1 {qeGroupBy = qeGroupBy q1
->                        ++ [SimpleGroup $ Collate (Iden "c") "x"]})
+>                        ++ [SimpleGroup $ Collate (Iden [Name "c"]) "x"]})
 >     ,("select a, sum(b),c from t group by a,c collate x having sum(b) > 100"
 >       ,q1 {qeGroupBy = qeGroupBy q1
->                        ++ [SimpleGroup $ Collate (Iden "c") "x"]
->           ,qeHaving = Just (BinOp (App "sum" [Iden "b"])
->                                   ">" (NumLit "100"))})
+>                        ++ [SimpleGroup $ Collate (Iden [Name "c"]) "x"]
+>           ,qeHaving = Just (BinOp (App [Name "sum"] [Iden [Name "b"]])
+>                                   [Name ">"] (NumLit "100"))})
 >     ]
 >   where
 >     q = makeSelect
->         {qeSelectList = [(Iden "a",Nothing), (App "sum" [Iden "b"],Nothing)]
->         ,qeFrom = [TRSimple "t"]
->         ,qeGroupBy = [SimpleGroup $ Iden "a"]
+>         {qeSelectList = [(Iden [Name "a"],Nothing), (App [Name "sum"] [Iden [Name "b"]],Nothing)]
+>         ,qeFrom = [TRSimple [Name "t"]]
+>         ,qeGroupBy = [SimpleGroup $ Iden [Name "a"]]
 >         }
->     q1 = q {qeSelectList = qeSelectList q ++ [(Iden "c", Nothing)]}
+>     q1 = q {qeSelectList = qeSelectList q ++ [(Iden [Name "c"], Nothing)]}
 
 
 7.10 <having clause> (p329)
@@ -2700,19 +2699,19 @@ Specify a quantified comparison.
 > quantifiedComparisonPredicate = Group "quantified comparison predicate" $ map (uncurry TestValueExpr)
 
 >     [("a = any (select * from t)"
->      ,QuantifiedComparison (Iden "a") "=" CPAny qe)
+>      ,QuantifiedComparison (Iden [Name "a"]) [Name "="] CPAny qe)
 >     ,("a <= some (select * from t)"
->      ,QuantifiedComparison (Iden "a") "<=" CPSome qe)
+>      ,QuantifiedComparison (Iden [Name "a"]) [Name "<="] CPSome qe)
 >     ,("a > all (select * from t)"
->      ,QuantifiedComparison (Iden "a") ">" CPAll qe)
+>      ,QuantifiedComparison (Iden [Name "a"]) [Name ">"] CPAll qe)
 >     ,("(a,b) <> all (select * from t)"
 >      ,QuantifiedComparison
->       (SpecialOp "rowctor" [Iden "a",Iden "b"]) "<>" CPAll qe)
+>       (SpecialOp [Name "rowctor"] [Iden [Name "a"],Iden [Name "b"]]) [Name "<>"] CPAll qe)
 >     ]
 >   where
 >     qe = makeSelect
 >          {qeSelectList = [(Star,Nothing)]
->          ,qeFrom = [TRSimple "t"]}
+>          ,qeFrom = [TRSimple [Name "t"]]}
 
 == 8.9 <exists predicate> (p399)
 
@@ -2734,8 +2733,8 @@ Specify a test for the absence of duplicate rows
 >      ,SubQueryExpr SqUnique
 >       $ makeSelect
 >         {qeSelectList = [(Star,Nothing)]
->         ,qeFrom = [TRSimple "t"]
->         ,qeWhere = Just (BinOp (Iden "a") "=" (NumLit "4"))
+>         ,qeFrom = [TRSimple [Name "t"]]
+>         ,qeWhere = Just (BinOp (Iden [Name "a"]) [Name "="] (NumLit "4"))
 >         }
 >      )]
 
@@ -2758,17 +2757,17 @@ Specify a test for matching rows.
 > matchPredicate :: TestItem
 > matchPredicate = Group "match predicate" $ map (uncurry TestValueExpr)
 >     [("a match (select a from t)"
->      ,Match (Iden "a") False qe)
+>      ,Match (Iden [Name "a"]) False qe)
 >     ,("(a,b) match (select a,b from t)"
->      ,Match (SpecialOp "rowctor" [Iden "a", Iden "b"]) False qea)
+>      ,Match (SpecialOp [Name "rowctor"] [Iden [Name "a"], Iden [Name "b"]]) False qea)
 >     ,("(a,b) match unique (select a,b from t)"
->      ,Match (SpecialOp "rowctor" [Iden "a", Iden "b"]) True qea)
+>      ,Match (SpecialOp [Name "rowctor"] [Iden [Name "a"], Iden [Name "b"]]) True qea)
 >     ]
 >   where
 >     qe = makeSelect
->          {qeSelectList = [(Iden "a",Nothing)]
->          ,qeFrom = [TRSimple "t"]}
->     qea = qe {qeSelectList = qeSelectList qe ++ [(Iden "b",Nothing)]}
+>          {qeSelectList = [(Iden [Name "a"],Nothing)]
+>          ,qeFrom = [TRSimple [Name "t"]]}
+>     qea = qe {qeSelectList = qeSelectList qe ++ [(Iden [Name "b"],Nothing)]}
 
 == 8.13 <overlaps predicate> (p405)
 
@@ -2988,7 +2987,7 @@ Specify a default collating sequence.
 > collateClause :: TestItem
 > collateClause = Group "collate clause" $ map (uncurry TestValueExpr)
 >     [("a collate my_collation"
->      ,Collate (Iden "a") "my_collation")]
+>      ,Collate (Iden [Name "a"]) "my_collation")]
 
 10.8 <constraint name definition> and <constraint characteristics> (p501)
 
@@ -3073,19 +3072,19 @@ TODO: review sort specifications
 > sortSpecificationList :: TestItem
 > sortSpecificationList = Group "sort specification list" $ map (uncurry TestQueryExpr)
 >     [("select * from t order by a"
->      ,qe {qeOrderBy = [SortSpec (Iden "a") DirDefault NullsOrderDefault]})
+>      ,qe {qeOrderBy = [SortSpec (Iden [Name "a"]) DirDefault NullsOrderDefault]})
 >     ,("select * from t order by a,b"
->      ,qe {qeOrderBy = [SortSpec (Iden "a") DirDefault NullsOrderDefault
->                       ,SortSpec (Iden "b") DirDefault NullsOrderDefault]})
+>      ,qe {qeOrderBy = [SortSpec (Iden [Name "a"]) DirDefault NullsOrderDefault
+>                       ,SortSpec (Iden [Name "b"]) DirDefault NullsOrderDefault]})
 >     ,("select * from t order by a asc,b"
->      ,qe {qeOrderBy = [SortSpec (Iden "a") Asc NullsOrderDefault
->                       ,SortSpec (Iden "b") DirDefault NullsOrderDefault]})
+>      ,qe {qeOrderBy = [SortSpec (Iden [Name "a"]) Asc NullsOrderDefault
+>                       ,SortSpec (Iden [Name "b"]) DirDefault NullsOrderDefault]})
 >     ,("select * from t order by a desc,b"
->      ,qe {qeOrderBy = [SortSpec (Iden "a") Desc NullsOrderDefault
->                       ,SortSpec (Iden "b") DirDefault NullsOrderDefault]})
+>      ,qe {qeOrderBy = [SortSpec (Iden [Name "a"]) Desc NullsOrderDefault
+>                       ,SortSpec (Iden [Name "b"]) DirDefault NullsOrderDefault]})
 >     ,("select * from t order by a collate x desc,b"
->      ,qe {qeOrderBy = [SortSpec (Collate (Iden "a") "x") Desc NullsOrderDefault
->                       ,SortSpec (Iden "b") DirDefault NullsOrderDefault]})
+>      ,qe {qeOrderBy = [SortSpec (Collate (Iden [Name "a"]) "x") Desc NullsOrderDefault
+>                       ,SortSpec (Iden [Name "b"]) DirDefault NullsOrderDefault]})
 >     ,("select * from t order by 1,2"
 >      ,qe {qeOrderBy = [SortSpec (NumLit "1") DirDefault NullsOrderDefault
 >                       ,SortSpec (NumLit "2") DirDefault NullsOrderDefault]})
@@ -3093,7 +3092,7 @@ TODO: review sort specifications
 >   where
 >     qe = makeSelect
 >          {qeSelectList = [(Star,Nothing)]
->          ,qeFrom = [TRSimple "t"]}
+>          ,qeFrom = [TRSimple [Name "t"]]}
 
 TODO: what happened to the collation in order by?
 Answer: sort used to be a column reference with an optional

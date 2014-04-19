@@ -5,7 +5,6 @@ table refs which are in a separate file.
 
 These are a few misc tests which don't fit anywhere else.
 
-> {-# LANGUAGE OverloadedStrings #-}
 > module Language.SQL.SimpleSQL.QueryExprComponents (queryExprComponentTests) where
 
 > import Language.SQL.SimpleSQL.TestTypes
@@ -37,8 +36,8 @@ These are a few misc tests which don't fit anywhere else.
 >  where
 >    ms d = makeSelect
 >           {qeSetQuantifier = d
->           ,qeSelectList = [(Iden "a",Nothing)]
->           ,qeFrom = [TRSimple "t"]}
+>           ,qeSelectList = [(Iden [Name "a"],Nothing)]
+>           ,qeFrom = [TRSimple [Name "t"]]}
 
 > selectLists :: TestItem
 > selectLists = Group "selectLists" $ map (uncurry TestQueryExpr)
@@ -46,29 +45,29 @@ These are a few misc tests which don't fit anywhere else.
 >       makeSelect {qeSelectList = [(NumLit "1",Nothing)]})
 
 >     ,("select a"
->      ,makeSelect {qeSelectList = [(Iden "a",Nothing)]})
+>      ,makeSelect {qeSelectList = [(Iden [Name "a"],Nothing)]})
 
 >     ,("select a,b"
->      ,makeSelect {qeSelectList = [(Iden "a",Nothing)
->                                  ,(Iden "b",Nothing)]})
+>      ,makeSelect {qeSelectList = [(Iden [Name "a"],Nothing)
+>                                  ,(Iden [Name "b"],Nothing)]})
 
 >     ,("select 1+2,3+4"
 >      ,makeSelect {qeSelectList =
->                      [(BinOp (NumLit "1") "+" (NumLit "2"),Nothing)
->                      ,(BinOp (NumLit "3") "+" (NumLit "4"),Nothing)]})
+>                      [(BinOp (NumLit "1") [Name "+"] (NumLit "2"),Nothing)
+>                      ,(BinOp (NumLit "3") [Name "+"] (NumLit "4"),Nothing)]})
 
 >     ,("select a as a, /*comment*/ b as b"
->      ,makeSelect {qeSelectList = [(Iden "a", Just "a")
->                                  ,(Iden "b", Just "b")]})
+>      ,makeSelect {qeSelectList = [(Iden [Name "a"], Just $ Name "a")
+>                                  ,(Iden [Name "b"], Just $ Name "b")]})
 
 >     ,("select a a, b b"
->      ,makeSelect {qeSelectList = [(Iden "a", Just "a")
->                                  ,(Iden "b", Just "b")]})
+>      ,makeSelect {qeSelectList = [(Iden [Name "a"], Just $ Name "a")
+>                                  ,(Iden [Name "b"], Just $ Name "b")]})
 
 >     ,("select a + b * c"
 >      ,makeSelect {qeSelectList =
->       [(BinOp (Iden "a") "+"
->         (BinOp (Iden "b") "*" (Iden "c"))
+>       [(BinOp (Iden [Name "a"]) [Name "+"]
+>         (BinOp (Iden [Name "b"]) [Name "*"] (Iden [Name "c"]))
 >        ,Nothing)]})
 
 >     ]
@@ -76,47 +75,47 @@ These are a few misc tests which don't fit anywhere else.
 > whereClause :: TestItem
 > whereClause = Group "whereClause" $ map (uncurry TestQueryExpr)
 >     [("select a from t where a = 5"
->      ,makeSelect {qeSelectList = [(Iden "a",Nothing)]
->                  ,qeFrom = [TRSimple "t"]
->                  ,qeWhere = Just $ BinOp (Iden "a") "=" (NumLit "5")})
+>      ,makeSelect {qeSelectList = [(Iden [Name "a"],Nothing)]
+>                  ,qeFrom = [TRSimple [Name "t"]]
+>                  ,qeWhere = Just $ BinOp (Iden [Name "a"]) [Name "="] (NumLit "5")})
 >     ]
 
 > having :: TestItem
 > having = Group "having" $ map (uncurry TestQueryExpr)
 >     [("select a,sum(b) from t group by a having sum(b) > 5"
->      ,makeSelect {qeSelectList = [(Iden "a",Nothing)
->                                  ,(App "sum" [Iden "b"],Nothing)]
->                  ,qeFrom = [TRSimple "t"]
->                  ,qeGroupBy = [SimpleGroup $ Iden "a"]
->                  ,qeHaving = Just $ BinOp (App "sum" [Iden "b"])
->                                           ">" (NumLit "5")
+>      ,makeSelect {qeSelectList = [(Iden [Name "a"],Nothing)
+>                                  ,(App [Name "sum"] [Iden [Name "b"]],Nothing)]
+>                  ,qeFrom = [TRSimple [Name "t"]]
+>                  ,qeGroupBy = [SimpleGroup $ Iden [Name "a"]]
+>                  ,qeHaving = Just $ BinOp (App [Name "sum"] [Iden [Name "b"]])
+>                                           [Name ">"] (NumLit "5")
 >                  })
 >     ]
 
 > orderBy :: TestItem
 > orderBy = Group "orderBy" $ map (uncurry TestQueryExpr)
 >     [("select a from t order by a"
->      ,ms [SortSpec (Iden "a") DirDefault NullsOrderDefault])
+>      ,ms [SortSpec (Iden [Name "a"]) DirDefault NullsOrderDefault])
 
 >     ,("select a from t order by a, b"
->      ,ms [SortSpec (Iden "a") DirDefault NullsOrderDefault
->          ,SortSpec (Iden "b") DirDefault NullsOrderDefault])
+>      ,ms [SortSpec (Iden [Name "a"]) DirDefault NullsOrderDefault
+>          ,SortSpec (Iden [Name "b"]) DirDefault NullsOrderDefault])
 
 >     ,("select a from t order by a asc"
->      ,ms [SortSpec (Iden "a") Asc NullsOrderDefault])
+>      ,ms [SortSpec (Iden [Name "a"]) Asc NullsOrderDefault])
 
 >     ,("select a from t order by a desc, b desc"
->      ,ms [SortSpec (Iden "a") Desc NullsOrderDefault
->          ,SortSpec (Iden "b") Desc NullsOrderDefault])
+>      ,ms [SortSpec (Iden [Name "a"]) Desc NullsOrderDefault
+>          ,SortSpec (Iden [Name "b"]) Desc NullsOrderDefault])
 
 >     ,("select a from t order by a desc nulls first, b desc nulls last"
->      ,ms [SortSpec (Iden "a") Desc NullsFirst
->          ,SortSpec (Iden "b") Desc NullsLast])
+>      ,ms [SortSpec (Iden [Name "a"]) Desc NullsFirst
+>          ,SortSpec (Iden [Name "b"]) Desc NullsLast])
 
 >     ]
 >   where
->     ms o = makeSelect {qeSelectList = [(Iden "a",Nothing)]
->                       ,qeFrom = [TRSimple "t"]
+>     ms o = makeSelect {qeSelectList = [(Iden [Name "a"],Nothing)]
+>                       ,qeFrom = [TRSimple [Name "t"]]
 >                       ,qeOrderBy = o}
 
 > offsetFetch :: TestItem
@@ -136,8 +135,8 @@ These are a few misc tests which don't fit anywhere else.
 >     ]
 >   where
 >     ms o l = makeSelect
->              {qeSelectList = [(Iden "a",Nothing)]
->              ,qeFrom = [TRSimple "t"]
+>              {qeSelectList = [(Iden [Name "a"],Nothing)]
+>              ,qeFrom = [TRSimple [Name "t"]]
 >              ,qeOffset = o
 >              ,qeFetchFirst = l}
 
@@ -165,33 +164,33 @@ These are a few misc tests which don't fit anywhere else.
 >     ]
 >   where
 >     ms1 = makeSelect
->           {qeSelectList = [(Iden "a",Nothing)]
->           ,qeFrom = [TRSimple "t"]}
+>           {qeSelectList = [(Iden [Name "a"],Nothing)]
+>           ,qeFrom = [TRSimple [Name "t"]]}
 >     ms2 = makeSelect
->           {qeSelectList = [(Iden "b",Nothing)]
->           ,qeFrom = [TRSimple "u"]}
+>           {qeSelectList = [(Iden [Name "b"],Nothing)]
+>           ,qeFrom = [TRSimple [Name "u"]]}
 
 
 > withQueries :: TestItem
 > withQueries = Group "with queries" $ map (uncurry TestQueryExpr)
 >     [("with u as (select a from t) select a from u"
->      ,With False [(Alias "u" Nothing, ms1)] ms2)
+>      ,With False [(Alias (Name "u") Nothing, ms1)] ms2)
 
 >     ,("with u(b) as (select a from t) select a from u"
->      ,With False [(Alias "u" (Just ["b"]), ms1)] ms2)
+>      ,With False [(Alias (Name "u") (Just [Name "b"]), ms1)] ms2)
 
 >     ,("with x as (select a from t),\n\
 >       \     u as (select a from x)\n\
 >       \select a from u"
->      ,With False [(Alias "x" Nothing, ms1), (Alias "u" Nothing,ms3)] ms2)
+>      ,With False [(Alias (Name "x") Nothing, ms1), (Alias (Name "u") Nothing,ms3)] ms2)
 
 >     ,("with recursive u as (select a from t) select a from u"
->      ,With True [(Alias "u" Nothing, ms1)] ms2)
+>      ,With True [(Alias (Name "u") Nothing, ms1)] ms2)
 >     ]
 >  where
 >    ms c t = makeSelect
->             {qeSelectList = [(Iden c,Nothing)]
->             ,qeFrom = [TRSimple t]}
+>             {qeSelectList = [(Iden [Name c],Nothing)]
+>             ,qeFrom = [TRSimple [Name t]]}
 >    ms1 = ms "a" "t"
 >    ms2 = ms "a" "u"
 >    ms3 = ms "a" "x"
@@ -205,5 +204,5 @@ These are a few misc tests which don't fit anywhere else.
 
 > tables :: TestItem
 > tables = Group "tables" $ map (uncurry TestQueryExpr)
->     [("table tbl", Table "tbl")
+>     [("table tbl", Table [Name "tbl"])
 >     ]

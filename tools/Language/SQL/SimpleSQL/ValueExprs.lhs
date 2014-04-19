@@ -1,7 +1,6 @@
 
 Tests for parsing value expressions
 
-> {-# LANGUAGE OverloadedStrings #-}
 > module Language.SQL.SimpleSQL.ValueExprs (valueExprTests) where
 
 > import Language.SQL.SimpleSQL.TestTypes
@@ -42,12 +41,12 @@ Tests for parsing value expressions
 >       ,IntervalLit Nothing "3" (Itf "day" Nothing) Nothing)
 >      ,("interval '3' day (3)"
 >       ,IntervalLit Nothing "3" (Itf "day" $ Just (3,Nothing)) Nothing)
->      ,("interval '3 weeks'", TypedLit (TypeName "interval") "3 weeks")
+>      ,("interval '3 weeks'", TypedLit (TypeName [Name "interval"]) "3 weeks")
 >     ]
 
 > identifiers :: TestItem
 > identifiers = Group "identifiers" $ map (uncurry TestValueExpr)
->     [("iden1", Iden "iden1")
+>     [("iden1", Iden [Name "iden1"])
 >     --,("t.a", Iden2 "t" "a")
 >     ,("\"quoted identifier\"", Iden [QName "quoted identifier"])
 >     ]
@@ -67,41 +66,41 @@ Tests for parsing value expressions
 
 > dots :: TestItem
 > dots = Group "dot" $ map (uncurry TestValueExpr)
->     [("t.a", Iden ["t","a"])
->     ,("t.*", BinOp (Iden "t") "." Star)
->     ,("a.b.c", Iden ["a","b","c"])
->     ,("ROW(t.*,42)", App "ROW" [BinOp (Iden "t") "." Star, NumLit "42"])
+>     [("t.a", Iden [Name "t",Name "a"])
+>     ,("t.*", BinOp (Iden [Name "t"]) [Name "."] Star)
+>     ,("a.b.c", Iden [Name "a",Name "b",Name "c"])
+>     ,("ROW(t.*,42)", App [Name "ROW"] [BinOp (Iden [Name "t"]) [Name "."] Star, NumLit "42"])
 >     ]
 
 > app :: TestItem
 > app = Group "app" $ map (uncurry TestValueExpr)
->     [("f()", App "f" [])
->     ,("f(a)", App "f" [Iden "a"])
->     ,("f(a,b)", App "f" [Iden "a", Iden "b"])
+>     [("f()", App [Name "f"] [])
+>     ,("f(a)", App [Name "f"] [Iden [Name "a"]])
+>     ,("f(a,b)", App [Name "f"] [Iden [Name "a"], Iden [Name "b"]])
 >     ]
 
 > caseexp :: TestItem
 > caseexp = Group "caseexp" $ map (uncurry TestValueExpr)
 >     [("case a when 1 then 2 end"
->      ,Case (Just $ Iden "a") [([NumLit "1"]
+>      ,Case (Just $ Iden [Name "a"]) [([NumLit "1"]
 >                               ,NumLit "2")] Nothing)
 
 >     ,("case a when 1 then 2 when 3 then 4 end"
->      ,Case (Just $ Iden "a") [([NumLit "1"], NumLit "2")
+>      ,Case (Just $ Iden [Name "a"]) [([NumLit "1"], NumLit "2")
 >                              ,([NumLit "3"], NumLit "4")] Nothing)
 
 >     ,("case a when 1 then 2 when 3 then 4 else 5 end"
->      ,Case (Just $ Iden "a") [([NumLit "1"], NumLit "2")
+>      ,Case (Just $ Iden [Name "a"]) [([NumLit "1"], NumLit "2")
 >                              ,([NumLit "3"], NumLit "4")]
 >                              (Just $ NumLit "5"))
 
 >     ,("case when a=1 then 2 when a=3 then 4 else 5 end"
->      ,Case Nothing [([BinOp (Iden "a") "=" (NumLit "1")], NumLit "2")
->                    ,([BinOp (Iden "a") "=" (NumLit "3")], NumLit "4")]
+>      ,Case Nothing [([BinOp (Iden [Name "a"]) [Name "="] (NumLit "1")], NumLit "2")
+>                    ,([BinOp (Iden [Name "a"]) [Name "="] (NumLit "3")], NumLit "4")]
 >                    (Just $ NumLit "5"))
 
 >     ,("case a when 1,2 then 10 when 3,4 then 20 end"
->      ,Case (Just $ Iden "a") [([NumLit "1",NumLit "2"]
+>      ,Case (Just $ Iden [Name "a"]) [([NumLit "1",NumLit "2"]
 >                                ,NumLit "10")
 >                              ,([NumLit "3",NumLit "4"]
 >                                ,NumLit "20")]
@@ -118,48 +117,48 @@ Tests for parsing value expressions
 
 > binaryOperators :: TestItem
 > binaryOperators = Group "binaryOperators" $ map (uncurry TestValueExpr)
->     [("a + b", BinOp (Iden "a") "+" (Iden "b"))
+>     [("a + b", BinOp (Iden [Name "a"]) [Name "+"] (Iden [Name "b"]))
 >      -- sanity check fixities
 >      -- todo: add more fixity checking
 
 >     ,("a + b * c"
->      ,BinOp  (Iden "a") "+"
->              (BinOp (Iden "b") "*" (Iden "c")))
+>      ,BinOp  (Iden [Name "a"]) [Name "+"]
+>              (BinOp (Iden [Name "b"]) [Name "*"] (Iden [Name "c"])))
 
 >     ,("a * b + c"
->      ,BinOp (BinOp (Iden "a") "*" (Iden "b"))
->             "+" (Iden "c"))
+>      ,BinOp (BinOp (Iden [Name "a"]) [Name "*"] (Iden [Name "b"]))
+>             [Name "+"] (Iden [Name "c"]))
 >     ]
 
 > unaryOperators :: TestItem
 > unaryOperators = Group "unaryOperators" $ map (uncurry TestValueExpr)
->     [("not a", PrefixOp "not" $ Iden "a")
->     ,("not not a", PrefixOp "not" $ PrefixOp "not" $ Iden "a")
->     ,("+a", PrefixOp "+" $ Iden "a")
->     ,("-a", PrefixOp "-" $ Iden "a")
+>     [("not a", PrefixOp [Name "not"] $ Iden [Name "a"])
+>     ,("not not a", PrefixOp [Name "not"] $ PrefixOp [Name "not"] $ Iden [Name "a"])
+>     ,("+a", PrefixOp [Name "+"] $ Iden [Name "a"])
+>     ,("-a", PrefixOp [Name "-"] $ Iden [Name "a"])
 >     ]
 
 
 > casts :: TestItem
 > casts = Group "operators" $ map (uncurry TestValueExpr)
 >     [("cast('1' as int)"
->      ,Cast (StringLit "1") $ TypeName "int")
+>      ,Cast (StringLit "1") $ TypeName [Name "int"])
 
 >     ,("int '3'"
->      ,TypedLit (TypeName "int") "3")
+>      ,TypedLit (TypeName [Name "int"]) "3")
 
 >     ,("cast('1' as double precision)"
->      ,Cast (StringLit "1") $ TypeName "double precision")
+>      ,Cast (StringLit "1") $ TypeName [Name "double precision"])
 
 >     ,("cast('1' as float(8))"
->      ,Cast (StringLit "1") $ PrecTypeName "float" 8)
+>      ,Cast (StringLit "1") $ PrecTypeName [Name "float"] 8)
 
 >     ,("cast('1' as decimal(15,2))"
->      ,Cast (StringLit "1") $ PrecScaleTypeName "decimal" 15 2)
+>      ,Cast (StringLit "1") $ PrecScaleTypeName [Name "decimal"] 15 2)
 
 
 >     ,("double precision '3'"
->      ,TypedLit (TypeName "double precision") "3")
+>      ,TypedLit (TypeName [Name "double precision"]) "3")
 >     ]
 
 > subqueries :: TestItem
@@ -168,113 +167,113 @@ Tests for parsing value expressions
 >     ,("(select a from t)", SubQueryExpr SqSq ms)
 
 >     ,("a in (select a from t)"
->      ,In True (Iden "a") (InQueryExpr ms))
+>      ,In True (Iden [Name "a"]) (InQueryExpr ms))
 
 >     ,("a not in (select a from t)"
->      ,In False (Iden "a") (InQueryExpr ms))
+>      ,In False (Iden [Name "a"]) (InQueryExpr ms))
 
 >     ,("a > all (select a from t)"
->      ,QuantifiedComparison (Iden "a") ">" CPAll ms)
+>      ,QuantifiedComparison (Iden [Name "a"]) [Name ">"] CPAll ms)
 
 >     ,("a = some (select a from t)"
->      ,QuantifiedComparison (Iden "a") "=" CPSome ms)
+>      ,QuantifiedComparison (Iden [Name "a"]) [Name "="] CPSome ms)
 
 >     ,("a <= any (select a from t)"
->      ,QuantifiedComparison (Iden "a") "<=" CPAny ms)
+>      ,QuantifiedComparison (Iden [Name "a"]) [Name "<="] CPAny ms)
 >     ]
 >   where
 >     ms = makeSelect
->          {qeSelectList = [(Iden "a",Nothing)]
->          ,qeFrom = [TRSimple "t"]
+>          {qeSelectList = [(Iden [Name "a"],Nothing)]
+>          ,qeFrom = [TRSimple [Name "t"]]
 >          }
 
 > miscOps :: TestItem
 > miscOps = Group "unaryOperators" $ map (uncurry TestValueExpr)
 >     [("a in (1,2,3)"
->      ,In True (Iden "a") $ InList $ map NumLit ["1","2","3"])
+>      ,In True (Iden [Name "a"]) $ InList $ map NumLit ["1","2","3"])
 
->     ,("a is null", PostfixOp "is null" (Iden "a"))
->     ,("a is not null", PostfixOp "is not null" (Iden "a"))
->     ,("a is true", PostfixOp "is true" (Iden "a"))
->     ,("a is not true", PostfixOp "is not true" (Iden "a"))
->     ,("a is false", PostfixOp "is false" (Iden "a"))
->     ,("a is not false", PostfixOp "is not false" (Iden "a"))
->     ,("a is unknown", PostfixOp "is unknown" (Iden "a"))
->     ,("a is not unknown", PostfixOp "is not unknown" (Iden "a"))
->     ,("a is distinct from b", BinOp (Iden "a") "is distinct from"(Iden "b"))
+>     ,("a is null", PostfixOp [Name "is null"] (Iden [Name "a"]))
+>     ,("a is not null", PostfixOp [Name "is not null"] (Iden [Name "a"]))
+>     ,("a is true", PostfixOp [Name "is true"] (Iden [Name "a"]))
+>     ,("a is not true", PostfixOp [Name "is not true"] (Iden [Name "a"]))
+>     ,("a is false", PostfixOp [Name "is false"] (Iden [Name "a"]))
+>     ,("a is not false", PostfixOp [Name "is not false"] (Iden [Name "a"]))
+>     ,("a is unknown", PostfixOp [Name "is unknown"] (Iden [Name "a"]))
+>     ,("a is not unknown", PostfixOp [Name "is not unknown"] (Iden [Name "a"]))
+>     ,("a is distinct from b", BinOp (Iden [Name "a"]) [Name "is distinct from"] (Iden [Name "b"]))
 
 >     ,("a is not distinct from b"
->      ,BinOp (Iden "a") "is not distinct from" (Iden "b"))
+>      ,BinOp (Iden [Name "a"]) [Name "is not distinct from"] (Iden [Name "b"]))
 
->     ,("a like b", BinOp (Iden "a") "like" (Iden "b"))
->     ,("a not like b", BinOp (Iden "a") "not like" (Iden "b"))
->     ,("a is similar to b", BinOp (Iden "a") "is similar to" (Iden "b"))
+>     ,("a like b", BinOp (Iden [Name "a"]) [Name "like"] (Iden [Name "b"]))
+>     ,("a not like b", BinOp (Iden [Name "a"]) [Name "not like"] (Iden [Name "b"]))
+>     ,("a is similar to b", BinOp (Iden [Name "a"]) [Name "is similar to"] (Iden [Name "b"]))
 
 >     ,("a is not similar to b"
->      ,BinOp (Iden "a") "is not similar to" (Iden "b"))
+>      ,BinOp (Iden [Name "a"]) [Name "is not similar to"] (Iden [Name "b"]))
 
->     ,("a overlaps b", BinOp (Iden "a") "overlaps" (Iden "b"))
+>     ,("a overlaps b", BinOp (Iden [Name "a"]) [Name "overlaps"] (Iden [Name "b"]))
 
 
 special operators
 
->     ,("a between b and c", SpecialOp "between" [Iden "a"
->                                                ,Iden "b"
->                                                ,Iden "c"])
+>     ,("a between b and c", SpecialOp [Name "between"] [Iden [Name "a"]
+>                                                ,Iden [Name "b"]
+>                                                ,Iden [Name "c"]])
 
->     ,("a not between b and c", SpecialOp "not between" [Iden "a"
->                                                        ,Iden "b"
->                                                        ,Iden "c"])
+>     ,("a not between b and c", SpecialOp [Name "not between"] [Iden [Name "a"]
+>                                                        ,Iden [Name "b"]
+>                                                        ,Iden [Name "c"]])
 >     ,("(1,2)"
->      ,SpecialOp "rowctor" [NumLit "1", NumLit "2"])
+>      ,SpecialOp [Name "rowctor"] [NumLit "1", NumLit "2"])
 
 
 keyword special operators
 
 >     ,("extract(day from t)"
->      , SpecialOpK "extract" (Just $ Iden "day") [("from", Iden "t")])
+>      , SpecialOpK [Name "extract"] (Just $ Iden [Name "day"]) [("from", Iden [Name "t"])])
 
 >     ,("substring(x from 1 for 2)"
->      ,SpecialOpK "substring" (Just $ Iden "x") [("from", NumLit "1")
+>      ,SpecialOpK [Name "substring"] (Just $ Iden [Name "x"]) [("from", NumLit "1")
 >                                                ,("for", NumLit "2")])
 
 >     ,("substring(x from 1)"
->      ,SpecialOpK "substring" (Just $ Iden "x") [("from", NumLit "1")])
+>      ,SpecialOpK [Name "substring"] (Just $ Iden [Name "x"]) [("from", NumLit "1")])
 
 >     ,("substring(x for 2)"
->      ,SpecialOpK "substring" (Just $ Iden "x") [("for", NumLit "2")])
+>      ,SpecialOpK [Name "substring"] (Just $ Iden [Name "x"]) [("for", NumLit "2")])
 
 >     ,("substring(x from 1 for 2 collate C)"
->      ,SpecialOpK "substring" (Just $ Iden "x")
+>      ,SpecialOpK [Name "substring"] (Just $ Iden [Name "x"])
 >           [("from", NumLit "1")
 >           ,("for", Collate (NumLit "2") "C")])
 
 this doesn't work because of a overlap in the 'in' parser
 
 >     ,("POSITION( string1 IN string2 )"
->      ,SpecialOpK "position" (Just $ Iden "string1") [("in", Iden "string2")])
+>      ,SpecialOpK [Name "position"] (Just $ Iden [Name "string1"]) [("in", Iden [Name "string2"])])
 
 >     ,("CONVERT(char_value USING conversion_char_name)"
->      ,SpecialOpK "convert" (Just $ Iden "char_value")
->           [("using", Iden "conversion_char_name")])
+>      ,SpecialOpK [Name "convert"] (Just $ Iden [Name "char_value"])
+>           [("using", Iden [Name "conversion_char_name"])])
 
 >     ,("TRANSLATE(char_value USING translation_name)"
->      ,SpecialOpK "translate" (Just $ Iden "char_value")
->           [("using", Iden "translation_name")])
+>      ,SpecialOpK [Name "translate"] (Just $ Iden [Name "char_value"])
+>           [("using", Iden [Name "translation_name"])])
 
 OVERLAY(string PLACING embedded_string FROM start
 [FOR length])
 
 >     ,("OVERLAY(string PLACING embedded_string FROM start)"
->      ,SpecialOpK "overlay" (Just $ Iden "string")
->           [("placing", Iden "embedded_string")
->           ,("from", Iden "start")])
+>      ,SpecialOpK [Name "overlay"] (Just $ Iden [Name "string"])
+>           [("placing", Iden [Name "embedded_string"])
+>           ,("from", Iden [Name "start"])])
 
 >     ,("OVERLAY(string PLACING embedded_string FROM start FOR length)"
->      ,SpecialOpK "overlay" (Just $ Iden "string")
->           [("placing", Iden "embedded_string")
->           ,("from", Iden "start")
->           ,("for", Iden "length")])
+>      ,SpecialOpK [Name "overlay"] (Just $ Iden [Name "string"])
+>           [("placing", Iden [Name "embedded_string"])
+>           ,("from", Iden [Name "start"])
+>           ,("for", Iden [Name "length"])])
 
 TRIM( [ [{LEADING | TRAILING | BOTH}] [removal_char] FROM ]
 target_string
@@ -283,117 +282,117 @@ target_string
 
 
 >     ,("trim(from target_string)"
->      ,SpecialOpK "trim" Nothing
+>      ,SpecialOpK [Name "trim"] Nothing
 >           [("both", StringLit " ")
->           ,("from", Iden "target_string")])
+>           ,("from", Iden [Name "target_string"])])
 
 >     ,("trim(leading from target_string)"
->      ,SpecialOpK "trim" Nothing
+>      ,SpecialOpK [Name "trim"] Nothing
 >           [("leading", StringLit " ")
->           ,("from", Iden "target_string")])
+>           ,("from", Iden [Name "target_string"])])
 
 >     ,("trim(trailing from target_string)"
->      ,SpecialOpK "trim" Nothing
+>      ,SpecialOpK [Name "trim"] Nothing
 >           [("trailing", StringLit " ")
->           ,("from", Iden "target_string")])
+>           ,("from", Iden [Name "target_string"])])
 
 >     ,("trim(both from target_string)"
->      ,SpecialOpK "trim" Nothing
+>      ,SpecialOpK [Name "trim"] Nothing
 >           [("both", StringLit " ")
->           ,("from", Iden "target_string")])
+>           ,("from", Iden [Name "target_string"])])
 
 
 >     ,("trim(leading 'x' from target_string)"
->      ,SpecialOpK "trim" Nothing
+>      ,SpecialOpK [Name "trim"] Nothing
 >           [("leading", StringLit "x")
->           ,("from", Iden "target_string")])
+>           ,("from", Iden [Name "target_string"])])
 
 >     ,("trim(trailing 'y' from target_string)"
->      ,SpecialOpK "trim" Nothing
+>      ,SpecialOpK [Name "trim"] Nothing
 >           [("trailing", StringLit "y")
->           ,("from", Iden "target_string")])
+>           ,("from", Iden [Name "target_string"])])
 
 >     ,("trim(both 'z' from target_string collate C)"
->      ,SpecialOpK "trim" Nothing
+>      ,SpecialOpK [Name "trim"] Nothing
 >           [("both", StringLit "z")
->           ,("from", Collate (Iden "target_string") "C")])
+>           ,("from", Collate (Iden [Name "target_string"]) "C")])
 
 >     ,("trim(leading from target_string)"
->      ,SpecialOpK "trim" Nothing
+>      ,SpecialOpK [Name "trim"] Nothing
 >           [("leading", StringLit " ")
->           ,("from", Iden "target_string")])
+>           ,("from", Iden [Name "target_string"])])
 
 
 >     ]
 
 > aggregates :: TestItem
 > aggregates = Group "aggregates" $ map (uncurry TestValueExpr)
->     [("count(*)",App "count" [Star])
+>     [("count(*)",App [Name "count"] [Star])
 
 >     ,("sum(a order by a)"
->     ,AggregateApp "sum" SQDefault [Iden "a"]
->                   [SortSpec (Iden "a") DirDefault NullsOrderDefault])
+>     ,AggregateApp [Name "sum"] SQDefault [Iden [Name "a"]]
+>                   [SortSpec (Iden [Name "a"]) DirDefault NullsOrderDefault])
 
 >     ,("sum(all a)"
->     ,AggregateApp "sum" All [Iden "a"] [])
+>     ,AggregateApp [Name "sum"] All [Iden [Name "a"]] [])
 
 >     ,("count(distinct a)"
->     ,AggregateApp "count" Distinct [Iden "a"] [])
+>     ,AggregateApp [Name "count"] Distinct [Iden [Name "a"]] [])
 >     ]
 
 > windowFunctions :: TestItem
 > windowFunctions = Group "windowFunctions" $ map (uncurry TestValueExpr)
->     [("max(a) over ()", WindowApp "max" [Iden "a"] [] [] Nothing)
->     ,("count(*) over ()", WindowApp "count" [Star] [] [] Nothing)
+>     [("max(a) over ()", WindowApp [Name "max"] [Iden [Name "a"]] [] [] Nothing)
+>     ,("count(*) over ()", WindowApp [Name "count"] [Star] [] [] Nothing)
 
 >     ,("max(a) over (partition by b)"
->      ,WindowApp "max" [Iden "a"] [Iden "b"] [] Nothing)
+>      ,WindowApp [Name "max"] [Iden [Name "a"]] [Iden [Name "b"]] [] Nothing)
 
 >     ,("max(a) over (partition by b,c)"
->      ,WindowApp "max" [Iden "a"] [Iden "b",Iden "c"] [] Nothing)
+>      ,WindowApp [Name "max"] [Iden [Name "a"]] [Iden [Name "b"],Iden [Name "c"]] [] Nothing)
 
 >     ,("sum(a) over (order by b)"
->      ,WindowApp "sum" [Iden "a"] []
->           [SortSpec (Iden "b") DirDefault NullsOrderDefault] Nothing)
+>      ,WindowApp [Name "sum"] [Iden [Name "a"]] []
+>           [SortSpec (Iden [Name "b"]) DirDefault NullsOrderDefault] Nothing)
 
 >     ,("sum(a) over (order by b desc,c)"
->      ,WindowApp "sum" [Iden "a"] []
->           [SortSpec (Iden "b") Desc NullsOrderDefault
->           ,SortSpec (Iden "c") DirDefault NullsOrderDefault] Nothing)
+>      ,WindowApp [Name "sum"] [Iden [Name "a"]] []
+>           [SortSpec (Iden [Name "b"]) Desc NullsOrderDefault
+>           ,SortSpec (Iden [Name "c"]) DirDefault NullsOrderDefault] Nothing)
 
 >     ,("sum(a) over (partition by b order by c)"
->      ,WindowApp "sum" [Iden "a"] [Iden "b"]
->           [SortSpec (Iden "c") DirDefault NullsOrderDefault] Nothing)
+>      ,WindowApp [Name "sum"] [Iden [Name "a"]] [Iden [Name "b"]]
+>           [SortSpec (Iden [Name "c"]) DirDefault NullsOrderDefault] Nothing)
 
 >     ,("sum(a) over (partition by b order by c range unbounded preceding)"
->      ,WindowApp "sum" [Iden "a"] [Iden "b"]
->       [SortSpec (Iden "c") DirDefault NullsOrderDefault]
+>      ,WindowApp [Name "sum"] [Iden [Name "a"]] [Iden [Name "b"]]
+>       [SortSpec (Iden [Name "c"]) DirDefault NullsOrderDefault]
 >       $ Just $ FrameFrom FrameRange UnboundedPreceding)
 
 >     ,("sum(a) over (partition by b order by c range 5 preceding)"
->      ,WindowApp "sum" [Iden "a"] [Iden "b"]
->       [SortSpec (Iden "c") DirDefault NullsOrderDefault]
+>      ,WindowApp [Name "sum"] [Iden [Name "a"]] [Iden [Name "b"]]
+>       [SortSpec (Iden [Name "c"]) DirDefault NullsOrderDefault]
 >       $ Just $ FrameFrom FrameRange $ Preceding (NumLit "5"))
 
 >     ,("sum(a) over (partition by b order by c range current row)"
->      ,WindowApp "sum" [Iden "a"] [Iden "b"]
->       [SortSpec (Iden "c") DirDefault NullsOrderDefault]
+>      ,WindowApp [Name "sum"] [Iden [Name "a"]] [Iden [Name "b"]]
+>       [SortSpec (Iden [Name "c"]) DirDefault NullsOrderDefault]
 >       $ Just $ FrameFrom FrameRange Current)
 
 >     ,("sum(a) over (partition by b order by c rows 5 following)"
->      ,WindowApp "sum" [Iden "a"] [Iden "b"]
->       [SortSpec (Iden "c") DirDefault NullsOrderDefault]
+>      ,WindowApp [Name "sum"] [Iden [Name "a"]] [Iden [Name "b"]]
+>       [SortSpec (Iden [Name "c"]) DirDefault NullsOrderDefault]
 >       $ Just $ FrameFrom FrameRows $ Following (NumLit "5"))
 
 >     ,("sum(a) over (partition by b order by c range unbounded following)"
->      ,WindowApp "sum" [Iden "a"] [Iden "b"]
->       [SortSpec (Iden "c") DirDefault NullsOrderDefault]
+>      ,WindowApp [Name "sum"] [Iden [Name "a"]] [Iden [Name "b"]]
+>       [SortSpec (Iden [Name "c"]) DirDefault NullsOrderDefault]
 >       $ Just $ FrameFrom FrameRange UnboundedFollowing)
 
 >     ,("sum(a) over (partition by b order by c \n\
 >       \range between 5 preceding and 5 following)"
->      ,WindowApp "sum" [Iden "a"] [Iden "b"]
->       [SortSpec (Iden "c") DirDefault NullsOrderDefault]
+>      ,WindowApp [Name "sum"] [Iden [Name "a"]] [Iden [Name "b"]]
+>       [SortSpec (Iden [Name "c"]) DirDefault NullsOrderDefault]
 >       $ Just $ FrameBetween FrameRange
 >                             (Preceding (NumLit "5"))
 >                             (Following (NumLit "5")))
@@ -402,6 +401,6 @@ target_string
 
 > parens :: TestItem
 > parens = Group "parens" $ map (uncurry TestValueExpr)
->     [("(a)", Parens (Iden "a"))
->     ,("(a + b)", Parens (BinOp (Iden "a") "+" (Iden "b")))
+>     [("(a)", Parens (Iden [Name "a"]))
+>     ,("(a + b)", Parens (BinOp (Iden [Name "a"]) [Name "+"] (Iden [Name "b"])))
 >     ]

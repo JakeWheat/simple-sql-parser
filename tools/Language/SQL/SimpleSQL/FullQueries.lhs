@@ -1,7 +1,6 @@
 
 Some tests for parsing full queries.
 
-> {-# LANGUAGE OverloadedStrings #-}
 > module Language.SQL.SimpleSQL.FullQueries (fullQueriesTests) where
 
 > import Language.SQL.SimpleSQL.TestTypes
@@ -12,8 +11,8 @@ Some tests for parsing full queries.
 > fullQueriesTests = Group "queries" $ map (uncurry TestQueryExpr)
 >     [("select count(*) from t"
 >      ,makeSelect
->       {qeSelectList = [(App "count" [Star], Nothing)]
->       ,qeFrom = [TRSimple "t"]
+>       {qeSelectList = [(App [Name "count"] [Star], Nothing)]
+>       ,qeFrom = [TRSimple [Name "t"]]
 >       }
 >      )
 
@@ -24,16 +23,17 @@ Some tests for parsing full queries.
 >       \  having count(1) > 5\n\
 >       \  order by s"
 >      ,makeSelect
->       {qeSelectList = [(Iden "a", Nothing)
->                       ,(App "sum" [BinOp (Iden "c")
->                                          "+" (Iden "d")]
->                        ,Just "s")]
->       ,qeFrom = [TRSimple "t", TRSimple "u"]
->       ,qeWhere = Just $ BinOp (Iden "a") ">" (NumLit "5")
->       ,qeGroupBy = [SimpleGroup $ Iden "a"]
->       ,qeHaving = Just $ BinOp (App "count" [NumLit "1"])
->                                ">" (NumLit "5")
->       ,qeOrderBy = [SortSpec (Iden "s") DirDefault NullsOrderDefault]
+>       {qeSelectList = [(Iden [Name "a"], Nothing)
+>                       ,(App [Name "sum"]
+>                         [BinOp (Iden [Name "c"])
+>                                [Name "+"] (Iden [Name "d"])]
+>                        ,Just $ Name "s")]
+>       ,qeFrom = [TRSimple [Name "t"], TRSimple [Name "u"]]
+>       ,qeWhere = Just $ BinOp (Iden [Name "a"]) [Name ">"] (NumLit "5")
+>       ,qeGroupBy = [SimpleGroup $ Iden [Name "a"]]
+>       ,qeHaving = Just $ BinOp (App [Name "count"] [NumLit "1"])
+>                                [Name ">"] (NumLit "5")
+>       ,qeOrderBy = [SortSpec (Iden [Name "s"]) DirDefault NullsOrderDefault]
 >       }
 >      )
 >     ]
