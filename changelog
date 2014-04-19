@@ -1,5 +1,5 @@
 0.4.0-dev (updated to 705724197463cd19dd8749dfd51e2eb8f1d02b8e)
-	completely remove dependency on haskell-src-exts
+	remove dependency on haskell-src-exts
 	improve the error messages a great deal
 	fix some trailing whitespace issues in the keyword style functions,
 	  e.g. extract(day from x), dealing with trailing whitespace on
