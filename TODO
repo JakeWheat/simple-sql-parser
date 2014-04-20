@@ -5,6 +5,8 @@ continue 2003 review and tests
    - base of error messages but add some more variations
 3. start thinking about tests for invalid syntax
 
+review names in the syntax for correspondence with sql standard, avoid
+   gratuitous differences
 
 touch up the expr hack as best as can
 
