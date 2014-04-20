@@ -16,6 +16,7 @@ which parts aren't currently supported.
 >     [literals
 >     ,identifiers
 >     ,typeNameTests
+>     ,fieldDefinition
 >     ,valueExpressions
 >     ,queryExpressions
 >     ,scalarSubquery
@@ -494,6 +495,11 @@ Specify a non-null value.
 >      ,StringLit "a quote: ', stuff")
 >     ,("''"
 >      ,StringLit "")
+
+I'm not sure how this should work. Maybe the parser should reject non
+ascii characters in strings and identifiers unless the current SQL
+character set allows them.
+
 >     ,("_francais 'français'"
 >      ,TypedLit (TypeName [Name "_francais"]) "français")
 >     ]
@@ -1055,6 +1061,8 @@ create a list of type name variations:
 >          ,("decimal(15,2)", PrecScaleTypeName [Name "decimal"] 15 2)
 >          -- lob prec + with multiname
 >          ,("blob(3M)", LobTypeName [Name "blob"] 3 (Just LobM) Nothing)
+>          ,("blob(3T)", LobTypeName [Name "blob"] 3 (Just LobT) Nothing)
+>          ,("blob(3P)", LobTypeName [Name "blob"] 3 (Just LobP) Nothing)
 >          ,("blob(4M characters) "
 >           ,LobTypeName [Name "blob"] 4 (Just LobM) (Just LobCharacters))
 >          ,("blob(6G octets) "
@@ -1145,8 +1153,6 @@ create a list of type name variations:
 >          ,("interval year(4) to second(2,3)"
 >           ,IntervalTypeName (Itf "year" $ Just (4,Nothing))
 >                             (Just $ Itf "second" $ Just (2, Just 3)))
->          ,("ref (t)", RefTypeName [Name "t"] Nothing)
->          ,("ref (t) scope q", RefTypeName [Name "t"] (Just [Name "q"]))
 >          ]
 
 Now test each variation in both cast expression and typed literal
@@ -1169,7 +1175,13 @@ Define a field of a row type.
 
 <field definition> ::= <field name> <data type>
 
-Tested in the row type above.
+> fieldDefinition :: TestItem
+> fieldDefinition = Group "field definition"
+>     $ map (uncurry TestValueExpr)
+>     [("cast('(1,2)' as row(a int,b char))"
+>      ,Cast (StringLit "(1,2)")
+>      $ RowTypeName [(Name "a", TypeName [Name "int"])
+>                    ,(Name "b", TypeName [Name "char"])])]
 
 == 6.3 <value expression primary>
 
@@ -1214,6 +1226,8 @@ Specify a value that is syntactically self-delimited.
 >     [generalValueSpecification
 >     ,parameterSpecification
 >     ,contextuallyTypedValueSpecification
+>     ,identifierChain
+>     ,columnReference
 >     ,setFunctionSpecification
 >     ,windowFunction
 >     ,nestedWindowFunction
@@ -1384,7 +1398,10 @@ Disambiguate a <period>-separated chain of identifiers.
 
 <basic identifier chain> ::= <identifier chain>
 
-tested with the identifier tests above
+> identifierChain :: TestItem
+> identifierChain = Group "identifier chain"
+>     $ map (uncurry TestValueExpr)
+>     [("a.b", Iden [Name "a",Name "b"])]
 
 == 6.7 <column reference>
 
@@ -1395,7 +1412,10 @@ Reference a column.
     <basic identifier chain>
   | MODULE <period> <qualified identifier> <period> <column name>
 
-tested with the identifier tests above
+> columnReference :: TestItem
+> columnReference = Group "column reference"
+>     $ map (uncurry TestValueExpr)
+>     [("module.a.b", Iden [Name "module",Name "a",Name "b"])]
 
 == 6.8 <SQL parameter reference>
 
@@ -1403,8 +1423,6 @@ Function
 Reference an SQL parameter.
 
 <SQL parameter reference> ::= <basic identifier chain>
-
-tested with the identifier tests above
 
 == 6.9 <set function specification>
 
@@ -1590,6 +1608,11 @@ Specify a conditional value.
   | <set predicate part 2>
   | <type predicate part 2>
 
+I haven't seen these part 2 style when operands in the wild. It
+doesn't even allow all the binary operators here. We will allow them
+all, and parser and represent these expressions by considering all the
+binary ops as unary prefix ops.
+
 <result> ::= <result expression> | NULL
 
 <result expression> ::= <value expression>
@@ -1610,8 +1633,6 @@ Specify a data conversion.
 <cast operand> ::= <value expression> | <implicitly typed value specification>
 
 <cast target> ::= <domain name> | <data type>
-
-This is already tested with the type name tests
 
 > castSpecification :: TestItem
 > castSpecification = Group "cast specification"
@@ -2230,7 +2251,6 @@ Specify an interval value.
 > intervalValueExpression :: TestItem
 > intervalValueExpression = Group "interval value expression"
 >     [-- todo: interval value expression
->      intervalValueFunction
 >     ]
 
 
@@ -2334,7 +2354,6 @@ Specify an array value.
 > arrayValueExpression :: TestItem
 > arrayValueExpression = Group "array value expression"
 >     [-- todo: array value expression
->      arrayValueFunction
 >     ]
 
 == 6.37 <array value function>
@@ -3080,7 +3099,9 @@ the result of recursive query expressions.
 == 7.15 <subquery>
 
 Function
-Specify a scalar value, a row, or a table derived from a <query expression>.
+
+Specify a scalar value, a row, or a table derived from a <query
+expression>.
 
 <scalar subquery> ::= <subquery>
 
@@ -3169,9 +3190,24 @@ Specify a comparison of two row values.
 
 > comparisonPredicates :: TestItem
 > comparisonPredicates = Group "comparison predicates"
->     [-- todo: comparison predicates
+>     $ map (uncurry TestValueExpr)
+>     $ map mkOp ["=", "<>", "<", ">", "<=", ">="]
+>     ++ [("ROW(a) = ROW(b)"
+>         ,BinOp (App [Name "ROW"] [a])
+>                [Name "="]
+>                (App [Name "ROW"] [b]))
+>        ,("(a,b) = (c,d)"
+>         ,BinOp (SpecialOp [Name "rowctor"] [a,b])
+>            [Name "="]
+>            (SpecialOp [Name "rowctor"] [Iden [Name "c"], Iden [Name "d"]]))
 >     ]
+>   where
+>     mkOp nm = ("a " ++ nm ++ " b"
+>               ,BinOp a [Name nm] b)
+>     a = Iden [Name "a"]
+>     b = Iden [Name "b"]
 
+TODO: what other tests, more complex expressions with comparisons?
 
 == 8.3 <between predicate>
 

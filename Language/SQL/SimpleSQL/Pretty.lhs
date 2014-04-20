@@ -263,7 +263,9 @@ which have been changed to try to improve the layout of the output.
 >                <> me (\x -> case x of
 >                            LobK -> text "K"
 >                            LobM -> text "M"
->                            LobG -> text "G") m
+>                            LobG -> text "G"
+>                            LobT -> text "T"
+>                            LobP -> text "P") m
 >                <+> me (\x -> case x of
 >                        LobCharacters -> text "CHARACTERS"
 >                        LobOctets -> text "OCTETS") u)
@@ -296,11 +298,6 @@ which have been changed to try to improve the layout of the output.
 
 > typeName (MultisetTypeName tn) =
 >     typeName tn <+> text "multiset"
-
-> typeName (RefTypeName rt sc) =
->     text "ref"
->     <> parens (names rt)
->     <+> me (\x -> text "scope" <+> names x) sc
 
 > intervalTypeField :: IntervalTypeField -> Doc
 > intervalTypeField (Itf n p) =

@@ -420,7 +420,7 @@ TODO: this code needs heavy refactoring
 
 > typeName :: Parser TypeName
 > typeName =
->     (rowTypeName <|> intervalTypeName <|> ref <|> otherTypeName)
+>     (rowTypeName <|> intervalTypeName <|> otherTypeName)
 >     >>= tnSuffix
 >     <?> "typename"
 >   where
@@ -432,11 +432,6 @@ TODO: this code needs heavy refactoring
 >     intervalTypeName =
 >         keyword_ "interval" >>
 >         uncurry IntervalTypeName <$> intervalQualifier
->     ref =
->         keyword_ "ref" >>
->         RefTypeName
->         <$> parens (names)
->         <*> optionMaybe (keyword_ "scope" *> names)
 >     -- other type names, which includes:
 >     -- precision, scale, lob scale and units, timezone, character
 >     -- set and collations
@@ -478,6 +473,8 @@ TODO: this code needs heavy refactoring
 >         x <- choice [Just LobK <$ keyword_ "k"
 >                     ,Just LobM <$ keyword_ "m"
 >                     ,Just LobG <$ keyword_ "g"
+>                     ,Just LobT <$ keyword_ "t"
+>                     ,Just LobP <$ keyword_ "p"
 >                     ,return Nothing]
 >         return (p,x)
 >     lobUnits = choice [LobCharacters <$ keyword_ "characters"

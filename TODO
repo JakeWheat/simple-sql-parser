@@ -1,4 +1,4 @@
-continue 2003 review and tests
+continue 2011 review and tests
 
 1. start replacing the 2003 stuff with 2011
 2. create an error message document for the website
@@ -62,76 +62,58 @@ rules for changing the multi keyword parsing:
    recursive, then don't do this.
 
 
-rough SQL 2003 todo, including tests to write:
+rough SQL 2011 todo, including tests to write:
 
-switch to SQL 2011
-
-now:
 review the commented out reserved keyword entries and work out how to
    fix
-go through all? the functions
-go through almost all the predicates
-window functions missing bits, window clauses
-from: more tests, review missing
-  tablesample, unnest, etc.
-rows review
-match missing bit
-between symmetric
-case review
 
-detail list from the grammar, LNR = maybe leave until after next
-   release, otherwise planned for next release
+big areas:
+window functions
+nested window functions
+case
+table ref
+joined table
+group by
+window clause
 
-LNR support needed MODULE syntax in identifiers - already covered?
-LNR decide how to represent special identifiers including the session
-   variables or whatever they are called like current_user
-LNR grouping - needs special syntax?
-LNR next value for
-LNR subtypes, methods, new /routine, dereference
-LNR double check associativity, precedence (value exprs, joins, set ops)
-position expressions
-length expressions
-extract expression
-cardinality expression?
-check concatenations
-substring expressions
-regular expression substring function
-convert
-translate
-trim
-overlay
-LNR specifictype
-row value constructors, expressions review
-review table value constructor exactly what is allowed
-lots more tests for from clause variations
-tablesamples
-unnest
-table function derived table
-only spec
-join variations, including union join
-review group by
-window clauses
-LNR all fields reference with alias 'select * as (a,b,c) ... '
-search or cycle clause
-between symmetric/asymmetric
-in predicate review
-escape for like
-escape for [not] similar to
-LNR regular expression syntax?
-normalized predicate
-overlaps predicate
-distinct from predicate
-member predicate
-submultiset predicate
-set predicate
-LNR type predicate
-additional stuff review:
-complete the list of keywords/reserved keywords and check everything
-   still works ok. The parser will reject all unquoted identifiers
-   which are the same as reserved or unreserved keywords.
-LNR select into
-LNR other language format identifiers for host params?
+other areas:
+unicode escape, strings and idens
+character set behaviour review
+datetime literals
+mixed quoting identifier chains
+names/identifiers careful review
+typenames: lengths, binary
+general value bits
+  collate for
+numeric val fn
+string exp fn
+datetime exp fn
+interval exp fn
+rows
+table value constructor
+interval qualifier
+query spec
+with
+setop
+explicit table
+order/offset/fetch
+search/cycle
+preds:
+between
+in
+like
+similar
+regex like?
+null
+normalize
+match
+overlaps
+distinct
+member
+submultiset
+period
 
+create list of unsupported syntax: xml, ref, subtypes, modules?
 
 
 ---
@@ -247,6 +229,10 @@ top
 string literals
 full number literals -> other bases?
 apply, pivot
+
+maybe add dml and ddl, source poses, quasi quotes
+
+leave: type check, dialects, procedural, separate lexing?
 
 other dialect targets:
 postgres

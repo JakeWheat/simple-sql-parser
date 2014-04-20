@@ -167,8 +167,6 @@
 >           | UQName String
 >             deriving (Eq,Show,Read,Data,Typeable)
 
-TODO: add ref and scope, any others?
-
 > -- | Represents a type name, used in casts.
 > data TypeName
 >     = TypeName [Name]
@@ -182,13 +180,12 @@ TODO: add ref and scope, any others?
 >     | IntervalTypeName IntervalTypeField (Maybe IntervalTypeField)
 >     | ArrayTypeName TypeName (Maybe Integer)
 >     | MultisetTypeName TypeName
->     | RefTypeName [Name] (Maybe [Name])
 >       deriving (Eq,Show,Read,Data,Typeable)
 
 > data IntervalTypeField = Itf String (Maybe (Integer, Maybe Integer))
 >                          deriving (Eq,Show,Read,Data,Typeable)
 
-> data LobMultiplier = LobK | LobM | LobG
+> data LobMultiplier = LobK | LobM | LobG | LobT | LobP
 >                      deriving (Eq,Show,Read,Data,Typeable)
 > data LobUnits = LobCharacters
 >               | LobOctets

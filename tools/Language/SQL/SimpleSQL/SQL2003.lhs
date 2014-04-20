@@ -1130,8 +1130,6 @@ create a list of type name variations:
 >          ,("interval year(4) to second(2,3)"
 >           ,IntervalTypeName (Itf "year" $ Just (4,Nothing))
 >                             (Just $ Itf "second" $ Just (2, Just 3)))
->          ,("ref (t)", RefTypeName [Name "t"] Nothing)
->          ,("ref (t) scope q", RefTypeName [Name "t"] (Just [Name "q"]))
 >          ]
 
 Now test each variation in both cast expression and typed literal
