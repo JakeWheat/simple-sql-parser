@@ -1,13 +1,57 @@
-0.4.0-dev (updated to 705724197463cd19dd8749dfd51e2eb8f1d02b8e)
+0.4.0-dev (updated to dbd48baaa1d1bce3d0d0139b8ffe55370fabe672)
+	now targets SQL:2011
 	remove dependency on haskell-src-exts
+	derive Data and Typeable in all the syntax types
 	improve the error messages a great deal
+	sql features:
+	parse schema qualified table names in from clause (thanks to Sönke
+	  Hahn)
+	support multiline string literals
+	support colon prefix host parameters and introducer
+	support unique predicate
+	support match predicate
+	support array constructors and subscripting
+	support character set literals
+	support collate
+	support escape for string literals as a postfix operator
+	parse schema/whatever qualified ids in various places: identifiers
+	  (replaces equivalent functionality using '.' operator), function,
+	  aggregate, window function names, explicit tables and functions in
+	  from clauses, typenames
+	support almost all typename syntax for SQL:2011 (just missing refs)
+	support most multiset operations (missing some predicates only,
+	  likely to be added before next release)
+	support two double quotes in a quoted identifier to represent a
+	  quote character in the identifier
+	support filter and within group for aggregates
+	support next value for
+	parse special nullary functions
+	annoying changes:
+	replace Int with Integer in the syntax
+	remove support for parsing clauses after the from clause if there
+	  is no from clause
+	change the syntax representation of quantified comparison
+	  predicates
+	change the hardcoded collate keyword in substring and trim to use
+	  the new collate postfix operator, this also changes the collation
+	  name to be an identifier instead of a string
+	represent missing setquantifier as a literal default instead of as
+	  the actual default value (all in select, distinct in set
+	  operators)
+	same for sort directions in order by
+	implement complete interval literals (fixed the handling of the
+	  interval qualifier)
+	make most of the standard reserved words actually reserved (still
+	  some gaps)
+	change the natural in join abstract syntax to match the concrete
+	  syntax instead of combining natural, on and using into one field
+	remove support for postgresql limit syntax
+	bug fixes:
 	fix some trailing whitespace issues in the keyword style functions,
 	  e.g. extract(day from x), dealing with trailing whitespace on
 	  the parens was fixed
 	improve some cases of parsing chained prefix or postfix operators
 	  (still some issues here)
-	parse schema qualified table names in from clause (thanks to Sönke
-	  Hahn)
 	fix bug where the 'as' was incorrectly optional in a 'with
 	  expression list item'
 	fix bug in set operations where 'all' was assumed as the default
@@ -17,46 +61,9 @@
 	fix corresponding bug where 'distinct' was being pretty printed in
 	  this case and 'all' was not since the assumed default was the
 	  wrong way round
-	replace Int with Integer in the syntax
-	derive Data and Typeable in all the syntax types
-	remove support for parsing clauses after the from clause if there
-	  is no from clause
 	fix some trailing junk lexing issues with symbols and number
 	  literals
 	fix number literals to accept upper case E
-	support multiline string literals
-	support colon prefix host parameters and introducer
-	support unique predicate
-	support match predicate
-	change the syntax representation of quantified comparison
-	  predicates
-	support array constructors and subscripting
-	support character set literals
-	support collate
-	change the hardcoded collate keyword in substring and trim to use
-	  the new collate postfix operator, this also changes the collation
-	  name to be an identifier instead of a string
-	support escape for string literals as a postfix operator
-	represent missing setquantifier as a literal default instead of as
-	  the actual default value (all in select, distinct in set
-	  operators)
-	same for sort directions in order by
-	parse schema/whatever qualified ids in various places: identifiers
-	  (replaces equivalent functionality using '.' operator), function,
-	  aggregate, window function names, explicit tables and functions in
-	  from clauses, typenames
-	support what appears to be 100% of sql 2003 typename syntax (phew)
-	support most multiset operations (missing some predicates only,
-	  likely to be added before next release)
-	support two double quotes in a quoted identifier to represent a
-	  quote character in the identifier
-	implement complete interval literals (fixed the handling of the
-	  interval qualifier)
-	make most of the standard reserved words actually reserved (still
-	  some gaps)
-	change the natural in join abstract syntax to match the concrete
-	  syntax instead of combining natural, on and using into one field
-	support filter and within group for aggregates
 0.3.1 (commit 5cba9a1cac19d66166aed2876d809aef892ff59f)
 	update to work with ghc 7.8.1
 0.3.0 (commit 9e75fa93650b4f1a08d94f4225a243bcc50445ae)
