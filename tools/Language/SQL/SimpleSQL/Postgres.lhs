@@ -218,7 +218,7 @@ queries section
 >      \  UNION ALL\n\
 >      \    SELECT n+1 FROM t\n\
 >      \)\n\
->      \SELECT n FROM t LIMIT 100;"
+>      \SELECT n FROM t --LIMIT 100;" -- limit is not standard
 
 select page reference
 

@@ -257,18 +257,18 @@ which have been changed to try to improve the layout of the output.
 > typeName (PrecTypeName t a) = names t <+> parens (text $ show a)
 > typeName (PrecScaleTypeName t a b) =
 >     names t <+> parens (text (show a) <+> comma <+> text (show b))
-> typeName (LobTypeName t i m u) =
+> typeName (PrecLengthTypeName t i m u) =
 >     names t
 >     <> parens (text (show i)
 >                <> me (\x -> case x of
->                            LobK -> text "K"
->                            LobM -> text "M"
->                            LobG -> text "G"
->                            LobT -> text "T"
->                            LobP -> text "P") m
+>                            PrecK -> text "K"
+>                            PrecM -> text "M"
+>                            PrecG -> text "G"
+>                            PrecT -> text "T"
+>                            PrecP -> text "P") m
 >                <+> me (\x -> case x of
->                        LobCharacters -> text "CHARACTERS"
->                        LobOctets -> text "OCTETS") u)
+>                        PrecCharacters -> text "CHARACTERS"
+>                        PrecOctets -> text "OCTETS") u)
 > typeName (CharTypeName t i cs col) =
 >     names t
 >     <> me (\x -> parens (text $ show x)) i

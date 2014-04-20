@@ -1039,13 +1039,13 @@ create a list of type name variations:
 >          -- 1 scale
 >          ,("decimal(15,2)", PrecScaleTypeName [Name "decimal"] 15 2)
 >          -- lob prec + with multiname
->          ,("blob(3M)", LobTypeName [Name "blob"] 3 (Just LobM) Nothing)
+>          ,("blob(3M)", PrecLengthTypeName [Name "blob"] 3 (Just PrecM) Nothing)
 >          ,("blob(4M characters) "
->           ,LobTypeName [Name "blob"] 4 (Just LobM) (Just LobCharacters))
+>           ,PrecLengthTypeName [Name "blob"] 4 (Just PrecM) (Just PrecCharacters))
 >          ,("blob(6G octets) "
->           ,LobTypeName [Name "blob"] 6 (Just LobG) (Just LobOctets))
+>           ,PrecLengthTypeName [Name "blob"] 6 (Just PrecG) (Just PrecOctets))
 >          ,("national character large object(7K) "
->           ,LobTypeName [Name "national character large object"] 7 (Just LobK) Nothing)
+>           ,PrecLengthTypeName [Name "national character large object"] 7 (Just PrecK) Nothing)
 >          -- 1 with and without tz
 >          ,("time with time zone"
 >           ,TimeTypeName [Name "time"] Nothing True)

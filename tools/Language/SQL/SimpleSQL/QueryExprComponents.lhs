@@ -129,9 +129,10 @@ These are a few misc tests which don't fit anywhere else.
 >      ,ms Nothing (Just $ NumLit "10"))
 >     ,("select a from t offset 5 row fetch first 10 row only"
 >      ,ms (Just $ NumLit "5") (Just $ NumLit "10"))
->      -- postgres
->     ,("select a from t limit 10 offset 5"
->      ,ms (Just $ NumLit "5") (Just $ NumLit "10"))
+>      -- postgres: disabled, will add back when postgres
+>      -- dialect is added
+>     --,("select a from t limit 10 offset 5"
+>     -- ,ms (Just $ NumLit "5") (Just $ NumLit "10"))
 >     ]
 >   where
 >     ms o l = makeSelect

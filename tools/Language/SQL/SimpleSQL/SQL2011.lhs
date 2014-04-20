@@ -1014,10 +1014,13 @@ create a list of type name variations:
 >     basicTypes =
 >         -- example of every standard type name
 >         map (\t -> (t,TypeName [Name t]))
->         ["character"
+>         ["binary"
+>         ,"binary varying"
+>         ,"character"
 >         ,"char"
 >         ,"character varying"
 >         ,"char varying"
+>         ,"varbinary"
 >         ,"varchar"
 >         ,"character large object"
 >         ,"char large object"
@@ -1059,16 +1062,18 @@ create a list of type name variations:
 >          ,("char varying(5)", PrecTypeName [Name "char varying"] 5)
 >          -- 1 scale
 >          ,("decimal(15,2)", PrecScaleTypeName [Name "decimal"] 15 2)
+>          ,("char(3 octets)", PrecLengthTypeName [Name "char"] 3 Nothing (Just PrecOctets))
+>          ,("varchar(50 characters)", PrecLengthTypeName [Name "varchar"] 50 Nothing (Just PrecCharacters))
 >          -- lob prec + with multiname
->          ,("blob(3M)", LobTypeName [Name "blob"] 3 (Just LobM) Nothing)
->          ,("blob(3T)", LobTypeName [Name "blob"] 3 (Just LobT) Nothing)
->          ,("blob(3P)", LobTypeName [Name "blob"] 3 (Just LobP) Nothing)
+>          ,("blob(3M)", PrecLengthTypeName [Name "blob"] 3 (Just PrecM) Nothing)
+>          ,("blob(3T)", PrecLengthTypeName [Name "blob"] 3 (Just PrecT) Nothing)
+>          ,("blob(3P)", PrecLengthTypeName [Name "blob"] 3 (Just PrecP) Nothing)
 >          ,("blob(4M characters) "
->           ,LobTypeName [Name "blob"] 4 (Just LobM) (Just LobCharacters))
+>           ,PrecLengthTypeName [Name "blob"] 4 (Just PrecM) (Just PrecCharacters))
 >          ,("blob(6G octets) "
->           ,LobTypeName [Name "blob"] 6 (Just LobG) (Just LobOctets))
+>           ,PrecLengthTypeName [Name "blob"] 6 (Just PrecG) (Just PrecOctets))
 >          ,("national character large object(7K) "
->           ,LobTypeName [Name "national character large object"] 7 (Just LobK) Nothing)
+>           ,PrecLengthTypeName [Name "national character large object"] 7 (Just PrecK) Nothing)
 >          -- 1 with and without tz
 >          ,("time with time zone"
 >           ,TimeTypeName [Name "time"] Nothing True)
@@ -2499,7 +2504,6 @@ Specify construction of a multiset.
 > queryExpressions :: TestItem
 > queryExpressions = Group "query expressions"
 >     [rowValueConstructor
->     ,rowValueExpression
 >     ,tableValueConstructor
 >     ,fromClause
 >     ,tableReference
@@ -2562,7 +2566,11 @@ Specify a value or list of values to be constructed into a row.
 
 > rowValueConstructor :: TestItem
 > rowValueConstructor = Group "row value constructor"
->     [-- TODO: row value constructor
+>     $ map (uncurry TestValueExpr)
+>     [("(a,b)"
+>      ,SpecialOp [Name "rowctor"] [Iden [Name "a"], Iden [Name "b"]])
+>     ,("row(1)",App [Name "row"] [NumLit "1"])
+>     ,("row(1,2)",App [Name "row"] [NumLit "1",NumLit "2"])
 >     ]
 
 == 7.2 <row value expression>
@@ -2588,10 +2596,7 @@ Specify a row value.
 
 <row value special case> ::= <nonparenthesized value expression primary>
 
-> rowValueExpression :: TestItem
-> rowValueExpression = Group "row value expression"
->     [-- todo: row value expression
->     ]
+There is nothing new here.
 
 == 7.3 <table value constructor>
 
@@ -2612,7 +2617,15 @@ Specify a set of <row value expression>s to be constructed into a table.
 
 > tableValueConstructor :: TestItem
 > tableValueConstructor = Group "table value constructor"
->     [-- TODO: table value constructor
+>     $ map (uncurry TestQueryExpr)
+>     [("values (1,2), (a+b,(select count(*) from t));"
+>      ,Values [[NumLit "1", NumLit "2"]
+>              ,[BinOp (Iden [Name "a"]) [Name "+"]
+>                      (Iden [Name "b"])
+>               ,SubQueryExpr SqSq
+>                (makeSelect
+>                 {qeSelectList = [(App [Name "count"] [Star],Nothing)]
+>                 ,qeFrom = [TRSimple [Name "t"]]})]])
 >     ]
 
 == 7.4 <table expression>
@@ -3123,8 +3136,29 @@ Specify a table derived from the result of a <table expression>.
 
 > querySpecification :: TestItem
 > querySpecification = Group "query specification"
->     [-- todo: query specification
+>     $ map (uncurry TestQueryExpr)
+>     [("select a from t",qe)
+>     ,("select all a from t",qe {qeSetQuantifier = All})
+>     ,("select distinct a from t",qe {qeSetQuantifier = Distinct})
+>     ,("select * from t", qe {qeSelectList = [(Star,Nothing)]})
+>     ,("select a.* from t"
+>      ,qe {qeSelectList = [(BinOp (Iden [Name "a"]) [Name "."] Star
+>                            ,Nothing)]})
+>     ,("select a b from t"
+>      ,qe {qeSelectList = [(Iden [Name "a"], Just $ Name "b")]})
+>     ,("select a as b from t"
+>      ,qe {qeSelectList = [(Iden [Name "a"], Just $ Name "b")]})
+>     ,("select a,b from t"
+>      ,qe {qeSelectList = [(Iden [Name "a"], Nothing)
+>                          ,(Iden [Name "b"], Nothing)]})
+>     -- todo: all field reference alias
+>     --,("select * as (a,b) from t",undefined)
 >     ]
+>   where
+>     qe = makeSelect
+>          {qeSelectList = [(Iden [Name "a"], Nothing)]
+>          ,qeFrom = [TRSimple [Name "t"]]
+>          }
 
 == 7.13 <query expression>
 
@@ -3170,8 +3204,28 @@ Specify a table.
 
 > setOpQueryExpression :: TestItem
 > setOpQueryExpression= Group "set operation query expression"
->     [-- todo: set operation query expression
+>     $ map (uncurry TestQueryExpr)
+>     -- todo: complete setop query expression tests
+>     [{-("select * from t union select * from t"
+>      ,undefined)
+>     ,("select * from t union all select * from t"
+>      ,undefined)
+>     ,("select * from t union distinct select * from t"
+>      ,undefined)
+>     ,("select * from t union corresponding select * from t"
+>      ,undefined)
+>     ,("select * from t union corresponding by (a,b) select * from t"
+>      ,undefined)
+>     ,("select * from t except select * from t"
+>      ,undefined)
+>     ,("select * from t in intersect select * from t"
+>      ,undefined)-}
 >     ]
+
+TODO: tests for the associativity and precendence
+
+TODO: not sure exactly where parens are allowed, we will allow them
+everywhere
 
 <simple table> ::=
     <query specification>
@@ -3187,7 +3241,8 @@ Specify a table.
 
 > explicitTableQueryExpression :: TestItem
 > explicitTableQueryExpression= Group "explicit table query expression"
->     [-- todo: explicit table query expression
+>     $ map (uncurry TestQueryExpr)
+>     [("table t", Table [Name "t"])
 >     ]
 
 
@@ -3208,7 +3263,14 @@ Specify a table.
 
 > orderOffsetFetchQueryExpression :: TestItem
 > orderOffsetFetchQueryExpression = Group "order, offset, fetch query expression"
->     [-- todo: order, offset, fetch query expression
+>     $ map (uncurry TestQueryExpr)
+>     [-- todo: finish tests for order offset and fetch
+>      {- ("select * from t order by a", undefined)
+>     ,("select * from t offset 5 row", undefined)
+>     ,("select * from t offset 5 rows", undefined)
+>     ,("select * from t fetch first 5 row only", undefined)
+>     ,("select * from t fetch next 5 rows with ties", undefined)
+>     ,("select * from t fetch first 5 percent rows only", undefined)-}
 >     ]
 
 == 7.14 <search or cycle clause>
@@ -4185,5 +4247,11 @@ Specify a sort order.
 
 > sortSpecificationList :: TestItem
 > sortSpecificationList = Group "sort specification list"
->     [-- todo: sort specification list
+>     $ map (uncurry TestQueryExpr)
+>     -- todo: finish test for sort specs
+>     [{-("select * from t order by a,b", undefined)
+>     ,("select * from t order by a asc", undefined)
+>     ,("select * from t order by a desc", undefined)
+>     ,("select * from t order by a nulls first", undefined)
+>     ,("select * from t order by a nulls first", undefined)-}
 >     ]

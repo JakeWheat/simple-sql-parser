@@ -7,8 +7,8 @@
 >     ,Name(..)
 >     ,TypeName(..)
 >     ,IntervalTypeField(..)
->     ,LobMultiplier(..)
->     ,LobUnits(..)
+>     ,PrecMultiplier(..)
+>     ,PrecUnits(..)
 >     ,SetQuantifier(..)
 >     ,SortSpec(..)
 >     ,Direction(..)
@@ -172,7 +172,7 @@
 >     = TypeName [Name]
 >     | PrecTypeName [Name] Integer
 >     | PrecScaleTypeName [Name] Integer Integer
->     | LobTypeName [Name] Integer (Maybe LobMultiplier) (Maybe LobUnits)
+>     | PrecLengthTypeName [Name] Integer (Maybe PrecMultiplier) (Maybe PrecUnits)
 >       -- precision, characterset, collate
 >     | CharTypeName [Name] (Maybe Integer) [Name] [Name]
 >     | TimeTypeName [Name] (Maybe Integer) Bool -- true == with time zone
@@ -185,10 +185,10 @@
 > data IntervalTypeField = Itf String (Maybe (Integer, Maybe Integer))
 >                          deriving (Eq,Show,Read,Data,Typeable)
 
-> data LobMultiplier = LobK | LobM | LobG | LobT | LobP
->                      deriving (Eq,Show,Read,Data,Typeable)
-> data LobUnits = LobCharacters
->               | LobOctets
+> data PrecMultiplier = PrecK | PrecM | PrecG | PrecT | PrecP
+>                       deriving (Eq,Show,Read,Data,Typeable)
+> data PrecUnits = PrecCharacters
+>                | PrecOctets
 >                 deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | Used for 'expr in (value expression list)', and 'expr in
