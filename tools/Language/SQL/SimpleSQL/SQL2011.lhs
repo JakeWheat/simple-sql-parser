@@ -15,7 +15,7 @@ which parts aren't currently supported.
 > sql2011Tests = Group "sql 2011 tests"
 >     [literals
 >     ,identifiers
->     ,typeNames
+>     ,typeNameTests
 >     ,valueExpressions
 >     ,queryExpressions
 >     ,scalarSubquery
@@ -481,7 +481,21 @@ Specify a non-null value.
 
 > characterStringLiterals :: TestItem
 > characterStringLiterals = Group "character string literals"
->     [-- TODO: character string literals
+>     $ map (uncurry TestValueExpr)
+>     [("'a regular string literal'"
+>      ,StringLit "a regular string literal")
+>     ,("'something' ' some more' 'and more'"
+>      ,StringLit "something some moreand more")
+>     ,("'something' \n ' some more' \t 'and more'"
+>      ,StringLit "something some moreand more")
+>     ,("'something' -- a comment\n ' some more' /*another comment*/ 'and more'"
+>      ,StringLit "something some moreand more")
+>     ,("'a quote: '', stuff'"
+>      ,StringLit "a quote: ', stuff")
+>     ,("''"
+>      ,StringLit "")
+>     ,("_francais 'français'"
+>      ,TypedLit (TypeName [Name "_francais"]) "français")
 >     ]
 
 <national character string literal> ::=
@@ -490,9 +504,10 @@ Specify a non-null value.
 
 > nationalCharacterStringLiterals :: TestItem
 > nationalCharacterStringLiterals = Group "national character string literals"
->     [-- TODO: national character string literals
+>     $ map (uncurry TestValueExpr)
+>     [("N'something'", CSStringLit "N" "something")
+>     ,("n'something'", CSStringLit "n" "something")
 >     ]
-
 
 <Unicode character string literal> ::=
   [ <introducer> <character set specification> ]
@@ -506,8 +521,15 @@ Specify a non-null value.
 
 > unicodeCharacterStringLiterals :: TestItem
 > unicodeCharacterStringLiterals = Group "unicode character string literals"
->     [-- TODO: unicode character string literals
+>     $ map (uncurry TestValueExpr)
+>     [("U&'something'", CSStringLit "U&" "something")
+>     ,("u&'something' escape ="
+>      ,Escape (CSStringLit "u&" "something") '=')
+>     ,("u&'something' uescape ="
+>      ,UEscape (CSStringLit "u&" "something") '=')
 >     ]
+
+TODO: unicode escape
 
 <binary string literal> ::=
   X <quote> [ <space>... ] [ { <hexit> [ <space>... ] <hexit> [ <space>... ] }... ] <quote>
@@ -518,7 +540,10 @@ Specify a non-null value.
 
 > binaryStringLiterals :: TestItem
 > binaryStringLiterals = Group "binary string literals"
->     [-- TODO: binary string literals
+>     $ map (uncurry TestValueExpr)
+>     [--("B'101010'", CSStringLit "B" "101010")
+>      ("X'7f7f7f'", CSStringLit "X" "7f7f7f")
+>     ,("X'7f7f7f' escape z", Escape (CSStringLit "X" "7f7f7f") 'z')
 >     ]
 
 <signed numeric literal> ::= [ <sign> ] <unsigned numeric literal>
@@ -545,7 +570,34 @@ Specify a non-null value.
 
 > numericLiterals :: TestItem
 > numericLiterals = Group "numeric literals"
->     [-- TODO: numeric literals
+>     $ map (uncurry TestValueExpr)
+>     [("11", NumLit "11")
+>     ,("11.11", NumLit "11.11")
+
+>     ,("11E23", NumLit "11E23")
+>     ,("11E+23", NumLit "11E+23")
+>     ,("11E-23", NumLit "11E-23")
+
+>     ,("11.11E23", NumLit "11.11E23")
+>     ,("11.11E+23", NumLit "11.11E+23")
+>     ,("11.11E-23", NumLit "11.11E-23")
+
+>     ,("+11E23", PrefixOp [Name "+"] $ NumLit "11E23")
+>     ,("+11E+23", PrefixOp [Name "+"] $ NumLit "11E+23")
+>     ,("+11E-23", PrefixOp [Name "+"] $ NumLit "11E-23")
+>     ,("+11.11E23", PrefixOp [Name "+"] $ NumLit "11.11E23")
+>     ,("+11.11E+23", PrefixOp [Name "+"] $ NumLit "11.11E+23")
+>     ,("+11.11E-23", PrefixOp [Name "+"] $ NumLit "11.11E-23")
+
+>     ,("-11E23", PrefixOp [Name "-"] $ NumLit "11E23")
+>     ,("-11E+23", PrefixOp [Name "-"] $ NumLit "11E+23")
+>     ,("-11E-23", PrefixOp [Name "-"] $ NumLit "11E-23")
+>     ,("-11.11E23", PrefixOp [Name "-"] $ NumLit "11.11E23")
+>     ,("-11.11E+23", PrefixOp [Name "-"] $ NumLit "11.11E+23")
+>     ,("-11.11E-23", PrefixOp [Name "-"] $ NumLit "11.11E-23")
+
+>     ,("11.11e23", NumLit "11.11e23")
+
 >     ]
 
 <datetime literal> ::= <date literal> | <time literal> | <timestamp literal>
@@ -623,17 +675,35 @@ Specify a non-null value.
 <datetime value> ::= <unsigned integer>
 
 > intervalLiterals :: TestItem
-> intervalLiterals = Group "interval literals"
->     [-- TODO: interval literals
+> intervalLiterals = Group "intervalLiterals literals"
+>     $ map (uncurry TestValueExpr)
+>     [("interval '1'", TypedLit (TypeName [Name "interval"]) "1")
+>     ,("interval '1' day"
+>      ,IntervalLit Nothing "1" (Itf "day" Nothing) Nothing)
+>     ,("interval '1' day(3)"
+>      ,IntervalLit Nothing "1" (Itf "day" $ Just (3,Nothing)) Nothing)
+>     ,("interval + '1' day(3)"
+>      ,IntervalLit (Just True) "1" (Itf "day" $ Just (3,Nothing)) Nothing)
+>     ,("interval - '1' second(2,2)"
+>      ,IntervalLit (Just False) "1" (Itf "second" $ Just (2,Just 2)) Nothing)
+>     ,("interval '1' year to month"
+>      ,IntervalLit Nothing "1" (Itf "year" Nothing)
+>                                   (Just $ Itf "month" Nothing))
+
+>     ,("interval '1' year(4) to second(2,3) "
+>      ,IntervalLit Nothing "1" (Itf "year" $ Just (4,Nothing))
+>                             (Just $ Itf "second" $ Just (2, Just 3)))
 >     ]
 
 <boolean literal> ::= TRUE | FALSE | UNKNOWN
 
 > booleanLiterals :: TestItem
 > booleanLiterals = Group "boolean literals"
->     [-- TODO: datetime literals
+>     $ map (uncurry TestValueExpr)
+>     [("true", Iden [Name "true"])
+>     ,("false", Iden [Name "false"])
+>     ,("unknown", Iden [Name "unknown"])
 >     ]
-
 
 == 5.4 Names and identifiers
 
@@ -649,8 +719,20 @@ Specify names.
 
 > identifiers :: TestItem
 > identifiers = Group "identifiers"
->     [-- TODO: identifiers
+>     $ map (uncurry TestValueExpr)
+>     [("test",Iden [Name "test"])
+>     ,("_test",Iden [Name "_test"])
+>     ,("t1",Iden [Name "t1"])
+>     ,("a.b",Iden [Name "a", Name "b"])
+>     ,("a.b.c",Iden [Name "a", Name "b", Name "c"])
+>     ,("\"quoted iden\"", Iden [QName "quoted iden"])
+>     ,("\"quoted \"\" iden\"", Iden [QName "quoted \" iden"])
+>     ,("U&\"quoted iden\"", Iden [UQName "quoted iden"])
+>     ,("U&\"quoted \"\" iden\"", Iden [UQName "quoted \" iden"])
 >     ]
+
+TODO: more identifiers, e.g. unicode escapes?, mixed quoted/unquoted
+chains
 
 TODO: review below stuff for exact rules
 
@@ -784,12 +866,6 @@ Specify a data type.
   | <reference type>
   | <collection type>
 
-> typeNames :: TestItem
-> typeNames = Group "type names"
->     [-- TODO: type names
->     ]
-
-
 <predefined type> ::=
     <character string type> [ CHARACTER SET <character set specification> ]
           [ <collate clause> ]
@@ -913,6 +989,179 @@ Specify a data type.
 
 <multiset type> ::= <data type> MULTISET
 
+TODO: below, add new stuff:
+review the length syntaxes
+binary, binary varying/varbinary
+new multipliers
+
+create a list of type name variations:
+
+> typeNames :: [(String,TypeName)]
+> typeNames =
+>     basicTypes
+>     ++ concatMap makeArray basicTypes
+>     ++ map makeMultiset basicTypes
+>   where
+>     makeArray (s,t) = [(s ++ " array", ArrayTypeName t Nothing)
+>                       ,(s ++ " array[5]", ArrayTypeName t (Just 5))]
+>     makeMultiset (s,t) = (s ++ " multiset", MultisetTypeName t)
+>     basicTypes =
+>         -- example of every standard type name
+>         map (\t -> (t,TypeName [Name t]))
+>         ["character"
+>         ,"char"
+>         ,"character varying"
+>         ,"char varying"
+>         ,"varchar"
+>         ,"character large object"
+>         ,"char large object"
+>         ,"clob"
+>         ,"national character"
+>         ,"national char"
+>         ,"nchar"
+>         ,"national character varying"
+>         ,"national char varying"
+>         ,"nchar varying"
+>         ,"national character large object"
+>         ,"nchar large object"
+>         ,"nclob"
+>         ,"binary large object"
+>         ,"blob"
+>         ,"numeric"
+>         ,"decimal"
+>         ,"dec"
+>         ,"smallint"
+>         ,"integer"
+>         ,"int"
+>         ,"bigint"
+>         ,"float"
+>         ,"real"
+>         ,"double precision"
+>         ,"boolean"
+>         ,"date"
+>         ,"time"
+>         ,"timestamp"]
+>         --interval -- not allowed without interval qualifier
+>         --row -- not allowed without row type body
+>         --ref -- not allowed without reference type
+>         -- array -- not allowed on own
+>         -- multiset -- not allowed on own
+
+>          ++
+>          [-- 1 single prec + 1 with multiname
+>           ("char(5)", PrecTypeName [Name "char"] 5)
+>          ,("char varying(5)", PrecTypeName [Name "char varying"] 5)
+>          -- 1 scale
+>          ,("decimal(15,2)", PrecScaleTypeName [Name "decimal"] 15 2)
+>          -- lob prec + with multiname
+>          ,("blob(3M)", LobTypeName [Name "blob"] 3 (Just LobM) Nothing)
+>          ,("blob(4M characters) "
+>           ,LobTypeName [Name "blob"] 4 (Just LobM) (Just LobCharacters))
+>          ,("blob(6G octets) "
+>           ,LobTypeName [Name "blob"] 6 (Just LobG) (Just LobOctets))
+>          ,("national character large object(7K) "
+>           ,LobTypeName [Name "national character large object"] 7 (Just LobK) Nothing)
+>          -- 1 with and without tz
+>          ,("time with time zone"
+>           ,TimeTypeName [Name "time"] Nothing True)
+>          ,("datetime(3) without time zone"
+>           ,TimeTypeName [Name "datetime"] (Just 3) False)
+>          -- chars: (single/multiname) x prec x charset x collate
+>          -- 1111
+>          ,("char varying(5) character set something collate something_insensitive"
+>           ,CharTypeName [Name "char varying"] (Just 5)
+>            [Name "something"] [Name "something_insensitive"])
+>           -- 0111
+>          ,("char(5) character set something collate something_insensitive"
+>           ,CharTypeName [Name "char"] (Just 5)
+>            [Name "something"] [Name "something_insensitive"])
+
+>           -- 1011
+>          ,("char varying character set something collate something_insensitive"
+>           ,CharTypeName [Name "char varying"] Nothing
+>            [Name "something"] [Name "something_insensitive"])
+>           -- 0011
+>          ,("char character set something collate something_insensitive"
+>           ,CharTypeName [Name "char"] Nothing
+>            [Name "something"] [Name "something_insensitive"])
+
+>           -- 1101
+>          ,("char varying(5) collate something_insensitive"
+>           ,CharTypeName [Name "char varying"] (Just 5)
+>            [] [Name "something_insensitive"])
+>           -- 0101
+>          ,("char(5) collate something_insensitive"
+>           ,CharTypeName [Name "char"] (Just 5)
+>            [] [Name "something_insensitive"])
+>           -- 1001
+>          ,("char varying collate something_insensitive"
+>           ,CharTypeName [Name "char varying"] Nothing
+>            [] [Name "something_insensitive"])
+>           -- 0001
+>          ,("char collate something_insensitive"
+>           ,CharTypeName [Name "char"] Nothing
+>            [] [Name "something_insensitive"])
+
+>          -- 1110
+>          ,("char varying(5) character set something"
+>           ,CharTypeName [Name "char varying"] (Just 5)
+>            [Name "something"] [])
+>           -- 0110
+>          ,("char(5) character set something"
+>           ,CharTypeName [Name "char"] (Just 5)
+>            [Name "something"] [])
+>           -- 1010
+>          ,("char varying character set something"
+>           ,CharTypeName [Name "char varying"] Nothing
+>            [Name "something"] [])
+>           -- 0010
+>          ,("char character set something"
+>           ,CharTypeName [Name "char"] Nothing
+>            [Name "something"] [])
+>           -- 1100
+>          ,("char varying character set something"
+>           ,CharTypeName [Name "char varying"] Nothing
+>            [Name "something"] [])
+
+>          -- single row field, two row field
+>          ,("row(a int)", RowTypeName [(Name "a", TypeName [Name "int"])])
+>          ,("row(a int,b char)"
+>           ,RowTypeName [(Name "a", TypeName [Name "int"])
+>                        ,(Name "b", TypeName [Name "char"])])
+>          -- interval each type raw
+>          ,("interval year"
+>           ,IntervalTypeName (Itf "year" Nothing) Nothing)
+>          -- one type with single suffix
+>          -- one type with double suffix
+>          ,("interval year(2)"
+>           ,IntervalTypeName (Itf "year" $ Just (2,Nothing)) Nothing)
+>          ,("interval second(2,5)"
+>           ,IntervalTypeName (Itf "second" $ Just (2,Just 5)) Nothing)
+>          -- a to b with raw
+>          -- a to b with single suffix
+>          ,("interval year to month"
+>           ,IntervalTypeName (Itf "year" Nothing)
+>                             (Just $ Itf "month" Nothing))
+>          ,("interval year(4) to second(2,3)"
+>           ,IntervalTypeName (Itf "year" $ Just (4,Nothing))
+>                             (Just $ Itf "second" $ Just (2, Just 3)))
+>          ,("ref (t)", RefTypeName [Name "t"] Nothing)
+>          ,("ref (t) scope q", RefTypeName [Name "t"] (Just [Name "q"]))
+>          ]
+
+Now test each variation in both cast expression and typed literal
+expression
+
+> typeNameTests :: TestItem
+> typeNameTests = Group "type names" $ map (uncurry TestValueExpr)
+>     $ concatMap makeTests typeNames
+>   where
+>     makeTests (ctn, stn) =
+>         [("cast('test' as " ++ ctn ++ ")", Cast (StringLit "test") stn)
+>         ,(ctn ++ " 'test'", TypedLit stn "test")
+>         ]
+
+
 == 6.2 <field definition>
 
 Function
@@ -989,6 +1238,13 @@ Specify a value that is syntactically self-delimited.
 >     ,multisetValueExpression
 >     ,multisetValueFunction
 >     ,multisetValueConstructor
+>     ,parenthesizedValueExpression
+>     ]
+
+> parenthesizedValueExpression :: TestItem
+> parenthesizedValueExpression = Group "parenthesized value expression" $ map (uncurry TestValueExpr)
+>     [("(3)", Parens (NumLit "3"))
+>     ,("((3))", Parens $ Parens (NumLit "3"))
 >     ]
 
 == 6.4 <value specification> and <target specification>
@@ -1022,9 +1278,19 @@ Specify one or more values, host parameters, SQL parameters, dynamic parameters,
 
 > generalValueSpecification :: TestItem
 > generalValueSpecification = Group "general value specification"
->     [--todo: general value specification
->     ]
+>     $ map (uncurry TestValueExpr) $
+>     map mkIden ["CURRENT_DEFAULT_TRANSFORM_GROUP"
+>                ,"CURRENT_PATH"
+>                ,"CURRENT_ROLE"
+>                ,"CURRENT_USER"
+>                ,"SESSION_USER"
+>                ,"SYSTEM_USER"
+>                ,"USER"
+>                ,"VALUE"]
+>   where
+>     mkIden nm = (nm,Iden [Name nm])
 
+TODO: add the missing bits
 
 <simple value specification> ::=
     <literal>
@@ -1066,11 +1332,18 @@ Specify one or more values, host parameters, SQL parameters, dynamic parameters,
 
 > parameterSpecification :: TestItem
 > parameterSpecification = Group "parameter specification"
->     [-- TODO: parameter specification
+>     $ map (uncurry TestValueExpr)
+>     [(":hostparam", HostParameter "hostparam" Nothing)
+>     ,(":hostparam indicator :another_host_param"
+>      ,HostParameter "hostparam" $ Just "another_host_param")
+>     ,("?", Parameter)
+>     ,(":h[3]", Array (HostParameter "h" Nothing) [NumLit "3"])
 >     ]
 
 <current collation specification> ::=
   COLLATION FOR <left paren> <string value expression> <right paren>
+
+TODO: review the modules stuff
 
 == 6.5 <contextually typed value specification>
 
@@ -1095,9 +1368,12 @@ Specify a value whose data type is to be inferred from its context.
 
 > contextuallyTypedValueSpecification :: TestItem
 > contextuallyTypedValueSpecification = Group "contextually typed value specification"
->     [-- todo: contextually typed value specification
+>     $ map (uncurry TestValueExpr)
+>     [("null", Iden [Name "null"])
+>     ,("array[]", Array (Iden [Name "array"]) [])
+>     ,("multiset[]", MultisetCtor [])
+>     ,("default", Iden [Name "default"])
 >     ]
-
 
 == 6.6 <identifier chain>
 
@@ -1143,7 +1419,17 @@ Specify a value derived by the application of a function to an argument.
 
 > setFunctionSpecification :: TestItem
 > setFunctionSpecification = Group "set function specification"
->     [-- set function specification
+>     $ map (uncurry TestQueryExpr)
+>     [("SELECT SalesQuota, SUM(SalesYTD) TotalSalesYTD,\n\
+>       \   GROUPING(SalesQuota) AS Grouping\n\
+>       \FROM Sales.SalesPerson\n\
+>       \GROUP BY ROLLUP(SalesQuota);"
+>      ,makeSelect
+>       {qeSelectList = [(Iden [Name "SalesQuota"],Nothing)
+>                       ,(App [Name "SUM"] [Iden [Name "SalesYTD"]],Just (Name "TotalSalesYTD"))
+>                       ,(App [Name "GROUPING"] [Iden [Name "SalesQuota"]],Just (Name "Grouping"))]
+>       ,qeFrom = [TRSimple [Name "Sales",Name "SalesPerson"]]
+>       ,qeGroupBy = [Rollup [SimpleGroup (Iden [Name "SalesQuota"])]]})
 >     ]
 
 == 6.10 <window function>
@@ -1325,9 +1611,13 @@ Specify a data conversion.
 
 <cast target> ::= <domain name> | <data type>
 
+This is already tested with the type name tests
+
 > castSpecification :: TestItem
 > castSpecification = Group "cast specification"
->     [-- todo: cast specification
+>     $ map (uncurry TestValueExpr)
+>     [("cast(a as int)"
+>      ,Cast (Iden [Name "a"]) (TypeName [Name "int"]))
 >     ]
 
 == 6.14 <next value expression>
@@ -1339,7 +1629,8 @@ Return the next value of a sequence generator.
 
 > nextValueExpression :: TestItem
 > nextValueExpression = Group "next value expression"
->     [-- todo: next value expression
+>     $ map (uncurry TestValueExpr)
+>     [("next value for a.b", NextValueFor [Name "a", Name "b"])
 >     ]
 
 == 6.15 <field reference>
@@ -1351,9 +1642,15 @@ Reference a field of a row value.
 
 > fieldReference :: TestItem
 > fieldReference = Group "field reference"
->     [-- todo: field reference
+>     $ map (uncurry TestValueExpr)
+>     [("f(something).a"
+>       ,BinOp (App [Name "f"] [Iden [Name "something"]])
+>        [Name "."]
+>        (Iden [Name "a"]))
 >     ]
 
+TODO: try all possible value expression syntax variations followed by
+field reference
 
 == 6.16 <subtype treatment>
 
@@ -1469,9 +1766,18 @@ Return an element of an array.
 
 > arrayElementReference :: TestItem
 > arrayElementReference = Group "array element reference"
->     [-- todo: array element reference
+>     $ map (uncurry TestValueExpr)
+>     [("something[3]"
+>      ,Array (Iden [Name "something"]) [NumLit "3"])
+>     ,("(something(a))[x]"
+>       ,Array (Parens (App [Name "something"] [Iden [Name "a"]]))
+>         [Iden [Name "x"]])
+>     ,("(something(a))[x][y] "
+>       ,Array (
+>         Array (Parens (App [Name "something"] [Iden [Name "a"]]))
+>         [Iden [Name "x"]])
+>         [Iden [Name "y"]])
 >     ]
-
 
 == 6.25 <multiset element reference>
 
@@ -1483,7 +1789,9 @@ Return the sole element of a multiset of one element.
 
 > multisetElementReference :: TestItem
 > multisetElementReference = Group "multisetElementReference"
->     [-- todo: next value expression
+>     $ map (uncurry TestValueExpr)
+>     [("element(something)"
+>      ,App [Name "element"] [Iden [Name "something"]])
 >     ]
 
 == 6.26 <value expression>
@@ -1531,9 +1839,20 @@ Specify a numeric value.
 
 > numericValueExpression :: TestItem
 > numericValueExpression = Group "numeric value expression"
->     [-- todo: numeric value expression
+>     $ map (uncurry TestValueExpr)
+>     [("a + b", binOp "+")
+>     ,("a - b", binOp "-")
+>     ,("a * b", binOp "*")
+>     ,("a / b", binOp "/")
+>     ,("+a", prefOp "+")
+>     ,("-a", prefOp "-")
 >     ]
+>   where
+>     binOp o = BinOp (Iden [Name "a"]) [Name o] (Iden [Name "b"])
+>     prefOp o = PrefixOp [Name o] (Iden [Name "a"])
 
+TODO: precedence and associativity tests (need to review all operators
+for what precendence and associativity tests to write)
 
 == 6.28 <numeric value function>
 
@@ -1978,8 +2297,25 @@ Specify a boolean value.
 
 > booleanValueExpression :: TestItem
 > booleanValueExpression = Group "booleab value expression"
->     [-- todo: boolean value expression
+>     $ map (uncurry TestValueExpr)
+>     [("a or b", BinOp a [Name "or"] b)
+>     ,("a and b", BinOp a [Name "and"] b)
+>     ,("not a", PrefixOp [Name "not"] a)
+>     ,("a is true", postfixOp "is true")
+>     ,("a is false", postfixOp "is false")
+>     ,("a is unknown", postfixOp "is unknown")
+>     ,("a is not true", postfixOp "is not true")
+>     ,("a is not false", postfixOp "is not false")
+>     ,("a is not unknown", postfixOp "is not unknown")
+>     ,("(a or b)", Parens $ BinOp a [Name "or"] b)
 >     ]
+>   where
+>     a = Iden [Name "a"]
+>     b = Iden [Name "b"]
+>     postfixOp nm = PostfixOp [Name nm] a
+
+TODO: review if more tests are needed. Should at least have
+precendence tests for mixed and, or and not without parens.
 
 == 6.36 <array value expression>
 
@@ -2037,8 +2373,24 @@ Specify construction of an array.
 
 > arrayValueConstructor :: TestItem
 > arrayValueConstructor = Group "array value constructor"
->     [-- todo: array value constructor
+>     $ map (uncurry TestValueExpr)
+>     [("array[1,2,3]"
+>      ,Array (Iden [Name "array"])
+>       [NumLit "1", NumLit "2", NumLit "3"])
+>     ,("array[a,b,c]"
+>      ,Array (Iden [Name "array"])
+>       [Iden [Name "a"], Iden [Name "b"], Iden [Name "c"]])
+>     ,("array(select * from t)"
+>       ,ArrayCtor (makeSelect
+>                   {qeSelectList = [(Star,Nothing)]
+>                   ,qeFrom = [TRSimple [Name "t"]]}))
+>     ,("array(select * from t order by a)"
+>       ,ArrayCtor (makeSelect
+>                   {qeSelectList = [(Star,Nothing)]
+>                   ,qeFrom = [TRSimple [Name "t"]]
+>                   ,qeOrderBy = [SortSpec (Iden [Name "a"]) DirDefault NullsOrderDefault] }))
 >     ]
+
 
 == 6.39 <multiset value expression>
 
@@ -2058,10 +2410,20 @@ Specify a multiset value.
 
 > multisetValueExpression :: TestItem
 > multisetValueExpression = Group "multiset value expression"
->     [-- todo: multiset value expression
->       multisetValueFunction
->     ]
+>    $ map (uncurry TestValueExpr)
+>    [("a multiset union b"
+>     ,MultisetBinOp (Iden [Name "a"]) Union SQDefault (Iden [Name "b"]))
+>    ,("a multiset union all b"
+>     ,MultisetBinOp (Iden [Name "a"]) Union All (Iden [Name "b"]))
+>    ,("a multiset union distinct b"
+>     ,MultisetBinOp (Iden [Name "a"]) Union Distinct (Iden [Name "b"]))
+>    ,("a multiset except b"
+>     ,MultisetBinOp (Iden [Name "a"]) Except SQDefault (Iden [Name "b"]))
+>    ,("a multiset intersect b"
+>     ,MultisetBinOp (Iden [Name "a"]) Intersect SQDefault (Iden [Name "b"]))
+>    ]
 
+TODO: check precedence and associativity
 
 == 6.40 <multiset value function>
 
@@ -2075,8 +2437,9 @@ Specify a function yielding a value of a multiset type.
 
 > multisetValueFunction :: TestItem
 > multisetValueFunction = Group "multiset value function"
->     [-- todo: multiset value function
->     ]
+>    $ map (uncurry TestValueExpr)
+>    [("set(a)", App [Name "set"] [Iden [Name "a"]])
+>    ]
 
 == 6.41 <multiset value constructor>
 
@@ -2102,8 +2465,14 @@ Specify construction of a multiset.
 
 > multisetValueConstructor :: TestItem
 > multisetValueConstructor = Group "multiset value constructor"
->     [-- todo: multiset value constructor
->     ]
+>    $ map (uncurry TestValueExpr)
+>    [("multiset[a,b,c]", MultisetCtor[Iden [Name "a"], Iden [Name "b"], Iden [Name "c"]])
+>    ,("multiset(select * from t)", MultisetQueryCtor qe)
+>    ,("table(select * from t)", MultisetQueryCtor qe)
+>    ]
+>   where
+>     qe = makeSelect {qeSelectList = [(Star,Nothing)]
+>                     ,qeFrom = [TRSimple [Name "t"]]}
 
 
 = 7 Query expressions
@@ -2397,8 +2766,12 @@ the result of the preceding <from clause>.
 
 > whereClause :: TestItem
 > whereClause = Group "where clause"
->     [-- todo: where clause
->     ]
+>     $ map (uncurry TestQueryExpr)
+>     [("select * from t where a = 5"
+>     ,makeSelect
+>      {qeSelectList = [(Star,Nothing)]
+>      ,qeFrom = [TRSimple [Name "t"]]
+>      ,qeWhere = Just $ BinOp (Iden [Name "a"]) [Name "="] (NumLit "5")})]
 
 == 7.9 <group by clause>
 
@@ -2985,8 +3358,22 @@ Specify a quantified comparison.
 
 > quantifiedComparisonPredicate :: TestItem
 > quantifiedComparisonPredicate = Group "quantified comparison predicate"
->     [-- todo: quantified comparison predicate
+>     $ map (uncurry TestValueExpr)
+
+>     [("a = any (select * from t)"
+>      ,QuantifiedComparison (Iden [Name "a"]) [Name "="] CPAny qe)
+>     ,("a <= some (select * from t)"
+>      ,QuantifiedComparison (Iden [Name "a"]) [Name "<="] CPSome qe)
+>     ,("a > all (select * from t)"
+>      ,QuantifiedComparison (Iden [Name "a"]) [Name ">"] CPAll qe)
+>     ,("(a,b) <> all (select * from t)"
+>      ,QuantifiedComparison
+>       (SpecialOp [Name "rowctor"] [Iden [Name "a"],Iden [Name "b"]]) [Name "<>"] CPAll qe)
 >     ]
+>   where
+>     qe = makeSelect
+>          {qeSelectList = [(Star,Nothing)]
+>          ,qeFrom = [TRSimple [Name "t"]]}
 
 == 8.10 <exists predicate>
 
@@ -2997,8 +3384,15 @@ Specify a test for a non-empty set.
 
 > existsPredicate :: TestItem
 > existsPredicate = Group "exists predicate"
->     [-- todo: exists predicate
->     ]
+>     $ map (uncurry TestValueExpr)
+>     [("exists(select * from t where a = 4)"
+>      ,SubQueryExpr SqExists
+>       $ makeSelect
+>         {qeSelectList = [(Star,Nothing)]
+>         ,qeFrom = [TRSimple [Name "t"]]
+>         ,qeWhere = Just (BinOp (Iden [Name "a"]) [Name "="] (NumLit "4"))
+>         }
+>      )]
 
 == 8.11 <unique predicate>
 
@@ -3009,8 +3403,15 @@ Specify a test for the absence of duplicate rows.
 
 > uniquePredicate :: TestItem
 > uniquePredicate = Group "unique predicate"
->     [-- todo: unique predicate
->     ]
+>     $ map (uncurry TestValueExpr)
+>     [("unique(select * from t where a = 4)"
+>      ,SubQueryExpr SqUnique
+>       $ makeSelect
+>         {qeSelectList = [(Star,Nothing)]
+>         ,qeFrom = [TRSimple [Name "t"]]
+>         ,qeWhere = Just (BinOp (Iden [Name "a"]) [Name "="] (NumLit "4"))
+>         }
+>      )]
 
 == 8.12 <normalized predicate>
 
@@ -3038,8 +3439,21 @@ Specify a test for matching rows.
 
 > matchPredicate :: TestItem
 > matchPredicate = Group "match predicate"
->     [-- todo: match predicate
+>     $ map (uncurry TestValueExpr)
+>     [("a match (select a from t)"
+>      ,Match (Iden [Name "a"]) False qe)
+>     ,("(a,b) match (select a,b from t)"
+>      ,Match (SpecialOp [Name "rowctor"] [Iden [Name "a"], Iden [Name "b"]]) False qea)
+>     ,("(a,b) match unique (select a,b from t)"
+>      ,Match (SpecialOp [Name "rowctor"] [Iden [Name "a"], Iden [Name "b"]]) True qea)
 >     ]
+>   where
+>     qe = makeSelect
+>          {qeSelectList = [(Iden [Name "a"],Nothing)]
+>          ,qeFrom = [TRSimple [Name "t"]]}
+>     qea = qe {qeSelectList = qeSelectList qe ++ [(Iden [Name "b"],Nothing)]}
+
+TODO: simple, partial and full
 
 == 8.14 <overlaps predicate>
 
@@ -3374,8 +3788,9 @@ Specify a default collation.
 
 > collateClause :: TestItem
 > collateClause = Group "collate clause"
->     [-- todo: collate clause
->     ]
+>     $ map (uncurry TestValueExpr)
+>     [("a collate my_collation"
+>      ,Collate (Iden [Name "a"]) [Name "my_collation"])]
 
 == 10.8 <constraint name definition> and <constraint characteristics>
 
@@ -3484,8 +3899,78 @@ Specify a value computed from a collection of rows.
 
 > aggregateFunction :: TestItem
 > aggregateFunction = Group "aggregate function"
->     [-- todo: aggregate function
->     ]
+>     $ map (uncurry TestValueExpr) $
+>     [("count(*)",App [Name "count"] [Star])
+>     ,("count(*) filter (where something > 5)"
+>      ,AggregateApp [Name "count"] SQDefault [Star] [] fil)
+
+gsf
+
+>     ,("count(a)",App [Name "count"] [Iden [Name "a"]])
+>     ,("count(distinct a)"
+>      ,AggregateApp [Name "count"]
+>                    Distinct
+>                    [Iden [Name "a"]] [] Nothing)
+>     ,("count(all a)"
+>      ,AggregateApp [Name "count"]
+>                    All
+>                    [Iden [Name "a"]] [] Nothing)
+>     ,("count(all a) filter (where something > 5)"
+>      ,AggregateApp [Name "count"]
+>                    All
+>                    [Iden [Name "a"]] [] fil)
+>     ] ++ concatMap mkSimpleAgg
+>          ["avg","max","min","sum"
+>          ,"every", "any", "some"
+>          ,"stddev_pop","stddev_samp","var_samp","var_pop"
+>          ,"collect","fusion","intersection"]
+
+bsf
+
+>     ++ concatMap mkBsf
+>          ["COVAR_POP","COVAR_SAMP","CORR","REGR_SLOPE"
+>           ,"REGR_INTERCEPT","REGR_COUNT","REGR_R2"
+>           ,"REGR_AVGX","REGR_AVGY"
+>           ,"REGR_SXX","REGR_SYY","REGR_SXY"]
+
+osf
+
+>     ++
+>     [("rank(a,c) within group (order by b)"
+>      ,AggregateAppGroup [Name "rank"]
+>           [Iden [Name "a"], Iden [Name "c"]]
+>           ob)]
+>     ++ map mkGp ["dense_rank","percent_rank"
+>                 ,"cume_dist", "percentile_cont"
+>                 ,"percentile_disc"]
+>     ++ [("array_agg(a)", App [Name "array_agg"] [Iden [Name "a"]])
+>        ,("array_agg(a order by z)"
+>         ,AggregateApp [Name "array_agg"]
+>                        SQDefault
+>                        [Iden [Name "a"]]
+>                        [SortSpec (Iden [Name "z"]) DirDefault NullsOrderDefault]
+>                        Nothing)]
+
+>   where
+>     fil = Just $ BinOp (Iden [Name "something"]) [Name ">"] (NumLit "5")
+>     ob = [SortSpec (Iden [Name "b"]) DirDefault NullsOrderDefault]
+>     mkGp nm = (nm ++ "(a) within group (order by b)"
+>               ,AggregateAppGroup [Name nm]
+>                [Iden [Name "a"]]
+>                ob)
+
+>     mkSimpleAgg nm =
+>         [(nm ++ "(a)",App [Name nm] [Iden [Name "a"]])
+>         ,(nm ++ "(distinct a)"
+>          ,AggregateApp [Name nm]
+>                        Distinct
+>                        [Iden [Name "a"]] [] Nothing)]
+>     mkBsf nm =
+>         [(nm ++ "(a,b)",App [Name nm] [Iden [Name "a"],Iden [Name "b"]])
+>         ,(nm ++"(a,b) filter (where something > 5)"
+>           ,AggregateApp [Name nm]
+>                         SQDefault
+>                         [Iden [Name "a"],Iden [Name "b"]] [] fil)]
 
 == 10.10 <sort specification list>
 
