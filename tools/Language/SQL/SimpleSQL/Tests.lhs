@@ -28,7 +28,6 @@ test data to the Test.Framework tests.
 > import Language.SQL.SimpleSQL.ValueExprs
 > import Language.SQL.SimpleSQL.Tpch
 
-> import Language.SQL.SimpleSQL.SQL2003
 > import Language.SQL.SimpleSQL.SQL2011
 
 Order the tests to start from the simplest first. This is also the
@@ -45,7 +44,6 @@ order on the generated documentation.
 >     ,fullQueriesTests
 >     ,postgresTests
 >     ,tpchTests
->     ,sql2003Tests
 >     ,sql2011Tests
 >     ]
 

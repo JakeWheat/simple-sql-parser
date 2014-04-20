@@ -4248,10 +4248,25 @@ Specify a sort order.
 > sortSpecificationList :: TestItem
 > sortSpecificationList = Group "sort specification list"
 >     $ map (uncurry TestQueryExpr)
->     -- todo: finish test for sort specs
->     [{-("select * from t order by a,b", undefined)
->     ,("select * from t order by a asc", undefined)
->     ,("select * from t order by a desc", undefined)
->     ,("select * from t order by a nulls first", undefined)
->     ,("select * from t order by a nulls first", undefined)-}
+>     [("select * from t order by a"
+>      ,qe {qeOrderBy = [SortSpec (Iden [Name "a"]) DirDefault NullsOrderDefault]})
+>     ,("select * from t order by a,b"
+>      ,qe {qeOrderBy = [SortSpec (Iden [Name "a"]) DirDefault NullsOrderDefault
+>                       ,SortSpec (Iden [Name "b"]) DirDefault NullsOrderDefault]})
+>     ,("select * from t order by a asc,b"
+>      ,qe {qeOrderBy = [SortSpec (Iden [Name "a"]) Asc NullsOrderDefault
+>                       ,SortSpec (Iden [Name "b"]) DirDefault NullsOrderDefault]})
+>     ,("select * from t order by a desc,b"
+>      ,qe {qeOrderBy = [SortSpec (Iden [Name "a"]) Desc NullsOrderDefault
+>                       ,SortSpec (Iden [Name "b"]) DirDefault NullsOrderDefault]})
+>     ,("select * from t order by a collate x desc,b"
+>      ,qe {qeOrderBy = [SortSpec (Collate (Iden [Name "a"]) [Name "x"]) Desc NullsOrderDefault
+>                       ,SortSpec (Iden [Name "b"]) DirDefault NullsOrderDefault]})
+>     ,("select * from t order by 1,2"
+>      ,qe {qeOrderBy = [SortSpec (NumLit "1") DirDefault NullsOrderDefault
+>                       ,SortSpec (NumLit "2") DirDefault NullsOrderDefault]})
 >     ]
+>   where
+>     qe = makeSelect
+>          {qeSelectList = [(Star,Nothing)]
+>          ,qeFrom = [TRSimple [Name "t"]]}
