@@ -2501,10 +2501,12 @@ Specify construction of a multiset.
 >     [rowValueConstructor
 >     ,rowValueExpression
 >     ,tableValueConstructor
+>     ,fromClause
 >     ,tableReference
 >     ,joinedTable
 >     ,whereClause
 >     ,groupByClause
+>     ,havingClause
 >     ,windowClause
 >     ,querySpecification
 >     ,withQueryExpression
@@ -2635,10 +2637,25 @@ Specify a table derived from one or more tables.
 <table reference list> ::=
   <table reference> [ { <comma> <table reference> }... ]
 
+> fromClause :: TestItem
+> fromClause = Group "fromClause"
+>     $ map (uncurry TestQueryExpr)
+>     [("select * from tbl1,tbl2"
+>      ,makeSelect
+>       {qeSelectList = [(Star, Nothing)]
+>       ,qeFrom = [TRSimple [Name "tbl1"], TRSimple [Name "tbl2"]]
+>       })]
+
+
 == 7.6 <table reference>
 
 Function
 Reference a table.
+
+> tableReference :: TestItem
+> tableReference = Group "table reference"
+>     $ map (uncurry TestQueryExpr)
+>     [("select * from t", sel)
 
 <table reference> ::= <table factor> | <joined table>
 
@@ -2657,7 +2674,7 @@ Reference a table.
 <repeat argument> ::= <numeric value expression>
 
 <table primary> ::=
-      <table or query name> [ <query system time period specification> ]
+    <table or query name> [ <query system time period specification> ]
           [ [ AS ] <correlation name>
             [ <left paren> <derived column list> <right paren> ] ]
   | <derived table> [ AS ] <correlation name>
@@ -2680,6 +2697,8 @@ Reference a table.
       <point in time 1> AND <point in time 2>
   | FOR SYSTEM_TIME FROM <point in time 1> TO <point in time 2>
 
+TODO: query system time period spec
+
 <point in time 1> ::= <point in time>
 
 <point in time 2> ::= <point in time>
@@ -2687,6 +2706,8 @@ Reference a table.
 <point in time> ::= <datetime value expression>
 
 <only spec> ::= ONLY <left paren> <table or query name> <right paren>
+
+TODO: only
 
 <lateral derived table> ::= LATERAL <table subquery>
 
@@ -2721,10 +2742,53 @@ Reference a table.
     <left paren> <parenthesized joined table> <right paren>
   | <left paren> <joined table> <right paren>
 
-> tableReference :: TestItem
-> tableReference = Group "table reference"
->     [-- todo: table reference
+
+>     -- table or query name
+>     ,("select * from t u", a sel)
+>     ,("select * from t as u", a sel)
+>     ,("select * from t u(a,b)", sel1 )
+>     ,("select * from t as u(a,b)", sel1)
+>     -- derived table TODO: realistic example
+>     ,("select * from (select * from t) u"
+>      ,a $ sel {qeFrom = [TRQueryExpr sel]})
+>     -- lateral TODO: realistic example
+>     ,("select * from lateral t"
+>      ,af TRLateral sel)
+>     -- TODO: bug, lateral should bind more tightly than the alias
+>     --,("select * from lateral t u"
+>     -- ,a $ af sel TRLateral)
+>     -- collection TODO: realistic example
+>      -- TODO: make it work
+>     --,("select * from unnest(a)", undefined)
+>     --,("select * from unnest(a,b)", undefined)
+>     --,("select * from unnest(a,b) with ordinality", undefined)
+>     --,("select * from unnest(a,b) with ordinality u", undefined)
+>     --,("select * from unnest(a,b) with ordinality as u", undefined)
+>     -- table fn TODO: realistic example
+>      -- TODO: make it work
+>     --,("select * from table(a)", undefined)
+>     -- parens
+>     ,("select * from (a join b)", jsel)
+>     ,("select * from (a join b) u", a jsel)
+>     ,("select * from ((a join b)) u", a $ af TRParens jsel)
+>     ,("select * from ((a join b) u) u", a $ af TRParens $ a jsel)
 >     ]
+>   where
+>     sel = makeSelect
+>           {qeSelectList = [(Star, Nothing)]
+>           ,qeFrom = [TRSimple [Name "t"]]}
+>     af f s = s {qeFrom = map f (qeFrom s)}
+>     a s = af (\x -> TRAlias x $ Alias (Name "u") Nothing) s
+>     sel1 = makeSelect
+>           {qeSelectList = [(Star, Nothing)]
+>           ,qeFrom = [TRAlias (TRSimple [Name "t"])
+>                      $ Alias (Name "u") $ Just [Name "a", Name "b"]]}
+>     jsel = sel {qeFrom =
+>                 [TRParens $ TRJoin (TRSimple [Name "a"])
+>                                    False
+>                                    JInner
+>                                    (TRSimple [Name "b"])
+>                                    Nothing]}
 
 == 7.7 <joined table>
 
@@ -2771,8 +2835,51 @@ Specify a table derived from a Cartesian product, inner join, or outer join.
 
 > joinedTable :: TestItem
 > joinedTable = Group "joined table"
->     [-- todo: joined table
+>     $ map (uncurry TestQueryExpr)
+>     [("select * from a cross join b"
+>      ,sel $ TRJoin a False JCross b Nothing)
+>     ,("select * from a join b on true"
+>      ,sel $ TRJoin a False JInner b
+>       (Just $ JoinOn $ Iden [Name "true"]))
+>     ,("select * from a join b using (c)"
+>      ,sel $ TRJoin a False JInner b
+>       (Just $ JoinUsing [Name "c"]))
+>     ,("select * from a inner join b on true"
+>      ,sel $ TRJoin a False JInner b
+>       (Just $ JoinOn $ Iden [Name "true"]))
+>     ,("select * from a left join b on true"
+>      ,sel $ TRJoin a False JLeft b
+>       (Just $ JoinOn $ Iden [Name "true"]))
+>     ,("select * from a left outer join b on true"
+>      ,sel $ TRJoin a False JLeft b
+>       (Just $ JoinOn $ Iden [Name "true"]))
+>     ,("select * from a right join b on true"
+>      ,sel $ TRJoin a False JRight b
+>       (Just $ JoinOn $ Iden [Name "true"]))
+>     ,("select * from a full join b on true"
+>      ,sel $ TRJoin a False JFull b
+>       (Just $ JoinOn $ Iden [Name "true"]))
+>     ,("select * from a natural join b"
+>      ,sel $ TRJoin a True JInner b Nothing)
+>     ,("select * from a natural inner join b"
+>      ,sel $ TRJoin a True JInner b Nothing)
+>     ,("select * from a natural left join b"
+>      ,sel $ TRJoin a True JLeft b Nothing)
+>     ,("select * from a natural left outer join b"
+>      ,sel $ TRJoin a True JLeft b Nothing)
+>     ,("select * from a natural right join b"
+>      ,sel $ TRJoin a True JRight b Nothing)
+>     ,("select * from a natural full join b"
+>      ,sel $ TRJoin a True JFull b Nothing)
 >     ]
+>   where
+>     sel t = makeSelect
+>             {qeSelectList = [(Star, Nothing)]
+>             ,qeFrom = [t]}
+>     a = TRSimple [Name "a"]
+>     b = TRSimple [Name "b"]
+
+TODO: partitioned joins
 
 == 7.8 <where clause>
 
@@ -2842,6 +2949,46 @@ clause> to the result of the previously specified clause.
 
 <empty grouping set> ::= <left paren> <right paren>
 
+
+> groupByClause :: TestItem
+> groupByClause = Group "group by clause"
+>     $ map (uncurry TestQueryExpr)
+>     [("select a,sum(x) from t group by a"
+>      ,qe [SimpleGroup $ Iden [Name "a"]])
+>      ,("select a,sum(x) from t group by a collate c"
+>      ,qe [SimpleGroup $ Collate (Iden [Name "a"]) [Name "c"]])
+>     ,("select a,b,sum(x) from t group by a,b"
+>      ,qex [SimpleGroup $ Iden [Name "a"]
+>           ,SimpleGroup $ Iden [Name "b"]])
+>     -- todo: group by set quantifier
+>     --,("select a,sum(x) from t group by distinct a"
+>     --,undefined)
+>     --,("select a,sum(x) from t group by all a"
+>     -- ,undefined)
+>     ,("select a,b,sum(x) from t group by rollup(a,b)"
+>      ,qex [Rollup [SimpleGroup $ Iden [Name "a"]
+>                   ,SimpleGroup $ Iden [Name "b"]]])
+>     ,("select a,b,sum(x) from t group by cube(a,b)"
+>      ,qex [Cube [SimpleGroup $ Iden [Name "a"]
+>                 ,SimpleGroup $ Iden [Name "b"]]])
+>     ,("select a,b,sum(x) from t group by grouping sets((),(a,b))"
+>      ,qex [GroupingSets [GroupingParens []
+>                         ,GroupingParens [SimpleGroup $ Iden [Name "a"]
+>                                         ,SimpleGroup $ Iden [Name "b"]]]])
+>     ,("select sum(x) from t group by ()"
+>      ,let x = qe [GroupingParens []]
+>       in x {qeSelectList = tail $ qeSelectList x})
+>     ]
+>   where
+>     qe g = makeSelect
+>            {qeSelectList = [(Iden [Name "a"], Nothing)
+>                            ,(App [Name "sum"] [Iden [Name "x"]], Nothing)]
+>            ,qeFrom = [TRSimple [Name "t"]]
+>            ,qeGroupBy = g}
+>     qex g = let x = qe g
+>             in x {qeSelectList = let [a,b] = qeSelectList x
+>                                  in [a,(Iden [Name "b"],Nothing),b]}
+
 == 7.10 <having clause>
 
 Function
@@ -2851,9 +2998,18 @@ not satisfy a <search condition>.
 
 <having clause> ::= HAVING <search condition>
 
-> groupByClause :: TestItem
-> groupByClause = Group "group by clause"
->     [-- todo: group by clause
+> havingClause :: TestItem
+> havingClause = Group "having clause"
+>     $ map (uncurry TestQueryExpr)
+>     [("select a,sum(x) from t group by a having sum(x) > 1000"
+>      ,makeSelect
+>       {qeSelectList = [(Iden [Name "a"], Nothing)
+>                       ,(App [Name "sum"] [Iden [Name "x"]], Nothing)]
+>       ,qeFrom = [TRSimple [Name "t"]]
+>       ,qeGroupBy = [SimpleGroup $ Iden [Name "a"]]
+>       ,qeHaving = Just $ BinOp (App [Name "sum"] [Iden [Name "x"]])
+>                                [Name ">"]
+>                                (NumLit "1000")})
 >     ]
 
 == 7.11 <window clause>
