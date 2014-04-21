@@ -1052,7 +1052,6 @@ create a list of type name variations:
 >         ,"timestamp"]
 >         --interval -- not allowed without interval qualifier
 >         --row -- not allowed without row type body
->         --ref -- not allowed without reference type
 >         -- array -- not allowed on own
 >         -- multiset -- not allowed on own
 
@@ -1062,8 +1061,10 @@ create a list of type name variations:
 >          ,("char varying(5)", PrecTypeName [Name "char varying"] 5)
 >          -- 1 scale
 >          ,("decimal(15,2)", PrecScaleTypeName [Name "decimal"] 15 2)
->          ,("char(3 octets)", PrecLengthTypeName [Name "char"] 3 Nothing (Just PrecOctets))
->          ,("varchar(50 characters)", PrecLengthTypeName [Name "varchar"] 50 Nothing (Just PrecCharacters))
+>          ,("char(3 octets)"
+>           ,PrecLengthTypeName [Name "char"] 3 Nothing (Just PrecOctets))
+>          ,("varchar(50 characters)"
+>           ,PrecLengthTypeName [Name "varchar"] 50 Nothing (Just PrecCharacters))
 >          -- lob prec + with multiname
 >          ,("blob(3M)", PrecLengthTypeName [Name "blob"] 3 (Just PrecM) Nothing)
 >          ,("blob(3T)", PrecLengthTypeName [Name "blob"] 3 (Just PrecT) Nothing)
@@ -1073,7 +1074,8 @@ create a list of type name variations:
 >          ,("blob(6G octets) "
 >           ,PrecLengthTypeName [Name "blob"] 6 (Just PrecG) (Just PrecOctets))
 >          ,("national character large object(7K) "
->           ,PrecLengthTypeName [Name "national character large object"] 7 (Just PrecK) Nothing)
+>           ,PrecLengthTypeName [Name "national character large object"]
+>                7 (Just PrecK) Nothing)
 >          -- 1 with and without tz
 >          ,("time with time zone"
 >           ,TimeTypeName [Name "time"] Nothing True)
@@ -1261,7 +1263,8 @@ Specify a value that is syntactically self-delimited.
 >     ]
 
 > parenthesizedValueExpression :: TestItem
-> parenthesizedValueExpression = Group "parenthesized value expression" $ map (uncurry TestValueExpr)
+> parenthesizedValueExpression = Group "parenthesized value expression"
+>     $ map (uncurry TestValueExpr)
 >     [("(3)", Parens (NumLit "3"))
 >     ,("((3))", Parens $ Parens (NumLit "3"))
 >     ]
@@ -1386,7 +1389,8 @@ Specify a value whose data type is to be inferred from its context.
 <default specification> ::= DEFAULT
 
 > contextuallyTypedValueSpecification :: TestItem
-> contextuallyTypedValueSpecification = Group "contextually typed value specification"
+> contextuallyTypedValueSpecification =
+>     Group "contextually typed value specification"
 >     $ map (uncurry TestValueExpr)
 >     [("null", Iden [Name "null"])
 >     ,("array[]", Array (Iden [Name "array"]) [])
@@ -1449,8 +1453,10 @@ Specify a value derived by the application of a function to an argument.
 >       \GROUP BY ROLLUP(SalesQuota);"
 >      ,makeSelect
 >       {qeSelectList = [(Iden [Name "SalesQuota"],Nothing)
->                       ,(App [Name "SUM"] [Iden [Name "SalesYTD"]],Just (Name "TotalSalesYTD"))
->                       ,(App [Name "GROUPING"] [Iden [Name "SalesQuota"]],Just (Name "Grouping"))]
+>                       ,(App [Name "SUM"] [Iden [Name "SalesYTD"]]
+>                        ,Just (Name "TotalSalesYTD"))
+>                       ,(App [Name "GROUPING"] [Iden [Name "SalesQuota"]]
+>                        ,Just (Name "Grouping"))]
 >       ,qeFrom = [TRSimple [Name "Sales",Name "SalesPerson"]]
 >       ,qeGroupBy = [Rollup [SimpleGroup (Iden [Name "SalesQuota"])]]})
 >     ]
@@ -2412,7 +2418,8 @@ Specify construction of an array.
 >       ,ArrayCtor (makeSelect
 >                   {qeSelectList = [(Star,Nothing)]
 >                   ,qeFrom = [TRSimple [Name "t"]]
->                   ,qeOrderBy = [SortSpec (Iden [Name "a"]) DirDefault NullsOrderDefault] }))
+>                   ,qeOrderBy = [SortSpec (Iden [Name "a"])
+>                                     DirDefault NullsOrderDefault]}))
 >     ]
 
 
@@ -2490,7 +2497,8 @@ Specify construction of a multiset.
 > multisetValueConstructor :: TestItem
 > multisetValueConstructor = Group "multiset value constructor"
 >    $ map (uncurry TestValueExpr)
->    [("multiset[a,b,c]", MultisetCtor[Iden [Name "a"], Iden [Name "b"], Iden [Name "c"]])
+>    [("multiset[a,b,c]", MultisetCtor[Iden [Name "a"]
+>                                     ,Iden [Name "b"], Iden [Name "c"]])
 >    ,("multiset(select * from t)", MultisetQueryCtor qe)
 >    ,("table(select * from t)", MultisetQueryCtor qe)
 >    ]
@@ -3265,13 +3273,25 @@ everywhere
 > orderOffsetFetchQueryExpression = Group "order, offset, fetch query expression"
 >     $ map (uncurry TestQueryExpr)
 >     [-- todo: finish tests for order offset and fetch
->      {- ("select * from t order by a", undefined)
->     ,("select * from t offset 5 row", undefined)
->     ,("select * from t offset 5 rows", undefined)
->     ,("select * from t fetch first 5 row only", undefined)
->     ,("select * from t fetch next 5 rows with ties", undefined)
->     ,("select * from t fetch first 5 percent rows only", undefined)-}
+>      ("select a from t order by a"
+>      ,qe {qeOrderBy = [SortSpec (Iden [Name "a"])
+>                            DirDefault NullsOrderDefault]})
+>     ,("select a from t offset 5 row"
+>      ,qe {qeOffset = Just $ NumLit "5"})
+>     ,("select a from t offset 5 rows"
+>      ,qe {qeOffset = Just $ NumLit "5"})
+>     ,("select a from t fetch first 5 row only"
+>      ,qe {qeFetchFirst = Just $ NumLit "5"})
+>     -- todo: support with ties and percent in fetch
+>     --,("select a from t fetch next 5 rows with ties"
+>     --,("select a from t fetch first 5 percent rows only"
 >     ]
+>  where
+>     qe = makeSelect
+>          {qeSelectList = [(Iden [Name "a"], Nothing)]
+>          ,qeFrom = [TRSimple [Name "t"]]
+>          }
+
 
 == 7.14 <search or cycle clause>
 
@@ -3622,7 +3642,8 @@ Specify a quantified comparison.
 >      ,QuantifiedComparison (Iden [Name "a"]) [Name ">"] CPAll qe)
 >     ,("(a,b) <> all (select * from t)"
 >      ,QuantifiedComparison
->       (SpecialOp [Name "rowctor"] [Iden [Name "a"],Iden [Name "b"]]) [Name "<>"] CPAll qe)
+>       (SpecialOp [Name "rowctor"] [Iden [Name "a"]
+>                                   ,Iden [Name "b"]]) [Name "<>"] CPAll qe)
 >     ]
 >   where
 >     qe = makeSelect
@@ -3697,15 +3718,18 @@ Specify a test for matching rows.
 >     [("a match (select a from t)"
 >      ,Match (Iden [Name "a"]) False qe)
 >     ,("(a,b) match (select a,b from t)"
->      ,Match (SpecialOp [Name "rowctor"] [Iden [Name "a"], Iden [Name "b"]]) False qea)
+>      ,Match (SpecialOp [Name "rowctor"]
+>              [Iden [Name "a"], Iden [Name "b"]]) False qea)
 >     ,("(a,b) match unique (select a,b from t)"
->      ,Match (SpecialOp [Name "rowctor"] [Iden [Name "a"], Iden [Name "b"]]) True qea)
+>      ,Match (SpecialOp [Name "rowctor"]
+>              [Iden [Name "a"], Iden [Name "b"]]) True qea)
 >     ]
 >   where
 >     qe = makeSelect
 >          {qeSelectList = [(Iden [Name "a"],Nothing)]
 >          ,qeFrom = [TRSimple [Name "t"]]}
->     qea = qe {qeSelectList = qeSelectList qe ++ [(Iden [Name "b"],Nothing)]}
+>     qea = qe {qeSelectList = qeSelectList qe
+>                              ++ [(Iden [Name "b"],Nothing)]}
 
 TODO: simple, partial and full
 
@@ -4202,7 +4226,8 @@ osf
 >         ,AggregateApp [Name "array_agg"]
 >                        SQDefault
 >                        [Iden [Name "a"]]
->                        [SortSpec (Iden [Name "z"]) DirDefault NullsOrderDefault]
+>                        [SortSpec (Iden [Name "z"])
+>                             DirDefault NullsOrderDefault]
 >                        Nothing)]
 
 >   where
@@ -4249,22 +4274,34 @@ Specify a sort order.
 > sortSpecificationList = Group "sort specification list"
 >     $ map (uncurry TestQueryExpr)
 >     [("select * from t order by a"
->      ,qe {qeOrderBy = [SortSpec (Iden [Name "a"]) DirDefault NullsOrderDefault]})
+>      ,qe {qeOrderBy = [SortSpec (Iden [Name "a"])
+>                            DirDefault NullsOrderDefault]})
 >     ,("select * from t order by a,b"
->      ,qe {qeOrderBy = [SortSpec (Iden [Name "a"]) DirDefault NullsOrderDefault
->                       ,SortSpec (Iden [Name "b"]) DirDefault NullsOrderDefault]})
+>      ,qe {qeOrderBy = [SortSpec (Iden [Name "a"])
+>                            DirDefault NullsOrderDefault
+>                       ,SortSpec (Iden [Name "b"])
+>                            DirDefault NullsOrderDefault]})
 >     ,("select * from t order by a asc,b"
->      ,qe {qeOrderBy = [SortSpec (Iden [Name "a"]) Asc NullsOrderDefault
->                       ,SortSpec (Iden [Name "b"]) DirDefault NullsOrderDefault]})
+>      ,qe {qeOrderBy = [SortSpec (Iden [Name "a"])
+>                            Asc NullsOrderDefault
+>                       ,SortSpec (Iden [Name "b"])
+>                            DirDefault NullsOrderDefault]})
 >     ,("select * from t order by a desc,b"
->      ,qe {qeOrderBy = [SortSpec (Iden [Name "a"]) Desc NullsOrderDefault
->                       ,SortSpec (Iden [Name "b"]) DirDefault NullsOrderDefault]})
+>      ,qe {qeOrderBy = [SortSpec (Iden [Name "a"])
+>                            Desc NullsOrderDefault
+>                       ,SortSpec (Iden [Name "b"])
+>                            DirDefault NullsOrderDefault]})
 >     ,("select * from t order by a collate x desc,b"
->      ,qe {qeOrderBy = [SortSpec (Collate (Iden [Name "a"]) [Name "x"]) Desc NullsOrderDefault
->                       ,SortSpec (Iden [Name "b"]) DirDefault NullsOrderDefault]})
+>      ,qe {qeOrderBy = [SortSpec
+>                            (Collate (Iden [Name "a"]) [Name "x"])
+>                            Desc NullsOrderDefault
+>                       ,SortSpec (Iden [Name "b"])
+>                            DirDefault NullsOrderDefault]})
 >     ,("select * from t order by 1,2"
->      ,qe {qeOrderBy = [SortSpec (NumLit "1") DirDefault NullsOrderDefault
->                       ,SortSpec (NumLit "2") DirDefault NullsOrderDefault]})
+>      ,qe {qeOrderBy = [SortSpec (NumLit "1")
+>                            DirDefault NullsOrderDefault
+>                       ,SortSpec (NumLit "2")
+>                            DirDefault NullsOrderDefault]})
 >     ]
 >   where
 >     qe = makeSelect

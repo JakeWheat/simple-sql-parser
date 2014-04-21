@@ -1,9 +1,9 @@
 continue 2011 review and tests
 
-1. start replacing the 2003 stuff with 2011
-2. create an error message document for the website
-   - base of error messages but add some more variations
-3. start thinking about tests for invalid syntax
+1. create an error message document for the website
+   - base off ErrorMessages but add some more variations
+2. start thinking about automated tests for invalid syntax to catch
+   bad parsing
 
 review names in the syntax for correspondence with sql standard, avoid
    gratuitous differences
@@ -18,6 +18,7 @@ refactor crufty bits
 reorder the code
 reconsider the names and structure of the constructors in the syntax
 refactor the typename parser - it's a real mess
+fix the lexing
 
 add documentation in Parser.lhs on the left factoring/error handling
    approach
@@ -63,6 +64,7 @@ rules for changing the multi keyword parsing:
 
 change join defaults to be defaults
 
+
 rough SQL 2011 todo, including tests to write:
 
 review the commented out reserved keyword entries and work out how to
@@ -87,7 +89,6 @@ character set behaviour review
 datetime literals
 mixed quoting identifier chains
 names/identifiers careful review
-typenames: lengths, binary
 general value bits
   collate for
 numeric val fn
@@ -95,12 +96,9 @@ string exp fn
 datetime exp fn
 interval exp fn
 rows
-table value constructor
 interval qualifier
-query spec
 with
 setop
-explicit table
 order/offset/fetch
 search/cycle
 preds:
@@ -121,7 +119,6 @@ period
 alias for * in select list
 
 create list of unsupported syntax: xml, ref, subtypes, modules?
-only
 
 ---
 
