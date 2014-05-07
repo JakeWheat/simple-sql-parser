@@ -184,7 +184,7 @@ fixing them in the syntax but leaving them till the semantic checking
 
 > import Control.Monad.Identity (Identity)
 > import Control.Monad (guard, void, when)
-> import Control.Applicative ((<$), (<$>), (<*>) ,(<*), (*>))
+> import Control.Applicative ((<$), (<$>), (<*>) ,(<*), (*>), (<**>))
 > import Data.Maybe (fromMaybe,catMaybes)
 > import Data.Char (toLower)
 > import Text.Parsec (errorPos,sourceLine,sourceColumn,sourceName
@@ -192,7 +192,7 @@ fixing them in the syntax but leaving them till the semantic checking
 >                    ,option,between,sepBy,sepBy1,string,manyTill,anyChar
 >                    ,try,string,many1,oneOf,digit,(<|>),choice,char,eof
 >                    ,optionMaybe,optional,many,letter,parse
->                    ,chainl1, (<?>),notFollowedBy,alphaNum, lookAhead)
+>                    ,chainl1, chainr1,(<?>),notFollowedBy,alphaNum, lookAhead)
 > import Text.Parsec.String (Parser)
 > import qualified Text.Parsec as P (ParseError)
 > import Text.Parsec.Perm (permute,(<$?>), (<|?>))
@@ -306,11 +306,19 @@ u&"example quoted"
 >               ,UQName <$> uquotedIdentifier
 >               ,Name <$> identifierBlacklist blacklist]
 
+todo: replace (:[]) with a named function all over
+
 > names :: Parser [Name]
-> names = ((:[]) <$> name) >>= optionSuffix another
+> names = reverse <$> repeatPostfix ((:[]) <$> name) anotherName
+>   -- can't use a simple chain here since we
+>   -- want to wrap the . + name in a try
+>   -- this will change when this is left factored
 >   where
->     another n =
->         (((n++) . (:[])) <$> try (symbol "." *> name)) >>= optionSuffix another
+>     anotherName :: Parser ([Name] -> [Name])
+>     anotherName = try ((:) <$> (symbol "." *> name))
+
+> repeatPostfix :: Parser a -> Parser (a -> a) -> Parser a
+> repeatPostfix p q = foldr ($) <$> p <*> (reverse <$> many q)
 
 = Type Names
 
@@ -420,8 +428,9 @@ TODO: this code needs heavy refactoring
 
 > typeName :: Parser TypeName
 > typeName =
->     (rowTypeName <|> intervalTypeName <|> otherTypeName)
->     >>= tnSuffix
+>     repeatPostfix
+>         (rowTypeName <|> intervalTypeName <|> otherTypeName)
+>         tnSuffix
 >     <?> "typename"
 >   where
 >     -- row type names - a little like create table
@@ -438,6 +447,7 @@ TODO: this code needs heavy refactoring
 >     otherTypeName = do
 >         tn <- (try reservedTypeNames <|> names)
 >         choice [try $ timezone tn
+>                 -- todo: use the P (a->a) style
 >                ,try (precscale tn) >>= optionSuffix charSuffix
 >                ,try $ lob tn
 >                ,optionSuffix charSuffix $ TypeName tn]
@@ -480,14 +490,11 @@ TODO: this code needs heavy refactoring
 >     lobUnits = choice [PrecCharacters <$ keyword_ "characters"
 >                       ,PrecOctets <$ keyword_ "octets"]
 >     -- deal with multiset and array suffixes
->     tnSuffix x =
->         multisetSuffix x <|> arrayTNSuffix x <|> return x
->     multisetSuffix x =
->         (MultisetTypeName x <$ keyword_ "multiset") >>= tnSuffix
->     arrayTNSuffix x =
->         (keyword_ "array" >> ArrayTypeName x
->                              <$> optionMaybe (brackets unsignedInteger)
->         ) >>= tnSuffix
+>     tnSuffix :: Parser (TypeName -> TypeName)
+>     tnSuffix = multisetSuffix <|> arrayTNSuffix
+>     multisetSuffix = MultisetTypeName <$ keyword_ "multiset"
+>     arrayTNSuffix = keyword_ "array" >>
+>         flip ArrayTypeName <$> optionMaybe (brackets unsignedInteger)
 >     -- this parser handles the fixed set of multi word
 >     -- type names, plus all the type names which are
 >     -- reserved words
@@ -850,6 +857,9 @@ if there are no value exprs
 >     makeApp i (SQDefault,es,Nothing) = App i es
 >     makeApp i (d,es,od) = AggregateApp i d es (fromMaybe [] od) Nothing
 
+TODO: change all these suffix functions to use type
+Parser (ValueExpr -> ValueExpr)
+
 > app :: [Name] -> Parser ValueExpr
 > app n = aggOrApp n >>= \a -> choice
 >         [windowSuffix a
@@ -939,8 +949,6 @@ These are all generic suffixes on any value expr
 in: two variations:
 a in (expr0, expr1, ...)
 a in (queryexpr)
-
-this is parsed as a postfix operator which is why it is in this form
 
 > inSuffix :: Parser (ValueExpr -> ValueExpr)
 > inSuffix =
@@ -1232,6 +1240,8 @@ tref
 > from :: Parser [TableRef]
 > from = keyword_ "from" *> commaSep1 tref
 >   where
+>     -- TODO: use P (a->) for the join tref suffix
+>     -- chainl or buildexpressionparser
 >     tref = nonJoinTref >>= optionSuffix joinTrefSuffix
 >     nonJoinTref = choice
 >         [parens $ choice
@@ -1243,9 +1253,8 @@ tref
 >          n <- names
 >          choice [TRFunction n
 >                  <$> parens (commaSep valueExpr)
->                 ,return $ TRSimple n]]
->         >>= optionSuffix aliasSuffix
->     aliasSuffix j = option j (TRAlias j <$> fromAlias)
+>                 ,return $ TRSimple n]] <??> aliasSuffix
+>     aliasSuffix = flip TRAlias <$> fromAlias
 >     joinTrefSuffix t =
 >         (TRJoin t <$> option False (True <$ keyword_ "natural")
 >                   <*> joinType
@@ -1356,7 +1365,7 @@ and union, etc..
 > queryExpr :: Parser QueryExpr
 > queryExpr = choice
 >     [with
->     ,choice [values,table, select] >>= optionSuffix queryExprSuffix]
+>     ,chainr1 (choice [values,table, select]) setOp]
 >   where
 >     select = keyword_ "select" >>
 >         mkSelect
@@ -1396,29 +1405,32 @@ be in the public syntax?
 >     mkTe f w g h od (ofs,fe) =
 >         TableExpression f w g h od ofs fe
 
-> queryExprSuffix :: QueryExpr -> Parser QueryExpr
-> queryExprSuffix qe = cqSuffix >>= optionSuffix queryExprSuffix
+> setOp :: Parser (QueryExpr -> QueryExpr -> QueryExpr)
+> setOp = cq
+>         <$> setOpK
+>         <*> (fromMaybe SQDefault <$> duplicates)
+>         <*> corr
 >   where
->     cqSuffix = CombineQueryExpr qe
->                <$> setOp
->                <*> (fromMaybe SQDefault <$> duplicates)
->                <*> corr
->                <*> queryExpr
->     setOp = choice [Union <$ keyword_ "union"
->                    ,Intersect <$ keyword_ "intersect"
->                    ,Except <$ keyword_ "except"]
+>     cq o d c q0 q1 = CombineQueryExpr q0 o d c q1
+>     setOpK = choice [Union <$ keyword_ "union"
+>                     ,Intersect <$ keyword_ "intersect"
+>                     ,Except <$ keyword_ "except"]
 >             <?> "set operator"
 >     corr = option Respectively (Corresponding <$ keyword_ "corresponding")
 
 
 wrapper for query expr which ignores optional trailing semicolon.
 
+TODO: change style
+
 > topLevelQueryExpr :: Parser QueryExpr
-> topLevelQueryExpr = queryExpr >>= optionSuffix ((semi *>) . return)
+> topLevelQueryExpr = queryExpr <??> (id <$ semi)
 
 wrapper to parse a series of query exprs from a single source. They
 must be separated by semicolon, but for the last expression, the
 trailing semicolon is optional.
+
+TODO: change style
 
 > queryExprs :: Parser [QueryExpr]
 > queryExprs = (:[]) <$> queryExpr
@@ -1511,24 +1523,15 @@ making a decision on how to represent numbers, the client code can
 make this choice.
 
 > numberLiteral :: Parser String
-> numberLiteral =
->     lexeme (numToken <* notFollowedBy (alphaNum <|> char '.'))
->     <?> "number literal"
+> numberLiteral = lexeme (
+>     int <??> (pp dot <??.> pp int) <??> pp expon
+>     <|> (++) <$> dot <*> int <??> pp expon)
 >   where
->     numToken = choice [int
->                        >>= optionSuffix dot
->                        >>= optionSuffix fracts
->                        >>= optionSuffix expon
->                       ,fract "" >>= optionSuffix expon]
 >     int = many1 digit
->     fract p = dot p >>= fracts
->     dot p = (p++) <$> string "."
->     fracts p = (p++) <$> int
->     expon p = concat <$> sequence
->               [return p
->               ,(:[]) <$> oneOf "eE"
->               ,option "" (string "+" <|> string "-")
->               ,int]
+>     dot = string "."
+>     expon = (:) <$> oneOf "eE" <*> sInt
+>     sInt = (++) <$> option "" (string "+" <|> string "-") <*> int
+>     pp = ((++) <$$>)
 
 
 > identifier :: Parser String
@@ -1665,6 +1668,9 @@ a possible issue with the option suffix is that it enforces left
 associativity when chaining it recursively. Have to review
 all these uses and figure out if any should be right associative
 instead, and create an alternative suffix parser
+
+This is no good, and should be replaced with chain and <??> which has
+a different type
 
 > optionSuffix :: (a -> Parser a) -> a -> Parser a
 > optionSuffix p a = option a (p a)
@@ -2068,3 +2074,26 @@ context
 >                     ++ replicate (sourceColumn p - 1) ' ' ++ "^\n"
 >              _ -> ""
 >     p = errorPos e
+
+parses an optional postfix element and applies its result to its left
+hand result, taken from uu-parsinglib
+
+TODO: make sure the precedence higher than <|> and lower than the
+other operators so it can be used nicely
+
+> (<??>) :: Parser a -> Parser (a -> a) -> Parser a
+> p <??> q = p <**> option id q
+
+
+this is analogous to <**>
+
+> (<$$>) :: (a -> b -> c) -> Parser b -> Parser (a -> c)
+> (<$$>) = (<$>) . flip
+
+
+composing suffix parsers, not sure about the name
+
+> (<??.>) :: Parser (a -> a) -> Parser (a -> a) -> Parser (a -> a)
+> (<??.>) pa pb = (.) <$$> pa <*> option id pb
+
+

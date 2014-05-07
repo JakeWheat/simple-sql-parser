@@ -5,6 +5,14 @@ continue 2011 review and tests
 2. start thinking about automated tests for invalid syntax to catch
    bad parsing
 
+
+fixing the non idiomatic (pun!) suffix parsing:
+  typename parsing
+  identifier/app/agg/window parsing
+  join parsing in trefs (use chain? - tricky because of postfix onExpr)
+  top level and queryexprs parsing
+  number literal
+
 review names in the syntax for correspondence with sql standard, avoid
    gratuitous differences
 
