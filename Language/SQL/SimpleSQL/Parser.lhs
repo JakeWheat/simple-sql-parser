@@ -185,7 +185,7 @@ fixing them in the syntax but leaving them till the semantic checking
 > import Control.Monad.Identity (Identity)
 > import Control.Monad (guard, void, when)
 > import Control.Applicative ((<$), (<$>), (<*>) ,(<*), (*>), (<**>), pure)
-> import Data.Maybe (fromMaybe,catMaybes)
+> import Data.Maybe (catMaybes)
 > import Data.Char (toLower)
 > import Text.Parsec (setPosition,setSourceColumn,setSourceLine,getPosition
 >                    ,option,between,sepBy,sepBy1,string,manyTill,anyChar
@@ -476,9 +476,9 @@ with some work to improve the readability still.
 >     charSet = keywords_ ["character", "set"] *> names
 >     tcollate = keyword_ "collate" *> names
 >     ----------------------------
->     tnSuffix = multisetSuffix <|> arrayTNSuffix
->     multisetSuffix = MultisetTypeName <$ keyword_ "multiset"
->     arrayTNSuffix = keyword_ "array" *>
+>     tnSuffix = multiset <|> array
+>     multiset = MultisetTypeName <$ keyword_ "multiset"
+>     array = keyword_ "array" *>
 >         (ArrayTypeName <$$> optionMaybe (brackets unsignedInteger))
 >     ----------------------------
 >     -- this parser handles the fixed set of multi word
@@ -702,9 +702,7 @@ all the value expressions which start with an identifier
 > idenExpr =
 >     -- todo: work out how to left factor this
 >     try (TypedLit <$> typeName <*> stringToken)
->     <|> (names >>= iden)
->   where
->     iden n = app n <|> pure (Iden n)
+>     <|> (names <**> option Iden app)
 
 === special
 
@@ -819,62 +817,87 @@ in the source
 >           $ catMaybes [Just (fa,StringLit ch)
 >                       ,Just ("from", fr)]
 
-
 === app, aggregate, window
 
-this represents anything which syntactically looks like regular C
-function application: an identifier, parens with comma sep value
-expression arguments.
+This parses all these variations:
+normal function application with just a csv of value exprs
+aggregate variations (distinct, order by in parens, filter and where
+  suffixes)
+window apps (fn/agg followed by over)
 
-The parsing for the aggregate extensions is here as well:
+This code still needs some tidying, and eventually has to be left
+factored with the typename 'literal' parser.
 
-aggregate([all|distinct] args [order by orderitems])
+> app :: Parser ([Name] -> ValueExpr)
+> app =
+>   openParen *> choice
+>   [((,,) <$> duplicates
+>          <*> commaSep1 valueExpr
+>          <*> (option [] orderBy <* closeParen))
+>    <**> (afilterz
+>          <|> pure (\(d,es,ob) f -> AggregateApp f d es ob Nothing))
+>    -- separate cases with no all or distinct which have at least one
+>    -- value expr
+>   ,commaSep1 valueExpr
+>    <**> choice
+>         [closeParen *> choice [window
+>                               ,withinGroup
+>                               ,afiltery
+>                               ,pure (flip App)]
+>         ,(orderBy <* closeParen)
+>          <**>
+>          choice [afilterx
+>                 ,pure (\ob es f -> AggregateApp f SQDefault es ob Nothing)]]
+>   ,([] <$ closeParen)
+>    <**> choice [window
+>                ,withinGroup
+>                ,pure (flip App)]
+>   ]
 
-TODO: try to refactor the parser to not allow distinct/all or order by
-if there are no value exprs
+todo: brain no work - fix this mess. Should be able to convert these
+to simple applicative functions then inline them
 
-> aggOrApp :: [Name] -> Parser ValueExpr
-> aggOrApp n =
->     makeApp n
->     <$> parens ((,,) <$> (fromMaybe SQDefault <$> duplicates)
->                      <*> choice [commaSep valueExpr]
->                      <*> (optionMaybe orderBy))
+> afilterx :: Parser ([SortSpec]
+>                     -> [ValueExpr]
+>                     -> [Name]
+>                     -> ValueExpr)
+> afilterx = do
+>     f <- afilter
+>     pure $ \ob es nm -> f SQDefault es ob nm
+
+> afiltery :: Parser ([ValueExpr]
+>                     -> [Name]
+>                     -> ValueExpr)
+> afiltery = do
+>     f <- afilter
+>     pure $ \es nm -> f SQDefault es [] nm
+
+
+> afilterz :: Parser ((SetQuantifier
+>                    ,[ValueExpr]
+>                    ,[SortSpec])
+>                    -> [Name]
+>                    -> ValueExpr)
+> afilterz = do
+>     f <- afilter
+>     pure $ \(sq,es,ob) nm -> f sq es ob nm
+
+> afilter :: Parser (SetQuantifier
+>                    -> [ValueExpr]
+>                    -> [SortSpec]
+>                    -> [Name]
+>                    -> ValueExpr)
+> afilter =
+>     keyword_ "filter" *> (ctor <$> parens (keyword_ "where" *> valueExpr))
 >   where
->     makeApp i (SQDefault,es,Nothing) = App i es
->     makeApp i (d,es,od) = AggregateApp i d es (fromMaybe [] od) Nothing
+>     ctor ve sq es ob f = AggregateApp f sq es ob (Just ve)
 
-TODO: change all these suffix functions to use type
-Parser (ValueExpr -> ValueExpr)
+> withinGroup :: Parser ([ValueExpr] -> [Name] -> ValueExpr)
+> withinGroup =
+>     keywords_ ["within", "group"] *>
+>     ((\ob es nm -> AggregateAppGroup nm es ob) <$> parens orderBy)
 
-> app :: [Name] -> Parser ValueExpr
-> app n = `aggOrApp n >>= \a -> choice
->         [windowSuffix a
->         ,filterSuffix a
->         ,withinGroupSuffix a
->         ,pure a]
-
-> filterSuffix :: ValueExpr -> Parser ValueExpr
-> filterSuffix (App nm es) =
->     filterSuffix (AggregateApp nm SQDefault es [] Nothing)
-> filterSuffix agg@(AggregateApp {}) =
->     filterSuffix' agg
-> filterSuffix _ = fail ""
-
-> filterSuffix' :: ValueExpr -> Parser ValueExpr
-> filterSuffix' agg =
->     keyword_ "filter" >>
->     rep <$> parens(keyword_ "where" *> (Just <$> valueExpr))
->   where
->     rep f = agg {aggFilter = f}
-
-
-
-> withinGroupSuffix :: ValueExpr -> Parser ValueExpr
-> withinGroupSuffix (App nm es) = keywords_ ["within", "group"] >>
->     AggregateAppGroup nm es <$> parens orderBy
-> withinGroupSuffix _ = fail ""
-
-==== window suffix
+==== window
 
 parse a window call as a suffix of a regular function call
 this looks like this:
@@ -882,18 +905,16 @@ functionname(args) over ([partition by ids] [order by orderitems])
 
 No support for explicit frames yet.
 
-The convention in this file is that the 'Suffix', erm, suffix on
-parser names means that they have been left factored. These are almost
-always used with the optionSuffix combinator.
+TODO: add window support for other aggregate variations, needs some
+changes to the syntax also
 
-> windowSuffix :: ValueExpr -> Parser ValueExpr
-> windowSuffix (App f es) =
->     keyword_ "over"
->     *> parens (WindowApp f es
->                <$> option [] partitionBy
->                <*> option [] orderBy
->                <*> optionMaybe frameClause)
+> window :: Parser ([ValueExpr] -> [Name] -> ValueExpr)
+> window = keyword_ "over" *> parens (ctorWrap
+>                                     <$> option [] partitionBy
+>                                     <*> option [] orderBy
+>                                     <*> optionMaybe frameClause)
 >   where
+>     ctorWrap pb ob fc es f = WindowApp f es pb ob fc
 >     partitionBy = keywords_ ["partition","by"] >> commaSep1 valueExpr
 >     frameClause =
 >         mkFrame <$> choice [FrameRows <$ keyword_ "rows"
@@ -922,9 +943,6 @@ always used with the optionSuffix combinator.
 >     mkFrameBetween s e rs = FrameBetween rs s e
 >     mkFrameFrom s rs = FrameFrom rs s
 >     mkFrame rs c = c rs
-> windowSuffix _ = fail ""
-
-
 
 == suffixes
 
@@ -1123,7 +1141,7 @@ messages, but both of these are too important.
 >         o <- choice [Union <$ keyword_ "union"
 >                     ,Intersect <$ keyword_ "intersect"
 >                     ,Except <$ keyword_ "except"]
->         d <- fromMaybe SQDefault <$> duplicates
+>         d <- option SQDefault duplicates
 >         pure (\a b -> MultisetBinOp a o d b))
 >           E.AssocLeft
 >     prefixKeyword nm = prefix (keyword_ nm) nm
@@ -1198,8 +1216,8 @@ use a data type for the datetime field?
 This is used in multiset operations (value expr), selects (query expr)
 and set operations (query expr).
 
-> duplicates :: Parser (Maybe SetQuantifier)
-> duplicates = optionMaybe $
+> duplicates :: Parser SetQuantifier
+> duplicates =
 >     choice [All <$ keyword_ "all"
 >            ,Distinct <$ keyword "distinct"]
 
@@ -1357,7 +1375,7 @@ and union, etc..
 >   where
 >     select = keyword_ "select" >>
 >         mkSelect
->         <$> (fromMaybe SQDefault <$> duplicates)
+>         <$> option SQDefault duplicates
 >         <*> selectList
 >         <*> optionMaybe tableExpression
 >     mkSelect d sl Nothing =
@@ -1396,7 +1414,7 @@ be in the public syntax?
 > setOp :: Parser (QueryExpr -> QueryExpr -> QueryExpr)
 > setOp = cq
 >         <$> setOpK
->         <*> (fromMaybe SQDefault <$> duplicates)
+>         <*> option SQDefault duplicates
 >         <*> corr
 >   where
 >     cq o d c q0 q1 = CombineQueryExpr q0 o d c q1
