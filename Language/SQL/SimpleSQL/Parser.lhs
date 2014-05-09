@@ -184,22 +184,22 @@ fixing them in the syntax but leaving them till the semantic checking
 
 > import Control.Monad.Identity (Identity)
 > import Control.Monad (guard, void, when)
-> import Control.Applicative ((<$), (<$>), (<*>) ,(<*), (*>), (<**>))
+> import Control.Applicative ((<$), (<$>), (<*>) ,(<*), (*>), (<**>), pure)
 > import Data.Maybe (fromMaybe,catMaybes)
 > import Data.Char (toLower)
-> import Text.Parsec (errorPos,sourceLine,sourceColumn,sourceName
->                    ,setPosition,setSourceColumn,setSourceLine,getPosition
+> import Text.Parsec (setPosition,setSourceColumn,setSourceLine,getPosition
 >                    ,option,between,sepBy,sepBy1,string,manyTill,anyChar
 >                    ,try,string,many1,oneOf,digit,(<|>),choice,char,eof
 >                    ,optionMaybe,optional,many,letter,parse
->                    ,chainl1, chainr1,(<?>),notFollowedBy,alphaNum, lookAhead)
+>                    ,chainl1, chainr1,(<?>) {-,notFollowedBy,alphaNum-}, lookAhead)
 > import Text.Parsec.String (Parser)
-> import qualified Text.Parsec as P (ParseError)
 > import Text.Parsec.Perm (permute,(<$?>), (<|?>))
 > import qualified Text.Parsec.Expr as E
 > import Data.List (intercalate,sort,groupBy)
 > import Data.Function (on)
 > import Language.SQL.SimpleSQL.Syntax
+> import Language.SQL.SimpleSQL.Combinators
+> import Language.SQL.SimpleSQL.Errors
 
 = Public API
 
@@ -252,19 +252,11 @@ converts the error return to the nice wrapper
 > wrapParse parser f p src =
 >     either (Left . convParseError src) Right
 >     $ parse (setPos p *> whitespace *> parser <* eof) f src
+>   where
+>     setPos Nothing = pure ()
+>     setPos (Just (l,c)) = fmap up getPosition >>= setPosition
+>       where up = flip setSourceColumn c . flip setSourceLine l
 
-> -- | Type to represent parse errors.
-> data ParseError = ParseError
->                   {peErrorString :: String
->                    -- ^ contains the error message
->                   ,peFilename :: FilePath
->                    -- ^ filename location for the error
->                   ,pePosition :: (Int,Int)
->                    -- ^ line number and column number location for the error
->                   ,peFormattedError :: String
->                    -- ^ formatted error with the position, error
->                    -- message and source context
->                   } deriving (Eq,Show)
 
 ------------------------------------------------
 
@@ -309,16 +301,13 @@ u&"example quoted"
 todo: replace (:[]) with a named function all over
 
 > names :: Parser [Name]
-> names = reverse <$> repeatPostfix ((:[]) <$> name) anotherName
+> names = reverse <$> (((:[]) <$> name) <??*> anotherName)
 >   -- can't use a simple chain here since we
 >   -- want to wrap the . + name in a try
 >   -- this will change when this is left factored
 >   where
 >     anotherName :: Parser ([Name] -> [Name])
 >     anotherName = try ((:) <$> (symbol "." *> name))
-
-> repeatPostfix :: Parser a -> Parser (a -> a) -> Parser a
-> repeatPostfix p q = foldr ($) <$> p <*> (reverse <$> many q)
 
 = Type Names
 
@@ -424,77 +413,74 @@ A type name will parse into the 'smallest' constructor it will fit in
 syntactically, e.g. a clob(5) will parse to a precision type name, not
 a lob type name.
 
-TODO: this code needs heavy refactoring
+Not sure if the factoring in this function is too far. It could do
+with some work to improve the readability still.
 
 > typeName :: Parser TypeName
-> typeName =
->     repeatPostfix
->         (rowTypeName <|> intervalTypeName <|> otherTypeName)
->         tnSuffix
->     <?> "typename"
+> typeName = lexeme $
+>     (rowTypeName <|> intervalTypeName <|> otherTypeName)
+>     <??*> tnSuffix
 >   where
->     -- row type names - a little like create table
 >     rowTypeName =
 >         RowTypeName <$> (keyword_ "row" *> parens (commaSep1 rowField))
 >     rowField = (,) <$> name <*> typeName
->     -- interval type names: interval a [to b]
+>     ----------------------------
 >     intervalTypeName =
->         keyword_ "interval" >>
->         uncurry IntervalTypeName <$> intervalQualifier
->     -- other type names, which includes:
->     -- precision, scale, lob scale and units, timezone, character
->     -- set and collations
->     otherTypeName = do
->         tn <- (try reservedTypeNames <|> names)
->         choice [try $ timezone tn
->                 -- todo: use the P (a->a) style
->                ,try (precscale tn) >>= optionSuffix charSuffix
->                ,try $ lob tn
->                ,optionSuffix charSuffix $ TypeName tn]
->     timezone tn = do
->         TimeTypeName tn
->         <$> optionMaybe prec
->         <*> choice [True <$ keywords_ ["with", "time","zone"]
->                    ,False <$ keywords_ ["without", "time","zone"]]
->     charSuffix (PrecTypeName t p) = chars t (Just p)
->     charSuffix (TypeName t) = chars t Nothing
->     charSuffix _ = fail ""
->     chars tn p =
->         ((,) <$> option [] charSet
->              <*> option [] tcollate)
->           >>= uncurry mkit
->         where
->           mkit [] [] = fail ""
->           mkit a b = return $ CharTypeName tn p a b
->     lob tn = parens $ do
->         (x,y) <- lobPrecToken
->         z <- optionMaybe lobUnits
->         return $ PrecLengthTypeName tn x y z
->     precscale tn = parens (commaSep unsignedInteger) >>= makeWrap
->                    where
->                      makeWrap [a] = return $ PrecTypeName tn a
->                      makeWrap [a,b] = return $ PrecScaleTypeName tn a b
->                      makeWrap _ = fail "there must be one or two precision components"
->     prec = parens unsignedInteger
+>         keyword_ "interval" *>
+>         (uncurry IntervalTypeName <$> intervalQualifier)
+>     ----------------------------
+>     otherTypeName =
+>         nameOfType <**>
+>             (typeNameWithParens
+>              <|> pure Nothing <**> timeTypeName
+>              <|> pure Nothing <**> charTypeName
+>              <|> pure TypeName)
+>     ----------------------------
+>     -- TODO: adapt the reserved type names to degenerate into
+>     -- names so try isn't needed (not sure it is needed anyway)
+>     nameOfType = try reservedTypeNames <|> names
+>     ----------------------------
+>     typeNameWithParens =
+>         (openParen *> unsignedInteger)
+>         <**> (precMaybeSuffix <|> extrasInParens)
+>     precMaybeSuffix = closeParen *>
+>         ((. Just) <$> timeTypeName
+>          <|> ((. Just) <$> charTypeName)
+>          <|> pure (flip PrecTypeName))
+>     extrasInParens = (precScaleTypeName <|> precLengthTypeName) <* closeParen
+>     ----------------------------
+>     precScaleTypeName =
+>         (\s p nm -> PrecScaleTypeName nm p s) <$> (comma *> unsignedInteger)
+>     ----------------------------
+>     precLengthTypeName =
+>         mkPrec <$> (Just <$> lobPrecSuffix) <*> optionMaybe lobUnits
+>          <|> mkPrec Nothing <$> (Just <$> lobUnits)
+>     mkPrec s u p nm = PrecLengthTypeName nm p s u
+>     lobPrecSuffix = choice
+>                     [PrecK <$ keyword_ "k"
+>                     ,PrecM <$ keyword_ "m"
+>                     ,PrecG <$ keyword_ "g"
+>                     ,PrecT <$ keyword_ "t"
+>                     ,PrecP <$ keyword_ "p"]
+>     lobUnits = PrecCharacters <$ keyword_ "characters"
+>                <|> PrecOctets <$ keyword_ "octets"
+>     ----------------------------
+>     timeTypeName =
+>         (\tz p nm -> TimeTypeName nm p tz)
+>         <$> (True <$ keywords_ ["with", "time","zone"]
+>              <|> False <$ keywords_ ["without", "time","zone"])
+>     ----------------------------
+>     charTypeName = mkCT <$> charSet <*> option [] tcollate
+>                    <|> mkCT [] <$> tcollate
+>     mkCT cs col p nm = CharTypeName nm p cs col
 >     charSet = keywords_ ["character", "set"] *> names
 >     tcollate = keyword_ "collate" *> names
->     lobPrecToken = lexeme $ do
->         p <- read <$> many1 digit <?> "unsigned integer"
->         x <- choice [Just PrecK <$ keyword_ "k"
->                     ,Just PrecM <$ keyword_ "m"
->                     ,Just PrecG <$ keyword_ "g"
->                     ,Just PrecT <$ keyword_ "t"
->                     ,Just PrecP <$ keyword_ "p"
->                     ,return Nothing]
->         return (p,x)
->     lobUnits = choice [PrecCharacters <$ keyword_ "characters"
->                       ,PrecOctets <$ keyword_ "octets"]
->     -- deal with multiset and array suffixes
->     tnSuffix :: Parser (TypeName -> TypeName)
+>     ----------------------------
 >     tnSuffix = multisetSuffix <|> arrayTNSuffix
 >     multisetSuffix = MultisetTypeName <$ keyword_ "multiset"
->     arrayTNSuffix = keyword_ "array" >>
->         flip ArrayTypeName <$> optionMaybe (brackets unsignedInteger)
+>     arrayTNSuffix = keyword_ "array" *>
+>         (ArrayTypeName <$$> optionMaybe (brackets unsignedInteger))
+>     ----------------------------
 >     -- this parser handles the fixed set of multi word
 >     -- type names, plus all the type names which are
 >     -- reserved words
@@ -683,7 +669,7 @@ then it is parsed as a regular typed literal. It must have a
 interval-datetime-field suffix to parse as an intervallit
 
 It uses try because of a conflict with interval type names: todo, fix
-this
+this. also fix the monad -> applicative
 
 > intervalLit :: Parser ValueExpr
 > intervalLit = try (keyword_ "interval" >> do
@@ -693,8 +679,8 @@ this
 >     q <- optionMaybe intervalQualifier
 >     mkIt s lit q)
 >   where
->     mkIt Nothing val Nothing = return $ TypedLit (TypeName [Name "interval"]) val
->     mkIt s val (Just (a,b)) = return $ IntervalLit s val a b
+>     mkIt Nothing val Nothing = pure $ TypedLit (TypeName [Name "interval"]) val
+>     mkIt s val (Just (a,b)) = pure $ IntervalLit s val a b
 >     mkIt (Just {}) _val Nothing = fail "cannot use sign without interval qualifier"
 
 == typed literal, app, special, aggregate, window, iden
@@ -718,7 +704,7 @@ all the value expressions which start with an identifier
 >     try (TypedLit <$> typeName <*> stringToken)
 >     <|> (names >>= iden)
 >   where
->     iden n = app n <|> return (Iden n)
+>     iden n = app n <|> pure (Iden n)
 
 === special
 
@@ -750,14 +736,14 @@ operatorname(firstArg keyword0 arg0 keyword1 arg1 etc.)
 >               guard (case (e,kws) of
 >                   (Iden [Name i], (k,_):_) | map toLower i == k -> False
 >                   _ -> True)
->               return e
+>               pure e
 >     fa <- case firstArg of
->          SOKNone -> return Nothing
+>          SOKNone -> pure Nothing
 >          SOKOptional -> optionMaybe (try pfa)
 >          SOKMandatory -> Just <$> pfa
 >     as <- mapM parseArg kws
 >     void closeParen
->     return $ SpecialOpK [Name opName] fa $ catMaybes as
+>     pure $ SpecialOpK [Name opName] fa $ catMaybes as
 >   where
 >     parseArg (nm,mand) =
 >         let p = keyword_ nm >> valueExpr
@@ -861,11 +847,11 @@ TODO: change all these suffix functions to use type
 Parser (ValueExpr -> ValueExpr)
 
 > app :: [Name] -> Parser ValueExpr
-> app n = aggOrApp n >>= \a -> choice
+> app n = `aggOrApp n >>= \a -> choice
 >         [windowSuffix a
 >         ,filterSuffix a
 >         ,withinGroupSuffix a
->         ,return a]
+>         ,pure a]
 
 > filterSuffix :: ValueExpr -> Parser ValueExpr
 > filterSuffix (App nm es) =
@@ -996,7 +982,7 @@ a = any (select * from t)
 >     c <- comp
 >     cq <- compQuan
 >     q <- parens queryExpr
->     return $ \v -> QuantifiedComparison v [c] cq q
+>     pure $ \v -> QuantifiedComparison v [c] cq q
 >   where
 >     comp = Name <$> choice (map symbol
 >            ["=", "<>", "<=", "<", ">", ">="])
@@ -1014,14 +1000,14 @@ a match (select a from t)
 >     keyword_ "match"
 >     u <- option False (True <$ keyword_ "unique")
 >     q <- parens queryExpr
->     return $ \v -> Match v u q
+>     pure $ \v -> Match v u q
 
 === array subscript
 
 > arraySuffix :: Parser (ValueExpr -> ValueExpr)
 > arraySuffix = do
 >     es <- brackets (commaSep valueExpr)
->     return $ \v -> Array v es
+>     pure $ \v -> Array v es
 
 === escape
 
@@ -1031,7 +1017,7 @@ a match (select a from t)
 >             [Escape <$ keyword_ "escape"
 >             ,UEscape <$ keyword_ "uescape"]
 >     c <- anyChar
->     return $ \v -> ctor v c
+>     pure $ \v -> ctor v c
 
 === collate
 
@@ -1039,7 +1025,7 @@ a match (select a from t)
 > collateSuffix = do
 >     keyword_ "collate"
 >     i <- names
->     return $ \v -> Collate v i
+>     pure $ \v -> Collate v i
 
 
 ==  operators
@@ -1123,26 +1109,26 @@ messages, but both of these are too important.
 >     binaryKeyword nm assoc = binary (keyword_ nm) nm assoc
 >     binaryKeywords p =
 >         E.Infix (do
->             o <- try p
->             return (\a b -> BinOp a [Name $ unwords o] b))
+>                  o <- try p
+>                  pure (\a b -> BinOp a [Name $ unwords o] b))
 >             E.AssocNone
 >     postfixKeywords p =
 >       postfix' $ do
 >           o <- try p
->           return $ PostfixOp [Name $ unwords o]
+>           pure $ PostfixOp [Name $ unwords o]
 >     binary p nm assoc =
->       E.Infix (p >> return (\a b -> BinOp a [Name nm] b)) assoc
+>       E.Infix (p >> pure (\a b -> BinOp a [Name nm] b)) assoc
 >     multisetBinOp = E.Infix (do
 >         keyword_ "multiset"
 >         o <- choice [Union <$ keyword_ "union"
 >                     ,Intersect <$ keyword_ "intersect"
 >                     ,Except <$ keyword_ "except"]
 >         d <- fromMaybe SQDefault <$> duplicates
->         return (\a b -> MultisetBinOp a o d b))
+>         pure (\a b -> MultisetBinOp a o d b))
 >           E.AssocLeft
 >     prefixKeyword nm = prefix (keyword_ nm) nm
 >     prefixSym nm = prefix (symbol_ nm) nm
->     prefix p nm = prefix' (p >> return (PrefixOp [Name nm]))
+>     prefix p nm = prefix' (p >> pure (PrefixOp [Name nm]))
 >     -- hack from here
 >     -- http://stackoverflow.com/questions/10475337/parsec-expr-repeated-prefix-postfix-operator-not-supported
 >     -- not implemented properly yet
@@ -1150,14 +1136,16 @@ messages, but both of these are too important.
 >     -- at least it works for 'not not a'
 >     -- ok: "x is not true is not true"
 >     -- no work: "x is not true is not null"
->     prefix'  p = E.Prefix  . chainl1 p $ return       (.)
->     postfix' p = E.Postfix . chainl1 p $ return (flip (.))
+>     prefix'  p = E.Prefix  . chainl1 p $ pure       (.)
+>     postfix' p = E.Postfix . chainl1 p $ pure (flip (.))
 
 == value expression top level
 
 This parses most of the value exprs.The order of the parsers and use
 of try is carefully done to make everything work. It is a little
-fragile and could at least do with some heavy explanation.
+fragile and could at least do with some heavy explanation. Update: the
+'try's have migrated into the individual parsers, they still need
+documenting/fixing.
 
 > valueExpr :: Parser ValueExpr
 > valueExpr = E.buildExpressionParser (opTable False) term
@@ -1253,8 +1241,8 @@ tref
 >          n <- names
 >          choice [TRFunction n
 >                  <$> parens (commaSep valueExpr)
->                 ,return $ TRSimple n]] <??> aliasSuffix
->     aliasSuffix = flip TRAlias <$> fromAlias
+>                 ,pure $ TRSimple n]] <??> aliasSuffix
+>     aliasSuffix = TRAlias <$$> fromAlias
 >     joinTrefSuffix t =
 >         (TRJoin t <$> option False (True <$ keyword_ "natural")
 >                   <*> joinType
@@ -1434,7 +1422,7 @@ TODO: change style
 
 > queryExprs :: Parser [QueryExpr]
 > queryExprs = (:[]) <$> queryExpr
->              >>= optionSuffix ((semi *>) . return)
+>              >>= optionSuffix ((semi *>) . pure)
 >              >>= optionSuffix (\p -> (p++) <$> queryExprs)
 
 ----------------------------------------------
@@ -1471,7 +1459,7 @@ thick.
 >         let tls = catMaybes $ map safeTail l
 >             pr = (k:) <$> parseTrees tls
 >         if (or $ map null tls)
->           then pr <|> return [k]
+>           then pr <|> pure [k]
 >           else pr
 >     parseGroup _ = guard False >> error "impossible"
 >     safeHead (x:_) = Just x
@@ -1490,7 +1478,7 @@ whitespace parser which skips comments also
 >     choice [simpleWhitespace *> whitespace
 >            ,lineComment *> whitespace
 >            ,blockComment *> whitespace
->            ,return ()] <?> "whitespace"
+>            ,pure ()] <?> "whitespace"
 >   where
 >     lineComment = try (string "--")
 >                   *> manyTill anyChar (void (char '\n') <|> eof)
@@ -1524,8 +1512,9 @@ make this choice.
 
 > numberLiteral :: Parser String
 > numberLiteral = lexeme (
->     int <??> (pp dot <??.> pp int) <??> pp expon
->     <|> (++) <$> dot <*> int <??> pp expon)
+>     (int <??> (pp dot <??.> pp int)
+>      <|> (++) <$> dot <*> int)
+>     <??> pp expon)
 >   where
 >     int = many1 digit
 >     dot = string "."
@@ -1574,7 +1563,7 @@ todo: work out the symbol parsing better
 >                  map (try . string) [">=","<=","!=","<>","||"]
 >                  ++ map (string . (:[])) "+-^*/%~&|<>=")
 >     guard (s == u)
->     return s)
+>     pure s)
 >     <?> s
 
 > questionMark :: Parser Char
@@ -1638,7 +1627,7 @@ todo: work out the symbol parsing better
 > keyword k = try (do
 >     i <- identifier
 >     guard (map toLower i == k)
->     return k) <?> k
+>     pure k) <?> k
 
 helper function to improve error messages
 
@@ -1664,23 +1653,12 @@ helper function to improve error messages
 > commaSep1 :: Parser a -> Parser [a]
 > commaSep1 = (`sepBy1` comma)
 
-a possible issue with the option suffix is that it enforces left
-associativity when chaining it recursively. Have to review
-all these uses and figure out if any should be right associative
-instead, and create an alternative suffix parser
-
-This is no good, and should be replaced with chain and <??> which has
-a different type
-
-> optionSuffix :: (a -> Parser a) -> a -> Parser a
-> optionSuffix p a = option a (p a)
-
 > identifierBlacklist :: [String] -> Parser String
 > identifierBlacklist bl = try (do
 >     i <- identifier
 >     when (map toLower i `elem` bl) $
 >         fail $ "keyword not allowed here: " ++ i
->     return i)
+>     pure i)
 >     <?> "identifier"
 
 > blacklist :: [String]
@@ -2036,64 +2014,3 @@ means).
 >     ,"without"
 >     --,"year"
 >     ]
-
---------------------------------------------
-
-= helper functions
-
-> setPos :: Maybe (Int,Int) -> Parser ()
-> setPos Nothing = return ()
-> setPos (Just (l,c)) = fmap f getPosition >>= setPosition
->   where f = flip setSourceColumn c
->             . flip setSourceLine l
-
-> convParseError :: String -> P.ParseError -> ParseError
-> convParseError src e =
->     ParseError
->     {peErrorString = show e
->     ,peFilename = sourceName p
->     ,pePosition = (sourceLine p, sourceColumn p)
->     ,peFormattedError = formatError src e}
->   where
->     p = errorPos e
-
-format the error more nicely: emacs format for positioning, plus
-context
-
-> formatError :: String -> P.ParseError -> String
-> formatError src e =
->     sourceName p ++ ":" ++ show (sourceLine p)
->     ++ ":" ++ show (sourceColumn p) ++ ":"
->     ++ context
->     ++ show e
->   where
->     context =
->         let lns = take 1 $ drop (sourceLine p - 1) $ lines src
->         in case lns of
->              [x] -> "\n" ++ x ++ "\n"
->                     ++ replicate (sourceColumn p - 1) ' ' ++ "^\n"
->              _ -> ""
->     p = errorPos e
-
-parses an optional postfix element and applies its result to its left
-hand result, taken from uu-parsinglib
-
-TODO: make sure the precedence higher than <|> and lower than the
-other operators so it can be used nicely
-
-> (<??>) :: Parser a -> Parser (a -> a) -> Parser a
-> p <??> q = p <**> option id q
-
-
-this is analogous to <**>
-
-> (<$$>) :: (a -> b -> c) -> Parser b -> Parser (a -> c)
-> (<$$>) = (<$>) . flip
-
-
-composing suffix parsers, not sure about the name
-
-> (<??.>) :: Parser (a -> a) -> Parser (a -> a) -> Parser (a -> a)
-> (<??.>) pa pb = (.) <$$> pa <*> option id pb
-
-

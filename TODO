@@ -1,3 +1,22 @@
+work on the new refactoring of the parser
+create a new module for generic combinators
+work on getting rid of monad and guard
+
+
+value expressions which start with an identifier/keyword:
+immediate focus:
+case
+cast
+
+interval
+typed literal
+
+special functions (extract, etc)
+app
+aggregate
+window function
+identifier
+
 continue 2011 review and tests
 
 1. create an error message document for the website
@@ -11,7 +30,6 @@ fixing the non idiomatic (pun!) suffix parsing:
   identifier/app/agg/window parsing
   join parsing in trefs (use chain? - tricky because of postfix onExpr)
   top level and queryexprs parsing
-  number literal
 
 review names in the syntax for correspondence with sql standard, avoid
    gratuitous differences
