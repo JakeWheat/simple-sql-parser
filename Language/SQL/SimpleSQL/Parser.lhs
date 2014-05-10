@@ -414,7 +414,19 @@ syntactically, e.g. a clob(5) will parse to a precision type name, not
 a lob type name.
 
 Not sure if the factoring in this function is too far. It could do
-with some work to improve the readability still.
+with some work to improve the readability still. Ideas: the parsers of
+each component, the various kinds combinators, the application of
+choice particularly and the constuctors are a bit mixed together and
+should be separated more. Probably start with:
+
+P (a -> b), which combines parsing some extra fields and then
+constructing a 'b' with these new fields and the 'a', decompose it
+into
+
+P c -- separate each field that contributes to a b to a separately
+named function
+separate out the ctor wrapper:  c -> a -> b
+and then create a P (a -> b) just by combining bits
 
 > typeName :: Parser TypeName
 > typeName = lexeme $
@@ -611,7 +623,7 @@ syntax can start with the same keyword.
 cast: cast(expr as type)
 
 > cast :: Parser ValueExpr
-> cast = keyword_ "cast" >>
+> cast = keyword_ "cast" *>
 >        parens (Cast <$> valueExpr
 >                     <*> (keyword_ "as" *> typeName))
 
@@ -834,7 +846,7 @@ factored with the typename 'literal' parser.
 >   [((,,) <$> duplicates
 >          <*> commaSep1 valueExpr
 >          <*> (option [] orderBy <* closeParen))
->    <**> (afilterz
+>    <**> ((\f (sq,es,ob) nm -> f sq es ob nm) <$> afilter
 >          <|> pure (\(d,es,ob) f -> AggregateApp f d es ob Nothing))
 >    -- separate cases with no all or distinct which have at least one
 >    -- value expr
@@ -842,45 +854,17 @@ factored with the typename 'literal' parser.
 >    <**> choice
 >         [closeParen *> choice [window
 >                               ,withinGroup
->                               ,afiltery
+>                               ,(\f es nm -> f SQDefault es [] nm) <$> afilter
 >                               ,pure (flip App)]
 >         ,(orderBy <* closeParen)
 >          <**>
->          choice [afilterx
+>          choice [(\f ob es nm -> f SQDefault es ob nm) <$> afilter
 >                 ,pure (\ob es f -> AggregateApp f SQDefault es ob Nothing)]]
 >   ,([] <$ closeParen)
 >    <**> choice [window
 >                ,withinGroup
 >                ,pure (flip App)]
 >   ]
-
-todo: brain no work - fix this mess. Should be able to convert these
-to simple applicative functions then inline them
-
-> afilterx :: Parser ([SortSpec]
->                     -> [ValueExpr]
->                     -> [Name]
->                     -> ValueExpr)
-> afilterx = do
->     f <- afilter
->     pure $ \ob es nm -> f SQDefault es ob nm
-
-> afiltery :: Parser ([ValueExpr]
->                     -> [Name]
->                     -> ValueExpr)
-> afiltery = do
->     f <- afilter
->     pure $ \es nm -> f SQDefault es [] nm
-
-
-> afilterz :: Parser ((SetQuantifier
->                    ,[ValueExpr]
->                    ,[SortSpec])
->                    -> [Name]
->                    -> ValueExpr)
-> afilterz = do
->     f <- afilter
->     pure $ \(sq,es,ob) nm -> f sq es ob nm
 
 > afilter :: Parser (SetQuantifier
 >                    -> [ValueExpr]

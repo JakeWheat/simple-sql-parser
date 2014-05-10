@@ -11,8 +11,8 @@
 >     ,(<??.>)
 >     ,(<??*>)) where
 
-> import Control.Applicative ((<$>), (<*>), (<**>))
-> import Text.Parsec (option,many)
+> import Control.Applicative --((<$>), (<*>), (<**>))
+> import Text.Parsec --(option,many)
 > import Text.Parsec.String (Parser)
 
 a possible issue with the option suffix is that it enforces left
@@ -54,4 +54,5 @@ succeeding.
 0 to many repeated applications of suffix parser
 
 > (<??*>) :: Parser a -> Parser (a -> a) -> Parser a
-> p <??*> q = foldr ($) <$> p <*> (reverse <$> many q)
+> p <??*> q = p <**> chainl q (pure (flip (.))) id
+>     -- foldr ($) <$> p <*> (reverse <$> many q)
