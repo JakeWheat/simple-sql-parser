@@ -413,20 +413,8 @@ A type name will parse into the 'smallest' constructor it will fit in
 syntactically, e.g. a clob(5) will parse to a precision type name, not
 a lob type name.
 
-Not sure if the factoring in this function is too far. It could do
-with some work to improve the readability still. Ideas: the parsers of
-each component, the various kinds combinators, the application of
-choice particularly and the constuctors are a bit mixed together and
-should be separated more. Probably start with:
-
-P (a -> b), which combines parsing some extra fields and then
-constructing a 'b' with these new fields and the 'a', decompose it
-into
-
-P c -- separate each field that contributes to a b to a separately
-named function
-separate out the ctor wrapper:  c -> a -> b
-and then create a P (a -> b) just by combining bits
+Unfortunately, to improve the error messages, there is a lot of (left)
+factoring in this function, and it is a little dense.
 
 > typeName :: Parser TypeName
 > typeName = lexeme $
@@ -444,54 +432,40 @@ and then create a P (a -> b) just by combining bits
 >     otherTypeName =
 >         nameOfType <**>
 >             (typeNameWithParens
->              <|> pure Nothing <**> timeTypeName
->              <|> pure Nothing <**> charTypeName
+>              <|> pure Nothing <**> (timeTypeName <|> charTypeName)
 >              <|> pure TypeName)
->     ----------------------------
->     -- TODO: adapt the reserved type names to degenerate into
->     -- names so try isn't needed (not sure it is needed anyway)
->     nameOfType = try reservedTypeNames <|> names
->     ----------------------------
+>     nameOfType = reservedTypeNames <|> names
+>     charTypeName = charSet <**> (option [] tcollate <$$$$> CharTypeName)
+>                    <|> pure [] <**> (tcollate <$$$$> CharTypeName)
 >     typeNameWithParens =
 >         (openParen *> unsignedInteger)
->         <**> (precMaybeSuffix <|> extrasInParens)
->     precMaybeSuffix = closeParen *>
->         ((. Just) <$> timeTypeName
->          <|> ((. Just) <$> charTypeName)
->          <|> pure (flip PrecTypeName))
->     extrasInParens = (precScaleTypeName <|> precLengthTypeName) <* closeParen
->     ----------------------------
->     precScaleTypeName =
->         (\s p nm -> PrecScaleTypeName nm p s) <$> (comma *> unsignedInteger)
->     ----------------------------
+>         <**> (closeParen *> precMaybeSuffix
+>               <|> (precScaleTypeName <|> precLengthTypeName) <* closeParen)
+>     precMaybeSuffix = (. Just) <$> (timeTypeName <|> charTypeName)
+>                       <|> pure (flip PrecTypeName)
+>     precScaleTypeName = (comma *> unsignedInteger) <$$$> PrecScaleTypeName
 >     precLengthTypeName =
->         mkPrec <$> (Just <$> lobPrecSuffix) <*> optionMaybe lobUnits
->          <|> mkPrec Nothing <$> (Just <$> lobUnits)
->     mkPrec s u p nm = PrecLengthTypeName nm p s u
->     lobPrecSuffix = choice
->                     [PrecK <$ keyword_ "k"
->                     ,PrecM <$ keyword_ "m"
->                     ,PrecG <$ keyword_ "g"
->                     ,PrecT <$ keyword_ "t"
->                     ,PrecP <$ keyword_ "p"]
+>         Just <$> lobPrecSuffix
+>         <**> (optionMaybe lobUnits <$$$$> PrecLengthTypeName)
+>         <|> pure Nothing <**> ((Just <$> lobUnits) <$$$$> PrecLengthTypeName)
+>     timeTypeName = tz <$$$> TimeTypeName
+>     ----------------------------
+>     lobPrecSuffix = PrecK <$ keyword_ "k"
+>                     <|> PrecM <$ keyword_ "m"
+>                     <|> PrecG <$ keyword_ "g"
+>                     <|> PrecT <$ keyword_ "t"
+>                     <|> PrecP <$ keyword_ "p"
 >     lobUnits = PrecCharacters <$ keyword_ "characters"
 >                <|> PrecOctets <$ keyword_ "octets"
->     ----------------------------
->     timeTypeName =
->         (\tz p nm -> TimeTypeName nm p tz)
->         <$> (True <$ keywords_ ["with", "time","zone"]
->              <|> False <$ keywords_ ["without", "time","zone"])
->     ----------------------------
->     charTypeName = mkCT <$> charSet <*> option [] tcollate
->                    <|> mkCT [] <$> tcollate
->     mkCT cs col p nm = CharTypeName nm p cs col
+>     tz = True <$ keywords_ ["with", "time","zone"]
+>          <|> False <$ keywords_ ["without", "time","zone"]
 >     charSet = keywords_ ["character", "set"] *> names
 >     tcollate = keyword_ "collate" *> names
 >     ----------------------------
 >     tnSuffix = multiset <|> array
 >     multiset = MultisetTypeName <$ keyword_ "multiset"
 >     array = keyword_ "array" *>
->         (ArrayTypeName <$$> optionMaybe (brackets unsignedInteger))
+>         (optionMaybe (brackets unsignedInteger) <$$> ArrayTypeName)
 >     ----------------------------
 >     -- this parser handles the fixed set of multi word
 >     -- type names, plus all the type names which are
@@ -635,9 +609,7 @@ subquery expression:
 > subquery :: Parser ValueExpr
 > subquery = SubQueryExpr <$> sqkw <*> parens queryExpr
 >   where
->     sqkw = choice
->            [SqExists <$ keyword_ "exists"
->            ,SqUnique <$ keyword_ "unique"]
+>     sqkw = SqExists <$ keyword_ "exists" <|> SqUnique <$ keyword_ "unique"
 
 === array/multiset constructor
 
@@ -837,49 +809,41 @@ aggregate variations (distinct, order by in parens, filter and where
   suffixes)
 window apps (fn/agg followed by over)
 
-This code still needs some tidying, and eventually has to be left
-factored with the typename 'literal' parser.
+This code is also a little dense like the typename code because of
+left factoring, later they will even have to be partially combined
+together.
 
 > app :: Parser ([Name] -> ValueExpr)
 > app =
->   openParen *> choice
->   [((,,) <$> duplicates
->          <*> commaSep1 valueExpr
->          <*> (option [] orderBy <* closeParen))
->    <**> ((\f (sq,es,ob) nm -> f sq es ob nm) <$> afilter
->          <|> pure (\(d,es,ob) f -> AggregateApp f d es ob Nothing))
->    -- separate cases with no all or distinct which have at least one
->    -- value expr
->   ,commaSep1 valueExpr
->    <**> choice
->         [closeParen *> choice [window
->                               ,withinGroup
->                               ,(\f es nm -> f SQDefault es [] nm) <$> afilter
->                               ,pure (flip App)]
->         ,(orderBy <* closeParen)
->          <**>
->          choice [(\f ob es nm -> f SQDefault es ob nm) <$> afilter
->                 ,pure (\ob es f -> AggregateApp f SQDefault es ob Nothing)]]
->   ,([] <$ closeParen)
->    <**> choice [window
->                ,withinGroup
->                ,pure (flip App)]
->   ]
-
-> afilter :: Parser (SetQuantifier
->                    -> [ValueExpr]
->                    -> [SortSpec]
->                    -> [Name]
->                    -> ValueExpr)
-> afilter =
->     keyword_ "filter" *> (ctor <$> parens (keyword_ "where" *> valueExpr))
+>     openParen *> choice
+>     [duplicates
+>      <**> (commaSep1 valueExpr
+>            <**> (((option [] orderBy) <* closeParen)
+>                  <**> (optionMaybe afilter <$$$$$> AggregateApp)))
+>      -- separate cases with no all or distinct which must have at
+>      -- least one value expr
+>     ,commaSep1 valueExpr
+>      <**> choice
+>           [closeParen *> choice
+>                          [window
+>                          ,withinGroup
+>                          ,(Just <$> afilter) <$$$> aggAppWithoutDupeOrd
+>                          ,pure (flip App)]
+>           ,orderBy <* closeParen
+>            <**> (optionMaybe afilter <$$$$> aggAppWithoutDupe)]
+>      -- no valueExprs: duplicates and order by not allowed
+>     ,([] <$ closeParen) <**> (window <|> withinGroup <|> pure (flip App))
+>     ]
 >   where
->     ctor ve sq es ob f = AggregateApp f sq es ob (Just ve)
+>     aggAppWithoutDupeOrd n es f = AggregateApp n SQDefault es [] f
+>     aggAppWithoutDupe n = AggregateApp n SQDefault
+
+> afilter :: Parser ValueExpr
+> afilter = keyword_ "filter" *> parens (keyword_ "where" *> valueExpr)
 
 > withinGroup :: Parser ([ValueExpr] -> [Name] -> ValueExpr)
 > withinGroup =
->     keywords_ ["within", "group"] *>
->     ((\ob es nm -> AggregateAppGroup nm es ob) <$> parens orderBy)
+>     (keywords_ ["within", "group"] *> parens orderBy) <$$$> AggregateAppGroup
 
 ==== window
 
@@ -893,40 +857,33 @@ TODO: add window support for other aggregate variations, needs some
 changes to the syntax also
 
 > window :: Parser ([ValueExpr] -> [Name] -> ValueExpr)
-> window = keyword_ "over" *> parens (ctorWrap
->                                     <$> option [] partitionBy
->                                     <*> option [] orderBy
->                                     <*> optionMaybe frameClause)
+> window =
+>   keyword_ "over" *> openParen *> option [] partitionBy
+>   <**> (option [] orderBy
+>         <**> (((optionMaybe frameClause) <* closeParen) <$$$$$> WindowApp))
 >   where
->     ctorWrap pb ob fc es f = WindowApp f es pb ob fc
->     partitionBy = keywords_ ["partition","by"] >> commaSep1 valueExpr
+>     partitionBy = keywords_ ["partition","by"] *> commaSep1 valueExpr
 >     frameClause =
->         mkFrame <$> choice [FrameRows <$ keyword_ "rows"
->                            ,FrameRange <$ keyword_ "range"]
->                 <*> frameStartEnd
->     frameStartEnd =
->         choice
->         [keyword_ "between" >>
->          mkFrameBetween <$> frameLimit True
->                         <*> (keyword_ "and" *> frameLimit True)
->         ,mkFrameFrom <$> frameLimit False]
->     -- use the bexpression style from the between parsing for frame between
+>         frameRowsRange -- TODO: this 'and' could be an issue
+>         <**> (choice [(keyword_ "between" *> frameLimit True)
+>                       <**> ((keyword_ "and" *> frameLimit True)
+>                             <$$$> FrameBetween)
+>                       -- maybe this should still use a b expression
+>                       -- for consistency
+>                      ,frameLimit False <**> pure (flip FrameFrom)])
+>     frameRowsRange = FrameRows <$ keyword_ "rows"
+>                      <|> FrameRange <$ keyword_ "range"
 >     frameLimit useB =
 >         choice
 >         [Current <$ keywords_ ["current", "row"]
->          -- todo: create an automatic left factor for stuff like
->          -- this
->         ,keyword_ "unbounded" >>
+>          -- todo: create an automatic left factor for stuff like this
+>         ,keyword_ "unbounded" *>
 >          choice [UnboundedPreceding <$ keyword_ "preceding"
 >                 ,UnboundedFollowing <$ keyword_ "following"]
->         ,do
->          e <- if useB then valueExprB else valueExpr
->          choice [Preceding e <$ keyword_ "preceding"
->                 ,Following e <$ keyword_ "following"]
+>         ,(if useB then valueExprB else valueExpr)
+>          <**> (Preceding <$ keyword_ "preceding"
+>                <|> Following <$ keyword_ "following")
 >         ]
->     mkFrameBetween s e rs = FrameBetween rs s e
->     mkFrameFrom s rs = FrameFrom rs s
->     mkFrame rs c = c rs
 
 == suffixes
 
@@ -1244,7 +1201,7 @@ tref
 >          choice [TRFunction n
 >                  <$> parens (commaSep valueExpr)
 >                 ,pure $ TRSimple n]] <??> aliasSuffix
->     aliasSuffix = TRAlias <$$> fromAlias
+>     aliasSuffix = fromAlias <$$> TRAlias
 >     joinTrefSuffix t =
 >         (TRJoin t <$> option False (True <$ keyword_ "natural")
 >                   <*> joinType
@@ -1448,7 +1405,6 @@ thick.
 > makeKeywordTree :: [String] -> Parser [String]
 > makeKeywordTree sets =
 >     parseTrees (sort $ map words sets)
->     --  ?? <?> intercalate "," sets
 >   where
 >     parseTrees :: [[String]] -> Parser [String]
 >     parseTrees ws = do
@@ -1522,7 +1478,7 @@ make this choice.
 >     dot = string "."
 >     expon = (:) <$> oneOf "eE" <*> sInt
 >     sInt = (++) <$> option "" (string "+" <|> string "-") <*> int
->     pp = ((++) <$$>)
+>     pp = (<$$> (++))
 
 
 > identifier :: Parser String

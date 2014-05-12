@@ -7,12 +7,16 @@
 > module Language.SQL.SimpleSQL.Combinators
 >     (optionSuffix
 >     ,(<??>)
->     ,(<$$>)
 >     ,(<??.>)
->     ,(<??*>)) where
+>     ,(<??*>)
+>     ,(<$$>)
+>     ,(<$$$>)
+>     ,(<$$$$>)
+>     ,(<$$$$$>)
+>     ) where
 
-> import Control.Applicative --((<$>), (<*>), (<**>))
-> import Text.Parsec --(option,many)
+> import Control.Applicative ((<$>), (<*>), (<**>), pure, Applicative)
+> import Text.Parsec (option,many)
 > import Text.Parsec.String (Parser)
 
 a possible issue with the option suffix is that it enforces left
@@ -37,10 +41,37 @@ other operators so it can be used nicely
 > p <??> q = p <**> option id q
 
 
-this is analogous to <**>, flipped <$>
+Help with left factored parsers. <$$> is like an analogy with <**>:
 
-> (<$$>) :: (a -> b -> c) -> Parser b -> Parser (a -> c)
-> (<$$>) = (<$>) . flip
+f <$> a <*> b
+
+is like
+
+a <**> (b <$$> f)
+
+f <$> a <*> b <*> c
+
+is like
+
+a <**> (b <**> (c <$$$> f))
+
+> (<$$>) :: Applicative f =>
+>       f b -> (a -> b -> c) -> f (a -> c)
+> (<$$>) pa c = pa <**> pure (flip c)
+
+> (<$$$>) :: Applicative f =>
+>           f c -> (a -> b -> c -> t) -> f (b -> a -> t)
+> p <$$$> c = p <**> pure (flip3 c)
+
+> (<$$$$>) :: Applicative f =>
+>           f d -> (a -> b -> c -> d -> t) -> f (c -> b -> a -> t)
+> p <$$$$> c = p <**> pure (flip4 c)
+
+> (<$$$$$>) :: Applicative f =>
+>           f e -> (a -> b -> c -> d -> e -> t) -> f (d -> c -> b -> a -> t)
+> p <$$$$$> c = p <**> pure (flip5 c)
+
+Surely no-one would write code like this seriously?
 
 
 composing suffix parsers, not sure about the name. This is used to add
@@ -48,11 +79,29 @@ a second or more suffix parser contingent on the first suffix parser
 succeeding.
 
 > (<??.>) :: Parser (a -> a) -> Parser (a -> a) -> Parser (a -> a)
-> (<??.>) pa pb = (.) <$$> pa <*> option id pb
+> (<??.>) pa pb = (.) `c` pa <*> option id pb
+>   -- todo: fix this mess
+>   where c = (<$>) . flip
 
 
 0 to many repeated applications of suffix parser
 
 > (<??*>) :: Parser a -> Parser (a -> a) -> Parser a
-> p <??*> q = p <**> chainl q (pure (flip (.))) id
->     -- foldr ($) <$> p <*> (reverse <$> many q)
+> p <??*> q = foldr ($) <$> p <*> (reverse <$> many q)
+
+
+These are to help with left factored parsers:
+
+a <**> (b <**> (c <**> pure (flip3 ctor)))
+
+Not sure the names are correct, but they follow a pattern with flip
+a <**> (b <**> pure (flip ctor))
+
+> flip3 :: (a -> b -> c -> t) -> c -> b -> a -> t
+> flip3 f a b c = f c b a
+
+> flip4 :: (a -> b -> c -> d -> t) -> d -> c -> b -> a -> t
+> flip4 f a b c d = f d c b a
+
+> flip5 :: (a -> b -> c -> d -> e -> t) -> e -> d -> c -> b -> a -> t
+> flip5 f a b c d e = f e d c b a
