@@ -35,7 +35,7 @@ library
   other-extensions:    TupleSections
   build-depends:       base >=4.6 && <4.8,
                        parsec >=3.1 && <3.2,
-                       mtl >=2.1 && <2.2,
+                       mtl >=2.1 && <2.3,
                        pretty >= 1.1 && < 1.2
   -- hs-source-dirs:
   default-language:    Haskell2010
@@ -48,7 +48,7 @@ Test-Suite Tests
   hs-source-dirs:      .,tools
   Build-Depends:       base >=4.6 && <4.8,
                        parsec >=3.1 && <3.2,
-                       mtl >=2.1 && <2.2,
+                       mtl >=2.1 && <2.3,
                        pretty >= 1.1 && < 1.2,
 
                        HUnit >= 1.2 && < 1.3,
@@ -83,7 +83,7 @@ executable SQLIndent
   hs-source-dirs:      .,tools
   Build-Depends:       base >=4.6 && <4.8,
                        parsec >=3.1 && <3.2,
-                       mtl >=2.1 && <2.2,
+                       mtl >=2.1 && <2.3,
                        pretty >= 1.1 && < 1.2
   other-extensions:    TupleSections,DeriveDataTypeable
   default-language:    Haskell2010

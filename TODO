@@ -1,3 +1,9 @@
+work on reasonable subset of sql which is similar to the current
+   subset and smaller than the complete 2011 target
+prototype for dialect handling
+position annotation
+
+
 work on the new refactoring of the parser
 create a new module for generic combinators
 work on getting rid of monad and guard

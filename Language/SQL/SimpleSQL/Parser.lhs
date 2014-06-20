@@ -832,7 +832,7 @@ together.
 >           ,orderBy <* closeParen
 >            <**> (optionMaybe afilter <$$$$> aggAppWithoutDupe)]
 >      -- no valueExprs: duplicates and order by not allowed
->     ,([] <$ closeParen) <**> (window <|> withinGroup <|> pure (flip App))
+>     ,([] <$ closeParen) <**> option (flip App) (window <|> withinGroup)
 >     ]
 >   where
 >     aggAppWithoutDupeOrd n es f = AggregateApp n SQDefault es [] f

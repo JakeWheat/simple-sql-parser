@@ -1,2 +1,4 @@
 /dist/
 /logchanges
+/cabal.sandbox.config
+/.cabal-sandbox/

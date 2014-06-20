@@ -1,5 +1,10 @@
-0.4.0-dev (updated to dbd48baaa1d1bce3d0d0139b8ffe55370fabe672)
+If you need help updating to a new version of simple-sql-parser,
+please email jakewheatmail@gmail.com or use the github bug tracker,
+https://github.com/JakeWheat/simple-sql-parser/issues.
+
+0.4.0 (updated to dbd48baaa1d1bce3d0d0139b8ffe55370fabe672)
 	now targets SQL:2011
+	update to ghc 7.8.2
 	remove dependency on haskell-src-exts
 	derive Data and Typeable in all the syntax types
 	improve the error messages a great deal
