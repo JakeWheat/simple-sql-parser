@@ -44,9 +44,9 @@ code > span.er { color: #ff0000; font-weight: bold; }
 </div>
 <h1 id="simple-sql-parser"><a href="#simple-sql-parser">simple-sql-parser</a></h1>
 <p>A parser for SQL queries in Haskell. Also includes a pretty printer which formats output nicely. The first goal is to parse most of SQL:2011 queries.</p>
-<p>This is the documentation for version 0.3.0.</p>
-<p>Status: Covers a lot of queries already, but the public API is probably not very stable, since adding support for all the not yet supported ANSI SQL then other dialects of SQL is likely to change the abstract syntax types considerably.</p>
-<p>Tested with GHC 7.6.3.</p>
+<p>This is the documentation for version 0.4.0.</p>
+<p>Status: Covers a lot of queries already, but the public API is probably not very stable, since adding support for all the not-yet-supported ANSI SQL syntax, then other dialects of SQL is likely to change the abstract syntax types considerably.</p>
+<p>Tested with GHC 7.6.3 and 7.8.2.</p>
 <h1 id="examples"><a href="#examples">Examples</a></h1>
 <p>Simple expression:</p>
 <pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">select</span> a + b * c</code></pre>
@@ -242,7 +242,7 @@ fetch <span class="fu">first</span> <span class="dv">100</span> <span class="kw"
 <h1 id="installation"><a href="#installation">Installation</a></h1>
 <p>Installing the latest release from Hackage.</p>
 <pre><code>cabal update &amp;&amp; cabal install simple-sql-parser</code></pre>
-<p>Installing the latest development version.</p>
+<p>Installing the latest development version. These instructions do not use cabal sandboxes which is bad, you should use sandboxes.</p>
 <pre><code>git clone https://github.com/JakeWheat/simple-sql-parser.git
 cd simple-sql-parser
 cabal install</code></pre>
@@ -251,7 +251,7 @@ cabal install</code></pre>
 <p>You can run the tests using cabal:</p>
 <pre><code>cabal configure --enable-tests
 cabal test</code></pre>
-<p>Or you can run them directly which gives more options. The test framework used is test-framework currently.</p>
+<p>Or you can run them directly which gives more options. The tests use test-framework, which provides the command line options.</p>
 <pre><code>cabal configure --enable-tests
 cabal build
 dist/build/Tests/Tests</code></pre>
