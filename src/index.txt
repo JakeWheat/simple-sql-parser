@@ -2,13 +2,16 @@
 
 A parser for SQL queries in Haskell. Also includes a pretty printer
 which formats output nicely. The first goal is to parse most of
-SQL:2003 queries.
+SQL:2011 queries.
 
-This is the documentation for version 0.3.0.
+This is the documentation for version 0.4.0.
 
-Status: Covers a lot of queries already and is mostly stable.
+Status: Covers a lot of queries already, but the public API is
+probably not very stable, since adding support for all the
+not-yet-supported ANSI SQL syntax, then other dialects of SQL is
+likely to change the abstract syntax types considerably.
 
-Tested with GHC 7.6.3.
+Tested with GHC 7.6.3 and 7.8.2.
 
 # Examples
 
@@ -178,6 +181,7 @@ Select{qeSetQuantifier = All,
          [SortSpec (Iden (Name "numwait")) Desc NullsOrderDefault,
           SortSpec (Iden (Name "s_name")) Asc NullsOrderDefault],
        qeOffset = Nothing, qeFetchFirst = Just (NumLit "100")})
+
 ~~~~
 
 Output from the simple-sql-parser pretty printer:
@@ -236,12 +240,46 @@ Installing the latest release from Hackage.
 cabal update && cabal install simple-sql-parser
 ~~~~
 
-Installing the latest development version.
+Installing the latest development version. These instructions do not
+use cabal sandboxes which is bad, you should use sandboxes.
 
 ~~~~
 git clone https://github.com/JakeWheat/simple-sql-parser.git
 cd simple-sql-parser
 cabal install
+~~~~
+
+## Running the tests
+
+Get the source using 'cabal unpack' or 'git clone', then change to the
+source directory.
+
+You can run the tests using cabal:
+
+~~~~
+cabal configure --enable-tests
+cabal test
+~~~~
+
+Or you can run them directly which gives more options. The tests use
+test-framework, which provides the command line options.
+
+~~~~
+cabal configure --enable-tests
+cabal build
+dist/build/Tests/Tests
+~~~~
+
+or, not using cabal at all:
+
+~~~~
+runghc -itools tools/RunTests.lhs
+~~~~
+
+--hide-successes is a good option to use:
+
+~~~~
+dist/build/Tests/Tests --hide-successes
 ~~~~
 
 # Documentation
@@ -288,7 +326,8 @@ This also covers SQL from a partly theoretical perspective.
 \
 A Guide to the SQL Standard, C. J. Date, Hugh Darwen
 
-Review: TODO. It covers up to  SQL:92.
+This is a fantastic book for covering all the little details of the
+SQL standard in depth. It only covers up to SQL:92.
 \
 \
 \
@@ -300,7 +339,13 @@ Database Systems) really relates to SQL.
 \
 \
 \
-The SQL draft standards are available to download for free (follow the
+Database Systems: The Complete Book, Hector Garcia-Molina, Jeff Ullman, and Jennifer Widom.
+
+This book is very comprehensive and has some interesting sections.
+\
+\
+\
+Some of the SQL draft standards are available to download for free (follow the
 links on the wikipedia page for SQL). They are a little tricky to
 read and understand.
 \

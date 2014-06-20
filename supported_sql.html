@@ -28,6 +28,9 @@
 <p><a href="index.html">simple-sql-parser home</a></p>
 <p>This page has more details on the supported SQL in simple-sql-parser.</p>
 <p>See the <a href="test_cases.html">simple-sql-parser test cases</a> page for examples.</p>
+<p>The target dialect of SQL at this time is ISO/ANSI SQL:2011. The parser only supports queries. The parser and syntax does not follow the standard grammar closely - they permit a lot of things which the grammar in the standard forbids. The intended usage is that an additional pass over the ast can be made if you want to carefully prohibit everything that the standard doesn't allow.</p>
+<p>Apart from this relative permissiveness, some work has been put into trying to get the best parser error messages possible.</p>
+<p>Finally, although the parser and syntax support some character set constructs, any source is always parsed in the default system encoding which Haskell uses, and any encoding/decoding is left to the system. I think this effectively means that you will usually be using utf-8 character set for the sql source.</p>
 <h1 id="select-lists"><a href="#select-lists">Select lists</a></h1>
 <p>Supports value expressions, aliases with optional 'as'.</p>
 <p>Doesn't support 'select * as (a,b,c) from t' yet.</p>
