@@ -9,7 +9,7 @@ expression
 
 
 > tableRefTests :: TestItem
-> tableRefTests = Group "tableRefTests" $ map (uncurry TestQueryExpr)
+> tableRefTests = Group "tableRefTests" $ map (uncurry (TestQueryExpr SQL2011))
 >     [("select a from t"
 >      ,ms [TRSimple [Name "t"]])
 

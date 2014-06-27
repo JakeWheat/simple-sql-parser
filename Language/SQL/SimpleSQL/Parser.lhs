@@ -204,11 +204,13 @@ fixing them in the syntax but leaving them till the semantic checking
 = Public API
 
 > -- | Parses a query expr, trailing semicolon optional.
-> parseQueryExpr :: FilePath
->                   -- ^ filename to use in errors
+> parseQueryExpr :: Dialect
+>                   -- ^ dialect of SQL to use
+>                -> FilePath
+>                   -- ^ filename to use in error messages
 >                -> Maybe (Int,Int)
 >                   -- ^ line number and column number of the first character
->                   -- in the source (to use in errors)
+>                   -- in the source to use in error messages
 >                -> String
 >                   -- ^ the SQL source to parse
 >                -> Either ParseError QueryExpr
@@ -216,22 +218,26 @@ fixing them in the syntax but leaving them till the semantic checking
 
 > -- | Parses a list of query expressions, with semi colons between
 > -- them. The final semicolon is optional.
-> parseQueryExprs :: FilePath
->                    -- ^ filename to use in errors
+> parseQueryExprs :: Dialect
+>                   -- ^ dialect of SQL to use
+>                 -> FilePath
+>                    -- ^ filename to use in error messages
 >                 -> Maybe (Int,Int)
 >                    -- ^ line number and column number of the first character
->                    -- in the source (to use in errors)
+>                    -- in the source to use in error messages
 >                 -> String
 >                    -- ^ the SQL source to parse
 >                 -> Either ParseError [QueryExpr]
 > parseQueryExprs = wrapParse queryExprs
 
 > -- | Parses a value expression.
-> parseValueExpr :: FilePath
->                    -- ^ filename to use in errors
+> parseValueExpr :: Dialect
+>                    -- ^ dialect of SQL to use
+>                 -> FilePath
+>                    -- ^ filename to use in error messages
 >                 -> Maybe (Int,Int)
 >                    -- ^ line number and column number of the first character
->                    -- in the source (to use in errors)
+>                    -- in the source to use in error messages
 >                 -> String
 >                    -- ^ the SQL source to parse
 >                 -> Either ParseError ValueExpr
@@ -245,11 +251,12 @@ checks the parser parses all the input using eof
 converts the error return to the nice wrapper
 
 > wrapParse :: Parser a
+>           -> Dialect
 >           -> FilePath
 >           -> Maybe (Int,Int)
 >           -> String
 >           -> Either ParseError a
-> wrapParse parser f p src =
+> wrapParse parser _ f p src =
 >     either (Left . convParseError src) Right
 >     $ parse (setPos p *> whitespace *> parser <* eof) f src
 >   where
@@ -296,7 +303,12 @@ u&"example quoted"
 > name :: Parser Name
 > name = choice [QName <$> quotedIdentifier
 >               ,UQName <$> uquotedIdentifier
->               ,Name <$> identifierBlacklist blacklist]
+>               ,Name <$> identifierBlacklist blacklist
+>               ,dqName]
+>   where
+>     dqName = lexeme (DQName "`" "`"
+>                      <$> (char '`'
+>                           *> manyTill anyChar (char '`')))
 
 todo: replace (:[]) with a named function all over
 
@@ -1289,10 +1301,13 @@ allows offset and fetch in either order
 >                               ,keyword_ "row"])
 
 > fetch :: Parser ValueExpr
-> fetch = fs *> valueExpr <* ro
+> fetch = fetchFirst <|> limit
 >   where
+>     fetchFirst = fs *> valueExpr <* ro
 >     fs = makeKeywordTree ["fetch first", "fetch next"]
 >     ro = makeKeywordTree ["rows only", "row only"]
+>     -- todo: not in ansi sql dialect
+>     limit = keyword_ "limit" *> valueExpr
 
 == common table expressions
 
@@ -1971,4 +1986,6 @@ means).
 >     ,"within"
 >     ,"without"
 >     --,"year"
+>      -- added for mysql dialect, todo: make dialect specific lists
+>     ,"limit"
 >     ]

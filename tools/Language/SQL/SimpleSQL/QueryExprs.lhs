@@ -8,7 +8,7 @@ query expressions from one string.
 > import Language.SQL.SimpleSQL.Syntax
 
 > queryExprsTests :: TestItem
-> queryExprsTests = Group "query exprs" $ map (uncurry TestQueryExprs)
+> queryExprsTests = Group "query exprs" $ map (uncurry (TestQueryExprs SQL2011))
 >     [("select 1",[ms])
 >     ,("select 1;",[ms])
 >     ,("select 1;select 1",[ms,ms])

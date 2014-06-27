@@ -30,6 +30,8 @@ test data to the Test.Framework tests.
 
 > import Language.SQL.SimpleSQL.SQL2011
 
+> import Language.SQL.SimpleSQL.MySQL
+
 Order the tests to start from the simplest first. This is also the
 order on the generated documentation.
 
@@ -45,6 +47,7 @@ order on the generated documentation.
 >     ,postgresTests
 >     ,tpchTests
 >     ,sql2011Tests
+>     ,mySQLTests
 >     ]
 
 > tests :: Test.Framework.Test
@@ -56,29 +59,30 @@ order on the generated documentation.
 > itemToTest :: TestItem -> Test.Framework.Test
 > itemToTest (Group nm ts) =
 >     testGroup nm $ map itemToTest ts
-> itemToTest (TestValueExpr str expected) =
->     toTest parseValueExpr prettyValueExpr str expected
-> itemToTest (TestQueryExpr str expected) =
->     toTest parseQueryExpr prettyQueryExpr str expected
-> itemToTest (TestQueryExprs str expected) =
->     toTest parseQueryExprs prettyQueryExprs str expected
-> itemToTest (ParseQueryExpr str) =
->     toPTest parseQueryExpr prettyQueryExpr str
+> itemToTest (TestValueExpr d str expected) =
+>     toTest parseValueExpr prettyValueExpr d str expected
+> itemToTest (TestQueryExpr d str expected) =
+>     toTest parseQueryExpr prettyQueryExpr d str expected
+> itemToTest (TestQueryExprs d str expected) =
+>     toTest parseQueryExprs prettyQueryExprs d str expected
+> itemToTest (ParseQueryExpr d str) =
+>     toPTest parseQueryExpr prettyQueryExpr d str
 
 > toTest :: (Eq a, Show a) =>
->           (String -> Maybe (Int,Int) -> String -> Either ParseError a)
->        -> (a -> String)
+>           (Dialect -> String -> Maybe (Int,Int) -> String -> Either ParseError a)
+>        -> (Dialect -> a -> String)
+>        -> Dialect
 >        -> String
 >        -> a
 >        -> Test.Framework.Test
-> toTest parser pp str expected = testCase str $ do
->         let egot = parser "" Nothing str
+> toTest parser pp d str expected = testCase str $ do
+>         let egot = parser d "" Nothing str
 >         case egot of
 >             Left e -> H.assertFailure $ peFormattedError e
 >             Right got -> do
 >                 H.assertEqual "" expected got
->                 let str' = pp got
->                 let egot' = parser "" Nothing str'
+>                 let str' = pp d got
+>                 let egot' = parser d "" Nothing str'
 >                 case egot' of
 >                     Left e' -> H.assertFailure $ "pp roundtrip"
 >                                                  ++ "\n" ++ str'
@@ -88,17 +92,18 @@ order on the generated documentation.
 >                                    expected got'
 
 > toPTest :: (Eq a, Show a) =>
->           (String -> Maybe (Int,Int) -> String -> Either ParseError a)
->        -> (a -> String)
+>           (Dialect -> String -> Maybe (Int,Int) -> String -> Either ParseError a)
+>        -> (Dialect -> a -> String)
+>        -> Dialect
 >        -> String
 >        -> Test.Framework.Test
-> toPTest parser pp str = testCase str $ do
->         let egot = parser "" Nothing str
+> toPTest parser pp d str = testCase str $ do
+>         let egot = parser d "" Nothing str
 >         case egot of
 >             Left e -> H.assertFailure $ peFormattedError e
 >             Right got -> do
->                 let str' = pp got
->                 let egot' = parser "" Nothing str'
+>                 let str' = pp d got
+>                 let egot' = parser d "" Nothing str'
 >                 case egot' of
 >                     Left e' -> H.assertFailure $ "pp roundtrip "
 >                                                  ++ "\n" ++ str' ++ "\n"

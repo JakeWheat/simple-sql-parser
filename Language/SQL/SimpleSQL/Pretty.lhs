@@ -19,17 +19,17 @@ which have been changed to try to improve the layout of the output.
 > import Data.List (intercalate)
 
 > -- | Convert a query expr ast to concrete syntax.
-> prettyQueryExpr :: QueryExpr -> String
-> prettyQueryExpr = render . queryExpr
+> prettyQueryExpr :: Dialect -> QueryExpr -> String
+> prettyQueryExpr _ = render . queryExpr
 
 > -- | Convert a value expr ast to concrete syntax.
-> prettyValueExpr :: ValueExpr -> String
-> prettyValueExpr = render . valueExpr
+> prettyValueExpr :: Dialect -> ValueExpr -> String
+> prettyValueExpr _ = render . valueExpr
 
 > -- | Convert a list of query exprs to concrete syntax. A semi colon
 > -- is inserted after each query expr.
-> prettyQueryExprs :: [QueryExpr] -> String
-> prettyQueryExprs = render . vcat . map ((<> text ";\n") . queryExpr)
+> prettyQueryExprs :: Dialect -> [QueryExpr] -> String
+> prettyQueryExprs _ = render . vcat . map ((<> text ";\n") . queryExpr)
 
 = value expressions
 
@@ -248,6 +248,7 @@ which have been changed to try to improve the layout of the output.
 > name (UQName n) =
 >     text "U&" <> doubleQuotes (text $ doubleUpDoubleQuotes n)
 > name (Name n) = text n
+> name (DQName s e n) = text s <> text n <> text e
 
 > names :: [Name] -> Doc
 > names ns = hcat $ punctuate (text ".") $ map name ns

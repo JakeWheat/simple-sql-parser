@@ -1,8 +1,13 @@
 work on reasonable subset of sql which is similar to the current
    subset and smaller than the complete 2011 target
-prototype for dialect handling
+prototype for dialect handling, todo:
+  add test which test for failure
+  test that mysql specific syntax fails on ansi mode
+    and that the ansi equivalents of the mysql specific syntax which
+    has been implemented fail in mysql mode
 position annotation
 
+simple stuff for error message and pretty printing monitoring
 
 work on the new refactoring of the parser
 create a new module for generic combinators

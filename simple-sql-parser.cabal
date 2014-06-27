@@ -1,5 +1,5 @@
 name:                simple-sql-parser
-version:             0.4.0
+version:             0.4.1
 synopsis:            A parser for SQL queries
 
 description:         A parser for SQL queries. Parses most SQL:2011
@@ -64,6 +64,7 @@ Test-Suite Tests
                        Language.SQL.SimpleSQL.ErrorMessages,
                        Language.SQL.SimpleSQL.FullQueries,
                        Language.SQL.SimpleSQL.GroupBy,
+                       Language.SQL.SimpleSQL.MySQL,
                        Language.SQL.SimpleSQL.Postgres,
                        Language.SQL.SimpleSQL.QueryExprComponents,
                        Language.SQL.SimpleSQL.QueryExprs,

@@ -6,10 +6,9 @@ revisited when the dialect support is added.
 > module Language.SQL.SimpleSQL.Postgres (postgresTests) where
 
 > import Language.SQL.SimpleSQL.TestTypes
-> --import Language.SQL.SimpleSQL.Syntax
 
 > postgresTests :: TestItem
-> postgresTests = Group "postgresTests" $ map ParseQueryExpr
+> postgresTests = Group "postgresTests" $ map (ParseQueryExpr SQL2011)
 
 lexical syntax section
 

@@ -8,7 +8,7 @@ Some tests for parsing full queries.
 
 
 > fullQueriesTests :: TestItem
-> fullQueriesTests = Group "queries" $ map (uncurry TestQueryExpr)
+> fullQueriesTests = Group "queries" $ map (uncurry (TestQueryExpr SQL2011))
 >     [("select count(*) from t"
 >      ,makeSelect
 >       {qeSelectList = [(App [Name "count"] [Star], Nothing)]

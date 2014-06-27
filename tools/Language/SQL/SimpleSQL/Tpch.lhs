@@ -13,7 +13,7 @@ The changes made to the official syntax are:
 > tpchTests :: TestItem
 > tpchTests =
 >     Group "parse tpch"
->     $ map (ParseQueryExpr . snd) tpchQueries
+>     $ map (ParseQueryExpr SQL2011 . snd) tpchQueries
 
 > tpchQueries :: [(String,String)]
 > tpchQueries =

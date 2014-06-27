@@ -30,6 +30,8 @@
 >     ,TableRef(..)
 >     ,JoinType(..)
 >     ,JoinCondition(..)
+>      -- * dialect
+>     ,Dialect(..)
 >     ) where
 
 > import Data.Data
@@ -165,6 +167,8 @@
 > data Name = Name String
 >           | QName String
 >           | UQName String
+>           | DQName String String String
+>             -- ^ dialect quoted name, the fields are start quote, end quote and the string itself, e.g. `something` is parsed to DQName "`" "`" "something, and $a$ test $a$ is parsed to DQName "$a$" "$a" " test "
 >             deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | Represents a type name, used in casts.
@@ -372,3 +376,10 @@ I'm not sure if this is valid syntax or not.
 > data JoinCondition = JoinOn ValueExpr -- ^ on expr
 >                    | JoinUsing [Name] -- ^ using (column list)
 >                      deriving (Eq,Show,Read,Data,Typeable)
+
+
+> -- | Used to set the dialect used for parsing and pretty printing,
+> -- very unfinished at the moment.
+> data Dialect = SQL2011
+>              | MySQL
+>                deriving (Eq,Show,Read,Data,Typeable)
