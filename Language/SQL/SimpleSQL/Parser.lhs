@@ -303,9 +303,10 @@ u&"example quoted"
 
 > name :: Parser Name
 > name = do
+>     d <- getState
 >     choice [QName <$> quotedIdentifier
 >            ,UQName <$> uquotedIdentifier
->            ,Name <$> identifierBlacklist blacklist
+>            ,Name <$> identifierBlacklist (blacklist d)
 >            ,dqName]
 >   where
 >     dqName = guardDialect [MySQL] *>
@@ -1639,7 +1640,7 @@ helper function to improve error messages
 >     pure i)
 >     <?> "identifier"
 
-> blacklist :: [String]
+> blacklist :: Dialect -> [String]
 > blacklist = reservedWord
 
 These blacklisted names are mostly needed when we parse something with
@@ -1656,8 +1657,8 @@ The standard has a weird mix of reserved keywords and unreserved
 keywords (I'm not sure what exactly being an unreserved keyword
 means).
 
-> reservedWord :: [String]
-> reservedWord =
+> reservedWord :: Dialect -> [String]
+> reservedWord SQL2011 =
 >     ["abs"
 >     --,"all"
 >     ,"allocate"
@@ -1982,9 +1983,12 @@ means).
 >     ,"within"
 >     ,"without"
 >     --,"year"
->      -- added for mysql dialect, todo: make dialect specific lists
->     ,"limit"
 >     ]
+
+TODO: create this list properly
+
+> reservedWord MySQL = reservedWord SQL2011 ++ ["limit"]
+
 
 -----------
 
