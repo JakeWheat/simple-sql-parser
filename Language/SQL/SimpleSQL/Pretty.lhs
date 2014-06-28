@@ -20,64 +20,64 @@ which have been changed to try to improve the layout of the output.
 
 > -- | Convert a query expr ast to concrete syntax.
 > prettyQueryExpr :: Dialect -> QueryExpr -> String
-> prettyQueryExpr _ = render . queryExpr
+> prettyQueryExpr d = render . queryExpr d
 
 > -- | Convert a value expr ast to concrete syntax.
 > prettyValueExpr :: Dialect -> ValueExpr -> String
-> prettyValueExpr _ = render . valueExpr
+> prettyValueExpr d = render . valueExpr d
 
 > -- | Convert a list of query exprs to concrete syntax. A semi colon
 > -- is inserted after each query expr.
 > prettyQueryExprs :: Dialect -> [QueryExpr] -> String
-> prettyQueryExprs _ = render . vcat . map ((<> text ";\n") . queryExpr)
+> prettyQueryExprs d = render . vcat . map ((<> text ";\n") . queryExpr d)
 
 = value expressions
 
-> valueExpr :: ValueExpr -> Doc
-> valueExpr (StringLit s) = quotes $ text $ doubleUpQuotes s
+> valueExpr :: Dialect -> ValueExpr -> Doc
+> valueExpr _ (StringLit s) = quotes $ text $ doubleUpQuotes s
 
-> valueExpr (NumLit s) = text s
-> valueExpr (IntervalLit s v f t) =
+> valueExpr _ (NumLit s) = text s
+> valueExpr _ (IntervalLit s v f t) =
 >     text "interval"
 >     <+> me (\x -> if x then text "+" else text "-") s
 >     <+> quotes (text v)
 >     <+> intervalTypeField f
 >     <+> me (\x -> text "to" <+> intervalTypeField x) t
-> valueExpr (Iden i) = names i
-> valueExpr Star = text "*"
-> valueExpr Parameter = text "?"
-> valueExpr (HostParameter p i) =
+> valueExpr _ (Iden i) = names i
+> valueExpr _ Star = text "*"
+> valueExpr _ Parameter = text "?"
+> valueExpr _ (HostParameter p i) =
 >     text (':':p)
 >     <+> me (\i' -> text "indicator" <+> text (':':i')) i
 
-> valueExpr (App f es) = names f <> parens (commaSep (map valueExpr es))
+> valueExpr d (App f es) = names f <> parens (commaSep (map (valueExpr d) es))
 
-> valueExpr (AggregateApp f d es od fil) =
+> valueExpr dia (AggregateApp f d es od fil) =
 >     names f
 >     <> parens ((case d of
 >                   Distinct -> text "distinct"
 >                   All -> text "all"
 >                   SQDefault -> empty)
->                <+> commaSep (map valueExpr es)
->                <+> orderBy od)
+>                <+> commaSep (map (valueExpr dia) es)
+>                <+> orderBy dia od)
 >     <+> me (\x -> text "filter"
->                   <+> parens (text "where" <+> valueExpr x)) fil
+>                   <+> parens (text "where" <+> valueExpr dia x)) fil
 
-> valueExpr (AggregateAppGroup f es od) =
+> valueExpr d (AggregateAppGroup f es od) =
 >     names f
->     <> parens (commaSep (map valueExpr es))
+>     <> parens (commaSep (map (valueExpr d) es))
 >     <+> if null od
 >         then empty
->         else text "within group" <+> parens(orderBy od)
+>         else text "within group" <+> parens (orderBy d od)
 
-> valueExpr (WindowApp f es pb od fr) =
->     names f <> parens (commaSep $ map valueExpr es)
+> valueExpr d (WindowApp f es pb od fr) =
+>     names f <> parens (commaSep $ map (valueExpr d) es)
 >     <+> text "over"
 >     <+> parens ((case pb of
 >                     [] -> empty
 >                     _ -> text "partition by"
->                           <+> nest 13 (commaSep $ map valueExpr pb))
->                 <+> orderBy od
+>                           <+> nest 13 (commaSep $ map (valueExpr d) pb))
+>                 <+> orderBy d od
 >     <+> me frd fr)
 >   where
 >     frd (FrameFrom rs fp) = rsd rs <+> fpd fp
@@ -90,109 +90,109 @@ which have been changed to try to improve the layout of the output.
 >     fpd UnboundedPreceding = text "unbounded preceding"
 >     fpd UnboundedFollowing = text "unbounded following"
 >     fpd Current = text "current row"
->     fpd (Preceding e) = valueExpr e <+> text "preceding"
->     fpd (Following e) = valueExpr e <+> text "following"
+>     fpd (Preceding e) = valueExpr d e <+> text "preceding"
+>     fpd (Following e) = valueExpr d e <+> text "following"
 
-> valueExpr (SpecialOp nm [a,b,c]) | nm `elem` [[Name "between"]
->                                              ,[Name "not between"]] =
->   sep [valueExpr a
->       ,names nm <+> valueExpr b
->       ,nest (length (unnames nm) + 1) $ text "and" <+> valueExpr c]
+> valueExpr dia (SpecialOp nm [a,b,c]) | nm `elem` [[Name "between"]
+>                                                  ,[Name "not between"]] =
+>   sep [valueExpr dia a
+>       ,names nm <+> valueExpr dia b
+>       ,nest (length (unnames nm) + 1) $ text "and" <+> valueExpr dia c]
 
-> valueExpr (SpecialOp [Name "rowctor"] as) =
->     parens $ commaSep $ map valueExpr as
+> valueExpr d (SpecialOp [Name "rowctor"] as) =
+>     parens $ commaSep $ map (valueExpr d) as
 
-> valueExpr (SpecialOp nm es) =
->   names nm <+> parens (commaSep $ map valueExpr es)
+> valueExpr d (SpecialOp nm es) =
+>   names nm <+> parens (commaSep $ map (valueExpr d) es)
 
-> valueExpr (SpecialOpK nm fs as) =
+> valueExpr d (SpecialOpK nm fs as) =
 >     names nm <> parens (sep $ catMaybes
->         (fmap valueExpr fs
->          : map (\(n,e) -> Just (text n <+> valueExpr e)) as))
+>         (fmap (valueExpr d) fs
+>          : map (\(n,e) -> Just (text n <+> valueExpr d e)) as))
 
-> valueExpr (PrefixOp f e) = names f <+> valueExpr e
-> valueExpr (PostfixOp f e) = valueExpr e <+> names f
-> valueExpr e@(BinOp _ op _) | op `elem` [[Name "and"], [Name "or"]] =
+> valueExpr d (PrefixOp f e) = names f <+> valueExpr d e
+> valueExpr d (PostfixOp f e) = valueExpr d e <+> names f
+> valueExpr d e@(BinOp _ op _) | op `elem` [[Name "and"], [Name "or"]] =
 >     -- special case for and, or, get all the ands so we can vcat them
 >     -- nicely
 >     case ands e of
->       (e':es) -> vcat (valueExpr e'
->                        : map ((names op <+>) . valueExpr) es)
+>       (e':es) -> vcat (valueExpr d e'
+>                        : map ((names op <+>) . valueExpr d) es)
 >       [] -> empty -- shouldn't be possible
 >   where
 >     ands (BinOp a op' b) | op == op' = ands a ++ ands b
 >     ands x = [x]
 > -- special case for . we don't use whitespace
-> valueExpr (BinOp e0 [Name "."] e1) =
->     valueExpr e0 <> text "." <> valueExpr e1
-> valueExpr (BinOp e0 f e1) =
->     valueExpr e0 <+> names f <+> valueExpr e1
+> valueExpr d (BinOp e0 [Name "."] e1) =
+>     valueExpr d e0 <> text "." <> valueExpr d e1
+> valueExpr d (BinOp e0 f e1) =
+>     valueExpr d e0 <+> names f <+> valueExpr d e1
 
-> valueExpr (Case t ws els) =
->     sep $ [text "case" <+> me valueExpr t]
+> valueExpr dia (Case t ws els) =
+>     sep $ [text "case" <+> me (valueExpr dia) t]
 >           ++ map w ws
 >           ++ maybeToList (fmap e els)
 >           ++ [text "end"]
 >   where
 >     w (t0,t1) =
->       text "when" <+> nest 5 (commaSep $ map valueExpr t0)
->       <+> text "then" <+> nest 5 (valueExpr t1)
->     e el = text "else" <+> nest 5 (valueExpr el)
-> valueExpr (Parens e) = parens $ valueExpr e
-> valueExpr (Cast e tn) =
->     text "cast" <> parens (sep [valueExpr e
+>       text "when" <+> nest 5 (commaSep $ map (valueExpr dia) t0)
+>       <+> text "then" <+> nest 5 (valueExpr dia t1)
+>     e el = text "else" <+> nest 5 (valueExpr dia el)
+> valueExpr d (Parens e) = parens $ valueExpr d e
+> valueExpr d (Cast e tn) =
+>     text "cast" <> parens (sep [valueExpr d e
 >                                ,text "as"
 >                                ,typeName tn])
 
-> valueExpr (TypedLit tn s) =
+> valueExpr _ (TypedLit tn s) =
 >     typeName tn <+> quotes (text s)
 
-> valueExpr (SubQueryExpr ty qe) =
+> valueExpr d (SubQueryExpr ty qe) =
 >     (case ty of
 >         SqSq -> empty
 >         SqExists -> text "exists"
 >         SqUnique -> text "unique"
->     ) <+> parens (queryExpr qe)
+>     ) <+> parens (queryExpr d qe)
 
-> valueExpr (QuantifiedComparison v c cp sq) =
->     valueExpr v
+> valueExpr d (QuantifiedComparison v c cp sq) =
+>     valueExpr d v
 >     <+> names c
 >     <+> (text $ case cp of
 >              CPAny -> "any"
 >              CPSome -> "some"
 >              CPAll -> "all")
->     <+> parens (queryExpr sq)
+>     <+> parens (queryExpr d sq)
 
-> valueExpr (Match v u sq) =
->     valueExpr v
+> valueExpr d (Match v u sq) =
+>     valueExpr d v
 >     <+> text "match"
 >     <+> (if u then text "unique" else empty)
->     <+> parens (queryExpr sq)
+>     <+> parens (queryExpr d sq)
 
-> valueExpr (In b se x) =
->     valueExpr se <+>
+> valueExpr d (In b se x) =
+>     valueExpr d se <+>
 >     (if b then empty else text "not")
 >     <+> text "in"
 >     <+> parens (nest (if b then 3 else 7) $
 >                  case x of
->                      InList es -> commaSep $ map valueExpr es
->                      InQueryExpr qe -> queryExpr qe)
+>                      InList es -> commaSep $ map (valueExpr d) es
+>                      InQueryExpr qe -> queryExpr d qe)
 
-> valueExpr (Array v es) =
->     valueExpr v <> brackets (commaSep $ map valueExpr es)
+> valueExpr d (Array v es) =
+>     valueExpr d v <> brackets (commaSep $ map (valueExpr d) es)
 
-> valueExpr (ArrayCtor q) =
->     text "array" <> parens (queryExpr q)
+> valueExpr d (ArrayCtor q) =
+>     text "array" <> parens (queryExpr d q)
 
-> valueExpr (MultisetCtor es) =
->     text "multiset" <> brackets (commaSep $ map valueExpr es)
+> valueExpr d (MultisetCtor es) =
+>     text "multiset" <> brackets (commaSep $ map (valueExpr d) es)
 
-> valueExpr (MultisetQueryCtor q) =
->     text "multiset" <> parens (queryExpr q)
+> valueExpr d (MultisetQueryCtor q) =
+>     text "multiset" <> parens (queryExpr d q)
 
-> valueExpr (MultisetBinOp a c q b) =
+> valueExpr d (MultisetBinOp a c q b) =
 >     sep
->     [valueExpr a
+>     [valueExpr d a
 >     ,text "multiset"
 >     ,text $ case c of
 >                 Union -> "union"
@@ -202,23 +202,23 @@ which have been changed to try to improve the layout of the output.
 >          SQDefault -> empty
 >          All -> text "all"
 >          Distinct -> text "distinct"
->     ,valueExpr b]
+>     ,valueExpr d b]
 
 
 
-> valueExpr (CSStringLit cs st) =
+> valueExpr _ (CSStringLit cs st) =
 >   text cs <> quotes (text $ doubleUpQuotes st)
 
-> valueExpr (Escape v e) =
->     valueExpr v <+> text "escape" <+> text [e]
+> valueExpr d (Escape v e) =
+>     valueExpr d v <+> text "escape" <+> text [e]
 
-> valueExpr (UEscape v e) =
->     valueExpr v <+> text "uescape" <+> text [e]
+> valueExpr d (UEscape v e) =
+>     valueExpr d v <+> text "uescape" <+> text [e]
 
-> valueExpr (Collate v c) =
->     valueExpr v <+> text "collate" <+> names c
+> valueExpr d (Collate v c) =
+>     valueExpr d v <+> text "collate" <+> names c
 
-> valueExpr (NextValueFor ns) =
+> valueExpr _ (NextValueFor ns) =
 >     text "next value for" <+> names ns
 
 
@@ -238,6 +238,7 @@ which have been changed to try to improve the layout of the output.
 > unname (QName n) = "\"" ++ doubleUpDoubleQuotes n ++ "\""
 > unname (UQName n) = "U&\"" ++ doubleUpDoubleQuotes n ++ "\""
 > unname (Name n) = n
+> unname (DQName s e n) = s ++ n ++ e
 
 > unnames :: [Name] -> String
 > unnames ns = intercalate "." $ map unname ns
@@ -310,25 +311,31 @@ which have been changed to try to improve the layout of the output.
 
 = query expressions
 
-> queryExpr :: QueryExpr -> Doc
-> queryExpr (Select d sl fr wh gb hv od off fe) =
+> queryExpr :: Dialect -> QueryExpr -> Doc
+> queryExpr dia (Select d sl fr wh gb hv od off fe) =
 >   sep [text "select"
 >       ,case d of
 >           SQDefault -> empty
 >           All -> text "all"
 >           Distinct -> text "distinct"
->       ,nest 7 $ sep [selectList sl]
->       ,from fr
->       ,maybeValueExpr "where" wh
->       ,grpBy gb
->       ,maybeValueExpr "having" hv
->       ,orderBy od
->       ,me (\e -> text "offset" <+> valueExpr e <+> text "rows") off
->       ,me (\e -> text "fetch first" <+> valueExpr e
->                  <+> text "rows only") fe
+>       ,nest 7 $ sep [selectList dia sl]
+>       ,from dia fr
+>       ,maybeValueExpr dia "where" wh
+>       ,grpBy dia gb
+>       ,maybeValueExpr dia "having" hv
+>       ,orderBy dia od
+>       ,me (\e -> text "offset" <+> valueExpr dia e <+> text "rows") off
+>       ,fetchFirst
 >       ]
-> queryExpr (CombineQueryExpr q1 ct d c q2) =
->   sep [queryExpr q1
+>   where
+>     fetchFirst =
+>       me (\e -> if dia == MySQL
+>                 then text "limit" <+> valueExpr dia e
+>                 else text "fetch first" <+> valueExpr dia e
+>                      <+> text "rows only") fe
+
+> queryExpr dia (CombineQueryExpr q1 ct d c q2) =
+>   sep [queryExpr dia q1
 >       ,text (case ct of
 >                 Union -> "union"
 >                 Intersect -> "intersect"
@@ -340,17 +347,17 @@ which have been changed to try to improve the layout of the output.
 >        <+> case c of
 >                Corresponding -> text "corresponding"
 >                Respectively -> empty
->       ,queryExpr q2]
-> queryExpr (With rc withs qe) =
+>       ,queryExpr dia q2]
+> queryExpr d (With rc withs qe) =
 >   text "with" <+> (if rc then text "recursive" else empty)
 >   <+> vcat [nest 5
 >             (vcat $ punctuate comma $ flip map withs $ \(n,q) ->
->              alias n <+> text "as" <+> parens (queryExpr q))
->            ,queryExpr qe]
-> queryExpr (Values vs) =
+>              alias n <+> text "as" <+> parens (queryExpr d q))
+>            ,queryExpr d qe]
+> queryExpr d (Values vs) =
 >     text "values"
->     <+> nest 7 (commaSep (map (parens . commaSep . map valueExpr) vs))
-> queryExpr (Table t) = text "table" <+> names t
+>     <+> nest 7 (commaSep (map (parens . commaSep . map (valueExpr d)) vs))
+> queryExpr _ (Table t) = text "table" <+> names t
 
 
 > alias :: Alias -> Doc
@@ -358,25 +365,25 @@ which have been changed to try to improve the layout of the output.
 >     text "as" <+> name nm
 >     <+> me (parens . commaSep . map name) cols
 
-> selectList :: [(ValueExpr,Maybe Name)] -> Doc
-> selectList is = commaSep $ map si is
+> selectList :: Dialect -> [(ValueExpr,Maybe Name)] -> Doc
+> selectList d is = commaSep $ map si is
 >   where
->     si (e,al) = valueExpr e <+> me als al
+>     si (e,al) = valueExpr d e <+> me als al
 >     als al = text "as" <+> name al
 
-> from :: [TableRef] -> Doc
-> from [] = empty
-> from ts =
+> from :: Dialect -> [TableRef] -> Doc
+> from _ [] = empty
+> from d ts =
 >     sep [text "from"
 >         ,nest 5 $ vcat $ punctuate comma $ map tr ts]
 >   where
 >     tr (TRSimple t) = names t
 >     tr (TRLateral t) = text "lateral" <+> tr t
 >     tr (TRFunction f as) =
->         names f <> parens (commaSep $ map valueExpr as)
+>         names f <> parens (commaSep $ map (valueExpr d) as)
 >     tr (TRAlias t a) = sep [tr t, alias a]
 >     tr (TRParens t) = parens $ tr t
->     tr (TRQueryExpr q) = parens $ queryExpr q
+>     tr (TRQueryExpr q) = parens $ queryExpr d q
 >     tr (TRJoin t0 b jt t1 jc) =
 >        sep [tr t0
 >            ,if b then text "natural" else empty
@@ -390,34 +397,34 @@ which have been changed to try to improve the layout of the output.
 >               JFull -> text "full"
 >               JCross -> text "cross"
 >           ,text "join"]
->     joinCond (Just (JoinOn e)) = text "on" <+> valueExpr e
+>     joinCond (Just (JoinOn e)) = text "on" <+> valueExpr d e
 >     joinCond (Just (JoinUsing es)) =
 >         text "using" <+> parens (commaSep $ map name es)
 >     joinCond Nothing = empty
 
-> maybeValueExpr :: String -> Maybe ValueExpr -> Doc
-> maybeValueExpr k = me
+> maybeValueExpr :: Dialect -> String -> Maybe ValueExpr -> Doc
+> maybeValueExpr d k = me
 >       (\e -> sep [text k
->                  ,nest (length k + 1) $ valueExpr e])
+>                  ,nest (length k + 1) $ valueExpr d e])
 
-> grpBy :: [GroupingExpr] -> Doc
-> grpBy [] = empty
-> grpBy gs = sep [text "group by"
+> grpBy :: Dialect -> [GroupingExpr] -> Doc
+> grpBy _ [] = empty
+> grpBy d gs = sep [text "group by"
 >                ,nest 9 $ commaSep $ map ge gs]
 >   where
->     ge (SimpleGroup e) = valueExpr e
+>     ge (SimpleGroup e) = valueExpr d e
 >     ge (GroupingParens g) = parens (commaSep $ map ge g)
 >     ge (Cube es) = text "cube" <> parens (commaSep $ map ge es)
 >     ge (Rollup es) = text "rollup" <> parens (commaSep $ map ge es)
 >     ge (GroupingSets es) = text "grouping sets" <> parens (commaSep $ map ge es)
 
-> orderBy :: [SortSpec] -> Doc
-> orderBy [] = empty
-> orderBy os = sep [text "order by"
+> orderBy :: Dialect -> [SortSpec] -> Doc
+> orderBy _ [] = empty
+> orderBy dia os = sep [text "order by"
 >                  ,nest 9 $ commaSep $ map f os]
 >   where
 >     f (SortSpec e d n) =
->         valueExpr e
+>         valueExpr dia e
 >         <+> (case d of
 >                   Asc -> text "asc"
 >                   Desc -> text "desc"

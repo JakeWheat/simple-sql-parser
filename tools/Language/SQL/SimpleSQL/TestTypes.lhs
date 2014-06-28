@@ -18,4 +18,9 @@ intermediate when I'm too lazy to write out the parsed AST. These
 should all be TODO to convert to a testqueryexpr test.
 
 >               | ParseQueryExpr Dialect String
+
+check that the string given fails to parse
+
+>               | ParseQueryExprFails Dialect String
+>               | ParseValueExprFails Dialect String
 >                 deriving (Eq,Show)

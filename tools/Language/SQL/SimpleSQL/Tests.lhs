@@ -68,6 +68,13 @@ order on the generated documentation.
 > itemToTest (ParseQueryExpr d str) =
 >     toPTest parseQueryExpr prettyQueryExpr d str
 
+> itemToTest (ParseQueryExprFails d str) =
+>     toFTest parseQueryExpr prettyQueryExpr d str
+
+> itemToTest (ParseValueExprFails d str) =
+>     toFTest parseValueExpr prettyValueExpr d str
+
+
 > toTest :: (Eq a, Show a) =>
 >           (Dialect -> String -> Maybe (Int,Int) -> String -> Either ParseError a)
 >        -> (Dialect -> a -> String)
@@ -109,3 +116,17 @@ order on the generated documentation.
 >                                                  ++ "\n" ++ str' ++ "\n"
 >                                                  ++ peFormattedError e'
 >                     Right _got' -> return ()
+
+
+> toFTest :: (Eq a, Show a) =>
+>           (Dialect -> String -> Maybe (Int,Int) -> String -> Either ParseError a)
+>        -> (Dialect -> a -> String)
+>        -> Dialect
+>        -> String
+>        -> Test.Framework.Test
+> toFTest parser pp d str = testCase str $ do
+>         let egot = parser d "" Nothing str
+>         case egot of
+>             Left e -> return ()
+>             Right got ->
+>               H.assertFailure $ "parse didn't fail: " ++ show d ++ "\n" ++ str

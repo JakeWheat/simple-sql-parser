@@ -190,10 +190,11 @@ fixing them in the syntax but leaving them till the semantic checking
 > import Text.Parsec (setPosition,setSourceColumn,setSourceLine,getPosition
 >                    ,option,between,sepBy,sepBy1,string,manyTill,anyChar
 >                    ,try,string,many1,oneOf,digit,(<|>),choice,char,eof
->                    ,optionMaybe,optional,many,letter,parse
+>                    ,optionMaybe,optional,many,letter,runParser
 >                    ,chainl1, chainr1,(<?>) {-,notFollowedBy,alphaNum-}, lookAhead)
-> import Text.Parsec.String (Parser)
+> -- import Text.Parsec.String (Parser)
 > import Text.Parsec.Perm (permute,(<$?>), (<|?>))
+> import Text.Parsec.Prim (Parsec, getState)
 > import qualified Text.Parsec.Expr as E
 > import Data.List (intercalate,sort,groupBy)
 > import Data.Function (on)
@@ -256,14 +257,14 @@ converts the error return to the nice wrapper
 >           -> Maybe (Int,Int)
 >           -> String
 >           -> Either ParseError a
-> wrapParse parser _ f p src =
+> wrapParse parser d f p src =
 >     either (Left . convParseError src) Right
->     $ parse (setPos p *> whitespace *> parser <* eof) f src
+>     $ runParser (setPos p *> whitespace *> parser <* eof)
+>                 d f src
 >   where
 >     setPos Nothing = pure ()
 >     setPos (Just (l,c)) = fmap up getPosition >>= setPosition
 >       where up = flip setSourceColumn c . flip setSourceLine l
-
 
 ------------------------------------------------
 
@@ -301,12 +302,14 @@ with U& or u&
 u&"example quoted"
 
 > name :: Parser Name
-> name = choice [QName <$> quotedIdentifier
->               ,UQName <$> uquotedIdentifier
->               ,Name <$> identifierBlacklist blacklist
->               ,dqName]
+> name = do
+>     choice [QName <$> quotedIdentifier
+>            ,UQName <$> uquotedIdentifier
+>            ,Name <$> identifierBlacklist blacklist
+>            ,dqName]
 >   where
->     dqName = lexeme (DQName "`" "`"
+>     dqName = guardDialect [MySQL] *>
+>              lexeme (DQName "`" "`"
 >                      <$> (char '`'
 >                           *> manyTill anyChar (char '`')))
 
@@ -1014,7 +1017,7 @@ syntax is way too messy. It might be possible to avoid this if we
 wanted to avoid extensibility and to not be concerned with parse error
 messages, but both of these are too important.
 
-> opTable :: Bool -> [[E.Operator String () Identity ValueExpr]]
+> opTable :: Bool -> [[E.Operator String ParseState Identity ValueExpr]]
 > opTable bExpr =
 >         [-- parse match and quantified comparisons as postfix ops
 >           -- todo: left factor the quantified comparison with regular
@@ -1303,11 +1306,13 @@ allows offset and fetch in either order
 > fetch :: Parser ValueExpr
 > fetch = fetchFirst <|> limit
 >   where
->     fetchFirst = fs *> valueExpr <* ro
+>     fetchFirst = guardDialect [SQL2011]
+>                  *> fs *> valueExpr <* ro
 >     fs = makeKeywordTree ["fetch first", "fetch next"]
 >     ro = makeKeywordTree ["rows only", "row only"]
 >     -- todo: not in ansi sql dialect
->     limit = keyword_ "limit" *> valueExpr
+>     limit = guardDialect [MySQL] *>
+>             keyword_ "limit" *> valueExpr
 
 == common table expressions
 
@@ -1635,16 +1640,7 @@ helper function to improve error messages
 >     <?> "identifier"
 
 > blacklist :: [String]
-> blacklist = reservedWord {-
->     [-- case
->      "case", "when", "then", "else", "end"
->     ,--join
->      "natural","inner","outer","cross","left","right","full","join"
->     ,"on","using","lateral"
->     ,"from","where","group","having","order","limit", "offset", "fetch"
->     ,"as","in"
->     ,"except", "intersect", "union"
->     ] -}
+> blacklist = reservedWord
 
 These blacklisted names are mostly needed when we parse something with
 an optional alias, e.g. select a a from t. If we write select a from
@@ -1989,3 +1985,17 @@ means).
 >      -- added for mysql dialect, todo: make dialect specific lists
 >     ,"limit"
 >     ]
+
+-----------
+
+bit hacky, used to make the dialect available during parsing so
+different parsers can be used for different dialects
+
+> type ParseState = Dialect
+
+> type Parser = Parsec String ParseState
+
+> guardDialect :: [Dialect] -> Parser ()
+> guardDialect ds = do
+>     d <- getState
+>     guard (d `elem` ds)
