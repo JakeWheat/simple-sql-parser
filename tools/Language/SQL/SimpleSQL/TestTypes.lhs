@@ -8,6 +8,11 @@ Tests.lhs module for the 'interpreter'.
 
 > import Language.SQL.SimpleSQL.Syntax
 
+TODO: maybe make the dialect args into [dialect], then each test
+checks all the dialects mentioned work, and all the dialects not
+mentioned give a parse error. Not sure if this will be too awkward due
+to lots of tricky exceptions/variationsx.
+
 > data TestItem = Group String [TestItem]
 >               | TestValueExpr Dialect String ValueExpr
 >               | TestQueryExpr Dialect String QueryExpr

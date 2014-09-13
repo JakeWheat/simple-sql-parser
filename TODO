@@ -1,40 +1,22 @@
 work on reasonable subset of sql which is similar to the current
-   subset and smaller than the complete 2011 target
-prototype for dialect handling, todo:
-  add test which test for failure
-  test that mysql specific syntax fails on ansi mode
-    and that the ansi equivalents of the mysql specific syntax which
-    has been implemented fail in mysql mode
-position annotation
+   subset and smaller than the complete 2011 target: describe the
+   exact target set for the next release
 
-simple stuff for error message and pretty printing monitoring
+improve the dialect testing: add notes on what to do
 
-work on the new refactoring of the parser
-create a new module for generic combinators
-work on getting rid of monad and guard
+position annotation in the syntax
 
+simple stuff for error message and pretty printing monitoring:
 
-value expressions which start with an identifier/keyword:
-immediate focus:
-case
-cast
+create a sample set of valid statements to pretty print
+pretty print these
+compare every so often to catch regressions and approve improvements
+start with tpch, and then add some others
 
-interval
-typed literal
-
-special functions (extract, etc)
-app
-aggregate
-window function
-identifier
-
-continue 2011 review and tests
-
-1. create an error message document for the website
-   - base off ErrorMessages but add some more variations
-2. start thinking about automated tests for invalid syntax to catch
-   bad parsing
-
+same with invalid statements to see the error messages
+start with some simple value exprs and a big query expr which has
+   stuff (either tokens, whitespace or junk strings)
+   semi-systematically added and/or removed
 
 fixing the non idiomatic (pun!) suffix parsing:
   typename parsing
@@ -45,9 +27,13 @@ fixing the non idiomatic (pun!) suffix parsing:
 review names in the syntax for correspondence with sql standard, avoid
    gratuitous differences
 
-touch up the expr hack as best as can
+touch up the expr hack as best as can, start thinking about
+   replacement for buildExprParser, maybe this can be a separate
+   general package, or maybe something like this already exists
 
-careful review of token parses wrt trailing delimiters/junk
+careful review of token parses wrt trailing delimiters/junk - already
+   caught a few issues like this incidentally when working on other
+   stuff
 
 undo mess in the code created by adding lots of new support:
 much more documentation
@@ -60,17 +46,12 @@ fix the lexing
 add documentation in Parser.lhs on the left factoring/error handling
    approach
 
-create error message demonstration page for the website
-
 fixes:
 
 keyword tree, add explicit result then can use for joins also
 
 keyword tree support prefix mode so can start from already parsed
    token
-
-do the final big left factor: typenames, interval lits, iden +
-   suffixes
 
 left factor/try removal summary (this list needs updating):
 
@@ -162,6 +143,13 @@ create list of unsupported syntax: xml, ref, subtypes, modules?
 
 
 after next release
+
+medium term goals:
+1. replace parser and syntax in hssqlppp with this code (keep two
+   separate packages in sync)
+2. this replacement should have better error messages, much more
+   complete ansi sql 2011 support, and probably will have reasonable
+   support for these dialects: mssql, oracle and teradata.
 
 review areas where this parser is too permissive, e.g. value
    expressions allowed where column reference names only should be

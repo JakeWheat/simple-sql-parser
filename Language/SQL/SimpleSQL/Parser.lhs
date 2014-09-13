@@ -1200,6 +1200,10 @@ tref
 tref
 [on expr | using (...)]
 
+TODO: either use explicit 'operator precedence' parsers or build
+expression parser for the 'tref operators' such as joins, lateral,
+aliases.
+
 > from :: Parser [TableRef]
 > from = keyword_ "from" *> commaSep1 tref
 >   where
@@ -2003,3 +2007,12 @@ different parsers can be used for different dialects
 > guardDialect ds = do
 >     d <- getState
 >     guard (d `elem` ds)
+
+TODO: the ParseState and the Dialect argument should be turned into a
+flags struct. Part (or all?) of this struct is the dialect
+information, but each dialect has different versions + a big set of
+flags to control syntax variations within a version of a product
+dialect (for instance, string and identifier parsing rules vary from
+dialect to dialect and version to version, and most or all SQL DBMSs
+appear to have a set of flags to further enable or disable variations
+for quoting and escaping strings and identifiers).
