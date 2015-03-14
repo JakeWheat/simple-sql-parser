@@ -13,7 +13,7 @@ which have been changed to try to improve the layout of the output.
 
 > import Language.SQL.SimpleSQL.Syntax
 > import Text.PrettyPrint (render, vcat, text, (<>), (<+>), empty, parens,
->                          nest, Doc, punctuate, comma, sep, quotes,
+>                          nest, Doc, punctuate, comma, sep, fsep, quotes,
 >                          doubleQuotes, brackets,hcat)
 > import Data.Maybe (maybeToList, catMaybes)
 > import Data.List (intercalate)
@@ -221,6 +221,8 @@ which have been changed to try to improve the layout of the output.
 > valueExpr _ (NextValueFor ns) =
 >     text "next value for" <+> names ns
 
+> valueExpr d (QEComment cmt v) =
+>     vcat $ map comment cmt ++ [valueExpr d v]
 
 > doubleUpQuotes :: String -> String
 > doubleUpQuotes [] = []
@@ -312,8 +314,9 @@ which have been changed to try to improve the layout of the output.
 = query expressions
 
 > queryExpr :: Dialect -> QueryExpr -> Doc
-> queryExpr dia (Select d sl fr wh gb hv od off fe) =
->   sep [text "select"
+> queryExpr dia (Select d sl fr wh gb hv od off fe cmt) =
+>   fsep $ map comment cmt++
+>   [sep [text "select"
 >       ,case d of
 >           SQDefault -> empty
 >           All -> text "all"
@@ -326,7 +329,7 @@ which have been changed to try to improve the layout of the output.
 >       ,orderBy dia od
 >       ,me (\e -> text "offset" <+> valueExpr dia e <+> text "rows") off
 >       ,fetchFirst
->       ]
+>       ]]
 >   where
 >     fetchFirst =
 >       me (\e -> if dia == MySQL
@@ -334,8 +337,9 @@ which have been changed to try to improve the layout of the output.
 >                 else text "fetch first" <+> valueExpr dia e
 >                      <+> text "rows only") fe
 
-> queryExpr dia (CombineQueryExpr q1 ct d c q2) =
->   sep [queryExpr dia q1
+> queryExpr dia (CombineQueryExpr q1 ct d c q2 cmt) =
+>   fsep $ map comment cmt++
+>   [sep [queryExpr dia q1
 >       ,text (case ct of
 >                 Union -> "union"
 >                 Intersect -> "intersect"
@@ -347,7 +351,7 @@ which have been changed to try to improve the layout of the output.
 >        <+> case c of
 >                Corresponding -> text "corresponding"
 >                Respectively -> empty
->       ,queryExpr dia q2]
+>       ,queryExpr dia q2]]
 > queryExpr d (With rc withs qe) =
 >   text "with" <+> (if rc then text "recursive" else empty)
 >   <+> vcat [nest 5
@@ -441,3 +445,6 @@ which have been changed to try to improve the layout of the output.
 
 > me :: (a -> Doc) -> Maybe a -> Doc
 > me = maybe empty
+
+> comment :: Comment -> Doc
+> comment (Comment str) = text "/*" <+> text str <+> text "*/"

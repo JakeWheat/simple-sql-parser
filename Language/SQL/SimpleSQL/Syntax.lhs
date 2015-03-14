@@ -32,6 +32,8 @@
 >     ,JoinCondition(..)
 >      -- * dialect
 >     ,Dialect(..)
+>      -- * comment
+>     ,Comment(..)
 >     ) where
 
 > import Data.Data
@@ -161,6 +163,7 @@
 >     | MultisetCtor [ValueExpr]
 >     | MultisetQueryCtor QueryExpr
 >     | NextValueFor [Name]
+>     | QEComment [Comment] ValueExpr
 >       deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | Represents an identifier name, which can be quoted or unquoted.
@@ -278,6 +281,7 @@ This would make some things a bit cleaner?
 >       ,qeOrderBy :: [SortSpec]
 >       ,qeOffset :: Maybe ValueExpr
 >       ,qeFetchFirst :: Maybe ValueExpr
+>       ,qeComment :: [Comment]
 >       }
 >     | CombineQueryExpr
 >       {qe0 :: QueryExpr
@@ -285,6 +289,7 @@ This would make some things a bit cleaner?
 >       ,qeSetQuantifier :: SetQuantifier
 >       ,qeCorresponding :: Corresponding
 >       ,qe1 :: QueryExpr
+>       ,qeComment :: [Comment]
 >       }
 >     | With
 >       {qeWithRecursive :: Bool
@@ -321,7 +326,8 @@ I'm not sure if this is valid syntax or not.
 >                     ,qeHaving = Nothing
 >                     ,qeOrderBy = []
 >                     ,qeOffset = Nothing
->                     ,qeFetchFirst = Nothing}
+>                     ,qeFetchFirst = Nothing
+>                     ,qeComment = []}
 
 
 > -- | Represents the Distinct or All keywords, which can be used
@@ -383,3 +389,9 @@ I'm not sure if this is valid syntax or not.
 > data Dialect = SQL2011
 >              | MySQL
 >                deriving (Eq,Show,Read,Data,Typeable)
+
+
+> -- | Comment. Useful when geterating SQL code programmatically.
+> data Comment = Comment String 
+>                deriving (Eq,Show,Read,Data,Typeable)
+
