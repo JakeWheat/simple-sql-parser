@@ -1343,7 +1343,7 @@ and union, etc..
 >     mkSelect d sl Nothing =
 >         makeSelect{qeSetQuantifier = d, qeSelectList = sl}
 >     mkSelect d sl (Just (TableExpression f w g h od ofs fe)) =
->         Select d sl f w g h od ofs fe []
+>         Select d sl f w g h od ofs fe
 >     values = keyword_ "values"
 >              >> Values <$> commaSep (parens (commaSep valueExpr))
 >     table = keyword_ "table" >> Table <$> names
@@ -1379,7 +1379,7 @@ be in the public syntax?
 >         <*> option SQDefault duplicates
 >         <*> corr
 >   where
->     cq o d c q0 q1 = CombineQueryExpr q0 o d c q1 []
+>     cq o d c q0 q1 = CombineQueryExpr q0 o d c q1
 >     setOpK = choice [Union <$ keyword_ "union"
 >                     ,Intersect <$ keyword_ "intersect"
 >                     ,Except <$ keyword_ "except"]
