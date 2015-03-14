@@ -388,7 +388,7 @@ I'm not sure if this is valid syntax or not.
 >                deriving (Eq,Show,Read,Data,Typeable)
 
 
-> -- | Comment. Useful when geterating SQL code programmatically.
-> data Comment = BlockComment String  
+> -- | Comment. Useful when generating SQL code programmatically.
+> data Comment = BlockComment String
 >                deriving (Eq,Show,Read,Data,Typeable)
 
