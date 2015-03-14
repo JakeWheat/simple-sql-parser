@@ -3,6 +3,8 @@ please email jakewheatmail@gmail.com or use the github bug tracker,
 https://github.com/JakeWheat/simple-sql-parser/issues.
 0.4.1 (unreleased)
 	simple demonstration of how dialects could be handled internally
+	add ability to add comments to syntax tree to help with generating
+	  SQL code
 0.4.0 (commit 7914898cc8f07bbaf8358d208469392346341964)
 	now targets SQL:2011
 	update to ghc 7.8.2

@@ -221,6 +221,8 @@ which have been changed to try to improve the layout of the output.
 > valueExpr _ (NextValueFor ns) =
 >     text "next value for" <+> names ns
 
+> valueExpr d (VEComment cmt v) =
+>     vcat $ map comment cmt ++ [valueExpr d v]
 
 > doubleUpQuotes :: String -> String
 > doubleUpQuotes [] = []
@@ -358,6 +360,8 @@ which have been changed to try to improve the layout of the output.
 >     text "values"
 >     <+> nest 7 (commaSep (map (parens . commaSep . map (valueExpr d)) vs))
 > queryExpr _ (Table t) = text "table" <+> names t
+> queryExpr d (QEComment cmt v) =
+>     vcat $ map comment cmt ++ [queryExpr d v]
 
 
 > alias :: Alias -> Doc
@@ -441,3 +445,6 @@ which have been changed to try to improve the layout of the output.
 
 > me :: (a -> Doc) -> Maybe a -> Doc
 > me = maybe empty
+
+> comment :: Comment -> Doc
+> comment (BlockComment str) = text "/*" <+> text str <+> text "*/"
