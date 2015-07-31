@@ -15,6 +15,7 @@ test data to the Test.Framework tests.
 > --import Language.SQL.SimpleSQL.Syntax
 > import Language.SQL.SimpleSQL.Pretty
 > import Language.SQL.SimpleSQL.Parser
+> import Language.SQL.SimpleSQL.Lexer
 
 > import Language.SQL.SimpleSQL.TestTypes
 
@@ -26,6 +27,7 @@ test data to the Test.Framework tests.
 > import Language.SQL.SimpleSQL.TableRefs
 > import Language.SQL.SimpleSQL.ValueExprs
 > import Language.SQL.SimpleSQL.Tpch
+> import Language.SQL.SimpleSQL.LexerTests
 
 > import Language.SQL.SimpleSQL.SQL2011
 
@@ -37,7 +39,8 @@ order on the generated documentation.
 > testData :: TestItem
 > testData =
 >     Group "parserTest"
->     [valueExprTests
+>     [lexerTests
+>     ,valueExprTests
 >     ,queryExprComponentTests
 >     ,queryExprsTests
 >     ,tableRefTests
@@ -73,6 +76,14 @@ order on the generated documentation.
 > itemToTest (ParseValueExprFails d str) =
 >     toFTest parseValueExpr prettyValueExpr d str
 
+> itemToTest (LexerTest d s ts) = makeLexerTest d s ts
+
+> makeLexerTest :: Dialect -> String -> [Token] -> T.TestTree
+> makeLexerTest d s ts = H.testCase s $ do
+>     let lx = either (error . show) id $ lexSQL d ("", 1, 1) s
+>     H.assertEqual "" ts $ map snd lx
+>     let s' = prettyTokens d $ map snd lx
+>     H.assertEqual "pretty print" s s'
 
 > toTest :: (Eq a, Show a) =>
 >           (Dialect -> String -> Maybe (Int,Int) -> String -> Either ParseError a)
@@ -123,9 +134,9 @@ order on the generated documentation.
 >        -> Dialect
 >        -> String
 >        -> T.TestTree
-> toFTest parser pp d str = H.testCase str $ do
+> toFTest parser _pp d str = H.testCase str $ do
 >         let egot = parser d "" Nothing str
 >         case egot of
->             Left e -> return ()
->             Right got ->
+>             Left _e -> return ()
+>             Right _got ->
 >               H.assertFailure $ "parse didn't fail: " ++ show d ++ "\n" ++ str

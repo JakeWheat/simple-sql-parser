@@ -17,9 +17,8 @@
 
 > import Control.Applicative ((<$>), (<*>), (<**>), pure, Applicative)
 > import Text.Parsec (option,many)
-> import Text.Parsec.Prim (Parsec)
+> import Text.Parsec.String (GenParser)
 
-> type Parser s = Parsec String s
 
 a possible issue with the option suffix is that it enforces left
 associativity when chaining it recursively. Have to review
@@ -29,7 +28,7 @@ instead, and create an alternative suffix parser
 This function style is not good, and should be replaced with chain and
 <??> which has a different type
 
-> optionSuffix :: (a -> Parser s a) -> a -> Parser s a
+> optionSuffix :: (a -> GenParser t s a) -> a -> GenParser t s a
 > optionSuffix p a = option a (p a)
 
 
@@ -39,7 +38,7 @@ hand result, taken from uu-parsinglib
 TODO: make sure the precedence higher than <|> and lower than the
 other operators so it can be used nicely
 
-> (<??>) :: Parser s a -> Parser s (a -> a) -> Parser s a
+> (<??>) :: GenParser t s a -> GenParser t s (a -> a) -> GenParser t s a
 > p <??> q = p <**> option id q
 
 
@@ -80,7 +79,7 @@ composing suffix parsers, not sure about the name. This is used to add
 a second or more suffix parser contingent on the first suffix parser
 succeeding.
 
-> (<??.>) :: Parser s (a -> a) -> Parser s (a -> a) -> Parser s (a -> a)
+> (<??.>) :: GenParser t s (a -> a) -> GenParser t s (a -> a) -> GenParser t s (a -> a)
 > (<??.>) pa pb = (.) `c` pa <*> option id pb
 >   -- todo: fix this mess
 >   where c = (<$>) . flip
@@ -88,7 +87,7 @@ succeeding.
 
 0 to many repeated applications of suffix parser
 
-> (<??*>) :: Parser s a -> Parser s (a -> a) -> Parser s a
+> (<??*>) :: GenParser t s a -> GenParser t s (a -> a) -> GenParser t s a
 > p <??*> q = foldr ($) <$> p <*> (reverse <$> many q)
 
 

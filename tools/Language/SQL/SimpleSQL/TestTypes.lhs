@@ -7,6 +7,7 @@ Tests.lhs module for the 'interpreter'.
 >     ,Dialect(..)) where
 
 > import Language.SQL.SimpleSQL.Syntax
+> import Language.SQL.SimpleSQL.Lexer (Token)
 
 TODO: maybe make the dialect args into [dialect], then each test
 checks all the dialects mentioned work, and all the dialects not
@@ -28,4 +29,5 @@ check that the string given fails to parse
 
 >               | ParseQueryExprFails Dialect String
 >               | ParseValueExprFails Dialect String
+>               | LexerTest Dialect String [Token]
 >                 deriving (Eq,Show)

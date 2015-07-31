@@ -47,7 +47,7 @@ isn't done because of the impact on the parser error
 messages. Apparently it can also help the speed but this hasn't been
 looked into.
 
-== Parser rrror messages
+== Parser error messages
 
 A lot of care has been given to generating good parser error messages
 for invalid syntax. There are a few utils below which partially help
@@ -185,22 +185,25 @@ fixing them in the syntax but leaving them till the semantic checking
 > import Control.Monad.Identity (Identity)
 > import Control.Monad (guard, void, when)
 > import Control.Applicative ((<$), (<$>), (<*>) ,(<*), (*>), (<**>), pure)
-> import Data.Maybe (catMaybes)
-> import Data.Char (toLower)
+> import Data.Char (toLower, isDigit)
 > import Text.Parsec (setPosition,setSourceColumn,setSourceLine,getPosition
->                    ,option,between,sepBy,sepBy1,string,manyTill,anyChar
->                    ,try,string,many1,oneOf,digit,(<|>),choice,char,eof
->                    ,optionMaybe,optional,many,letter,runParser
->                    ,chainl1, chainr1,(<?>) {-,notFollowedBy,alphaNum-}, lookAhead)
+>                    ,option,between,sepBy,sepBy1
+>                    ,try,many1,(<|>),choice,eof
+>                    ,optionMaybe,optional,runParser
+>                    ,chainl1, chainr1,(<?>))
 > -- import Text.Parsec.String (Parser)
 > import Text.Parsec.Perm (permute,(<$?>), (<|?>))
-> import Text.Parsec.Prim (Parsec, getState)
+> import Text.Parsec.Prim (getState, token)
+> import Text.Parsec.Pos (newPos)
 > import qualified Text.Parsec.Expr as E
 > import Data.List (intercalate,sort,groupBy)
 > import Data.Function (on)
 > import Language.SQL.SimpleSQL.Syntax
 > import Language.SQL.SimpleSQL.Combinators
 > import Language.SQL.SimpleSQL.Errors
+> import qualified Language.SQL.SimpleSQL.Lexer as L
+> import Data.Maybe
+> import Text.Parsec.String (GenParser)
 
 = Public API
 
@@ -257,14 +260,21 @@ converts the error return to the nice wrapper
 >           -> Maybe (Int,Int)
 >           -> String
 >           -> Either ParseError a
-> wrapParse parser d f p src =
+> wrapParse parser d f p src = do
+>     let (l,c) = fromMaybe (1,0) p
+>     lx <- L.lexSQL d (f,l,c) src
 >     either (Left . convParseError src) Right
->     $ runParser (setPos p *> whitespace *> parser <* eof)
->                 d f src
+>       $ runParser (setPos p *> parser <* eof)
+>                   d f $ filter keep lx
 >   where
 >     setPos Nothing = pure ()
 >     setPos (Just (l,c)) = fmap up getPosition >>= setPosition
 >       where up = flip setSourceColumn c . flip setSourceLine l
+>     keep (_,L.Whitespace {}) = False
+>     keep (_,L.LineComment {}) = False
+>     keep (_,L.BlockComment {}) = False
+>     keep _ = True
+
 
 ------------------------------------------------
 
@@ -304,15 +314,11 @@ u&"example quoted"
 > name :: Parser Name
 > name = do
 >     d <- getState
->     choice [QName <$> quotedIdentifier
->            ,UQName <$> uquotedIdentifier
+>     choice [QName <$> qidentifierTok
+>            ,UQName <$> uqidentifierTok
 >            ,Name <$> identifierBlacklist (blacklist d)
->            ,dqName]
->   where
->     dqName = guardDialect [MySQL] *>
->              lexeme (DQName "`" "`"
->                      <$> (char '`'
->                           *> manyTill anyChar (char '`')))
+>            ,(\(s,e,t) -> DQName s e t) <$> dqidentifierTok
+>            ]
 
 todo: replace (:[]) with a named function all over
 
@@ -433,7 +439,7 @@ Unfortunately, to improve the error messages, there is a lot of (left)
 factoring in this function, and it is a little dense.
 
 > typeName :: Parser TypeName
-> typeName = lexeme $
+> typeName =
 >     (rowTypeName <|> intervalTypeName <|> otherTypeName)
 >     <??*> tnSuffix
 >   where
@@ -536,20 +542,13 @@ factoring in this function, and it is a little dense.
 See the stringToken lexer below for notes on string literal syntax.
 
 > stringLit :: Parser ValueExpr
-> stringLit = StringLit <$> stringToken
+> stringLit = StringLit <$> stringTokExtend
 
 > numberLit :: Parser ValueExpr
-> numberLit = NumLit <$> numberLiteral
+> numberLit = NumLit <$> sqlNumberTok
 
 > characterSetLit :: Parser ValueExpr
-> characterSetLit =
->     CSStringLit <$> shortCSPrefix <*> stringToken
->   where
->     shortCSPrefix = try $ choice
->         [(:[]) <$> oneOf "nNbBxX"
->         ,string "u&"
->         ,string "U&"
->         ] <* lookAhead quote
+> characterSetLit = uncurry CSStringLit <$> csSqlStringLitTok
 
 > simpleLiteral :: Parser ValueExpr
 > simpleLiteral = numberLit <|> stringLit <|> characterSetLit
@@ -575,8 +574,8 @@ select x from t where x > :param
 > parameter = choice
 >     [Parameter <$ questionMark
 >     ,HostParameter
->      <$> hostParameterToken
->      <*> optionMaybe (keyword "indicator" *> hostParameterToken)]
+>      <$> hostParamTok
+>      <*> optionMaybe (keyword "indicator" *> hostParamTok)]
 
 == parens
 
@@ -675,7 +674,7 @@ this. also fix the monad -> applicative
 > intervalLit = try (keyword_ "interval" >> do
 >     s <- optionMaybe $ choice [True <$ symbol_ "+"
 >                               ,False <$ symbol_ "-"]
->     lit <- stringToken
+>     lit <- stringTok
 >     q <- optionMaybe intervalQualifier
 >     mkIt s lit q)
 >   where
@@ -701,7 +700,7 @@ all the value expressions which start with an identifier
 > idenExpr :: Parser ValueExpr
 > idenExpr =
 >     -- todo: work out how to left factor this
->     try (TypedLit <$> typeName <*> stringToken)
+>     try (TypedLit <$> typeName <*> stringTokExtend)
 >     <|> (names <**> option Iden app)
 
 === special
@@ -731,9 +730,11 @@ operatorname(firstArg keyword0 arg0 keyword1 arg1 etc.)
 >               e <- valueExpr
 >               -- check we haven't parsed the first
 >               -- keyword as an identifier
->               guard (case (e,kws) of
->                   (Iden [Name i], (k,_):_) | map toLower i == k -> False
->                   _ -> True)
+>               case (e,kws) of
+>                   (Iden [Name i], (k,_):_)
+>                       | map toLower i == k ->
+>                           fail $ "cannot use keyword here: " ++ i
+>                   _ -> return ()
 >               pure e
 >     fa <- case firstArg of
 >          SOKNone -> pure Nothing
@@ -806,7 +807,7 @@ in the source
 >     keyword "trim" >>
 >     parens (mkTrim
 >             <$> option "both" sides
->             <*> option " " stringToken
+>             <*> option " " stringTok
 >             <*> (keyword_ "from" *> valueExpr))
 >   where
 >     sides = choice ["leading" <$ keyword_ "leading"
@@ -986,13 +987,28 @@ a match (select a from t)
 
 === escape
 
+It is going to be really difficult to support an arbitrary character
+for the escape now there is a separate lexer ...
+
 > escapeSuffix :: Parser (ValueExpr -> ValueExpr)
 > escapeSuffix = do
 >     ctor <- choice
 >             [Escape <$ keyword_ "escape"
 >             ,UEscape <$ keyword_ "uescape"]
->     c <- anyChar
+>     c <- escapeChar
 >     pure $ \v -> ctor v c
+>   where
+>     escapeChar = escapeIden <|> escapeSym
+>     escapeIden = do
+>                  c <- identifierTok
+>                  case c of
+>                    [c'] -> return c'
+>                    _ -> fail "escape char must be single char"
+>     escapeSym = do
+>                c <- symbolTok
+>                case c of
+>                  [c'] -> return c'
+>                  _ -> fail "escape char must be single char"
 
 === collate
 
@@ -1018,7 +1034,7 @@ syntax is way too messy. It might be possible to avoid this if we
 wanted to avoid extensibility and to not be concerned with parse error
 messages, but both of these are too important.
 
-> opTable :: Bool -> [[E.Operator String ParseState Identity ValueExpr]]
+> opTable :: Bool -> [[E.Operator [Token] ParseState Identity ValueExpr]]
 > opTable bExpr =
 >         [-- parse match and quantified comparisons as postfix ops
 >           -- todo: left factor the quantified comparison with regular
@@ -1452,163 +1468,134 @@ thick.
 
 ------------------------------------------------
 
-= lexing parsers
+= lexing
 
-whitespace parser which skips comments also
+TODO: push checks into here:
+keyword blacklists
+unsigned integer match
+symbol matching
+keyword matching
 
-> whitespace :: Parser ()
-> whitespace =
->     choice [simpleWhitespace *> whitespace
->            ,lineComment *> whitespace
->            ,blockComment *> whitespace
->            ,pure ()] <?> "whitespace"
+> csSqlStringLitTok :: Parser (String,String)
+> csSqlStringLitTok = mytoken (\tok ->
+>     case tok of
+>       L.CSSqlString p s -> Just (p,s)
+>       _ -> Nothing)
+
+> stringTok :: Parser String
+> stringTok = mytoken (\tok ->
+>     case tok of
+>       L.SqlString s -> Just s
+>       _ -> Nothing)
+
+This is to support SQL strings where you can write
+'part of a string' ' another part'
+and it will parse as a single string
+
+> stringTokExtend :: Parser String
+> stringTokExtend = do
+>     x <- stringTok
+>     choice [
+>         ((x++) <$> stringTokExtend)
+>         ,return x
+>         ]
+
+> hostParamTok :: Parser String
+> hostParamTok = mytoken (\tok ->
+>     case tok of
+>       L.HostParam p -> Just p
+>       _ -> Nothing)
+
+> sqlNumberTok :: Parser String
+> sqlNumberTok = mytoken (\tok ->
+>     case tok of
+>       L.SqlNumber p -> Just p
+>       _ -> Nothing)
+
+
+> symbolTok :: Parser String
+> symbolTok = mytoken (\tok ->
+>     case tok of
+>       L.Symbol p -> Just p
+>       _ -> Nothing)
+
+> identifierTok :: Parser String
+> identifierTok = mytoken (\tok ->
+>     case tok of
+>       L.Identifier p -> Just p
+>       _ -> Nothing)
+
+> qidentifierTok :: Parser String
+> qidentifierTok = mytoken (\tok ->
+>     case tok of
+>       L.QIdentifier p -> Just p
+>       _ -> Nothing)
+
+> dqidentifierTok :: Parser (String,String,String)
+> dqidentifierTok = mytoken (\tok ->
+>     case tok of
+>       L.DQIdentifier s e t -> Just (s,e,t)
+>       _ -> Nothing)
+
+> uqidentifierTok :: Parser String
+> uqidentifierTok = mytoken (\tok ->
+>     case tok of
+>       L.UQIdentifier p -> Just p
+>       _ -> Nothing)
+
+
+> mytoken :: (L.Token -> Maybe a) -> Parser a
+> mytoken test = token showToken posToken testToken
 >   where
->     lineComment = try (string "--")
->                   *> manyTill anyChar (void (char '\n') <|> eof)
->     blockComment = -- no nesting of block comments in SQL
->                    try (string "/*")
->                    -- try used here so it doesn't fail when we see a
->                    -- '*' which isn't followed by a '/'
->                    *> manyTill anyChar (try $ string "*/")
->     -- use many1 so we can more easily avoid non terminating loops
->     simpleWhitespace = void $ many1 (oneOf " \t\n")
-
-> lexeme :: Parser a -> Parser a
-> lexeme p = p <* whitespace
+>     showToken (_,tok)   = show tok
+>     posToken  ((a,b,c),_)  = newPos a b c
+>     testToken (_,tok)   = test tok
 
 > unsignedInteger :: Parser Integer
-> unsignedInteger = read <$> lexeme (many1 digit) <?> "integer"
-
-
-number literals
-
-here is the rough grammar target:
-
-digits
-digits.[digits][e[+-]digits]
-[digits].digits[e[+-]digits]
-digitse[+-]digits
-
-numbers are parsed to strings, not to a numeric type. This is to avoid
-making a decision on how to represent numbers, the client code can
-make this choice.
-
-> numberLiteral :: Parser String
-> numberLiteral = lexeme (
->     (int <??> (pp dot <??.> pp int)
->      <|> (++) <$> dot <*> int)
->     <??> pp expon)
->   where
->     int = many1 digit
->     dot = string "."
->     expon = (:) <$> oneOf "eE" <*> sInt
->     sInt = (++) <$> option "" (string "+" <|> string "-") <*> int
->     pp = (<$$> (++))
-
-
-> identifier :: Parser String
-> identifier = lexeme ((:) <$> firstChar <*> many nonFirstChar)
->              <?> "identifier"
->   where
->     firstChar = letter <|> char '_' <?> "identifier"
->     nonFirstChar = digit <|> firstChar <?> ""
-
-> quotedIdentifier :: Parser String
-> quotedIdentifier = quotedIdenHelper
-
-> quotedIdenHelper :: Parser String
-> quotedIdenHelper =
->     lexeme (dq *> manyTill anyChar dq >>= optionSuffix moreIden)
->     <?> "identifier"
->   where
->     moreIden s0 = do
->          void dq
->          s <- manyTill anyChar dq
->          optionSuffix moreIden (s0 ++ "\"" ++ s)
->     dq = char '"' <?> "double quote"
-
-> uquotedIdentifier :: Parser String
-> uquotedIdentifier =
->   try (string "u&" <|> string "U&") *> quotedIdenHelper
->   <?> "identifier"
-
-parses an identifier with a : prefix. The : isn't included in the
-return value
-
-> hostParameterToken :: Parser String
-> hostParameterToken = lexeme $ char ':' *> identifier
+> unsignedInteger = try (do
+>                    x <- sqlNumberTok
+>                    guard (all isDigit x)
+>                    return $ read x
+>                    ) <?> "integer"
 
 todo: work out the symbol parsing better
 
 > symbol :: String -> Parser String
-> symbol s = try (lexeme $ do
->     u <- choice (many1 (char '.') :
->                  map (try . string) [">=","<=","!=","<>","||"]
->                  ++ map (string . (:[])) "+-^*/%~&|<>=")
->     guard (s == u)
->     pure s)
->     <?> s
+> symbol s = try (do
+>   u <- symbolTok
+>   guard (s == u)
+>   pure s) <?> s
+
+> singleCharSymbol :: Char -> Parser Char
+> singleCharSymbol c = c <$ symbol [c]
 
 > questionMark :: Parser Char
-> questionMark = lexeme (char '?') <?> "question mark"
+> questionMark = singleCharSymbol '?' <?> "question mark"
 
 > openParen :: Parser Char
-> openParen = lexeme $ char '('
+> openParen = singleCharSymbol '('
 
 > closeParen :: Parser Char
-> closeParen = lexeme $ char ')'
+> closeParen = singleCharSymbol ')'
 
 > openBracket :: Parser Char
-> openBracket = lexeme $ char '['
+> openBracket = singleCharSymbol '['
 
 > closeBracket :: Parser Char
-> closeBracket = lexeme $ char ']'
+> closeBracket = singleCharSymbol ']'
 
 
 > comma :: Parser Char
-> comma = lexeme (char ',') <?> "comma"
+> comma = singleCharSymbol ','
 
 > semi :: Parser Char
-> semi = lexeme (char ';') <?> "semicolon"
-
-> quote :: Parser Char
-> quote = lexeme (char '\'') <?> "single quote"
-
-> --stringToken :: Parser String
-> --stringToken = lexeme (char '\'' *> manyTill anyChar (char '\''))
-> -- todo: tidy this up, add the prefixes stuff, and add the multiple
-> -- string stuff
-> stringToken :: Parser String
-> stringToken =
->     lexeme (nlquote *> manyTill anyChar nlquote
->     >>= optionSuffix moreString)
->     <?> "string"
->   where
->     moreString s0 = choice
->         [-- handle two adjacent quotes
->          do
->          void nlquote
->          s <- manyTill anyChar nlquote
->          optionSuffix moreString (s0 ++ "'" ++ s)
->         ,-- handle string in separate parts
->          -- e.g. 'part 1' 'part 2'
->          do --can this whitespace be factored out?
->             -- since it will be parsed twice when there is no more literal
->             -- yes: split the adjacent quote and multiline literal
->             -- into two different suffixes
->             -- won't need to call lexeme at the top level anymore after this
->          try (whitespace <* nlquote)
->          s <- manyTill anyChar nlquote
->          optionSuffix moreString (s0 ++ s)
->         ]
->     -- non lexeme quote
->     nlquote = char '\'' <?> "single quote"
+> semi = singleCharSymbol ';'
 
 = helper functions
 
 > keyword :: String -> Parser String
 > keyword k = try (do
->     i <- identifier
+>     i <- identifierTok
 >     guard (map toLower i == k)
 >     pure k) <?> k
 
@@ -1638,7 +1625,7 @@ helper function to improve error messages
 
 > identifierBlacklist :: [String] -> Parser String
 > identifierBlacklist bl = try (do
->     i <- identifier
+>     i <- identifierTok
 >     when (map toLower i `elem` bl) $
 >         fail $ "keyword not allowed here: " ++ i
 >     pure i)
@@ -2001,7 +1988,10 @@ different parsers can be used for different dialects
 
 > type ParseState = Dialect
 
-> type Parser = Parsec String ParseState
+> type Token = (L.Position,L.Token)
+
+> --type Parser = Parsec String ParseState
+> type Parser = GenParser Token ParseState
 
 > guardDialect :: [Dialect] -> Parser ()
 > guardDialect ds = do
