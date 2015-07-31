@@ -9,9 +9,8 @@ test data to the Test.Framework tests.
 >     ,TestItem(..)
 >     ) where
 
-> import Test.Framework
-> import Test.Framework.Providers.HUnit
-> import qualified Test.HUnit as H
+> import qualified Test.Tasty as T
+> import qualified Test.Tasty.HUnit as H
 
 > --import Language.SQL.SimpleSQL.Syntax
 > import Language.SQL.SimpleSQL.Pretty
@@ -50,15 +49,15 @@ order on the generated documentation.
 >     ,mySQLTests
 >     ]
 
-> tests :: Test.Framework.Test
+> tests :: T.TestTree
 > tests = itemToTest testData
 
 > --runTests :: IO ()
 > --runTests = void $ H.runTestTT $ itemToTest testData
 
-> itemToTest :: TestItem -> Test.Framework.Test
+> itemToTest :: TestItem -> T.TestTree
 > itemToTest (Group nm ts) =
->     testGroup nm $ map itemToTest ts
+>     T.testGroup nm $ map itemToTest ts
 > itemToTest (TestValueExpr d str expected) =
 >     toTest parseValueExpr prettyValueExpr d str expected
 > itemToTest (TestQueryExpr d str expected) =
@@ -81,8 +80,8 @@ order on the generated documentation.
 >        -> Dialect
 >        -> String
 >        -> a
->        -> Test.Framework.Test
-> toTest parser pp d str expected = testCase str $ do
+>        -> T.TestTree
+> toTest parser pp d str expected = H.testCase str $ do
 >         let egot = parser d "" Nothing str
 >         case egot of
 >             Left e -> H.assertFailure $ peFormattedError e
@@ -103,8 +102,8 @@ order on the generated documentation.
 >        -> (Dialect -> a -> String)
 >        -> Dialect
 >        -> String
->        -> Test.Framework.Test
-> toPTest parser pp d str = testCase str $ do
+>        -> T.TestTree
+> toPTest parser pp d str = H.testCase str $ do
 >         let egot = parser d "" Nothing str
 >         case egot of
 >             Left e -> H.assertFailure $ peFormattedError e
@@ -123,8 +122,8 @@ order on the generated documentation.
 >        -> (Dialect -> a -> String)
 >        -> Dialect
 >        -> String
->        -> Test.Framework.Test
-> toFTest parser pp d str = testCase str $ do
+>        -> T.TestTree
+> toFTest parser pp d str = H.testCase str $ do
 >         let egot = parser d "" Nothing str
 >         case egot of
 >             Left e -> return ()

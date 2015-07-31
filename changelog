@@ -2,7 +2,7 @@ If you need help updating to a new version of simple-sql-parser,
 please email jakewheatmail@gmail.com or use the github bug tracker,
 https://github.com/JakeWheat/simple-sql-parser/issues.
 
-0.4.1 (commit TBD)
+0.4.1 (commit c156c5c34e91e1f7ef449d2c1ea14e282104fd90)
 	tested with ghc 7.4.2, 7.6.3, 7.8.4,7.10.0.20150123
 	simple demonstration of how dialects could be handled internally
 	add ability to add comments to syntax tree to help with generating
