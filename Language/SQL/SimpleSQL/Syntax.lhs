@@ -36,6 +36,7 @@
 >     ,IdentityRestart(..)
 >     ,InsertSource(..)
 >     ,SetClause(..)
+>     ,TableElement(..) 
 >      -- * Dialect
 >     ,Dialect(..)
 >      -- * Comment
@@ -392,8 +393,8 @@ I'm not sure if this is valid syntax or not.
 >     -- ddl
 >     CreateSchema [Name] -- XXX
 >   | DropSchema [Name] DropBehaviour -- XXX
->   {-   |  CreateTable -- XXX
->   | AlterTable -- XXX
+>   | CreateTable [Name] [TableElement]
+>   {-  | AlterTable -- XXX
 >   | DropTable  -- XXX
 >   | CreateView  -- XXX
 >   | DropView -- XXX
@@ -485,6 +486,28 @@ I'm not sure if this is valid syntax or not.
 >     Set [Name] ValueExpr
 >   | SetMultiple [[Name]] [ValueExpr]
 >     deriving (Eq,Show,Read,Data,Typeable)
+
+> data TableElement =
+>     ColumnDef Name TypeName
+>        (Maybe DefaultClause)
+>        -- (Maybe ColumnConstraintDef)
+>        -- (Maybe CollateClause)
+>   --   | TableConstraintDef
+>     deriving (Eq,Show,Read,Data,Typeable)
+
+> {-data TableConstraintDef
+>     deriving (Eq,Show,Read,Data,Typeable) -}
+
+> data DefaultClause =
+>      DefaultClause ValueExpr
+>    | IdentityColumnSpec
+>    | GenerationClause
+
+> {-data ColumnConstraintDef =
+>     | NotNullConstraint
+>     | UniqueConstraint
+>     | ReferencesConstraint
+>     | CheckConstraint-}
 
 --------------------------
 

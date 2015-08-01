@@ -453,6 +453,13 @@ which have been changed to try to improve the layout of the output.
 > statement _ (CreateSchema nm) =
 >     text "create" <+> text "schema" <+> names nm
 
+> statement _ (CreateTable nm cds) =
+>     text "create" <+> text "table" <+> names nm
+>     <+> parens (commaSep $ map cd cds)
+>   where
+>     cd (ColumnDef n t) = name n <+> typeName t
+
+
 > statement _ (DropSchema nm db) =
 >     text "drop" <+> text "schema" <+> names nm <+> dropBehav db
 

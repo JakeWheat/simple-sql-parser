@@ -232,7 +232,7 @@ fixing them in the syntax but leaving them till the semantic checking
 >                -> String
 >                   -- ^ the SQL source to parse
 >                -> Either ParseError Statement
-> parseStatement = wrapParse statement
+> parseStatement = wrapParse topLevelStatement
 
 
 > -- | Parses a list of statements, with semi colons between
@@ -1432,6 +1432,9 @@ TODO: change style
 > topLevelQueryExpr :: Parser QueryExpr
 > topLevelQueryExpr = queryExpr <??> (id <$ semi)
 
+> topLevelStatement :: Parser Statement
+> topLevelStatement = statement <??> (id <$ semi)
+
 -------------------------
 
 = Statements
@@ -1441,6 +1444,7 @@ TODO: change style
 >     [keyword_ "create"
 >      *> choice
 >         [createSchema
+>         ,createTable
 >         ]
 >     ,keyword_ "drop"
 >      *> choice
@@ -1456,6 +1460,14 @@ TODO: change style
 > createSchema :: Parser Statement
 > createSchema = keyword_ "schema" >>
 >     CreateSchema <$> names
+
+> createTable :: Parser Statement
+> createTable = keyword_ "table" >>
+>     CreateTable
+>     <$> names
+>     <*> parens (commaSep1 columnDef)
+>   where
+>     columnDef = ColumnDef <$> name <*> typeName
 
 > dropSchema :: Parser Statement
 > dropSchema = keyword_ "schema" >>
