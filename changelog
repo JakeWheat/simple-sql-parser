@@ -2,6 +2,14 @@ If you need help updating to a new version of simple-sql-parser,
 please email jakewheatmail@gmail.com or use the github bug tracker,
 https://github.com/JakeWheat/simple-sql-parser/issues.
 
+	0.5.0 (not released yet, updated to commit dfa84072dce3ac0fb908ede3f5addbbf4c076d79)
+	add a separate lexer to simplify code and speed up parsing
+	replace SqlIndent with new tool, SimpleSqlParserTool (amazing
+	  name) which can indent, and parse and lex.
+	experiments in new approach to dealing with fixities with separate
+	  pass after parsing
+	add support for insert, update, delete and truncate
+	add limited support for create schema, plus drop schema
 0.4.1 (commit c156c5c34e91e1f7ef449d2c1ea14e282104fd90)
 	tested with ghc 7.4.2, 7.6.3, 7.8.4,7.10.0.20150123
 	simple demonstration of how dialects could be handled internally
