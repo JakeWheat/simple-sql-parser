@@ -13,6 +13,7 @@ indent: parse then pretty print sql
 > import Data.Maybe
 > import System.Exit
 > import Data.List
+> import Text.Show.Pretty
 
 > import Language.SQL.SimpleSQL.Pretty
 > import Language.SQL.SimpleSQL.Parser
@@ -65,7 +66,7 @@ indent: parse then pretty print sql
 >   ,\args -> do
 >       (f,src) <- getInput args
 >       either (error . peFormattedError)
->           (putStrLn . prettyQueryExprs SQL2011)
+>           (putStrLn . ppShow)
 >           $ parseQueryExprs SQL2011 f Nothing src
 >   )
 
