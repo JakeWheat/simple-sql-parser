@@ -262,7 +262,7 @@ converts the error return to the nice wrapper
 >           -> Either ParseError a
 > wrapParse parser d f p src = do
 >     let (l,c) = fromMaybe (1,0) p
->     lx <- L.lexSQL d (f,l,c) src
+>     lx <- L.lexSQL d f (Just (l,c)) src
 >     either (Left . convParseError src) Right
 >       $ runParser (setPos p *> parser <* eof)
 >                   d f $ filter keep lx
@@ -998,17 +998,12 @@ for the escape now there is a separate lexer ...
 >     c <- escapeChar
 >     pure $ \v -> ctor v c
 >   where
->     escapeChar = escapeIden <|> escapeSym
->     escapeIden = do
->                  c <- identifierTok
->                  case c of
+>     escapeChar :: Parser Char
+>     escapeChar = (identifierTok <|> symbolTok) >>= oneOnly
+>     oneOnly :: String -> Parser Char
+>     oneOnly c = case c of
 >                    [c'] -> return c'
 >                    _ -> fail "escape char must be single char"
->     escapeSym = do
->                c <- symbolTok
->                case c of
->                  [c'] -> return c'
->                  _ -> fail "escape char must be single char"
 
 === collate
 
@@ -1988,9 +1983,8 @@ different parsers can be used for different dialects
 
 > type ParseState = Dialect
 
-> type Token = (L.Position,L.Token)
+> type Token = ((String,Int,Int),L.Token)
 
-> --type Parser = Parsec String ParseState
 > type Parser = GenParser Token ParseState
 
 > guardDialect :: [Dialect] -> Parser ()

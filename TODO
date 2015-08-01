@@ -1,3 +1,21 @@
+
+What will make this library nice and complete:
+List of all the SQL that it doesn't support
+annotation, with positions coming from the parser
+dml
+ddl
+procedural sql
+dialects: reasonable support for sql server and oracle, and maybe also
+   postgres, mysql, teradata, redshift, sqlite, db2, sap stuff, etc.
+good work on error messages
+fixity code + get it right
+review names of syntax
+defaults handled better (use default/nothing instead of substituting
+   in the default)
+evaluate uu parsing lib -> could at least remove need to do left
+   factoring, and maybe help make better error messages also
+-----
+
 work on reasonable subset of sql which is similar to the current
    subset and smaller than the complete 2011 target: describe the
    exact target set for the next release

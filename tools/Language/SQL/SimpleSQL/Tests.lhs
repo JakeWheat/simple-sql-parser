@@ -80,7 +80,7 @@ order on the generated documentation.
 
 > makeLexerTest :: Dialect -> String -> [Token] -> T.TestTree
 > makeLexerTest d s ts = H.testCase s $ do
->     let lx = either (error . show) id $ lexSQL d ("", 1, 1) s
+>     let lx = either (error . show) id $ lexSQL d "" Nothing s
 >     H.assertEqual "" ts $ map snd lx
 >     let s' = prettyTokens d $ map snd lx
 >     H.assertEqual "pretty print" s s'

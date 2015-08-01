@@ -22,8 +22,8 @@ source-repository head
   type:                git
   location:            https://github.com/JakeWheat/simple-sql-parser.git
 
-Flag sqlindent
-  Description: Build SQLIndent exe
+Flag parserexe
+  Description: Build SimpleSqlParserTool exe
   Default:     False
 
 library
@@ -80,29 +80,18 @@ Test-Suite Tests
   default-language:    Haskell2010
   ghc-options:         -Wall -threaded
 
-executable SQLIndent
-  main-is:             SQLIndent.lhs
+executable SimpleSqlParserTool
+  main-is:             SimpleSqlParserTool.lhs
   hs-source-dirs:      .,tools
   Build-Depends:       base >=4.5 && <4.9,
                        parsec >=3.1 && <3.2,
                        mtl >=2.1 && <2.3,
-                       pretty >= 1.1 && < 1.2
+                       pretty >= 1.1 && < 1.2,
+                       pretty-show >= 1.6 && < 1.7
   other-extensions:    TupleSections,DeriveDataTypeable
   default-language:    Haskell2010
   ghc-options:         -Wall
-  if flag(sqlindent)
+  if flag(parserexe)
     buildable:         True
   else
     buildable:         False
-
-executable TestLex
-  main-is:             TestLex.lhs
-  hs-source-dirs:      .,tools
-  Build-Depends:       base >=4.5 && <4.9,
-                       parsec >=3.1 && <3.2,
-                       mtl >=2.1 && <2.3,
-                       pretty >= 1.1 && < 1.2
-  other-extensions:    TupleSections,DeriveDataTypeable
-  default-language:    Haskell2010
-  ghc-options:         -Wall
-  buildable:           False

@@ -3,14 +3,15 @@ Lexer TODO:
 
 left factor to get rid of trys
 
+add some notes on why there is a separate lexer.
+
 > -- | This is the module contains a Lexer for SQL.
 > {-# LANGUAGE TupleSections #-}
 > module Language.SQL.SimpleSQL.Lexer
->     (lexSQL
->     ,Token(..)
+>     (Token(..)
+>     ,lexSQL
 >     ,prettyToken
 >     ,prettyTokens
->     ,Position
 >     ,ParseError(..)
 >     ,Dialect(..)) where
 
@@ -18,7 +19,10 @@ left factor to get rid of trys
 
 > import Text.Parsec (option,string,manyTill,anyChar
 >                    ,try,string,many1,oneOf,digit,(<|>),choice,char,eof
->                    ,many,runParser,lookAhead,satisfy)
+>                    ,many,runParser,lookAhead,satisfy
+>                    ,setPosition,getPosition
+>                    ,setSourceColumn,setSourceLine
+>                    ,sourceLine, sourceColumn)
 > import Language.SQL.SimpleSQL.Combinators
 > import Language.SQL.SimpleSQL.Errors
 > import Control.Applicative hiding ((<|>), many)
@@ -26,11 +30,13 @@ left factor to get rid of trys
 > import Control.Monad
 > import Prelude hiding (takeWhile)
 > import Text.Parsec.String (Parser)
+> import Data.Maybe
 
 
 > -- | Represents a lexed token
 > data Token
->     -- | a symbol is one of the following
+>     -- | A symbol is one of the following
+>     --
 >     -- * multi char symbols <> <= >= != ||
 >     -- * single char symbols: * + -  < >  ^ / %  ~ & | ? ( ) [ ] , ; ( )
 >     --
@@ -47,7 +53,7 @@ left factor to get rid of trys
 
 >     -- | This is a dialect specific quoted identifier with the quote
 >     -- characters explicit. The first and second fields are the
->     -- starting and ending quote characters.n
+>     -- starting and ending quote characters.
 >     | DQIdentifier String String String
 >
 >     -- | This is a host param symbol, e.g. :param
@@ -57,25 +63,23 @@ left factor to get rid of trys
 >     | SqlString String
 >
 >     -- | This is a character set string literal. The first field is
->     -- the charatecter set (one of nNbBxX).
+>     -- the character set (one of nNbBxX, or u&, U&).
 >     | CSSqlString String String
 >
->     -- | a number literal (integral or otherwise), stored in original format
+>     -- | A number literal (integral or otherwise), stored in original format
 >     -- unchanged
 >     | SqlNumber String
 >
->     -- | non-significant whitespace (space, tab, newline) (strictly speaking,
->     -- it is up to the client to decide whether the whitespace is significant
->     -- or not)
+>     -- | Whitespace, one or more of space, tab or newline.
 >     | Whitespace String
 >
->     -- | a commented line using --, contains every character starting with the
+>     -- | A commented line using --, contains every character starting with the
 >     -- \'--\' and including the terminating newline character if there is one
 >     -- - this will be missing if the last line in the source is a line comment
 >     -- with no trailing newline
 >     | LineComment String
 >
->     -- | a block comment, \/* stuff *\/, includes the comment delimiters
+>     -- | A block comment, \/* stuff *\/, includes the comment delimiters
 >     | BlockComment String
 >
 >       deriving (Eq,Show)
@@ -112,38 +116,29 @@ left factor to get rid of trys
 
 TODO: try to make all parsers applicative only
 
-> type Position = (String,Int,Int)
-
-> addPosition :: Position -> String -> Position
-> addPosition = addPosition'
-
-> addPosition' :: Position -> String -> Position
-> addPosition' (f,l,c) [] = (f,l,c)
-> addPosition' (f,l,_) ('\n':xs) = addPosition' (f,l+1,0) xs
-> addPosition' (f,l,c) (_:xs) = addPosition' (f,l,c+1) xs
-
-
-
-> lexSQL :: Dialect -> Position -> String -> Either ParseError [(Position,Token)]
-> lexSQL dialect pos@(fn,_,_) txt =
->     either (Left . convParseError fn) Right
->     $ runParser (many_p pos <* eof) () "" txt
+> lexSQL :: Dialect
+>                   -- ^ dialect of SQL to use
+>                -> FilePath
+>                   -- ^ filename to use in error messages
+>                -> Maybe (Int,Int)
+>                   -- ^ line number and column number of the first character
+>                   -- in the source to use in error messages
+>                -> String
+>                   -- ^ the SQL source to lex
+>                -> Either ParseError [((String,Int,Int),Token)]
+> lexSQL dialect fn p src =
+>     let (l,c) = fromMaybe (1,0) p
+>     in either (Left . convParseError src) Right
+>        $ runParser (setPos (l,c) *> many (sqlToken dialect) <* eof) () fn src
 >   where
-
->      many_p pos' = some_p pos' `mplus` return []
->      some_p pos' = do
->        tok <- sqlToken dialect pos'
->        let pos'' = advancePos dialect pos' (snd tok)
->        (tok:) <$> many_p pos''
-
-> advancePos :: Dialect -> Position -> Token -> Position
-> advancePos dialect pos tok =
->     let pt = prettyToken dialect tok
->     in addPosition pos pt
+>     setPos (l,c) = fmap up getPosition >>= setPosition
+>        where up = flip setSourceColumn c . flip setSourceLine l
 
 > -- | parser for a sql token
-> sqlToken :: Dialect -> Position -> Parser (Position,Token)
-> sqlToken d p =
+> sqlToken :: Dialect -> Parser ((String,Int,Int),Token)
+> sqlToken d = do
+>     p' <- getPosition
+>     let p = ("",sourceLine p', sourceColumn p')
 >     (p,) <$> choice [sqlString d
 >                     ,identifier d
 >                     ,hostParam d
