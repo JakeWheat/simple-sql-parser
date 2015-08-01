@@ -111,6 +111,13 @@ parsec
 > prettyTokens :: Dialect -> [Token] -> String
 > prettyTokens d ts = concat $ map (prettyToken d) ts
 
+When parsing a quoted identifier, you can have a double quote
+character in the identifier like this: "quotes""identifier" ->
+quoted"identifer. The double double quotes character is changed to a
+single character in the lexer and expanded back to two characters in
+the pretty printer. This also applies to strings, which can embed a
+single quote like this: 'string''with quote'.
+
 > doubleChars :: Char -> String -> String
 > doubleChars _ [] = []
 > doubleChars c (d:ds) | c == d = c:d:doubleChars c ds
@@ -142,6 +149,14 @@ TODO: try to make all parsers applicative only
 > sqlToken d = do
 >     p' <- getPosition
 >     let p = ("",sourceLine p', sourceColumn p')
+
+The order of parsers is important: strings and quoted identifiers can
+start out looking like normal identifiers, so we try to parse these
+first and use a little bit of try. Line and block comments start like
+symbols, so we try these before symbol. Numbers can start with a . so
+this is also tried before symbol (a .1 will be parsed as a number, but
+. otherwise will be parsed as a symbol).
+
 >     (p,) <$> choice [sqlString d
 >                     ,identifier d
 >                     ,hostParam d
@@ -151,10 +166,20 @@ TODO: try to make all parsers applicative only
 >                     ,symbol d
 >                     ,sqlWhitespace d]
 
+Parses identifiers:
+
+simple_identifier_23
+u&"unicode quoted identifier"
+"quoted identifier"
+"quoted identifier "" with double quote char"
+`mysql quoted identifier`
+
 > identifier :: Dialect -> Parser Token
 > identifier d =
 >     choice
 >     [QIdentifier <$> qiden
+>      -- try is used here to avoid a conflict with identifiers
+>      -- and quoted strings which also start with a 'u'
 >     ,UQIdentifier <$> ((try (string "u&" <|> string "U&")) *> qiden)
 >     ,Identifier <$> identifierString
 >     ,DQIdentifier "`" "`" <$> mySqlQIden
@@ -174,10 +199,21 @@ TODO: try to make all parsers applicative only
 >         guard (d == MySQL)
 >         char '`' *> takeWhile1 (/='`') <* char '`'
 
+This parses a valid identifier without quotes.
+
 > identifierString :: Parser String
 > identifierString =
 >     startsWith (\c -> c == '_' || isAlpha c)
 >                (\c -> c == '_' || isAlphaNum c)
+
+
+Parse a SQL string. Examples:
+
+'basic string'
+'string with '' a quote'
+n'international text'
+b'binary string'
+x'hexidecimal string'
 
 
 > sqlString :: Dialect -> Parser Token
@@ -195,6 +231,10 @@ TODO: try to make all parsers applicative only
 >                 void $ char '\''
 >                 normalStringSuffix $ concat [t,s,"'"]
 >                ,return $ concat [t,s]]
+>     -- try is used to to avoid conflicts with
+>     -- identifiers which can start with n,b,x,u
+>     -- once we read the quote type and the starting '
+>     -- then we commit to a string
 >     csString = CSSqlString <$> try (cs  <* char '\'') <*> normalStringSuffix ""
 >     cs = choice [(:[]) <$> oneOf "nNbBxX"
 >                 ,string "u&"
@@ -204,17 +244,6 @@ TODO: try to make all parsers applicative only
 > hostParam _ = HostParam <$> (char ':' *> identifierString)
 
 
-> sqlNumber :: Dialect -> Parser Token
-> sqlNumber _ = SqlNumber <$>
->     (int <??> (pp dot <??.> pp int)
->      <|> try ((++) <$> dot <*> int))
->     <??> pp expon
->   where
->     int = many1 digit
->     dot = string "."
->     expon = (:) <$> oneOf "eE" <*> sInt
->     sInt = (++) <$> option "" (string "+" <|> string "-") <*> int
->     pp = (<$$> (++))
 
 digits
 digits.[digits][e[+-]digits]
@@ -229,12 +258,32 @@ the constant. Note that any leading plus or minus sign is not actually
 considered part of the constant; it is an operator applied to the
 constant.
 
+> sqlNumber :: Dialect -> Parser Token
+> sqlNumber _ = SqlNumber <$>
+>     (int <??> (pp dot <??.> pp int)
+>      -- try is used in case we read a dot
+>      -- and it isn't part of a number
+>      -- if there are any following digits, then we commit
+>      -- to it being a number and not something else
+>      <|> try ((++) <$> dot <*> int))
+>     <??> pp expon
+>   where
+>     int = many1 digit
+>     dot = string "."
+>     expon = (:) <$> oneOf "eE" <*> sInt
+>     sInt = (++) <$> option "" (string "+" <|> string "-") <*> int
+>     pp = (<$$> (++))
+
 
 A symbol is one of the two character symbols, or one of the single
 character symbols in the two lists below.
 
 > symbol :: Dialect -> Parser Token
 > symbol _ = Symbol <$> choice (many1 (char '.') :
+>                  -- try is used because most of the first
+>                  -- characters of the two character symbols
+>                  -- can also be part of a single character symbol
+>                  -- maybe this would be better with left factoring?
 >                  map (try . string) [">=","<=","!=","<>","||"]
 >                  ++ map (string . (:[])) "+-^*/%~&|?<>[]=,;()")
 
@@ -244,8 +293,14 @@ character symbols in the two lists below.
 > lineComment :: Dialect -> Parser Token
 > lineComment _ =
 >     (\s -> LineComment $ concat ["--",s]) <$>
+>     -- try is used here in case we see a - symbol
+>     -- once we read two -- then we commit to the comment token
 >     (try (string "--") *>
 >      manyTill anyChar (void (char '\n') <|> eof))
+
+Try is used in the block comment for the two symbol bits because we
+want to backtrack if we read the first symbol but the second symbol
+isn't there.
 
 > blockComment :: Dialect -> Parser Token
 > blockComment _ =
@@ -267,6 +322,8 @@ character symbols in the two lists below.
 >               -- not an end comment or nested comment, continue
 >              ,(\c s -> x ++ [c] ++ s) <$> anyChar <*> commentSuffix n]
 
+
+Some helper combinators
 
 > startsWith :: (Char -> Bool) -> (Char -> Bool) -> Parser String
 > startsWith p ps = do

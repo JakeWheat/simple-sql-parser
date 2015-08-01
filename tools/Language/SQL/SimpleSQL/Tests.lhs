@@ -29,7 +29,11 @@ test data to the Test.Framework tests.
 > import Language.SQL.SimpleSQL.Tpch
 > import Language.SQL.SimpleSQL.LexerTests
 
-> import Language.SQL.SimpleSQL.SQL2011
+> import Language.SQL.SimpleSQL.SQL2011Queries
+> import Language.SQL.SimpleSQL.SQL2011AccessControl
+> import Language.SQL.SimpleSQL.SQL2011Bits
+> import Language.SQL.SimpleSQL.SQL2011DataManipulation
+> import Language.SQL.SimpleSQL.SQL2011Schema
 
 > import Language.SQL.SimpleSQL.MySQL
 
@@ -48,7 +52,11 @@ order on the generated documentation.
 >     ,fullQueriesTests
 >     ,postgresTests
 >     ,tpchTests
->     ,sql2011Tests
+>     ,sql2011QueryTests
+>     ,sql2011DataManipulationTests
+>     ,sql2011SchemaTests
+>     ,sql2011AccessControlTests
+>     ,sql2011BitsTests
 >     ,mySQLTests
 >     ]
 

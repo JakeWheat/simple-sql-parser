@@ -1984,3 +1984,6 @@ dialect (for instance, string and identifier parsing rules vary from
 dialect to dialect and version to version, and most or all SQL DBMSs
 appear to have a set of flags to further enable or disable variations
 for quoting and escaping strings and identifiers).
+
+The dialect stuff can also be used for custom options: e.g. to only
+parse dml for instance.

@@ -1,5 +1,5 @@
 
-> -- | The AST for SQL queries.
+> -- | The AST for SQL.
 > {-# LANGUAGE DeriveDataTypeable #-}
 > module Language.SQL.SimpleSQL.Syntax
 >     (-- * Value expressions

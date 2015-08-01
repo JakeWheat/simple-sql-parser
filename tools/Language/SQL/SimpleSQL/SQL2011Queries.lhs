@@ -3,16 +3,26 @@ This file goes through the grammar for SQL 2011 (using the draft standard).
 
 We are only looking at the query syntax, and no other parts.
 
+There are other files which cover some of the other sections.
+Possible sections not covered yet:
+13 modules
+16 control statements
+20 dynamic
+22 direct
+23 diagnostics
+
+
+
 The goal is to create some example tests for each bit of grammar, with
 some areas getting more comprehensive coverage tests, and also to note
 which parts aren't currently supported.
 
-> module Language.SQL.SimpleSQL.SQL2011 (sql2011Tests) where
+> module Language.SQL.SimpleSQL.SQL2011Queries (sql2011QueryTests) where
 > import Language.SQL.SimpleSQL.TestTypes
 > import Language.SQL.SimpleSQL.Syntax
 
-> sql2011Tests :: TestItem
-> sql2011Tests = Group "sql 2011 tests"
+> sql2011QueryTests :: TestItem
+> sql2011QueryTests = Group "sql 2011 query tests"
 >     [literals
 >     ,identifiers
 >     ,typeNameTests

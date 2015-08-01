@@ -1,9 +1,12 @@
 name:                simple-sql-parser
-version:             0.4.1
-synopsis:            A parser for SQL queries
+version:             0.5.0
+synopsis:            A parser for SQL.
 
-description:         A parser for SQL queries. Parses most SQL:2011
-                     queries. Please see the homepage for more information
+description:         A parser for SQL. Parses most SQL:2011
+                     queries, DML, schema/DDL, transaction control,
+                     session and connection management, access
+                     control. Please see the homepage for more
+                     information
                      <http://jakewheat.github.io/simple-sql-parser/>.
 
 homepage:            http://jakewheat.github.io/simple-sql-parser/
@@ -68,7 +71,11 @@ Test-Suite Tests
                        Language.SQL.SimpleSQL.Postgres,
                        Language.SQL.SimpleSQL.QueryExprComponents,
                        Language.SQL.SimpleSQL.QueryExprs,
-                       Language.SQL.SimpleSQL.SQL2011,
+                       Language.SQL.SimpleSQL.SQL2011Queries,
+                       Language.SQL.SimpleSQL.SQL2011AccessControl,
+                       Language.SQL.SimpleSQL.SQL2011Bits,
+                       Language.SQL.SimpleSQL.SQL2011DataManipulation,
+                       Language.SQL.SimpleSQL.SQL2011Schema,
                        Language.SQL.SimpleSQL.TableRefs,
                        Language.SQL.SimpleSQL.TestTypes,
                        Language.SQL.SimpleSQL.Tests,
