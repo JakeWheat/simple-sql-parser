@@ -183,7 +183,7 @@ fixing them in the syntax but leaving them till the semantic checking
 >     ,ParseError(..)) where
 
 > import Control.Monad.Identity (Identity)
-> import Control.Monad (guard, void, when)
+> import Control.Monad (guard, void)
 > import Control.Applicative ((<$), (<$>), (<*>) ,(<*), (*>), (<**>), pure)
 > import Data.Char (toLower, isDigit)
 > import Text.Parsec (setPosition,setSourceColumn,setSourceLine,getPosition
@@ -261,7 +261,7 @@ converts the error return to the nice wrapper
 >           -> String
 >           -> Either ParseError a
 > wrapParse parser d f p src = do
->     let (l,c) = fromMaybe (1,0) p
+>     let (l,c) = fromMaybe (1,1) p
 >     lx <- L.lexSQL d f (Just (l,c)) src
 >     either (Left . convParseError src) Right
 >       $ runParser (setPos p *> parser <* eof)
@@ -316,7 +316,7 @@ u&"example quoted"
 >     d <- getState
 >     choice [QName <$> qidentifierTok
 >            ,UQName <$> uqidentifierTok
->            ,Name <$> identifierBlacklist (blacklist d)
+>            ,Name <$> identifierTok (blacklist d) Nothing
 >            ,(\(s,e,t) -> DQName s e t) <$> dqidentifierTok
 >            ]
 
@@ -545,7 +545,7 @@ See the stringToken lexer below for notes on string literal syntax.
 > stringLit = StringLit <$> stringTokExtend
 
 > numberLit :: Parser ValueExpr
-> numberLit = NumLit <$> sqlNumberTok
+> numberLit = NumLit <$> sqlNumberTok False
 
 > characterSetLit :: Parser ValueExpr
 > characterSetLit = uncurry CSStringLit <$> csSqlStringLitTok
@@ -999,7 +999,7 @@ for the escape now there is a separate lexer ...
 >     pure $ \v -> ctor v c
 >   where
 >     escapeChar :: Parser Char
->     escapeChar = (identifierTok <|> symbolTok) >>= oneOnly
+>     escapeChar = (identifierTok [] Nothing <|> symbolTok Nothing) >>= oneOnly
 >     oneOnly :: String -> Parser Char
 >     oneOnly c = case c of
 >                    [c'] -> return c'
@@ -1501,23 +1501,25 @@ and it will parse as a single string
 >       L.HostParam p -> Just p
 >       _ -> Nothing)
 
-> sqlNumberTok :: Parser String
-> sqlNumberTok = mytoken (\tok ->
+> sqlNumberTok :: Bool -> Parser String
+> sqlNumberTok intOnly = mytoken (\tok ->
 >     case tok of
->       L.SqlNumber p -> Just p
+>       L.SqlNumber p | not intOnly || all isDigit p -> Just p
 >       _ -> Nothing)
 
 
-> symbolTok :: Parser String
-> symbolTok = mytoken (\tok ->
->     case tok of
->       L.Symbol p -> Just p
+> symbolTok :: Maybe String -> Parser String
+> symbolTok sym = mytoken (\tok ->
+>     case (sym,tok) of
+>       (Nothing, L.Symbol p) -> Just p
+>       (Just s, L.Symbol p) | s == p -> Just p
 >       _ -> Nothing)
 
-> identifierTok :: Parser String
-> identifierTok = mytoken (\tok ->
->     case tok of
->       L.Identifier p -> Just p
+> identifierTok :: [String] -> Maybe String -> Parser String
+> identifierTok blackList kw = mytoken (\tok ->
+>     case (kw,tok) of
+>       (Nothing, L.Identifier p) | map toLower p `notElem` blackList -> Just p
+>       (Just k, L.Identifier p) | k == map toLower p -> Just p
 >       _ -> Nothing)
 
 > qidentifierTok :: Parser String
@@ -1547,19 +1549,12 @@ and it will parse as a single string
 >     testToken (_,tok)   = test tok
 
 > unsignedInteger :: Parser Integer
-> unsignedInteger = try (do
->                    x <- sqlNumberTok
->                    guard (all isDigit x)
->                    return $ read x
->                    ) <?> "integer"
+> unsignedInteger = read <$> sqlNumberTok True <?> "natural number"
 
 todo: work out the symbol parsing better
 
 > symbol :: String -> Parser String
-> symbol s = try (do
->   u <- symbolTok
->   guard (s == u)
->   pure s) <?> s
+> symbol s = symbolTok (Just s) <?> s
 
 > singleCharSymbol :: Char -> Parser Char
 > singleCharSymbol c = c <$ symbol [c]
@@ -1589,10 +1584,7 @@ todo: work out the symbol parsing better
 = helper functions
 
 > keyword :: String -> Parser String
-> keyword k = try (do
->     i <- identifierTok
->     guard (map toLower i == k)
->     pure k) <?> k
+> keyword k = identifierTok [] (Just k) <?> k
 
 helper function to improve error messages
 
@@ -1617,14 +1609,6 @@ helper function to improve error messages
 
 > commaSep1 :: Parser a -> Parser [a]
 > commaSep1 = (`sepBy1` comma)
-
-> identifierBlacklist :: [String] -> Parser String
-> identifierBlacklist bl = try (do
->     i <- identifierTok
->     when (map toLower i `elem` bl) $
->         fail $ "keyword not allowed here: " ++ i
->     pure i)
->     <?> "identifier"
 
 > blacklist :: Dialect -> [String]
 > blacklist = reservedWord

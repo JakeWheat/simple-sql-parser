@@ -1,9 +1,12 @@
 
-Lexer TODO:
+The parser uses a separate lexer for two reasons:
 
-left factor to get rid of trys
+1. sql syntax is very awkward to parse, the separate lexer makes it
+easier to handle this in most places (in some places it makes it
+harder or impossible, the fix is to switch to something better than
+parsec
 
-add some notes on why there is a separate lexer.
+2. using a separate lexer gives a huge speed boost
 
 > -- | This is the module contains a Lexer for SQL.
 > {-# LANGUAGE TupleSections #-}
@@ -86,9 +89,8 @@ add some notes on why there is a separate lexer.
 
 
 
-> -- | Accurate pretty printing, if you lex a bunch of tokens,
-> -- then pretty print them, should should get back exactly the
-> -- same string
+> -- | Pretty printing, if you lex a bunch of tokens, then pretty
+> -- print them, should should get back exactly the same string
 > prettyToken :: Dialect -> Token -> String
 > prettyToken _ (Symbol s) = s
 > prettyToken _ (Identifier t) = t
@@ -116,6 +118,7 @@ add some notes on why there is a separate lexer.
 
 TODO: try to make all parsers applicative only
 
+> -- | Lex some SQL to a list of tokens.
 > lexSQL :: Dialect
 >                   -- ^ dialect of SQL to use
 >                -> FilePath
@@ -127,7 +130,7 @@ TODO: try to make all parsers applicative only
 >                   -- ^ the SQL source to lex
 >                -> Either ParseError [((String,Int,Int),Token)]
 > lexSQL dialect fn p src =
->     let (l,c) = fromMaybe (1,0) p
+>     let (l,c) = fromMaybe (1,1) p
 >     in either (Left . convParseError src) Right
 >        $ runParser (setPos (l,c) *> many (sqlToken dialect) <* eof) () fn src
 >   where
@@ -147,20 +150,6 @@ TODO: try to make all parsers applicative only
 >                     ,sqlNumber d
 >                     ,symbol d
 >                     ,sqlWhitespace d]
-
-> takeWhile1 :: (Char -> Bool) -> Parser String
-> takeWhile1 p = many1 (satisfy p)
-
-> takeWhile :: (Char -> Bool) -> Parser String
-> takeWhile p = many (satisfy p)
-
-> takeTill :: (Char -> Bool) -> Parser String
-> takeTill p =
->     try (manyTill anyChar (peekSatisfy p))
-
-> peekSatisfy :: (Char -> Bool) -> Parser ()
-> peekSatisfy p = do
->     void $ try $ lookAhead (satisfy p)
 
 > identifier :: Dialect -> Parser Token
 > identifier d =
@@ -255,13 +244,8 @@ character symbols in the two lists below.
 > lineComment :: Dialect -> Parser Token
 > lineComment _ =
 >     (\s -> LineComment $ concat ["--",s]) <$>
->     (try (string "--") *> choice
->                     [flip snoc '\n' <$> takeTill (=='\n') <* char '\n'
->                     ,takeWhile (/='\n') <* eof
->                     ])
->   where
->     snoc :: String -> Char -> String
->     snoc s a = s ++ [a]
+>     (try (string "--") *>
+>      manyTill anyChar (void (char '\n') <|> eof))
 
 > blockComment :: Dialect -> Parser Token
 > blockComment _ =
@@ -281,7 +265,7 @@ character symbols in the two lists below.
 >               -- nested comment, recurse
 >              ,try (string "/*") *> ((\s -> concat [x,"/*",s]) <$> commentSuffix (n + 1))
 >               -- not an end comment or nested comment, continue
->              ,(:) <$> anyChar <*> commentSuffix n]
+>              ,(\c s -> x ++ [c] ++ s) <$> anyChar <*> commentSuffix n]
 
 
 > startsWith :: (Char -> Bool) -> (Char -> Bool) -> Parser String
@@ -289,3 +273,17 @@ character symbols in the two lists below.
 >   c <- satisfy p
 >   choice [(:) c <$> (takeWhile1 ps)
 >          ,return [c]]
+
+> takeWhile1 :: (Char -> Bool) -> Parser String
+> takeWhile1 p = many1 (satisfy p)
+
+> takeWhile :: (Char -> Bool) -> Parser String
+> takeWhile p = many (satisfy p)
+
+> takeTill :: (Char -> Bool) -> Parser String
+> takeTill p =
+>     manyTill anyChar (peekSatisfy p)
+
+> peekSatisfy :: (Char -> Bool) -> Parser ()
+> peekSatisfy p = do
+>     void $ lookAhead (satisfy p)

@@ -51,8 +51,7 @@ Test for the lexer
 >     -- block comment
 >     ++ map (\c -> (c, [BlockComment c]))
 >        ["/**/", "/* */","/* this is a comment */"
->         -- todo: bug in the lexer, fix this
->         --,"/* this *is/ a comment */"
+>        ,"/* this *is/ a comment */"
 >        ]
 
 
