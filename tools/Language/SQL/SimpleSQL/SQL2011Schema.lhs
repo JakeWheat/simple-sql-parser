@@ -6,9 +6,11 @@ This module covers the tests for parsing schema and DDL statements.
 > module Language.SQL.SimpleSQL.SQL2011Schema (sql2011SchemaTests) where
 
 > import Language.SQL.SimpleSQL.TestTypes
+> import Language.SQL.SimpleSQL.Syntax
 
 > sql2011SchemaTests :: TestItem
-> sql2011SchemaTests = Group "sql 2011 schema tests" []
+> sql2011SchemaTests = Group "sql 2011 schema tests"
+>     [
 
 
 11.1 <schema definition>
@@ -17,6 +19,12 @@ This module covers the tests for parsing schema and DDL statements.
   CREATE SCHEMA <schema name clause>
       [ <schema character set or path> ]
       [ <schema element>... ]
+
+>      (TestStatement SQL2011 "create schema my_schema"
+>      $ CreateSchema [Name "my_schema"])
+
+todo: schema name can have .
+schema name can be quoted iden or unicode quoted iden
 
 <schema character set or path> ::=
     <schema character set specification>
@@ -66,6 +74,14 @@ This module covers the tests for parsing schema and DDL statements.
     CASCADE
   | RESTRICT
 
+
+>     ,(TestStatement SQL2011 "drop schema my_schema"
+>      $ DropSchema [Name "my_schema"] DefaultDropBehaviour)
+>     ,(TestStatement SQL2011 "drop schema my_schema cascade"
+>      $ DropSchema [Name "my_schema"] Cascade)
+>     ,(TestStatement SQL2011 "drop schema my_schema restrict"
+>      $ DropSchema [Name "my_schema"] Restrict)
+
 11.3 <table definition>
 
 
@@ -73,6 +89,9 @@ This module covers the tests for parsing schema and DDL statements.
   CREATE [ <table scope> ] TABLE <table name> <table contents source>
       [ WITH <system versioning clause> ]
       [ ON COMMIT <table commit action> ROWS ]
+
+     ,(TestStatement SQL2011 "create table ( a int )"
+
 
 <table contents source> ::=
     <table element list>
@@ -1310,3 +1329,5 @@ This module covers the tests for parsing schema and DDL statements.
 
 <drop sequence generator statement> ::=
   DROP SEQUENCE <sequence generator name> <drop behavior>
+
+>     ]

@@ -179,7 +179,8 @@ fixing them in the syntax but leaving them till the semantic checking
 > module Language.SQL.SimpleSQL.Parser
 >     (parseQueryExpr
 >     ,parseValueExpr
->     ,parseQueryExprs
+>     ,parseStatement
+>     ,parseStatements
 >     ,ParseError(..)) where
 
 > import Control.Monad.Identity (Identity)
@@ -220,9 +221,23 @@ fixing them in the syntax but leaving them till the semantic checking
 >                -> Either ParseError QueryExpr
 > parseQueryExpr = wrapParse topLevelQueryExpr
 
-> -- | Parses a list of query expressions, with semi colons between
+> -- | Parses a statement, trailing semicolon optional.
+> parseStatement :: Dialect
+>                   -- ^ dialect of SQL to use
+>                -> FilePath
+>                   -- ^ filename to use in error messages
+>                -> Maybe (Int,Int)
+>                   -- ^ line number and column number of the first character
+>                   -- in the source to use in error messages
+>                -> String
+>                   -- ^ the SQL source to parse
+>                -> Either ParseError Statement
+> parseStatement = wrapParse statement
+
+
+> -- | Parses a list of statements, with semi colons between
 > -- them. The final semicolon is optional.
-> parseQueryExprs :: Dialect
+> parseStatements :: Dialect
 >                   -- ^ dialect of SQL to use
 >                 -> FilePath
 >                    -- ^ filename to use in error messages
@@ -231,8 +246,8 @@ fixing them in the syntax but leaving them till the semantic checking
 >                    -- in the source to use in error messages
 >                 -> String
 >                    -- ^ the SQL source to parse
->                 -> Either ParseError [QueryExpr]
-> parseQueryExprs = wrapParse queryExprs
+>                 -> Either ParseError [Statement]
+> parseStatements = wrapParse statements
 
 > -- | Parses a value expression.
 > parseValueExpr :: Dialect
@@ -701,7 +716,15 @@ all the value expressions which start with an identifier
 > idenExpr =
 >     -- todo: work out how to left factor this
 >     try (TypedLit <$> typeName <*> stringTokExtend)
+>     <|> multisetSetFunction
 >     <|> (names <**> option Iden app)
+>   where
+>     -- this is a special case because set is a reserved keyword
+>     -- and the names parser won't parse it
+>     multisetSetFunction =
+>         App [Name "set"] . (:[]) <$>
+>         (try (keyword_ "set" *> openParen)
+>          *> valueExpr <* closeParen)
 
 === special
 
@@ -1409,16 +1432,93 @@ TODO: change style
 > topLevelQueryExpr :: Parser QueryExpr
 > topLevelQueryExpr = queryExpr <??> (id <$ semi)
 
-wrapper to parse a series of query exprs from a single source. They
-must be separated by semicolon, but for the last expression, the
-trailing semicolon is optional.
+-------------------------
+
+= Statements
+
+> statement :: Parser Statement
+> statement = choice
+>     [keyword_ "create"
+>      *> choice
+>         [createSchema
+>         ]
+>     ,keyword_ "drop"
+>      *> choice
+>         [dropSchema
+>         ]
+>     ,delete
+>     ,truncateSt
+>     ,insert
+>     ,update
+>     ,SelectStatement <$> queryExpr
+>     ]
+
+> createSchema :: Parser Statement
+> createSchema = keyword_ "schema" >>
+>     CreateSchema <$> names
+
+> dropSchema :: Parser Statement
+> dropSchema = keyword_ "schema" >>
+>     DropSchema <$> names
+>     <*> dropBehaviour
+
+> delete :: Parser Statement
+> delete = keywords_ ["delete","from"] >>
+>     Delete
+>     <$> names
+>     <*> optionMaybe (optional (keyword_ "as") *> name)
+>     <*> optionMaybe (keyword_ "where" *> valueExpr)
+
+> truncateSt :: Parser Statement
+> truncateSt = keywords_ ["truncate", "table"] >>
+>     Truncate
+>     <$> names
+>     <*> option DefaultIdentityRestart
+>         (ContinueIdentity <$ keywords_ ["continue","identity"]
+>          <|> RestartIdentity <$ keywords_ ["restart","identity"])
+
+> insert :: Parser Statement
+> insert = keywords_ ["insert", "into"] >>
+>     Insert
+>     <$> names
+>     <*> optionMaybe (parens $ commaSep1 name)
+>     <*> (DefaultInsertValues <$ keywords_ ["default", "values"]
+>          <|> InsertQuery <$> queryExpr)
+
+> update :: Parser Statement
+> update = keywords_ ["update"] >>
+>     Update
+>     <$> names
+>     <*> optionMaybe (optional (keyword_ "as") *> name)
+>     <*> (keyword_ "set" *> commaSep1 setClause)
+>     <*> optionMaybe (keyword_ "where" *> valueExpr)
+>   where
+>     setClause = multipleSet <|> singleSet
+>     multipleSet = SetMultiple
+>                   <$> parens (commaSep1 names)
+>                   <*> (symbol "=" *> parens (commaSep1 valueExpr))
+>     singleSet = Set
+>                 <$> names
+>                 <*> (symbol "=" *> valueExpr)
+
+> dropBehaviour :: Parser DropBehaviour
+> dropBehaviour =
+>     option DefaultDropBehaviour
+>     (Restrict <$ keyword_ "restrict"
+>     <|> Cascade <$ keyword_ "cascade")
+
+----------------------------
+
+wrapper to parse a series of statements. They must be separated by
+semicolon, but for the last statement, the trailing semicolon is
+optional.
 
 TODO: change style
 
-> queryExprs :: Parser [QueryExpr]
-> queryExprs = (:[]) <$> queryExpr
+> statements :: Parser [Statement]
+> statements = (:[]) <$> statement
 >              >>= optionSuffix ((semi *>) . pure)
->              >>= optionSuffix (\p -> (p++) <$> queryExprs)
+>              >>= optionSuffix (\p -> (p++) <$> statements)
 
 ----------------------------------------------
 
@@ -1884,7 +1984,7 @@ means).
 >     ,"select"
 >     ,"sensitive"
 >     --,"session_user"
->     --,"set"
+>     ,"set"
 >     ,"similar"
 >     ,"smallint"
 >     --,"some"

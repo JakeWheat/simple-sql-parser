@@ -73,8 +73,10 @@ order on the generated documentation.
 >     toTest parseValueExpr prettyValueExpr d str expected
 > itemToTest (TestQueryExpr d str expected) =
 >     toTest parseQueryExpr prettyQueryExpr d str expected
-> itemToTest (TestQueryExprs d str expected) =
->     toTest parseQueryExprs prettyQueryExprs d str expected
+> itemToTest (TestStatement d str expected) =
+>     toTest parseStatement prettyStatement d str expected
+> itemToTest (TestStatements d str expected) =
+>     toTest parseStatements prettyStatements d str expected
 > itemToTest (ParseQueryExpr d str) =
 >     toPTest parseQueryExpr prettyQueryExpr d str
 

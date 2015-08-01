@@ -67,7 +67,7 @@ indent: parse then pretty print sql
 >       (f,src) <- getInput args
 >       either (error . peFormattedError)
 >           (putStrLn . ppShow)
->           $ parseQueryExprs SQL2011 f Nothing src
+>           $ parseStatements SQL2011 f Nothing src
 >   )
 
 > lexCommand :: (String,[String] -> IO ())
@@ -87,7 +87,7 @@ indent: parse then pretty print sql
 >   ,\args -> do
 >       (f,src) <- getInput args
 >       either (error . peFormattedError)
->           (putStrLn . prettyQueryExprs SQL2011)
->           $ parseQueryExprs SQL2011 f Nothing src
+>           (putStrLn . prettyStatements SQL2011)
+>           $ parseStatements SQL2011 f Nothing src
 
 >   )

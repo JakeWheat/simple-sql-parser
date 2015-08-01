@@ -5,7 +5,8 @@
 > module Language.SQL.SimpleSQL.Pretty
 >     (prettyQueryExpr
 >     ,prettyValueExpr
->     ,prettyQueryExprs
+>     ,prettyStatement
+>     ,prettyStatements
 >     ) where
 
 TODO: there should be more comments in this file, especially the bits
@@ -26,10 +27,14 @@ which have been changed to try to improve the layout of the output.
 > prettyValueExpr :: Dialect -> ValueExpr -> String
 > prettyValueExpr d = render . valueExpr d
 
-> -- | Convert a list of query exprs to concrete syntax. A semi colon
-> -- is inserted after each query expr.
-> prettyQueryExprs :: Dialect -> [QueryExpr] -> String
-> prettyQueryExprs d = render . vcat . map ((<> text ";\n") . queryExpr d)
+> -- | Convert a statement ast to concrete syntax.
+> prettyStatement :: Dialect -> Statement -> String
+> prettyStatement d = render . statement d
+
+> -- | Convert a list of statements to concrete syntax. A semi colon
+> -- is inserted after each statement.
+> prettyStatements :: Dialect -> [Statement] -> String
+> prettyStatements d = render . vcat . map ((<> text ";\n") . statement d)
 
 = value expressions
 
@@ -437,6 +442,67 @@ which have been changed to try to improve the layout of the output.
 >                 NullsOrderDefault -> empty
 >                 NullsFirst -> text "nulls" <+> text "first"
 >                 NullsLast -> text "nulls" <+> text "last")
+
+= statements
+
+> statement :: Dialect -> Statement -> Doc
+
+
+== ddl
+
+> statement _ (CreateSchema nm) =
+>     text "create" <+> text "schema" <+> names nm
+
+> statement _ (DropSchema nm db) =
+>     text "drop" <+> text "schema" <+> names nm <+> dropBehav db
+
+== dml
+
+> statement d (SelectStatement q) = queryExpr d q
+
+> statement d (Delete t a w) =
+>     text "delete" <+> text "from"
+>     <+> names t <+> maybe empty (\x -> text "as" <+> name x) a
+>     <+> maybeValueExpr d "where" w
+
+> statement _ (Truncate t ir) =
+>     text "truncate" <+> text "table" <+> names t
+>     <+> case ir of
+>             DefaultIdentityRestart -> empty
+>             ContinueIdentity -> text "continue" <+> text "identity"
+>             RestartIdentity -> text "restart" <+> text "identity"
+
+> statement d (Insert t cs s) =
+>     text "insert" <+> text "into" <+> names t
+>     <+> maybe empty (\cs' -> parens (commaSep $ map name cs')) cs
+>     <+> case s of
+>             DefaultInsertValues -> text "default" <+> text "values"
+>             InsertQuery q -> queryExpr d q
+
+> statement d (Update t a sts whr) =
+>     text "update" <+> names t
+>     <+> maybe empty (\x -> text "as" <+> name x) a
+>     <+> text "set" <+> commaSep (map sc sts)
+>     <+> maybeValueExpr d "where" whr
+>   where
+>     sc (Set tg v) = names tg <+> text "=" <+> valueExpr d v
+>     sc (SetMultiple ts vs) = parens (commaSep $ map names ts) <+> text "="
+>                              <+> parens (commaSep $ map (valueExpr d) vs)
+
+== access control
+
+== transactions
+
+== sessions
+
+
+== extras
+
+> dropBehav :: DropBehaviour -> Doc
+> dropBehav DefaultDropBehaviour = empty
+> dropBehav Cascade = text "cascade"
+> dropBehav Restrict = text "restrict"
+
 
 = utils
 

@@ -17,7 +17,8 @@ to lots of tricky exceptions/variationsx.
 > data TestItem = Group String [TestItem]
 >               | TestValueExpr Dialect String ValueExpr
 >               | TestQueryExpr Dialect String QueryExpr
->               | TestQueryExprs Dialect String [QueryExpr]
+>               | TestStatement Dialect String Statement
+>               | TestStatements Dialect String [Statement]
 
 this just checks the sql parses without error, mostly just a
 intermediate when I'm too lazy to write out the parsed AST. These

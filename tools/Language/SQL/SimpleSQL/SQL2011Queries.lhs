@@ -2476,6 +2476,9 @@ Specify a function yielding a value of a multiset type.
 <multiset set function> ::=
   SET <left paren> <multiset value expression> <right paren>
 
+TODO: set is now a reserved keyword. Fix the set parsing with a
+special case term.
+
 > multisetValueFunction :: TestItem
 > multisetValueFunction = Group "multiset value function"
 >    $ map (uncurry (TestValueExpr SQL2011))

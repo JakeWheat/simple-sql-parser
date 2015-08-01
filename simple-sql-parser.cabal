@@ -4,9 +4,8 @@ synopsis:            A parser for SQL.
 
 description:         A parser for SQL. Parses most SQL:2011
                      queries, DML, schema/DDL, transaction control,
-                     session and connection management, access
-                     control. Please see the homepage for more
-                     information
+                     session and access control. Please see the
+                     homepage for more information
                      <http://jakewheat.github.io/simple-sql-parser/>.
 
 homepage:            http://jakewheat.github.io/simple-sql-parser/

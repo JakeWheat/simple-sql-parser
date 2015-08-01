@@ -30,9 +30,15 @@
 >     ,TableRef(..)
 >     ,JoinType(..)
 >     ,JoinCondition(..)
->      -- * dialect
+>      -- * Statements
+>     ,Statement(..)
+>     ,DropBehaviour(..)
+>     ,IdentityRestart(..)
+>     ,InsertSource(..)
+>     ,SetClause(..)
+>      -- * Dialect
 >     ,Dialect(..)
->      -- * comment
+>      -- * Comment
 >     ,Comment(..)
 >     ) where
 
@@ -380,6 +386,107 @@ I'm not sure if this is valid syntax or not.
 >                    | JoinUsing [Name] -- ^ using (column list)
 >                      deriving (Eq,Show,Read,Data,Typeable)
 
+---------------------------
+
+> data Statement =
+>     -- ddl
+>     CreateSchema [Name] -- XXX
+>   | DropSchema [Name] DropBehaviour -- XXX
+>   {-   |  CreateTable -- XXX
+>   | AlterTable -- XXX
+>   | DropTable  -- XXX
+>   | CreateView  -- XXX
+>   | DropView -- XXX
+>   | CreateDomain  -- XXX
+>   | AlterDomain
+>   | DropDomain -- XXX
+>   | CreateCharacterSet
+>   | DropCharacterSet
+>   | CreateCollation
+>   | DropCollation
+>   | CreateTranslation
+>   | DropTranslation
+>   | CreateAssertion
+>   | DropAssertion
+>   | CreateTrigger
+>   | DropTrigger
+>   | CreateType
+>   | AlterType
+>   | DropType
+>     -- routine stuff?
+>   | CreateCast
+>   | DropCast
+>   | CreateOrdering
+>   | DropOrdering
+>     -- transforms
+>   | CreateSequence -- XXX
+>   | AlterSequence -- XXX
+>   | DropSequence -- XXX -}
+>     -- dml
+>   | SelectStatement QueryExpr
+>   {-    | DeclareCursor
+>   | OpenCursor
+>   | FetchCursor
+>   | CloseCursor
+>   | SelectInto -}
+>   --   | DeletePositioned
+>   | Delete [Name] (Maybe Name) (Maybe ValueExpr)
+>   | Truncate [Name] IdentityRestart
+>   | Insert [Name] (Maybe [Name]) InsertSource
+>   --  | Merge
+>   | Update [Name] (Maybe Name) [SetClause] (Maybe ValueExpr)
+>   {-  | TemporaryTable
+>   | FreeLocator
+>   | HoldLocator  -}
+>     -- access control
+>   {-  | GrantPrivilege
+>   | GrantRole
+>   | CreateRole
+>   | DropRole
+>   | RevokePrivilege
+>   | RevokeRole -}
+>     -- transaction management
+>   {-  | StartTransaction
+>   | SetTransaction
+>   | SetContraints
+>   | SavePoint
+>   | ReleaseSavePoint
+>   | Rollback -}
+>     -- session
+>   {-  | SetSessionCharacteristics
+>   | SetSessionAuthorization
+>   | SetRole
+>   | SetTimeZone
+>   | SetCatalog
+>   | SetSchema
+>   | SetNames
+>   | SetTransform
+>   | SetCollation -}
+>     deriving (Eq,Show,Read,Data,Typeable)
+
+> data DropBehaviour =
+>     Restrict
+>   | Cascade
+>   | DefaultDropBehaviour
+>     deriving (Eq,Show,Read,Data,Typeable)
+
+> data IdentityRestart =
+>     ContinueIdentity
+>   | RestartIdentity
+>   | DefaultIdentityRestart
+>     deriving (Eq,Show,Read,Data,Typeable)
+
+> data InsertSource =
+>     InsertQuery QueryExpr
+>   | DefaultInsertValues
+>     deriving (Eq,Show,Read,Data,Typeable)
+
+> data SetClause =
+>     Set [Name] ValueExpr
+>   | SetMultiple [[Name]] [ValueExpr]
+>     deriving (Eq,Show,Read,Data,Typeable)
+
+--------------------------
 
 > -- | Used to set the dialect used for parsing and pretty printing,
 > -- very unfinished at the moment.
@@ -388,7 +495,8 @@ I'm not sure if this is valid syntax or not.
 >                deriving (Eq,Show,Read,Data,Typeable)
 
 
-> -- | Comment. Useful when generating SQL code programmatically.
+> -- | Comment. Useful when generating SQL code programmatically. The
+> -- parser doesn't produce these.
 > data Comment = BlockComment String
 >                deriving (Eq,Show,Read,Data,Typeable)
 
