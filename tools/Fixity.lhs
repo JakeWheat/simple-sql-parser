@@ -155,6 +155,7 @@ then the fixer can be easier?
 > import Debug.Trace
 > import Text.Show.Pretty
 > import Data.List
+> import Control.Applicative
 
 > import qualified Test.Tasty as T
 > import qualified Test.Tasty.HUnit as H

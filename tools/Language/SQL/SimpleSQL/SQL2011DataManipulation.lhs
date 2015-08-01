@@ -215,6 +215,178 @@ Section 14 in Foundation
       USING <table reference>
       ON <search condition> <merge operation specification>
 
+merge into t
+  using t
+  on a = b
+  merge operation specification
+
+merge into t as u
+using (table factor | joined expression)
+
+ MERGE INTO tablename USING table_reference ON (condition)
+   WHEN MATCHED THEN
+   UPDATE SET column1 = value1 [, column2 = value2 ...]
+   WHEN NOT MATCHED THEN
+   INSERT (column1 [, column2 ...]) VALUES (value1 [, value2 ...
+
+merge into t23
+using t42
+on t42.id = t23.id
+when matched then
+    update
+    set     t23.col1 = t42.col1
+when not matched then
+    insert  (id, col1)
+    values  (t42.id, t42.col1)
+
+
+
+MERGE INTO TableA u
+
+USING (SELECT b.Key1, b.ColB1, c.ColC1
+
+FROM TableB b
+
+INNER JOIN TableC c ON c.KeyC1 = b.KeyB1
+
+) s
+
+ON (u.KeyA1 = s.KeyA1)
+
+WHEN MATCHED THEN
+
+UPDATE SET u.ColA1 = s.ColB1, u.ColA2 = s.ColC1
+
+
+MERGE INTO Department 
+USING NewDept AS ND 
+ON nd.Department_Number = Department.
+Department_Number 
+WHEN MATCHED THEN UPDATE 
+SET budget_amount = nd.Budget_Amount 
+WHEN NOT MATCHED THEN INSERT 
+VALUES 
+(nd.Department_Number, nd.Department_
+Name, nd.Budget_Amount, 
+ nd.Manager_Employee_Number);
+
+
+MERGE INTO Orders2 
+USING Orders3 
+ON ORDERS3.Order_Number = Orders2.
+Order_Number 
+WHEN NOT MATCHED THEN INSERT 
+Orders3.order_number, Orders3.
+invoice_number, 
+ Orders3.customer_number, Orders3.
+initial_order_date, 
+ Orders3.invoice_date, Orders3.
+invoice_amount);
+
+MERGE INTO Orders2 
+USING Orders3 
+ON ORDERS3.Order_Number = Orders2.
+Order_Number AND 1=0 
+WHEN NOT MATCHED THEN INSERT 
+(Orders3.order_number, Orders3.invoice_number, 
+ Orders3.customer_number, Orders3.
+initial_order_date, 
+ Orders3.invoice_date, Orders3.
+invoice_amount);
+
+MERGE INTO Department 
+USING NewDept AS ND 
+ON nd.Department_Number = Department.
+Department_Number 
+WHEN MATCHED THEN UPDATE 
+SET budget_amount = nd.Budget_Amount 
+LOGGING ALL ERRORS WITH NO LIMIT;
+
+
+MERGE INTO Department 
+USING 
+ (SELECT Department_Number,
+department_name, 
+        Budget_Amount, 
+Manager_Employee_Number 
+    FROM NewDept 
+    WHERE Department_Number IN 
+(SELECT Department_Number 
+        FROM Employee)) AS m
+ON m.Department_Number = Department.
+Department_Number 
+WHEN MATCHED THEN UPDATE 
+SET budget_amount = m.Budget_Amount 
+WHEN NOT MATCHED THEN INSERT 
+(m.Department_Number, m.Department_
+Name, m.Budget_Amount, 
+m.Manager_Employee_Number) 
+LOGGING ALL ERRORS WITH NO LIMIT;
+
+ 
+MERGE INTO Customers AS c
+USING      Moved     AS m
+      ON   m.SSN      = c.SSN
+WHEN MATCHED
+THEN UPDATE
+SET        Street     = m.Street,
+           HouseNo    = m.HouseNo,
+           City       = m.City;
+
+MERGE INTO CentralOfficeAccounts AS C    -- Target
+USING BranchOfficeAccounts AS B          -- Source
+   ON C.account_nbr = B.account_nbr
+WHEN MATCHED THEN                        -- On match update
+     UPDATE SET C.company_name = B.company_name,
+                C.primary_contact = B.primary_contact,
+                C.contact_phone = B.contact_phone
+WHEN NOT MATCHED THEN                    -- Add missing
+     INSERT (account_nbr, company_name, primary_contact, contact_phone)
+     VALUES (B.account_nbr, B.company_name, B.primary_contact, B.contact_phone);
+ 
+SELECT account_nbr, company_name, primary_contact, contact_phone 
+FROM CentralOfficeAccounts;
+
+
+
+MERGE INTO CentralOfficeAccounts AS C   -- Target
+USING BranchOfficeAccounts AS B         -- Source
+   ON C.account_nbr = B.account_nbr
+WHEN MATCHED                            -- On match update
+ AND (C.company_name <> B.company_name  -- Additional search conditions
+   OR C.primary_contact <> B.primary_contact
+   OR C.contact_phone <> B.contact_phone) THEN                        
+     UPDATE SET C.company_name = B.company_name,
+                C.primary_contact = B.primary_contact,
+                C.contact_phone = B.contact_phone
+WHEN NOT MATCHED THEN                   -- Add missing
+     INSERT (account_nbr, company_name, primary_contact, contact_phone)
+     VALUES (B.account_nbr, B.company_name, B.primary_contact, B.contact_phone);
+
+
+
+MERGE INTO CentralOfficeAccounts AS C   -- Target
+USING BranchOfficeAccounts AS B         -- Source
+   ON C.account_nbr = B.account_nbr
+WHEN MATCHED                            -- On match update
+ AND (C.company_name <> B.company_name  -- Additional search conditions
+   OR C.primary_contact <> B.primary_contact
+   OR C.contact_phone <> B.contact_phone) THEN                        
+     UPDATE SET C.company_name = B.company_name,
+                C.primary_contact = B.primary_contact,
+                C.contact_phone = B.contact_phone
+WHEN NOT MATCHED THEN                   -- Add missing
+     INSERT (account_nbr, company_name, primary_contact, contact_phone)
+     VALUES (B.account_nbr, B.company_name, B.primary_contact, B.contact_phone)
+WHEN SOURCE NOT MATCHED THEN            -- Delete missing from source
+     DELETE;
+ 
+SELECT account_nbr, company_name, primary_contact, contact_phone 
+FROM CentralOfficeAccounts; 
+
+
+
+
 <merge correlation name> ::=
   <correlation name>
 
@@ -350,6 +522,8 @@ Section 14 in Foundation
 <temporary table declaration> ::=
   DECLARE LOCAL TEMPORARY TABLE <table name> <table element list>
       [ ON COMMIT <table commit action> ROWS ]
+
+declare local temporary table t (a int) [on commit {preserve | delete} rows]
 
 14.17 <free locator statement>
 

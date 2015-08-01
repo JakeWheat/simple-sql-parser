@@ -3,9 +3,10 @@ version:             0.5.0
 synopsis:            A parser for SQL.
 
 description:         A parser for SQL. Parses most SQL:2011
-                     queries, DML, schema/DDL, transaction control,
-                     session and access control. Please see the
-                     homepage for more information
+                     queries, non-query DML, DDL, access control,
+                     transaction management and session management
+                     syntax. Please see the homepage for more
+                     information
                      <http://jakewheat.github.io/simple-sql-parser/>.
 
 homepage:            http://jakewheat.github.io/simple-sql-parser/
@@ -13,7 +14,7 @@ license:             BSD3
 license-file:        LICENSE
 author:              Jake Wheat
 maintainer:          jakewheatmail@gmail.com
-copyright:           Copyright Jake Wheat 2013, 2014
+copyright:           Copyright Jake dist/build/Tests/TestsWheat 2013, 2014, 2015
 category:            Database,Language
 build-type:          Simple
 extra-source-files:  README,LICENSE,changelog
