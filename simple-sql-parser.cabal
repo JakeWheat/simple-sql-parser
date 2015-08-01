@@ -14,7 +14,7 @@ license:             BSD3
 license-file:        LICENSE
 author:              Jake Wheat
 maintainer:          jakewheatmail@gmail.com
-copyright:           Copyright Jake dist/build/Tests/TestsWheat 2013, 2014, 2015
+copyright:           Copyright Jake Wheat 2013, 2014, 2015
 category:            Database,Language
 build-type:          Simple
 extra-source-files:  README,LICENSE,changelog
