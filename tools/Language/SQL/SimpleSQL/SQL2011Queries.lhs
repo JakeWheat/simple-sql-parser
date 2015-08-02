@@ -1,15 +1,27 @@
 
-This file goes through the grammar for SQL 2011 (using the draft standard).
+This file goes through the grammar for SQL 2011 queries (using the
+draft standard).
 
-We are only looking at the query syntax, and no other parts.
+There are other files which cover some of the other sections from SQL
+2011 (ddl, non-query dml, etc).
 
-There are other files which cover some of the other sections.
-Possible sections not covered yet:
+Possible sections not in the todo which could
+be covered:
+
 13 modules
 16 control statements
+18 connection management
 20 dynamic
 22 direct
 23 diagnostics
+
+procedural sql
+
+some of the main areas being left for now:
+temporal and versioning stuff
+modules
+ref stuff
+todo: finish this list
 
 
 

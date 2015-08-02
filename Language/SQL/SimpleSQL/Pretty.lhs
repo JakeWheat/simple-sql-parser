@@ -457,7 +457,7 @@ which have been changed to try to improve the layout of the output.
 >     text "create" <+> text "table" <+> names nm
 >     <+> parens (commaSep $ map cd cds)
 >   where
->     cd (ColumnDef n t mdef) =
+>     cd (ColumnDef n t mdef cons) =
 >       name n <+> typeName t
 >       <+> case mdef of
 >              Nothing -> empty
@@ -475,6 +475,7 @@ which have been changed to try to improve the layout of the output.
 >                  <+> (case o of
 >                          [] -> empty
 >                          os -> parens (sep $ map sgo os))
+>       <+> sep (map cdef cons)
 >     sgo (SGOStartWith i) = texts ["start",  "with", show i]
 >     sgo (SGOIncrementBy i) = texts ["increment", "by", show i]
 >     sgo (SGOMaxValue i) = texts ["maxvalue", show i]
@@ -483,6 +484,36 @@ which have been changed to try to improve the layout of the output.
 >     sgo SGONoMinValue = texts ["no", "minvalue"]
 >     sgo SGOCycle = text "cycle"
 >     sgo SGONoCycle = text "no cycle"
+>     cdef (ConstraintDef cnm con) =
+>         maybe empty (\s -> text "constraint" <+> names s) cnm
+>         <+> pcon con
+>     pcon NotNullConstraint = texts ["not","null"]
+>     pcon UniqueConstraint = text "unique"
+>     pcon PrimaryKeyConstraint = texts ["primary","key"]
+>     pcon (CheckConstraint v) = text "check" <+> parens (valueExpr d v)
+>     pcon (ReferencesConstraint t c m u del) =
+>         text "references"
+>         <+> names t
+>         <+> maybe empty (\c' -> parens (name c')) c
+>         <+> (case m of
+>                  DefaultReferenceMatch -> empty
+>                  MatchFull -> texts ["match", "full"]
+>                  MatchPartial -> texts ["match","partial"]
+>                  MatchSimple -> texts ["match", "simple"])
+>         <+> (case u of
+>                  DefaultReferentialAction -> empty
+>                  RefCascade -> texts ["on", "update", "cascade"]
+>                  RefSetNull -> texts ["on", "update", "set", "null"]
+>                  RefSetDefault -> texts ["on", "update", "set", "default"]
+>                  RefRestrict -> texts ["on", "update", "restrict"]
+>                  RefNoAction -> texts ["on", "update", "no", "action"])
+>         <+> (case del of
+>                  DefaultReferentialAction -> empty
+>                  RefCascade -> texts ["on", "delete", "cascade"]
+>                  RefSetNull -> texts ["on", "delete", "set", "null"]
+>                  RefSetDefault -> texts ["on", "delete", "set", "default"]
+>                  RefRestrict -> texts ["on", "delete", "restrict"]
+>                  RefNoAction -> texts ["on", "delete", "no", "action"])
 
 > statement _ (DropSchema nm db) =
 >     text "drop" <+> text "schema" <+> names nm <+> dropBehav db

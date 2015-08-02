@@ -40,6 +40,10 @@
 >     ,DefaultClause(..)
 >     ,IdentityWhen(..)
 >     ,SequenceGeneratorOption(..)
+>     ,ConstraintDef(..)
+>     ,Constraint(..)
+>     ,ReferenceMatch(..)
+>     ,ReferentialAction(..)
 >      -- * Dialect
 >     ,Dialect(..)
 >      -- * Comment
@@ -493,10 +497,67 @@ I'm not sure if this is valid syntax or not.
 > data TableElement =
 >     ColumnDef Name TypeName
 >        (Maybe DefaultClause)
->        -- (Maybe ColumnConstraintDef)
+>        [ConstraintDef]
 >        -- (Maybe CollateClause)
 >   --   | TableConstraintDef
 >     deriving (Eq,Show,Read,Data,Typeable)
+
+> data ConstraintDef =
+>     ConstraintDef (Maybe [Name]) Constraint
+>       -- (Maybe [ConstraintCharacteristics])
+>     deriving (Eq,Show,Read,Data,Typeable)
+
+> data Constraint =
+>     NotNullConstraint
+>   | UniqueConstraint
+>   | PrimaryKeyConstraint
+>   | ReferencesConstraint [Name] (Maybe Name)
+>        ReferenceMatch
+>        ReferentialAction
+>        ReferentialAction
+>   | CheckConstraint ValueExpr
+>     deriving (Eq,Show,Read,Data,Typeable)
+
+> data ReferenceMatch =
+>     DefaultReferenceMatch
+>   | MatchFull
+>   | MatchPartial
+>   | MatchSimple
+>     deriving (Eq,Show,Read,Data,Typeable)
+
+> data ReferentialAction =
+>     DefaultReferentialAction
+>   | RefCascade
+>   | RefSetNull
+>   | RefSetDefault
+>   | RefRestrict
+>   | RefNoAction
+>     deriving (Eq,Show,Read,Data,Typeable)
+
+> {-data ConstraintCharacteristics =
+>     ConstraintCharacteristics
+>         ConstraintCheckTime
+>         Deferrable
+>         ConstraintEnforcement
+>     deriving (Eq,Show,Read,Data,Typeable)
+
+> data ConstraintCheckTime =
+>     DefaultConstraintCheckTime
+>   | InitiallyDeferred
+>   | InitiallyImmeditate
+>     deriving (Eq,Show,Read,Data,Typeable)
+
+> data Deferrable =
+>     DefaultDefferable
+>   | Deferrable
+>   | NotDeferrable
+>     deriving (Eq,Show,Read,Data,Typeable)
+
+> data ConstraintEnforcement =
+>     DefaultConstraintEnforcement
+>   | Enforced
+>   | NotEnforced
+>     deriving (Eq,Show,Read,Data,Typeable) -}
 
 > {-data TableConstraintDef
 >     deriving (Eq,Show,Read,Data,Typeable) -}

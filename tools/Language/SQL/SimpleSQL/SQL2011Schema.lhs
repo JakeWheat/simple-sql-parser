@@ -92,8 +92,8 @@ schema name can be quoted iden or unicode quoted iden
 
 >     ,(TestStatement SQL2011 "create table t (a int, b int);"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
->        ,ColumnDef (Name "b") (TypeName [Name "int"]) Nothing])
+>        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing []
+>        ,ColumnDef (Name "b") (TypeName [Name "int"]) Nothing []])
 
 
 <table contents source> ::=
@@ -296,6 +296,154 @@ defintely skip
   | <references specification>
   | <check constraint definition>
 
+
+can have more than one
+whitespace separated
+
+one constratint:
+optional name: constraint [Name]
+not null | unique | references | check
+todo: constraint characteristics
+
+
+>     ,(TestStatement SQL2011
+>       "create table t (a int not null);"
+>      $ CreateTable [Name "t"]
+>        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>         [ConstraintDef Nothing NotNullConstraint]])
+
+>     ,(TestStatement SQL2011
+>       "create table t (a int constraint a_not_null not null);"
+>      $ CreateTable [Name "t"]
+>        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>         [ConstraintDef (Just [Name "a_not_null"]) NotNullConstraint]])
+
+>     ,(TestStatement SQL2011
+>       "create table t (a int unique);"
+>      $ CreateTable [Name "t"]
+>        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>         [ConstraintDef Nothing UniqueConstraint]])
+
+>     ,(TestStatement SQL2011
+>       "create table t (a int primary key);"
+>      $ CreateTable [Name "t"]
+>        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>         [ConstraintDef Nothing PrimaryKeyConstraint]])
+
+references t(a,b)
+  [ Full |partial| simepl]
+  [perm: on update [cascade | set null | set default | restrict | no action]
+         on delete ""
+
+>     ,(TestStatement SQL2011
+>       "create table t (a int references u);"
+>      $ CreateTable [Name "t"]
+>        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>         [ConstraintDef Nothing $ ReferencesConstraint
+>          [Name "u"] Nothing DefaultReferenceMatch
+>          DefaultReferentialAction DefaultReferentialAction]])
+
+>     ,(TestStatement SQL2011
+>       "create table t (a int references u(a));"
+>      $ CreateTable [Name "t"]
+>        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>         [ConstraintDef Nothing $ ReferencesConstraint
+>          [Name "u"] (Just $ Name "a") DefaultReferenceMatch
+>          DefaultReferentialAction DefaultReferentialAction]])
+
+>     ,(TestStatement SQL2011
+>       "create table t (a int references u match full);"
+>      $ CreateTable [Name "t"]
+>        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>         [ConstraintDef Nothing $ ReferencesConstraint
+>          [Name "u"] Nothing MatchFull
+>          DefaultReferentialAction DefaultReferentialAction]])
+
+>     ,(TestStatement SQL2011
+>       "create table t (a int references u match partial);"
+>      $ CreateTable [Name "t"]
+>        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>         [ConstraintDef Nothing $ ReferencesConstraint
+>          [Name "u"] Nothing MatchPartial
+>          DefaultReferentialAction DefaultReferentialAction]])
+
+>     ,(TestStatement SQL2011
+>       "create table t (a int references u match simple);"
+>      $ CreateTable [Name "t"]
+>        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>         [ConstraintDef Nothing $ ReferencesConstraint
+>          [Name "u"] Nothing MatchSimple
+>          DefaultReferentialAction DefaultReferentialAction]])
+
+>     ,(TestStatement SQL2011
+>       "create table t (a int references u on update cascade );"
+>      $ CreateTable [Name "t"]
+>        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>         [ConstraintDef Nothing $ ReferencesConstraint
+>          [Name "u"] Nothing DefaultReferenceMatch
+>          RefCascade DefaultReferentialAction]])
+
+>     ,(TestStatement SQL2011
+>       "create table t (a int references u on update set null );"
+>      $ CreateTable [Name "t"]
+>        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>         [ConstraintDef Nothing $ ReferencesConstraint
+>          [Name "u"] Nothing DefaultReferenceMatch
+>          RefSetNull DefaultReferentialAction]])
+
+>     ,(TestStatement SQL2011
+>       "create table t (a int references u on update set default );"
+>      $ CreateTable [Name "t"]
+>        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>         [ConstraintDef Nothing $ ReferencesConstraint
+>          [Name "u"] Nothing DefaultReferenceMatch
+>          RefSetDefault DefaultReferentialAction]])
+
+>     ,(TestStatement SQL2011
+>       "create table t (a int references u on update no action );"
+>      $ CreateTable [Name "t"]
+>        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>         [ConstraintDef Nothing $ ReferencesConstraint
+>          [Name "u"] Nothing DefaultReferenceMatch
+>          RefNoAction DefaultReferentialAction]])
+
+>     ,(TestStatement SQL2011
+>       "create table t (a int references u on delete cascade );"
+>      $ CreateTable [Name "t"]
+>        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>         [ConstraintDef Nothing $ ReferencesConstraint
+>          [Name "u"] Nothing DefaultReferenceMatch
+>          DefaultReferentialAction RefCascade]])
+
+
+>     ,(TestStatement SQL2011
+>       "create table t (a int references u on update cascade on delete restrict );"
+>      $ CreateTable [Name "t"]
+>        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>         [ConstraintDef Nothing $ ReferencesConstraint
+>          [Name "u"] Nothing DefaultReferenceMatch
+>          RefCascade RefRestrict]])
+
+>     ,(TestStatement SQL2011
+>       "create table t (a int references u on delete restrict on update cascade );"
+>      $ CreateTable [Name "t"]
+>        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>         [ConstraintDef Nothing $ ReferencesConstraint
+>          [Name "u"] Nothing DefaultReferenceMatch
+>          RefCascade RefRestrict]])
+
+>     ,(TestStatement SQL2011
+>       "create table t (a int check (a>5));"
+>      $ CreateTable [Name "t"]
+>        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>         [ConstraintDef Nothing
+>          (CheckConstraint $ BinOp (Iden [Name "a"]) [Name ">"] (NumLit "5"))]])
+
+
+check (valueexpr)
+
+
+
 <identity column specification> ::=
   GENERATED { ALWAYS | BY DEFAULT } AS IDENTITY
       [ <left paren> <common sequence generator options> <right paren> ]
@@ -303,17 +451,17 @@ defintely skip
 >     ,(TestStatement SQL2011 "create table t (a int generated as identity);"
 >      $ CreateTable [Name "t"]
 >        [ColumnDef (Name "a") (TypeName [Name "int"])
->         (Just $ IdentityColumnSpec GeneratedDefault [])])
+>         (Just $ IdentityColumnSpec GeneratedDefault []) []])
 
 >     ,(TestStatement SQL2011 "create table t (a int generated always as identity);"
 >      $ CreateTable [Name "t"]
 >        [ColumnDef (Name "a") (TypeName [Name "int"])
->         (Just $ IdentityColumnSpec GeneratedAlways [])])
+>         (Just $ IdentityColumnSpec GeneratedAlways []) []])
 
 >     ,(TestStatement SQL2011 "create table t (a int generated by default as identity);"
 >      $ CreateTable [Name "t"]
 >        [ColumnDef (Name "a") (TypeName [Name "int"])
->         (Just $ IdentityColumnSpec GeneratedByDefault [])])
+>         (Just $ IdentityColumnSpec GeneratedByDefault []) []])
 
 
 >     ,(TestStatement SQL2011
@@ -326,7 +474,7 @@ defintely skip
 >          ,SGOIncrementBy 5
 >          ,SGOMaxValue 500
 >          ,SGOMinValue 5
->          ,SGOCycle])])
+>          ,SGOCycle]) []])
 
 >     ,(TestStatement SQL2011
 >       "create table t (a int generated as identity\
@@ -337,7 +485,7 @@ defintely skip
 >          [SGOStartWith (-4)
 >          ,SGONoMaxValue
 >          ,SGONoMinValue
->          ,SGONoCycle])])
+>          ,SGONoCycle]) []])
 
 I think <common sequence generator options> is supposed to just
 whitespace separated. In db2 it seems to be csv, but the grammar here
@@ -360,10 +508,10 @@ generated always (valueexpr)
 >       "create table t (a int, \
 >       \                a2 int generated always as (a * 2));"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing []
 >        ,ColumnDef (Name "a2") (TypeName [Name "int"])
 >         (Just $ GenerationClause
->          (BinOp (Iden [Name "a"]) [Name "*"] (NumLit "2")))])
+>          (BinOp (Iden [Name "a"]) [Name "*"] (NumLit "2"))) []])
 
 
 
@@ -389,7 +537,7 @@ generated always (valueexpr)
 >     ,(TestStatement SQL2011 "create table t (a int default 0);"
 >      $ CreateTable [Name "t"]
 >        [ColumnDef (Name "a") (TypeName [Name "int"])
->         (Just $ DefaultClause $ NumLit "0")])
+>         (Just $ DefaultClause $ NumLit "0") []])
 
 
 

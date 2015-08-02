@@ -1465,10 +1465,12 @@ TODO: change style
 > createTable = keyword_ "table" >>
 >     CreateTable
 >     <$> names
+>     -- todo: is this order mandatory or is it a perm?
 >     <*> parens (commaSep1 columnDef)
 >   where
 >     columnDef = ColumnDef <$> name <*> typeName
 >                 <*> optionMaybe defaultClause
+>                 <*> option [] (many1 constraintDef)
 >     defaultClause = choice [
 >         keyword_ "default" >>
 >         DefaultClause <$> valueExpr
@@ -1508,6 +1510,39 @@ TODO: change style
 >     noMinValue = SGONoMinValue <$ try (keywords_ ["no","minvalue"])
 >     scycle = SGOCycle <$ keyword_ "cycle"
 >     noCycle = SGONoCycle <$ try (keywords_ ["no","cycle"])
+
+
+> constraintDef :: Parser ConstraintDef
+> constraintDef =
+>     ConstraintDef
+>     <$> (optionMaybe (keyword_ "constraint" *> names))
+>     <*> (notNull <|> unique <|> primaryKey <|> check <|> references)
+>   where
+>     notNull = NotNullConstraint <$ keywords_ ["not", "null"]
+>     unique = UniqueConstraint <$ keyword_ "unique"
+>     primaryKey = PrimaryKeyConstraint <$ keywords_ ["primary", "key"]
+>     check = keyword_ "check" >> CheckConstraint <$> parens valueExpr
+>     references = keyword_ "references" >>
+>         (\t c m (ou,od) -> ReferencesConstraint t c m ou od)
+>         <$> names
+>         <*> optionMaybe (parens name)
+>         <*> option DefaultReferenceMatch
+>             (keyword_ "match" *>
+>              choice [MatchFull <$ keyword_ "full"
+>                     ,MatchPartial <$ keyword_ "partial"
+>                     ,MatchSimple <$ keyword_ "simple"])
+>         <*> permute ((,) <$?> (DefaultReferentialAction, onUpdate)
+>                          <|?> (DefaultReferentialAction, onDelete))
+>     -- todo: left factor?
+>     onUpdate = try (keywords_ ["on", "update"]) *> referentialAction
+>     onDelete = try (keywords_ ["on", "delete"]) *> referentialAction
+>     referentialAction = choice [
+>          RefCascade <$ keyword_ "cascade"
+>          -- todo: left factor?
+>         ,RefSetNull <$ try (keywords_ ["set", "null"])
+>         ,RefSetDefault <$ try (keywords_ ["set", "default"])
+>         ,RefRestrict <$ keyword_ "restrict"
+>         ,RefNoAction <$ keywords_ ["no", "action"]]
 
 slightly hacky parser for signed integers
 
