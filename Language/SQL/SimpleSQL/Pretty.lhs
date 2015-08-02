@@ -459,22 +459,8 @@ which have been changed to try to improve the layout of the output.
 >   where
 >     cd (TableConstraintDef n con) =
 >         maybe empty (\s -> text "constraint" <+> names s) n
->         <+> ptcon con
+>         <+> tableConstraint d con
 >     cd (TableColumnDef cd') = columnDef d cd'
->     ptcon (TableUniqueConstraint ns) =
->          text "unique" <+> parens (commaSep $ map name ns)
->     ptcon (TablePrimaryKeyConstraint ns) =
->         texts ["primary","key"] <+> parens (commaSep $ map name ns)
->     ptcon (TableReferencesConstraint cs t tcs m u del) =
->         texts ["foreign", "key"]
->         <+> parens (commaSep $ map name cs)
->         <+> text "references"
->         <+> names t
->         <+> maybe empty (\c' -> parens (commaSep $ map name c')) tcs
->         <+> refMatch m
->         <+> refAct "update" u
->         <+> refAct "delete" del
->     ptcon (TableCheckConstraint v) = text "check" <+> parens (valueExpr d v)
 
 > statement d (AlterTable t act) =
 >     texts ["alter","table"] <+> names t
@@ -543,7 +529,6 @@ which have been changed to try to improve the layout of the output.
 >              Just (IdentityColumnSpec w o) ->
 >                  text "generated"
 >                  <+> (case w of
->                          GeneratedDefault -> empty
 >                          GeneratedAlways -> text "always"
 >                          GeneratedByDefault -> text "by" <+> text "default")
 >                  <+> text "as" <+> text "identity"
@@ -594,6 +579,65 @@ which have been changed to try to improve the layout of the output.
 > alterTableAction :: Dialect -> AlterTableAction -> Doc
 > alterTableAction d (AddColumnDef cd) =
 >     texts ["add", "column"] <+> columnDef d cd
+
+> alterTableAction d (AlterColumnSetDefault n v) =
+>     texts ["alter", "column"]
+>     <+> name n
+>     <+> texts ["set","default"] <+> valueExpr d v
+> alterTableAction _ (AlterColumnDropDefault n) =
+>     texts ["alter", "column"]
+>     <+> name n
+>     <+> texts ["drop","default"]
+
+> alterTableAction _ (AlterColumnSetNotNull n) =
+>     texts ["alter", "column"]
+>     <+> name n
+>     <+> texts ["set","not","null"]
+
+> alterTableAction _ (AlterColumnDropNotNull n) =
+>     texts ["alter", "column"]
+>     <+> name n
+>     <+> texts ["drop","not","null"]
+
+> alterTableAction _ (AlterColumnSetDataType n t) =
+>     texts ["alter", "column"]
+>     <+> name n
+>     <+> texts ["set","data","Type"]
+>     <+> typeName t
+
+> alterTableAction _ (DropColumn n b) =
+>     texts ["drop", "column"]
+>     <+> name n
+>     <+> dropBehav b
+
+> alterTableAction d (AddTableConstraintDef n con) =
+>     text "add"
+>     <+> maybe empty (\s -> text "constraint" <+> names s) n
+>     <+> tableConstraint d con
+
+> alterTableAction _ (DropTableConstraintDef n b) =
+>     texts ["drop", "constraint"]
+>     <+> names n
+>     <+> dropBehav b
+
+
+> tableConstraint :: Dialect -> TableConstraint -> Doc
+> tableConstraint _ (TableUniqueConstraint ns) =
+>          text "unique" <+> parens (commaSep $ map name ns)
+> tableConstraint _ (TablePrimaryKeyConstraint ns) =
+>         texts ["primary","key"] <+> parens (commaSep $ map name ns)
+> tableConstraint _ (TableReferencesConstraint cs t tcs m u del) =
+>         texts ["foreign", "key"]
+>         <+> parens (commaSep $ map name cs)
+>         <+> text "references"
+>         <+> names t
+>         <+> maybe empty (\c' -> parens (commaSep $ map name c')) tcs
+>         <+> refMatch m
+>         <+> refAct "update" u
+>         <+> refAct "delete" del
+> tableConstraint d (TableCheckConstraint v) = text "check" <+> parens (valueExpr d v)
+
+
 
 = utils
 

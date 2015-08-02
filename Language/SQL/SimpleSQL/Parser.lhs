@@ -1461,7 +1461,7 @@ TODO: change style
 >     CreateTable
 >     <$> names
 >     -- todo: is this order mandatory or is it a perm?
->     <*> parens (commaSep1 (tableConstraintDef
+>     <*> parens (commaSep1 (uncurry TableConstraintDef <$> tableConstraintDef
 >                            <|> TableColumnDef <$> columnDef))
 
 > columnDef :: Parser ColumnDef
@@ -1477,8 +1477,7 @@ TODO: change style
 >              GenerationClause <$> parens valueExpr)
 >        ,keyword_ "generated" >>
 >         IdentityColumnSpec
->         <$> option GeneratedDefault
->             (GeneratedAlways <$ keyword_ "always"
+>         <$> (GeneratedAlways <$ keyword_ "always"
 >              <|> GeneratedByDefault <$ keywords_ ["by", "default"])
 >         <*> (keywords_ ["as", "identity"] *>
 >              option [] (parens sequenceGeneratorOptions))
@@ -1509,9 +1508,9 @@ TODO: change style
 >     scycle = SGOCycle <$ keyword_ "cycle"
 >     noCycle = SGONoCycle <$ try (keywords_ ["no","cycle"])
 
-> tableConstraintDef :: Parser TableElement
+> tableConstraintDef :: Parser (Maybe [Name], TableConstraint)
 > tableConstraintDef =
->     TableConstraintDef
+>     (,)
 >     <$> (optionMaybe (keyword_ "constraint" *> names))
 >     <*> (unique <|> primaryKey <|> check <|> references)
 >   where
@@ -1575,11 +1574,40 @@ slightly hacky parser for signed integers
 
 > alterTable :: Parser Statement
 > alterTable = keyword_ "table" >>
->     AlterTable <$> names <*> choice [addColumnDef]
+>     -- the choices have been ordered so that it works
+>     AlterTable <$> names <*> choice [addConstraint
+>                                     ,dropConstraint
+>                                     ,addColumnDef
+>                                     ,alterColumn
+>                                     ,dropColumn
+>                                     ]
 >   where
 >     addColumnDef = try (keyword_ "add"
 >                         *> optional (keyword_ "column")) >>
 >                    AddColumnDef <$> columnDef
+>     alterColumn = keyword_ "alter" >> optional (keyword_ "column") >>
+>                   name <**> choice [setDefault
+>                                    ,dropDefault
+>                                    ,setNotNull
+>                                    ,dropNotNull
+>                                    ,setDataType]
+>     setDefault :: Parser (Name -> AlterTableAction)
+>     -- todo: left factor
+>     setDefault = try (keywords_ ["set","default"]) >>
+>                  valueExpr <$$> AlterColumnSetDefault
+>     dropDefault = AlterColumnDropDefault <$ try (keywords_ ["drop","default"])
+>     setNotNull = AlterColumnSetNotNull <$ try (keywords_ ["set","not","null"])
+>     dropNotNull = AlterColumnDropNotNull <$ try (keywords_ ["drop","not","null"])
+>     setDataType = try (keywords_ ["set","data","type"]) >>
+>                   typeName <$$> AlterColumnSetDataType
+>     dropColumn = try (keyword_ "drop" *> optional (keyword_ "column")) >>
+>                  DropColumn <$> name <*> dropBehaviour
+>     -- todo: left factor, this try is especially bad
+>     addConstraint = try (keyword_ "add" >>
+>         uncurry AddTableConstraintDef <$> tableConstraintDef)
+>     dropConstraint = try (keywords_ ["drop","constraint"]) >>
+>         DropTableConstraintDef <$> names <*> dropBehaviour
+
 
 > dropSchema :: Parser Statement
 > dropSchema = keyword_ "schema" >>

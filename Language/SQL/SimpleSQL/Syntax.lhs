@@ -553,13 +553,18 @@ I'm not sure if this is valid syntax or not.
 
 > data AlterTableAction =
 >     AddColumnDef ColumnDef
->   {-
->   | AlterColumnDef
->   | DropColumnDef
->   | AddTableConstraintDef
->   | AlterTableConstraintDef
->   | DropTableConstraintDef
->   -}
+>   | AlterColumnSetDefault Name ValueExpr
+>   | AlterColumnDropDefault Name
+>   | AlterColumnSetNotNull Name
+>   | AlterColumnDropNotNull Name
+>   | AlterColumnSetDataType Name TypeName
+>   {-  | AlterColumnAlterIdentity
+>   | AlterColumnDropIdentity
+>   | AlterColumnDropColumnGeneration-}
+>   | DropColumn Name DropBehaviour
+>   | AddTableConstraintDef (Maybe [Name]) TableConstraint
+>   --  | AlterTableConstraintDef
+>   | DropTableConstraintDef [Name] DropBehaviour
 >     deriving (Eq,Show,Read,Data,Typeable)
 
 > {-data ConstraintCharacteristics =
@@ -597,8 +602,7 @@ I'm not sure if this is valid syntax or not.
 >     deriving (Eq,Show,Read,Data,Typeable)
 
 > data IdentityWhen =
->     GeneratedDefault
->   | GeneratedAlways
+>     GeneratedAlways
 >   | GeneratedByDefault
 >     deriving (Eq,Show,Read,Data,Typeable)
 
