@@ -1468,6 +1468,51 @@ TODO: change style
 >     <*> parens (commaSep1 columnDef)
 >   where
 >     columnDef = ColumnDef <$> name <*> typeName
+>                 <*> optionMaybe defaultClause
+>     defaultClause = choice [
+>         keyword_ "default" >>
+>         DefaultClause <$> valueExpr
+>        ,keyword_ "generated" >>
+>         IdentityColumnSpec
+>         <$> option GeneratedDefault
+>             (GeneratedAlways <$ keyword_ "always"
+>              <|> GeneratedByDefault <$ keywords_ ["by", "default"])
+>         <*> (keywords_ ["as", "identity"] *>
+>              option [] (parens sequenceGeneratorOptions))
+>        ]
+>     sequenceGeneratorOptions =
+>          -- todo: could try to combine exclusive options
+>          -- such as cycle and nocycle
+>          permute ((\a b c d e f g h -> catMaybes [a,b,c,d,e,f,g,h])
+>                   <$?> (Nothing, Just <$> startWith)
+>                   <|?> (Nothing, Just <$> incrementBy)
+>                   <|?> (Nothing, Just <$> maxValue)
+>                   <|?> (Nothing, Just <$> noMaxValue)
+>                   <|?> (Nothing, Just <$> minValue)
+>                   <|?> (Nothing, Just <$> noMinValue)
+>                   <|?> (Nothing, Just <$> scycle)
+>                   <|?> (Nothing, Just <$> noCycle)
+>                  )
+>     startWith = keywords_ ["start", "with"] >>
+>                 SGOStartWith <$> signedInteger
+>     incrementBy = keywords_ ["increment", "by"] >>
+>                 SGOIncrementBy <$> signedInteger
+>     maxValue = keyword_ "maxvalue" >>
+>                 SGOMaxValue <$> signedInteger
+>     noMaxValue = SGONoMaxValue <$ try (keywords_ ["no","maxvalue"])
+>     minValue = keyword_ "minvalue" >>
+>                 SGOMinValue <$> signedInteger
+>     noMinValue = SGONoMinValue <$ try (keywords_ ["no","minvalue"])
+>     scycle = SGOCycle <$ keyword_ "cycle"
+>     noCycle = SGONoCycle <$ try (keywords_ ["no","cycle"])
+
+slightly hacky parser for signed integers
+
+> signedInteger :: Parser Integer
+> signedInteger = do
+>     s <- option 1 (1 <$ symbol "+" <|> (-1) <$ symbol "-")
+>     d <- unsignedInteger
+>     return $ s * d
 
 > dropSchema :: Parser Statement
 > dropSchema = keyword_ "schema" >>

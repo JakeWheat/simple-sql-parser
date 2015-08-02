@@ -36,7 +36,10 @@
 >     ,IdentityRestart(..)
 >     ,InsertSource(..)
 >     ,SetClause(..)
->     ,TableElement(..) 
+>     ,TableElement(..)
+>     ,DefaultClause(..)
+>     ,IdentityWhen(..)
+>     ,SequenceGeneratorOption(..)
 >      -- * Dialect
 >     ,Dialect(..)
 >      -- * Comment
@@ -489,7 +492,7 @@ I'm not sure if this is valid syntax or not.
 
 > data TableElement =
 >     ColumnDef Name TypeName
->        -- (Maybe DefaultClause)
+>        (Maybe DefaultClause)
 >        -- (Maybe ColumnConstraintDef)
 >        -- (Maybe CollateClause)
 >   --   | TableConstraintDef
@@ -498,10 +501,28 @@ I'm not sure if this is valid syntax or not.
 > {-data TableConstraintDef
 >     deriving (Eq,Show,Read,Data,Typeable) -}
 
-> {-data DefaultClause =
+> data DefaultClause =
 >      DefaultClause ValueExpr
->    | IdentityColumnSpec
->    | GenerationClause-}
+>    | IdentityColumnSpec IdentityWhen [SequenceGeneratorOption]
+>    --  | GenerationClause
+>     deriving (Eq,Show,Read,Data,Typeable)
+
+> data IdentityWhen =
+>     GeneratedDefault
+>   | GeneratedAlways
+>   | GeneratedByDefault
+>     deriving (Eq,Show,Read,Data,Typeable)
+
+> data SequenceGeneratorOption =
+>     SGOStartWith Integer
+>   | SGOIncrementBy Integer
+>   | SGOMaxValue Integer
+>   | SGONoMaxValue
+>   | SGOMinValue Integer
+>   | SGONoMinValue
+>   | SGOCycle
+>   | SGONoCycle
+>     deriving (Eq,Show,Read,Data,Typeable)
 
 > {-data ColumnConstraintDef =
 >     | NotNullConstraint

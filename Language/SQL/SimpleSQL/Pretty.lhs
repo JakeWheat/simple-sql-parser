@@ -453,12 +453,34 @@ which have been changed to try to improve the layout of the output.
 > statement _ (CreateSchema nm) =
 >     text "create" <+> text "schema" <+> names nm
 
-> statement _ (CreateTable nm cds) =
+> statement d (CreateTable nm cds) =
 >     text "create" <+> text "table" <+> names nm
 >     <+> parens (commaSep $ map cd cds)
 >   where
->     cd (ColumnDef n t) = name n <+> typeName t
-
+>     cd (ColumnDef n t mdef) =
+>       name n <+> typeName t
+>       <+> case mdef of
+>              Nothing -> empty
+>              Just (DefaultClause def) ->
+>                  text "default" <+> valueExpr d def
+>              Just (IdentityColumnSpec w o) ->
+>                  text "generated"
+>                  <+> (case w of
+>                          GeneratedDefault -> empty
+>                          GeneratedAlways -> text "always"
+>                          GeneratedByDefault -> text "by" <+> text "default")
+>                  <+> text "as" <+> text "identity"
+>                  <+> (case o of
+>                          [] -> empty
+>                          os -> parens (sep $ map sgo os))
+>     sgo (SGOStartWith i) = texts ["start",  "with", show i]
+>     sgo (SGOIncrementBy i) = texts ["increment", "by", show i]
+>     sgo (SGOMaxValue i) = texts ["maxvalue", show i]
+>     sgo SGONoMaxValue = texts ["no", "maxvalue"]
+>     sgo (SGOMinValue i) = texts ["minvalue", show i]
+>     sgo SGONoMinValue = texts ["no", "minvalue"]
+>     sgo SGOCycle = text "cycle"
+>     sgo SGONoCycle = text "no cycle"
 
 > statement _ (DropSchema nm db) =
 >     text "drop" <+> text "schema" <+> names nm <+> dropBehav db
@@ -521,3 +543,6 @@ which have been changed to try to improve the layout of the output.
 
 > comment :: Comment -> Doc
 > comment (BlockComment str) = text "/*" <+> text str <+> text "*/"
+
+> texts :: [String] -> Doc
+> texts ts = sep $ map text ts
