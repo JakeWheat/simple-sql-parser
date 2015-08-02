@@ -47,6 +47,7 @@
 >     ,ReferenceMatch(..)
 >     ,ReferentialAction(..)
 >     ,AlterTableAction(..)
+>     ,CheckOption(..)
 >      -- * Dialect
 >     ,Dialect(..)
 >      -- * Comment
@@ -406,9 +407,10 @@ I'm not sure if this is valid syntax or not.
 >   | CreateTable [Name] [TableElement]
 >   | AlterTable [Name] AlterTableAction
 >   | DropTable [Name] DropBehaviour
->   {-  | CreateView
->   | DropView
->   | CreateDomain
+>   | CreateView Bool [Name] (Maybe [Name])
+>         QueryExpr (Maybe CheckOption)
+>   | DropView [Name]  DropBehaviour
+>   {-  | CreateDomain
 >   | AlterDomain
 >   | DropDomain
 >   | CreateCharacterSet
@@ -617,11 +619,12 @@ I'm not sure if this is valid syntax or not.
 >   | SGONoCycle
 >     deriving (Eq,Show,Read,Data,Typeable)
 
-> {-data ColumnConstraintDef =
->     | NotNullConstraint
->     | UniqueConstraint
->     | ReferencesConstraint
->     | CheckConstraint-}
+> data CheckOption =
+>     DefaultCheckOption
+>   | CascadedCheckOption
+>   | LocalCheckOption
+>     deriving (Eq,Show,Read,Data,Typeable)
+
 
 --------------------------
 

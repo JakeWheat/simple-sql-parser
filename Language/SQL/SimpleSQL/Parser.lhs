@@ -1442,10 +1442,12 @@ TODO: change style
 > statement :: Parser Statement
 > statement = choice
 >     [keyword_ "create" *> choice [createSchema
->                                  ,createTable]
+>                                  ,createTable
+>                                  ,createView]
 >     ,keyword_ "alter" *> choice [alterTable]
 >     ,keyword_ "drop" *> choice [dropSchema
->                                ,dropTable]
+>                                ,dropTable
+>                                ,dropView]
 >     ,delete
 >     ,truncateSt
 >     ,insert
@@ -1618,6 +1620,28 @@ slightly hacky parser for signed integers
 > dropTable = keyword_ "table" >>
 >     DropTable <$> names <*> dropBehaviour
 
+> createView :: Parser Statement
+> createView =
+>     CreateView
+>     <$> (option False (True <$ keyword_ "recursive") <* keyword_ "view")
+>     <*> names
+>     <*> optionMaybe (parens (commaSep1 name))
+>     <*> (keyword_ "as" *> queryExpr)
+>     <*> optionMaybe (choice [
+>             -- todo: left factor
+>             DefaultCheckOption <$ try (keywords_ ["with", "check", "option"])
+>            ,CascadedCheckOption <$ try (keywords_ ["with", "cascaded", "check", "option"])
+>            ,LocalCheckOption <$ try (keywords_ ["with", "local", "check", "option"])
+>             ])
+
+> dropView :: Parser Statement
+> dropView = keyword_ "view" >>
+>     DropView <$> names <*> dropBehaviour
+
+
+-----------------
+
+= dml
 
 > delete :: Parser Statement
 > delete = keywords_ ["delete","from"] >>

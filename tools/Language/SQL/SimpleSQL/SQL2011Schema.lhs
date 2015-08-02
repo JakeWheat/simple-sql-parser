@@ -1078,10 +1078,67 @@ defintely skip
 <view column list> ::=
   <column name list>
 
+>     ,(TestStatement SQL2011
+>       "create view v as select * from t"
+>      $ CreateView False [Name "v"] Nothing (makeSelect
+>          {qeSelectList = [(Star, Nothing)]
+>          ,qeFrom = [TRSimple [Name "t"]]
+>          }) Nothing)
+
+
+>     ,(TestStatement SQL2011
+>       "create recursive view v as select * from t"
+>      $ CreateView True [Name "v"] Nothing (makeSelect
+>          {qeSelectList = [(Star, Nothing)]
+>          ,qeFrom = [TRSimple [Name "t"]]
+>          }) Nothing)
+
+>     ,(TestStatement SQL2011
+>       "create view v(a,b) as select * from t"
+>      $ CreateView False [Name "v"] (Just [Name "a", Name "b"])
+>          (makeSelect
+>          {qeSelectList = [(Star, Nothing)]
+>          ,qeFrom = [TRSimple [Name "t"]]
+>          }) Nothing)
+
+
+>     ,(TestStatement SQL2011
+>       "create view v as select * from t with check option"
+>      $ CreateView False [Name "v"] Nothing (makeSelect
+>          {qeSelectList = [(Star, Nothing)]
+>          ,qeFrom = [TRSimple [Name "t"]]
+>          }) (Just DefaultCheckOption))
+
+>     ,(TestStatement SQL2011
+>       "create view v as select * from t with cascaded check option"
+>      $ CreateView False [Name "v"] Nothing (makeSelect
+>          {qeSelectList = [(Star, Nothing)]
+>          ,qeFrom = [TRSimple [Name "t"]]
+>          }) (Just CascadedCheckOption))
+
+>     ,(TestStatement SQL2011
+>       "create view v as select * from t with local check option"
+>      $ CreateView False [Name "v"] Nothing
+>          (makeSelect
+>          {qeSelectList = [(Star, Nothing)]
+>          ,qeFrom = [TRSimple [Name "t"]]
+>          }) (Just LocalCheckOption))
+
+
 11.33 <drop view statement>
 
 <drop view statement> ::=
   DROP VIEW <table name> <drop behavior>
+
+
+>     ,(TestStatement SQL2011
+>       "drop view v"
+>      $ DropView [Name "v"] DefaultDropBehaviour)
+
+>     ,(TestStatement SQL2011
+>       "drop view v cascade"
+>      $ DropView [Name "v"] Cascade)
+
 
 11.34 <domain definition>
 

@@ -505,6 +505,22 @@ which have been changed to try to improve the layout of the output.
 > statement _ (DropTable n b) =
 >     text "drop" <+> text "table" <+> names n <+> dropBehav b
 
+> statement d (CreateView r nm al q co) =
+>     text "create" <+> (if r then text "recursive" else empty)
+>     <+> text "view" <+> names nm
+>     <+> (maybe empty (\al' -> parens $ commaSep $ map name al')) al
+>     <+> text "as"
+>     <+> queryExpr d q
+>     <+> case co of
+>             Nothing -> empty
+>             Just DefaultCheckOption -> texts ["with", "check", "option"]
+>             Just CascadedCheckOption -> texts ["with", "cascaded", "check", "option"]
+>             Just LocalCheckOption -> texts ["with", "local", "check", "option"]
+
+> statement _ (DropView n b) =
+>     text "drop" <+> text "view" <+> names n <+> dropBehav b
+
+
 == access control
 
 == transactions
