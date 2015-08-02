@@ -401,16 +401,16 @@ I'm not sure if this is valid syntax or not.
 
 > data Statement =
 >     -- ddl
->     CreateSchema [Name] -- XXX
->   | DropSchema [Name] DropBehaviour -- XXX
+>     CreateSchema [Name]
+>   | DropSchema [Name] DropBehaviour
 >   | CreateTable [Name] [TableElement]
 >   | AlterTable [Name] AlterTableAction
->   {-  | DropTable  -- XXX
->   | CreateView  -- XXX
->   | DropView -- XXX
->   | CreateDomain  -- XXX
+>   | DropTable [Name] DropBehaviour
+>   {-  | CreateView
+>   | DropView
+>   | CreateDomain
 >   | AlterDomain
->   | DropDomain -- XXX
+>   | DropDomain
 >   | CreateCharacterSet
 >   | DropCharacterSet
 >   | CreateCollation
@@ -430,9 +430,9 @@ I'm not sure if this is valid syntax or not.
 >   | CreateOrdering
 >   | DropOrdering
 >     -- transforms
->   | CreateSequence -- XXX
->   | AlterSequence -- XXX
->   | DropSequence -- XXX -}
+>   | CreateSequence
+>   | AlterSequence
+>   | DropSequence -}
 >     -- dml
 >   | SelectStatement QueryExpr
 >   {-    | DeclareCursor

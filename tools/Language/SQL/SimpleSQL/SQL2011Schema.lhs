@@ -1032,9 +1032,14 @@ defintely skip
 <drop table statement> ::=
   DROP TABLE <table name> <drop behavior>
 
-drop table t
-drop table t cascade
-drop table t restrict
+>     ,(TestStatement SQL2011
+>       "drop table t"
+>      $ DropTable [Name "t"] DefaultDropBehaviour)
+
+>     ,(TestStatement SQL2011
+>       "drop table t restrict"
+>      $ DropTable [Name "t"] Restrict)
+
 
 11.32 <view definition>
 

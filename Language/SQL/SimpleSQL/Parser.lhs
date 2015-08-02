@@ -1444,7 +1444,8 @@ TODO: change style
 >     [keyword_ "create" *> choice [createSchema
 >                                  ,createTable]
 >     ,keyword_ "alter" *> choice [alterTable]
->     ,keyword_ "drop" *> choice [dropSchema]
+>     ,keyword_ "drop" *> choice [dropSchema
+>                                ,dropTable]
 >     ,delete
 >     ,truncateSt
 >     ,insert
@@ -1611,8 +1612,12 @@ slightly hacky parser for signed integers
 
 > dropSchema :: Parser Statement
 > dropSchema = keyword_ "schema" >>
->     DropSchema <$> names
->     <*> dropBehaviour
+>     DropSchema <$> names <*> dropBehaviour
+
+> dropTable :: Parser Statement
+> dropTable = keyword_ "table" >>
+>     DropTable <$> names <*> dropBehaviour
+
 
 > delete :: Parser Statement
 > delete = keywords_ ["delete","from"] >>

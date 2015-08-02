@@ -502,6 +502,9 @@ which have been changed to try to improve the layout of the output.
 >     sc (SetMultiple ts vs) = parens (commaSep $ map names ts) <+> text "="
 >                              <+> parens (commaSep $ map (valueExpr d) vs)
 
+> statement _ (DropTable n b) =
+>     text "drop" <+> text "table" <+> names n <+> dropBehav b
+
 == access control
 
 == transactions
