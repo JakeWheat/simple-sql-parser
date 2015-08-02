@@ -457,28 +457,10 @@ which have been changed to try to improve the layout of the output.
 >     text "create" <+> text "table" <+> names nm
 >     <+> parens (commaSep $ map cd cds)
 >   where
->     cd (ColumnDef n t mdef cons) =
->       name n <+> typeName t
->       <+> case mdef of
->              Nothing -> empty
->              Just (DefaultClause def) ->
->                  text "default" <+> valueExpr d def
->              Just (GenerationClause e) ->
->                  texts ["generated","always","as"] <+> parens (valueExpr d e)
->              Just (IdentityColumnSpec w o) ->
->                  text "generated"
->                  <+> (case w of
->                          GeneratedDefault -> empty
->                          GeneratedAlways -> text "always"
->                          GeneratedByDefault -> text "by" <+> text "default")
->                  <+> text "as" <+> text "identity"
->                  <+> (case o of
->                          [] -> empty
->                          os -> parens (sep $ map sgo os))
->       <+> sep (map cdef cons)
 >     cd (TableConstraintDef n con) =
 >         maybe empty (\s -> text "constraint" <+> names s) n
 >         <+> ptcon con
+>     cd (TableColumnDef cd') = columnDef d cd'
 >     ptcon (TableUniqueConstraint ns) =
 >          text "unique" <+> parens (commaSep $ map name ns)
 >     ptcon (TablePrimaryKeyConstraint ns) =
@@ -494,40 +476,9 @@ which have been changed to try to improve the layout of the output.
 >         <+> refAct "delete" del
 >     ptcon (TableCheckConstraint v) = text "check" <+> parens (valueExpr d v)
 
->     sgo (SGOStartWith i) = texts ["start",  "with", show i]
->     sgo (SGOIncrementBy i) = texts ["increment", "by", show i]
->     sgo (SGOMaxValue i) = texts ["maxvalue", show i]
->     sgo SGONoMaxValue = texts ["no", "maxvalue"]
->     sgo (SGOMinValue i) = texts ["minvalue", show i]
->     sgo SGONoMinValue = texts ["no", "minvalue"]
->     sgo SGOCycle = text "cycle"
->     sgo SGONoCycle = text "no cycle"
->     cdef (ColConstraintDef cnm con) =
->         maybe empty (\s -> text "constraint" <+> names s) cnm
->         <+> pcon con
->     pcon ColNotNullConstraint = texts ["not","null"]
->     pcon ColUniqueConstraint = text "unique"
->     pcon ColPrimaryKeyConstraint = texts ["primary","key"]
->     pcon (ColCheckConstraint v) = text "check" <+> parens (valueExpr d v)
->     pcon (ColReferencesConstraint t c m u del) =
->         text "references"
->         <+> names t
->         <+> maybe empty (\c' -> parens (name c')) c
->         <+> refMatch m
->         <+> refAct "update" u
->         <+> refAct "delete" del
->     refMatch m = case m of
->                      DefaultReferenceMatch -> empty
->                      MatchFull -> texts ["match", "full"]
->                      MatchPartial -> texts ["match","partial"]
->                      MatchSimple -> texts ["match", "simple"]
->     refAct t a = case a of
->                      DefaultReferentialAction -> empty
->                      RefCascade -> texts ["on", t, "cascade"]
->                      RefSetNull -> texts ["on", t, "set", "null"]
->                      RefSetDefault -> texts ["on", t, "set", "default"]
->                      RefRestrict -> texts ["on", t, "restrict"]
->                      RefNoAction -> texts ["on", t, "no", "action"]
+> statement d (AlterTable t act) =
+>     texts ["alter","table"] <+> names t
+>     <+> alterTableAction d act
 
 > statement _ (DropSchema nm db) =
 >     text "drop" <+> text "schema" <+> names nm <+> dropBehav db
@@ -579,6 +530,70 @@ which have been changed to try to improve the layout of the output.
 > dropBehav Cascade = text "cascade"
 > dropBehav Restrict = text "restrict"
 
+
+> columnDef :: Dialect -> ColumnDef -> Doc
+> columnDef d (ColumnDef n t mdef cons) =
+>       name n <+> typeName t
+>       <+> case mdef of
+>              Nothing -> empty
+>              Just (DefaultClause def) ->
+>                  text "default" <+> valueExpr d def
+>              Just (GenerationClause e) ->
+>                  texts ["generated","always","as"] <+> parens (valueExpr d e)
+>              Just (IdentityColumnSpec w o) ->
+>                  text "generated"
+>                  <+> (case w of
+>                          GeneratedDefault -> empty
+>                          GeneratedAlways -> text "always"
+>                          GeneratedByDefault -> text "by" <+> text "default")
+>                  <+> text "as" <+> text "identity"
+>                  <+> (case o of
+>                          [] -> empty
+>                          os -> parens (sep $ map sgo os))
+>       <+> sep (map cdef cons)
+>   where
+>     sgo (SGOStartWith i) = texts ["start",  "with", show i]
+>     sgo (SGOIncrementBy i) = texts ["increment", "by", show i]
+>     sgo (SGOMaxValue i) = texts ["maxvalue", show i]
+>     sgo SGONoMaxValue = texts ["no", "maxvalue"]
+>     sgo (SGOMinValue i) = texts ["minvalue", show i]
+>     sgo SGONoMinValue = texts ["no", "minvalue"]
+>     sgo SGOCycle = text "cycle"
+>     sgo SGONoCycle = text "no cycle"
+>     cdef (ColConstraintDef cnm con) =
+>         maybe empty (\s -> text "constraint" <+> names s) cnm
+>         <+> pcon con
+>     pcon ColNotNullConstraint = texts ["not","null"]
+>     pcon ColUniqueConstraint = text "unique"
+>     pcon ColPrimaryKeyConstraint = texts ["primary","key"]
+>     pcon (ColCheckConstraint v) = text "check" <+> parens (valueExpr d v)
+>     pcon (ColReferencesConstraint tb c m u del) =
+>         text "references"
+>         <+> names tb
+>         <+> maybe empty (\c' -> parens (name c')) c
+>         <+> refMatch m
+>         <+> refAct "update" u
+>         <+> refAct "delete" del
+
+> refMatch :: ReferenceMatch -> Doc
+> refMatch m = case m of
+>                      DefaultReferenceMatch -> empty
+>                      MatchFull -> texts ["match", "full"]
+>                      MatchPartial -> texts ["match","partial"]
+>                      MatchSimple -> texts ["match", "simple"]
+
+> refAct :: String -> ReferentialAction -> Doc
+> refAct t a = case a of
+>                      DefaultReferentialAction -> empty
+>                      RefCascade -> texts ["on", t, "cascade"]
+>                      RefSetNull -> texts ["on", t, "set", "null"]
+>                      RefSetDefault -> texts ["on", t, "set", "default"]
+>                      RefRestrict -> texts ["on", t, "restrict"]
+>                      RefNoAction -> texts ["on", t, "no", "action"]
+
+> alterTableAction :: Dialect -> AlterTableAction -> Doc
+> alterTableAction d (AddColumnDef cd) =
+>     texts ["add", "column"] <+> columnDef d cd
 
 = utils
 

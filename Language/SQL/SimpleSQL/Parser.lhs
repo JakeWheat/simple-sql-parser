@@ -1441,15 +1441,10 @@ TODO: change style
 
 > statement :: Parser Statement
 > statement = choice
->     [keyword_ "create"
->      *> choice
->         [createSchema
->         ,createTable
->         ]
->     ,keyword_ "drop"
->      *> choice
->         [dropSchema
->         ]
+>     [keyword_ "create" *> choice [createSchema
+>                                  ,createTable]
+>     ,keyword_ "alter" *> choice [alterTable]
+>     ,keyword_ "drop" *> choice [dropSchema]
 >     ,delete
 >     ,truncateSt
 >     ,insert
@@ -1466,11 +1461,14 @@ TODO: change style
 >     CreateTable
 >     <$> names
 >     -- todo: is this order mandatory or is it a perm?
->     <*> parens (commaSep1 (tableConstraintDef <|> columnDef))
+>     <*> parens (commaSep1 (tableConstraintDef
+>                            <|> TableColumnDef <$> columnDef))
+
+> columnDef :: Parser ColumnDef
+> columnDef = ColumnDef <$> name <*> typeName
+>             <*> optionMaybe defaultClause
+>             <*> option [] (many1 colConstraintDef)
 >   where
->     columnDef = ColumnDef <$> name <*> typeName
->                 <*> optionMaybe defaultClause
->                 <*> option [] (many1 colConstraintDef)
 >     defaultClause = choice [
 >         keyword_ "default" >>
 >         DefaultClause <$> valueExpr
@@ -1571,10 +1569,17 @@ TODO: change style
 slightly hacky parser for signed integers
 
 > signedInteger :: Parser Integer
-> signedInteger = do
->     s <- option 1 (1 <$ symbol "+" <|> (-1) <$ symbol "-")
->     d <- unsignedInteger
->     return $ s * d
+> signedInteger =
+>     (*) <$> option 1 (1 <$ symbol "+" <|> (-1) <$ symbol "-")
+>     <*> unsignedInteger
+
+> alterTable :: Parser Statement
+> alterTable = keyword_ "table" >>
+>     AlterTable <$> names <*> choice [addColumnDef]
+>   where
+>     addColumnDef = try (keyword_ "add"
+>                         *> optional (keyword_ "column")) >>
+>                    AddColumnDef <$> columnDef
 
 > dropSchema :: Parser Statement
 > dropSchema = keyword_ "schema" >>

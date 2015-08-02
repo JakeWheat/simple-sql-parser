@@ -37,6 +37,7 @@
 >     ,InsertSource(..)
 >     ,SetClause(..)
 >     ,TableElement(..)
+>     ,ColumnDef(..)
 >     ,DefaultClause(..)
 >     ,IdentityWhen(..)
 >     ,SequenceGeneratorOption(..)
@@ -45,6 +46,7 @@
 >     ,TableConstraint(..)
 >     ,ReferenceMatch(..)
 >     ,ReferentialAction(..)
+>     ,AlterTableAction(..)
 >      -- * Dialect
 >     ,Dialect(..)
 >      -- * Comment
@@ -402,8 +404,8 @@ I'm not sure if this is valid syntax or not.
 >     CreateSchema [Name] -- XXX
 >   | DropSchema [Name] DropBehaviour -- XXX
 >   | CreateTable [Name] [TableElement]
->   {-  | AlterTable -- XXX
->   | DropTable  -- XXX
+>   | AlterTable [Name] AlterTableAction
+>   {-  | DropTable  -- XXX
 >   | CreateView  -- XXX
 >   | DropView -- XXX
 >   | CreateDomain  -- XXX
@@ -496,11 +498,14 @@ I'm not sure if this is valid syntax or not.
 >     deriving (Eq,Show,Read,Data,Typeable)
 
 > data TableElement =
->     ColumnDef Name TypeName
+>     TableColumnDef ColumnDef
+>   | TableConstraintDef (Maybe [Name]) TableConstraint
+>     deriving (Eq,Show,Read,Data,Typeable)
+
+> data ColumnDef = ColumnDef Name TypeName
 >        (Maybe DefaultClause)
 >        [ColConstraintDef]
 >        -- (Maybe CollateClause)
->   | TableConstraintDef (Maybe [Name]) TableConstraint
 >     deriving (Eq,Show,Read,Data,Typeable)
 
 > data ColConstraintDef =
@@ -544,6 +549,17 @@ I'm not sure if this is valid syntax or not.
 >   | RefSetDefault
 >   | RefRestrict
 >   | RefNoAction
+>     deriving (Eq,Show,Read,Data,Typeable)
+
+> data AlterTableAction =
+>     AddColumnDef ColumnDef
+>   {-
+>   | AlterColumnDef
+>   | DropColumnDef
+>   | AddTableConstraintDef
+>   | AlterTableConstraintDef
+>   | DropTableConstraintDef
+>   -}
 >     deriving (Eq,Show,Read,Data,Typeable)
 
 > {-data ConstraintCharacteristics =

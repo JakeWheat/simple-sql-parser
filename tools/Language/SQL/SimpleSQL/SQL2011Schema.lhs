@@ -96,8 +96,8 @@ add schema element support:
 
 >     ,(TestStatement SQL2011 "create table t (a int, b int);"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing []
->        ,ColumnDef (Name "b") (TypeName [Name "int"]) Nothing []])
+>        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing []
+>        ,TableColumnDef $ ColumnDef (Name "b") (TypeName [Name "int"]) Nothing []])
 
 
 <table contents source> ::=
@@ -146,7 +146,7 @@ defintely skip
 
 <typed table element> ::=
     <column options>
-  | <table constraint definition>
+ | <table constraint definition>
   | <self-referencing column specification>
 
 defintely skip
@@ -313,25 +313,25 @@ todo: constraint characteristics
 >     ,(TestStatement SQL2011
 >       "create table t (a int not null);"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
 >         [ColConstraintDef Nothing ColNotNullConstraint]])
 
 >     ,(TestStatement SQL2011
 >       "create table t (a int constraint a_not_null not null);"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
 >         [ColConstraintDef (Just [Name "a_not_null"]) ColNotNullConstraint]])
 
 >     ,(TestStatement SQL2011
 >       "create table t (a int unique);"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
 >         [ColConstraintDef Nothing ColUniqueConstraint]])
 
 >     ,(TestStatement SQL2011
 >       "create table t (a int primary key);"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
 >         [ColConstraintDef Nothing ColPrimaryKeyConstraint]])
 
 references t(a,b)
@@ -342,7 +342,7 @@ references t(a,b)
 >     ,(TestStatement SQL2011
 >       "create table t (a int references u);"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
 >         [ColConstraintDef Nothing $ ColReferencesConstraint
 >          [Name "u"] Nothing DefaultReferenceMatch
 >          DefaultReferentialAction DefaultReferentialAction]])
@@ -350,7 +350,7 @@ references t(a,b)
 >     ,(TestStatement SQL2011
 >       "create table t (a int references u(a));"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
 >         [ColConstraintDef Nothing $ ColReferencesConstraint
 >          [Name "u"] (Just $ Name "a") DefaultReferenceMatch
 >          DefaultReferentialAction DefaultReferentialAction]])
@@ -358,7 +358,7 @@ references t(a,b)
 >     ,(TestStatement SQL2011
 >       "create table t (a int references u match full);"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
 >         [ColConstraintDef Nothing $ ColReferencesConstraint
 >          [Name "u"] Nothing MatchFull
 >          DefaultReferentialAction DefaultReferentialAction]])
@@ -366,7 +366,7 @@ references t(a,b)
 >     ,(TestStatement SQL2011
 >       "create table t (a int references u match partial);"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
 >         [ColConstraintDef Nothing $ ColReferencesConstraint
 >          [Name "u"] Nothing MatchPartial
 >          DefaultReferentialAction DefaultReferentialAction]])
@@ -374,7 +374,7 @@ references t(a,b)
 >     ,(TestStatement SQL2011
 >       "create table t (a int references u match simple);"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
 >         [ColConstraintDef Nothing $ ColReferencesConstraint
 >          [Name "u"] Nothing MatchSimple
 >          DefaultReferentialAction DefaultReferentialAction]])
@@ -382,7 +382,7 @@ references t(a,b)
 >     ,(TestStatement SQL2011
 >       "create table t (a int references u on update cascade );"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
 >         [ColConstraintDef Nothing $ ColReferencesConstraint
 >          [Name "u"] Nothing DefaultReferenceMatch
 >          RefCascade DefaultReferentialAction]])
@@ -390,7 +390,7 @@ references t(a,b)
 >     ,(TestStatement SQL2011
 >       "create table t (a int references u on update set null );"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
 >         [ColConstraintDef Nothing $ ColReferencesConstraint
 >          [Name "u"] Nothing DefaultReferenceMatch
 >          RefSetNull DefaultReferentialAction]])
@@ -398,7 +398,7 @@ references t(a,b)
 >     ,(TestStatement SQL2011
 >       "create table t (a int references u on update set default );"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
 >         [ColConstraintDef Nothing $ ColReferencesConstraint
 >          [Name "u"] Nothing DefaultReferenceMatch
 >          RefSetDefault DefaultReferentialAction]])
@@ -406,7 +406,7 @@ references t(a,b)
 >     ,(TestStatement SQL2011
 >       "create table t (a int references u on update no action );"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
 >         [ColConstraintDef Nothing $ ColReferencesConstraint
 >          [Name "u"] Nothing DefaultReferenceMatch
 >          RefNoAction DefaultReferentialAction]])
@@ -414,7 +414,7 @@ references t(a,b)
 >     ,(TestStatement SQL2011
 >       "create table t (a int references u on delete cascade );"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
 >         [ColConstraintDef Nothing $ ColReferencesConstraint
 >          [Name "u"] Nothing DefaultReferenceMatch
 >          DefaultReferentialAction RefCascade]])
@@ -423,7 +423,7 @@ references t(a,b)
 >     ,(TestStatement SQL2011
 >       "create table t (a int references u on update cascade on delete restrict );"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
 >         [ColConstraintDef Nothing $ ColReferencesConstraint
 >          [Name "u"] Nothing DefaultReferenceMatch
 >          RefCascade RefRestrict]])
@@ -431,7 +431,7 @@ references t(a,b)
 >     ,(TestStatement SQL2011
 >       "create table t (a int references u on delete restrict on update cascade );"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
 >         [ColConstraintDef Nothing $ ColReferencesConstraint
 >          [Name "u"] Nothing DefaultReferenceMatch
 >          RefCascade RefRestrict]])
@@ -443,7 +443,7 @@ options
 >     ,(TestStatement SQL2011
 >       "create table t (a int check (a>5));"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
 >         [ColConstraintDef Nothing
 >          (ColCheckConstraint $ BinOp (Iden [Name "a"]) [Name ">"] (NumLit "5"))]])
 
@@ -457,17 +457,17 @@ options
 
 >     ,(TestStatement SQL2011 "create table t (a int generated as identity);"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"])
+>        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"])
 >         (Just $ IdentityColumnSpec GeneratedDefault []) []])
 
 >     ,(TestStatement SQL2011 "create table t (a int generated always as identity);"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"])
+>        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"])
 >         (Just $ IdentityColumnSpec GeneratedAlways []) []])
 
 >     ,(TestStatement SQL2011 "create table t (a int generated by default as identity);"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"])
+>        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"])
 >         (Just $ IdentityColumnSpec GeneratedByDefault []) []])
 
 
@@ -475,7 +475,7 @@ options
 >       "create table t (a int generated as identity\n\
 >       \  ( start with 5 increment by 5 maxvalue 500 minvalue 5 cycle ));"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"])
+>        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"])
 >         (Just $ IdentityColumnSpec GeneratedDefault
 >          [SGOStartWith 5
 >          ,SGOIncrementBy 5
@@ -487,7 +487,7 @@ options
 >       "create table t (a int generated as identity\n\
 >       \  ( start with -4 no maxvalue no minvalue no cycle ));"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"])
+>        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"])
 >         (Just $ IdentityColumnSpec GeneratedDefault
 >          [SGOStartWith (-4)
 >          ,SGONoMaxValue
@@ -515,8 +515,8 @@ generated always (valueexpr)
 >       "create table t (a int, \n\
 >       \                a2 int generated always as (a * 2));"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing []
->        ,ColumnDef (Name "a2") (TypeName [Name "int"])
+>        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing []
+>        ,TableColumnDef $ ColumnDef (Name "a2") (TypeName [Name "int"])
 >         (Just $ GenerationClause
 >          (BinOp (Iden [Name "a"]) [Name "*"] (NumLit "2"))) []])
 
@@ -543,7 +543,7 @@ generated always (valueexpr)
 
 >     ,(TestStatement SQL2011 "create table t (a int default 0);"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"])
+>        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"])
 >         (Just $ DefaultClause $ NumLit "0") []])
 
 
@@ -576,14 +576,14 @@ generated always (valueexpr)
 >     ,(TestStatement SQL2011
 >       "create table t (a int, unique (a));"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing []
+>        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing []
 >        ,TableConstraintDef Nothing $ TableUniqueConstraint [Name "a"]
 >         ])
 
 >     ,(TestStatement SQL2011
 >       "create table t (a int, constraint a_unique unique (a));"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing []
+>        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing []
 >        ,TableConstraintDef (Just [Name "a_unique"]) $
 >             TableUniqueConstraint [Name "a"]
 >         ])
@@ -593,8 +593,8 @@ todo: test permutations of column defs and table constraints
 >     ,(TestStatement SQL2011
 >       "create table t (a int, b int, unique (a,b));"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing []
->        ,ColumnDef (Name "b") (TypeName [Name "int"]) Nothing []
+>        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing []
+>        ,TableColumnDef $ ColumnDef (Name "b") (TypeName [Name "int"]) Nothing []
 >        ,TableConstraintDef Nothing $
 >             TableUniqueConstraint [Name "a", Name "b"]
 >         ])
@@ -602,8 +602,8 @@ todo: test permutations of column defs and table constraints
 >     ,(TestStatement SQL2011
 >       "create table t (a int, b int, primary key (a,b));"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing []
->        ,ColumnDef (Name "b") (TypeName [Name "int"]) Nothing []
+>        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing []
+>        ,TableColumnDef $ ColumnDef (Name "b") (TypeName [Name "int"]) Nothing []
 >        ,TableConstraintDef Nothing $
 >             TablePrimaryKeyConstraint [Name "a", Name "b"]
 >         ])
@@ -627,8 +627,8 @@ defintely skip
 >       "create table t (a int, b int,\n\
 >       \                foreign key (a,b) references u(c,d) match full on update cascade on delete restrict );"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing []
->        ,ColumnDef (Name "b") (TypeName [Name "int"]) Nothing []
+>        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing []
+>        ,TableColumnDef $ ColumnDef (Name "b") (TypeName [Name "int"]) Nothing []
 >        ,TableConstraintDef Nothing $
 >             TableReferencesConstraint
 >                 [Name "a", Name "b"]
@@ -641,7 +641,7 @@ defintely skip
 >       "create table t (a int,\n\
 >       \                constraint tfku1 foreign key (a) references u);"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing []
+>        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing []
 >        ,TableConstraintDef (Just [Name "tfku1"]) $
 >             TableReferencesConstraint
 >                 [Name "a"]
@@ -709,8 +709,8 @@ defintely skip
 >       "create table t (a int, b int, \n\
 >       \                check (a > b));"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing []
->        ,ColumnDef (Name "b") (TypeName [Name "int"]) Nothing []
+>        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing []
+>        ,TableColumnDef $ ColumnDef (Name "b") (TypeName [Name "int"]) Nothing []
 >        ,TableConstraintDef Nothing $
 >             TableCheckConstraint
 >             (BinOp (Iden [Name "a"]) [Name ">"] (Iden [Name "b"]))
@@ -721,8 +721,8 @@ defintely skip
 >       "create table t (a int, b int, \n\
 >       \                constraint agtb check (a > b));"
 >      $ CreateTable [Name "t"]
->        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing []
->        ,ColumnDef (Name "b") (TypeName [Name "int"]) Nothing []
+>        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing []
+>        ,TableColumnDef $ ColumnDef (Name "b") (TypeName [Name "int"]) Nothing []
 >        ,TableConstraintDef (Just [Name "agtb"]) $
 >             TableCheckConstraint
 >             (BinOp (Iden [Name "a"]) [Name ">"] (Iden [Name "b"]))
@@ -757,6 +757,13 @@ and types and the other bits in a column def
 alter table t add column a int
 alter table t add a int
 alter table t add a int unique not null check (a>0)
+
+>     ,(TestStatement SQL2011
+>       "alter table t add column a int"
+>      $ AlterTable [Name "t"] $ AddColumnDef
+>        $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing []
+>        )
+
 
 11.12 <alter column definition>
 
