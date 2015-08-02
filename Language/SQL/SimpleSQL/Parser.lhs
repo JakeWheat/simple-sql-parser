@@ -1472,6 +1472,9 @@ TODO: change style
 >     defaultClause = choice [
 >         keyword_ "default" >>
 >         DefaultClause <$> valueExpr
+>         -- todo: left factor
+>        ,try (keywords_ ["generated","always","as"] >>
+>              GenerationClause <$> parens valueExpr)
 >        ,keyword_ "generated" >>
 >         IdentityColumnSpec
 >         <$> option GeneratedDefault

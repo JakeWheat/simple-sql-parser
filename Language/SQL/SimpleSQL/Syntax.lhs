@@ -504,7 +504,7 @@ I'm not sure if this is valid syntax or not.
 > data DefaultClause =
 >      DefaultClause ValueExpr
 >    | IdentityColumnSpec IdentityWhen [SequenceGeneratorOption]
->    --  | GenerationClause
+>    | GenerationClause ValueExpr
 >     deriving (Eq,Show,Read,Data,Typeable)
 
 > data IdentityWhen =

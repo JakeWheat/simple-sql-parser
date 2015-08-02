@@ -463,6 +463,8 @@ which have been changed to try to improve the layout of the output.
 >              Nothing -> empty
 >              Just (DefaultClause def) ->
 >                  text "default" <+> valueExpr d def
+>              Just (GenerationClause e) ->
+>                  texts ["generated","always","as"] <+> parens (valueExpr d e)
 >              Just (IdentityColumnSpec w o) ->
 >                  text "generated"
 >                  <+> (case w of

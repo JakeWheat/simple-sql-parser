@@ -356,6 +356,16 @@ generated always (valueexpr)
 <generation expression> ::=
   <left paren> <value expression> <right paren>
 
+>     ,(TestStatement SQL2011
+>       "create table t (a int, \
+>       \                a2 int generated always as (a * 2));"
+>      $ CreateTable [Name "t"]
+>        [ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
+>        ,ColumnDef (Name "a2") (TypeName [Name "int"])
+>         (Just $ GenerationClause
+>          (BinOp (Iden [Name "a"]) [Name "*"] (NumLit "2")))])
+
+
 
 11.5 <default clause>
 
