@@ -47,7 +47,7 @@ Test for the lexer
 >               | a <- " \n\t", b <- " \n\t"]
 >     -- line comment
 >     ++ map (\c -> (c, [LineComment c]))
->        ["--", "-- ", "-- this is a comment"]
+>        ["--", "-- ", "-- this is a comment", "-- line com\n"]
 >     -- block comment
 >     ++ map (\c -> (c, [BlockComment c]))
 >        ["/**/", "/* */","/* this is a comment */"
@@ -103,7 +103,7 @@ number number (todo: double check more carefully)
 >                ,(isUQIdentifier, isQIdentifier)
 >                ,(isString, isString)
 >                ,(isCsString, isString)
->                ,(isLineComment, const True)
+>                ,(isEofLineComment, const True)
 >                ,(isNumber, isNumber)
 >                ,(isHostParam,isIdentifier)
 >                ,(isHostParam,isCsString)
@@ -123,7 +123,9 @@ number number (todo: double check more carefully)
 >    isUQIdentifier _ = False
 >    isCsString (CSSqlString {}) = True
 >    isCsString _ = False
->    isLineComment (LineComment{}) = True
+>    isEofLineComment (LineComment s) = last s /= '\n'
+>    isEofLineComment _ = False
+>    isLineComment (LineComment {}) = True
 >    isLineComment _ = False
 >    isNumber (SqlNumber{}) = True
 >    isNumber _ = False
