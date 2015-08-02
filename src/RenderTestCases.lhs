@@ -2,9 +2,10 @@
 Converts the test data to markdown
 
 > import Language.SQL.SimpleSQL.Tests
-> import Text.Groom
+> import Text.Show.Pretty
 > import Control.Monad.State
 > import Language.SQL.SimpleSQL.Parser
+> import Language.SQL.SimpleSQL.Lexer
 
 > data TableItem = Heading Int String
 >                | Row String String
@@ -13,14 +14,32 @@ Converts the test data to markdown
 > doc n (Group nm is) =
 >     Heading n nm
 >     : concatMap (doc (n + 1)) is
-> doc _ (TestValueExpr str e) =
->     [Row str (groom e)]
-> doc _ (TestQueryExpr str e) =
->     [Row str (groom e)]
-> doc _ (TestQueryExprs str e) =
->     [Row str (groom e)]
-> doc _ (ParseQueryExpr str) =
->     [Row str (groom $ parseQueryExpr "" Nothing str)]
+> doc _ (TestValueExpr _ str e) =
+>     [Row str (ppShow e)]
+> doc _ (TestQueryExpr _ str e) =
+>     [Row str (ppShow e)]
+> doc _ (TestStatement _ str e) =
+>     [Row str (ppShow e)]
+> doc _ (TestStatements _ str e) =
+>     [Row str (ppShow e)]
+> doc _ (ParseQueryExpr d str) =
+>     [Row str (ppShow $ parseQueryExpr d "" Nothing str)]
+> doc _ (ParseQueryExprFails d str) =
+>     [Row str (ppShow $ parseQueryExpr d "" Nothing str)]
+> doc _ (ParseValueExprFails d str) =
+>     [Row str (ppShow $ parseValueExpr d "" Nothing str)]
+
+> doc _ (LexerTest d str t) =
+>   -- todo: figure out how to handle this:
+>   -- too many entries, but want to show the lexing
+>   -- a bit
+>     -- [Row str (ppShow $ lexSQL d "" Nothing str)]
+>     []
+>     -- should probably think about doing something similar
+>     -- with other generated combination tests such as the typename
+>     -- tests
+
+TODO: should put the dialect in the html output
 
 
 > render :: [TableItem] -> IO ()

@@ -1,17 +1,18 @@
 # simple-sql-parser
 
-A parser for SQL queries in Haskell. Also includes a pretty printer
-which formats output nicely. The first goal is to parse most of
-SQL:2011 queries.
+A parser for SQL in Haskell. Also includes a pretty printer which
+formats output nicely. Current target is to parse most SQL:2011
+queries, plus a good subset of DDL, non-query DML, transaction
+management, access control and session management.
 
-This is the documentation for version 0.4.0.
+This is the documentation for version 0.5.0.
 
 Status: Covers a lot of queries already, but the public API is
 probably not very stable, since adding support for all the
 not-yet-supported ANSI SQL syntax, then other dialects of SQL is
 likely to change the abstract syntax types considerably.
 
-Tested with GHC 7.6.3 and 7.8.2.
+Tested with GHC 7.10.2, 7.8.4 and 7.6.3.
 
 # Examples
 
@@ -214,16 +215,27 @@ fetch first 100 rows only;
 
 # Feature support
 
-* select lists
-* from clause
-* where clause
-* group by clause
-* having clause
-* order by clause
-* offset and fetch
-* set operators
-* common table expressions
-* wide range of value expressions
+* query expressions
+* * select lists
+* * from clause
+* * where clause
+* * group by clause
+* * having clause
+* * order by clause
+* * offset and fetch
+* * set operators
+* * common table expressions
+* * wide range of value expressions
+* DDL
+* * TODO
+* non-query DML
+* * TODO
+* Access control
+* * TODO
+* Transaction management
+* * TODO
+* Session management
+* * TODO
 
 See the [supported_sql.html](supported_sql.html) page for details on
 the supported SQL.
@@ -240,13 +252,14 @@ Installing the latest release from Hackage.
 cabal update && cabal install simple-sql-parser
 ~~~~
 
-Installing the latest development version. These instructions do not
-use cabal sandboxes which is bad, you should use sandboxes.
+Working with the latest development version:
 
 ~~~~
 git clone https://github.com/JakeWheat/simple-sql-parser.git
 cd simple-sql-parser
-cabal install
+cabal sandbox init
+cabal install --only-dependencies
+cabal build
 ~~~~
 
 ## Running the tests
@@ -257,23 +270,21 @@ source directory.
 You can run the tests using cabal:
 
 ~~~~
+cabal sandbox init
+cabal install --only-dependencies --enable-tests
 cabal configure --enable-tests
 cabal test
 ~~~~
 
 Or you can run them directly which gives more options. The tests use
-test-framework, which provides the command line options.
+tasty, which provides the command line options.
 
 ~~~~
+cabal sandbox init
+cabal install --only-dependencies --enable-tests
 cabal configure --enable-tests
 cabal build
 dist/build/Tests/Tests
-~~~~
-
-or, not using cabal at all:
-
-~~~~
-runghc -itools tools/RunTests.lhs
 ~~~~
 
 --hide-successes is a good option to use:

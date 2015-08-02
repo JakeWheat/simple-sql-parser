@@ -1,6 +1,7 @@
 #! /bin/sh
 
 set -x
+set -e
 cd ..
 # index
 pandoc --from=markdown --to=html src/index.txt -o index.html -c main.css --title=simple-sql-parser --toc
@@ -8,7 +9,7 @@ pandoc --from=markdown --to=html src/supported_sql.txt -o supported_sql.html -c 
 # tpch sql file
 # pandoc src/tpch.sql -s --highlight-style kate -o tpch.sql.html
 # rendered test cases
-runhaskell -package-db=../trunk/.cabal-sandbox/x86_64-linux-ghc-7.8.2-packages.conf.d/ -i../trunk:../trunk/tools src/RenderTestCases > src/test_cases.txt
+runhaskell -package-db=../trunk/.cabal-sandbox/x86_64-linux-ghc-7.10.2-packages.conf.d/ -i../trunk:../trunk/tools src/RenderTestCases > src/test_cases.txt
 pandoc --from=markdown --to=html src/test_cases.txt -o test_cases.html -c main.css '--title=simple-sql-parser examples/test cases' --toc
 # haddock
 cd ../trunk

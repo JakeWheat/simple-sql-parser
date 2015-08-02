@@ -8,10 +8,11 @@ See the [simple-sql-parser test cases](test_cases.html) page for
 examples.
 
 The target dialect of SQL at this time is ISO/ANSI SQL:2011. The
-parser only supports queries. The parser and syntax does not follow
-the standard grammar closely - they permit a lot of things which the
-grammar in the standard forbids. The intended usage is that an
-additional pass over the ast can be made if you want to carefully
+parser supports queries, DDL, non-query DML, access control, transaction
+management and session management syntax. The parser and syntax does
+not follow the standard grammar closely - they permit a lot of things
+which the grammar in the standard forbids. The intended usage is that
+an additional pass over the ast can be made if you want to carefully
 prohibit everything that the standard doesn't allow.
 
 Apart from this permissiveness, some work has been put into trying to
@@ -23,17 +24,19 @@ Haskell uses, and any encoding/decoding is left to the system. I think
 this effectively means that you will usually be using utf-8 character
 set for the sql source.
 
-# Select lists
+# Queries
+
+## Select lists
 
 Supports value expressions, aliases with optional 'as'.
 
 Doesn't support 'select * as (a,b,c) from t' yet.
 
-# Set quantifiers on select
+## Set quantifiers on select
 
 Supports 'select distinct' and explicit 'select all'.
 
-# From clause
+## From clause
 
 * aliases
 * subqueries
@@ -47,32 +50,32 @@ Supports 'select distinct' and explicit 'select all'.
     - using lists
     - lateral
 
-# Group by clause
+## Group by clause
 
 Supports value expressions, group by (), cube, rollup, grouping
 parentheses and grouping sets with nested grouping expressions.
 
-# Order by clause
+## Order by clause
 
 Supports value expressions, asc/desc and nulls first/last.
 
-# Offset and fetch
+## Offset and fetch
 
 Supports 'offset n rows' and 'fetch first n rows only'.
 
-# Set operators
+## Set operators
 
 Union, except, intersect + all/distinct and corresponding.
 
-# Table value constructor
+## Table value constructor
 
 For example: values (1,2),(3,4).
 
-# Explicit table
+## Explicit table
 
 For example: 'table t', which is shorthand for 'select * from t'.
 
-# Value expressions
+## Value expressions
 
 The value expressions type and parser is used in many contexts,
 including:
@@ -136,3 +139,23 @@ The supported value expressions include:
   plus some explicit frame support (same as in postgres 9.3)
 * row constructors, e.g. where (a,b) = any (select a,b from t)
 * ? used in parameterized queries
+
+# DDL
+
+todo
+
+# Non-query DML
+
+todo
+
+# Access Control
+
+todo
+
+# Transaction management
+
+todo
+
+# Session management
+
+todo

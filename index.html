@@ -7,23 +7,41 @@
   <title>simple-sql-parser - </title>
   <style type="text/css">code{white-space: pre;}</style>
   <style type="text/css">
+div.sourceCode { overflow-x: auto; }
 table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
   margin: 0; padding: 0; vertical-align: baseline; border: none; }
 table.sourceCode { width: 100%; line-height: 100%; }
 td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
 td.sourceCode { padding-left: 5px; }
-code > span.kw { color: #007020; font-weight: bold; }
-code > span.dt { color: #902000; }
-code > span.dv { color: #40a070; }
-code > span.bn { color: #40a070; }
-code > span.fl { color: #40a070; }
-code > span.ch { color: #4070a0; }
-code > span.st { color: #4070a0; }
-code > span.co { color: #60a0b0; font-style: italic; }
-code > span.ot { color: #007020; }
-code > span.al { color: #ff0000; font-weight: bold; }
-code > span.fu { color: #06287e; }
-code > span.er { color: #ff0000; font-weight: bold; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
   </style>
   <link rel="stylesheet" href="main.css" type="text/css" />
 </head>
@@ -42,24 +60,24 @@ code > span.er { color: #ff0000; font-weight: bold; }
 <li><a href="#contact">Contact</a></li>
 </ul>
 </div>
-<h1 id="simple-sql-parser"><a href="#simple-sql-parser">simple-sql-parser</a></h1>
-<p>A parser for SQL queries in Haskell. Also includes a pretty printer which formats output nicely. The first goal is to parse most of SQL:2011 queries.</p>
-<p>This is the documentation for version 0.4.0.</p>
+<h1 id="simple-sql-parser">simple-sql-parser</h1>
+<p>A parser for SQL in Haskell. Also includes a pretty printer which formats output nicely. Current target is to parse most SQL:2011 queries, plus a good subset of DDL, non-query DML, transaction management, access control and session management.</p>
+<p>This is the documentation for version 0.5.0.</p>
 <p>Status: Covers a lot of queries already, but the public API is probably not very stable, since adding support for all the not-yet-supported ANSI SQL syntax, then other dialects of SQL is likely to change the abstract syntax types considerably.</p>
-<p>Tested with GHC 7.6.3 and 7.8.2.</p>
-<h1 id="examples"><a href="#examples">Examples</a></h1>
+<p>Tested with GHC 7.10.2, 7.8.4 and 7.6.3.</p>
+<h1 id="examples">Examples</h1>
 <p>Simple expression:</p>
-<pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">select</span> a + b * c</code></pre>
+<div class="sourceCode"><pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">select</span> a + b * c</code></pre></div>
 <p>Parsed AST:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="dt">Select</span>{qeSetQuantifier <span class="fu">=</span> <span class="dt">All</span>,
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="dt">Select</span>{qeSetQuantifier <span class="fu">=</span> <span class="dt">All</span>,
        qeSelectList <span class="fu">=</span>
          [(<span class="dt">BinOp</span> (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;a&quot;</span>)) (<span class="dt">Name</span> <span class="st">&quot;+&quot;</span>)
              (<span class="dt">BinOp</span> (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;b&quot;</span>)) (<span class="dt">Name</span> <span class="st">&quot;*&quot;</span>) (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;c&quot;</span>))),
-           <span class="kw">Nothing</span>)],
-       qeFrom <span class="fu">=</span> [], qeWhere <span class="fu">=</span> <span class="kw">Nothing</span>, qeGroupBy <span class="fu">=</span> [], qeHaving <span class="fu">=</span> <span class="kw">Nothing</span>,
-       qeOrderBy <span class="fu">=</span> [], qeOffset <span class="fu">=</span> <span class="kw">Nothing</span>, qeFetchFirst <span class="fu">=</span> <span class="kw">Nothing</span>}</code></pre>
+           <span class="dt">Nothing</span>)],
+       qeFrom <span class="fu">=</span> [], qeWhere <span class="fu">=</span> <span class="dt">Nothing</span>, qeGroupBy <span class="fu">=</span> [], qeHaving <span class="fu">=</span> <span class="dt">Nothing</span>,
+       qeOrderBy <span class="fu">=</span> [], qeOffset <span class="fu">=</span> <span class="dt">Nothing</span>, qeFetchFirst <span class="fu">=</span> <span class="dt">Nothing</span>}</code></pre></div>
 <p>TPC-H query 21:</p>
-<pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">select</span>
+<div class="sourceCode"><pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">select</span>
         s_name,
         <span class="fu">count</span>(*) <span class="kw">as</span> numwait
 <span class="kw">from</span>
@@ -98,18 +116,18 @@ code > span.er { color: #ff0000; font-weight: bold; }
 <span class="kw">order</span> <span class="kw">by</span>
         numwait <span class="kw">desc</span>,
         s_name
-fetch <span class="fu">first</span> <span class="dv">100</span> <span class="kw">rows</span> <span class="kw">only</span>;</code></pre>
+fetch <span class="fu">first</span> <span class="dv">100</span> <span class="kw">rows</span> <span class="kw">only</span>;</code></pre></div>
 <p>Parsed:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="dt">Select</span>{qeSetQuantifier <span class="fu">=</span> <span class="dt">All</span>,
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="dt">Select</span>{qeSetQuantifier <span class="fu">=</span> <span class="dt">All</span>,
        qeSelectList <span class="fu">=</span>
-         [(<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;s_name&quot;</span>), <span class="kw">Nothing</span>),
-          (<span class="dt">App</span> (<span class="dt">Name</span> <span class="st">&quot;count&quot;</span>) [<span class="dt">Star</span>], <span class="kw">Just</span> (<span class="dt">Name</span> <span class="st">&quot;numwait&quot;</span>))],
+         [(<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;s_name&quot;</span>), <span class="dt">Nothing</span>),
+          (<span class="dt">App</span> (<span class="dt">Name</span> <span class="st">&quot;count&quot;</span>) [<span class="dt">Star</span>], <span class="dt">Just</span> (<span class="dt">Name</span> <span class="st">&quot;numwait&quot;</span>))],
        qeFrom <span class="fu">=</span>
          [<span class="dt">TRSimple</span> (<span class="dt">Name</span> <span class="st">&quot;supplier&quot;</span>),
-          <span class="dt">TRAlias</span> (<span class="dt">TRSimple</span> (<span class="dt">Name</span> <span class="st">&quot;lineitem&quot;</span>)) (<span class="dt">Alias</span> (<span class="dt">Name</span> <span class="st">&quot;l1&quot;</span>) <span class="kw">Nothing</span>),
+          <span class="dt">TRAlias</span> (<span class="dt">TRSimple</span> (<span class="dt">Name</span> <span class="st">&quot;lineitem&quot;</span>)) (<span class="dt">Alias</span> (<span class="dt">Name</span> <span class="st">&quot;l1&quot;</span>) <span class="dt">Nothing</span>),
           <span class="dt">TRSimple</span> (<span class="dt">Name</span> <span class="st">&quot;orders&quot;</span>), <span class="dt">TRSimple</span> (<span class="dt">Name</span> <span class="st">&quot;nation&quot;</span>)],
        qeWhere <span class="fu">=</span>
-         <span class="kw">Just</span>
+         <span class="dt">Just</span>
            (<span class="dt">BinOp</span>
               (<span class="dt">BinOp</span>
                  (<span class="dt">BinOp</span>
@@ -134,12 +152,12 @@ fetch <span class="fu">first</span> <span class="dv">100</span> <span class="kw"
                                 (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;l_commitdate&quot;</span>)))))
                        (<span class="dt">Name</span> <span class="st">&quot;and&quot;</span>)
                        (<span class="dt">SubQueryExpr</span> <span class="dt">SqExists</span>
-                          (<span class="dt">Select</span>{qeSetQuantifier <span class="fu">=</span> <span class="dt">All</span>, qeSelectList <span class="fu">=</span> [(<span class="dt">Star</span>, <span class="kw">Nothing</span>)],
+                          (<span class="dt">Select</span>{qeSetQuantifier <span class="fu">=</span> <span class="dt">All</span>, qeSelectList <span class="fu">=</span> [(<span class="dt">Star</span>, <span class="dt">Nothing</span>)],
                                   qeFrom <span class="fu">=</span>
                                     [<span class="dt">TRAlias</span> (<span class="dt">TRSimple</span> (<span class="dt">Name</span> <span class="st">&quot;lineitem&quot;</span>))
-                                       (<span class="dt">Alias</span> (<span class="dt">Name</span> <span class="st">&quot;l2&quot;</span>) <span class="kw">Nothing</span>)],
+                                       (<span class="dt">Alias</span> (<span class="dt">Name</span> <span class="st">&quot;l2&quot;</span>) <span class="dt">Nothing</span>)],
                                   qeWhere <span class="fu">=</span>
-                                    <span class="kw">Just</span>
+                                    <span class="dt">Just</span>
                                       (<span class="dt">BinOp</span>
                                          (<span class="dt">BinOp</span>
                                             (<span class="dt">BinOp</span> (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;l2&quot;</span>)) (<span class="dt">Name</span> <span class="st">&quot;.&quot;</span>)
@@ -154,17 +172,17 @@ fetch <span class="fu">first</span> <span class="dv">100</span> <span class="kw"
                                             (<span class="dt">Name</span> <span class="st">&quot;&lt;&gt;&quot;</span>)
                                             (<span class="dt">BinOp</span> (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;l1&quot;</span>)) (<span class="dt">Name</span> <span class="st">&quot;.&quot;</span>)
                                                (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;l_suppkey&quot;</span>))))),
-                                  qeGroupBy <span class="fu">=</span> [], qeHaving <span class="fu">=</span> <span class="kw">Nothing</span>, qeOrderBy <span class="fu">=</span> [],
-                                  qeOffset <span class="fu">=</span> <span class="kw">Nothing</span>, qeFetchFirst <span class="fu">=</span> <span class="kw">Nothing</span>})))
+                                  qeGroupBy <span class="fu">=</span> [], qeHaving <span class="fu">=</span> <span class="dt">Nothing</span>, qeOrderBy <span class="fu">=</span> [],
+                                  qeOffset <span class="fu">=</span> <span class="dt">Nothing</span>, qeFetchFirst <span class="fu">=</span> <span class="dt">Nothing</span>})))
                     (<span class="dt">Name</span> <span class="st">&quot;and&quot;</span>)
                     (<span class="dt">PrefixOp</span> (<span class="dt">Name</span> <span class="st">&quot;not&quot;</span>)
                        (<span class="dt">SubQueryExpr</span> <span class="dt">SqExists</span>
-                          (<span class="dt">Select</span>{qeSetQuantifier <span class="fu">=</span> <span class="dt">All</span>, qeSelectList <span class="fu">=</span> [(<span class="dt">Star</span>, <span class="kw">Nothing</span>)],
+                          (<span class="dt">Select</span>{qeSetQuantifier <span class="fu">=</span> <span class="dt">All</span>, qeSelectList <span class="fu">=</span> [(<span class="dt">Star</span>, <span class="dt">Nothing</span>)],
                                   qeFrom <span class="fu">=</span>
                                     [<span class="dt">TRAlias</span> (<span class="dt">TRSimple</span> (<span class="dt">Name</span> <span class="st">&quot;lineitem&quot;</span>))
-                                       (<span class="dt">Alias</span> (<span class="dt">Name</span> <span class="st">&quot;l3&quot;</span>) <span class="kw">Nothing</span>)],
+                                       (<span class="dt">Alias</span> (<span class="dt">Name</span> <span class="st">&quot;l3&quot;</span>) <span class="dt">Nothing</span>)],
                                   qeWhere <span class="fu">=</span>
-                                    <span class="kw">Just</span>
+                                    <span class="dt">Just</span>
                                       (<span class="dt">BinOp</span>
                                          (<span class="dt">BinOp</span>
                                             (<span class="dt">BinOp</span>
@@ -187,21 +205,21 @@ fetch <span class="fu">first</span> <span class="dv">100</span> <span class="kw"
                                             (<span class="dt">Name</span> <span class="st">&quot;&gt;&quot;</span>)
                                             (<span class="dt">BinOp</span> (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;l3&quot;</span>)) (<span class="dt">Name</span> <span class="st">&quot;.&quot;</span>)
                                                (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;l_commitdate&quot;</span>))))),
-                                  qeGroupBy <span class="fu">=</span> [], qeHaving <span class="fu">=</span> <span class="kw">Nothing</span>, qeOrderBy <span class="fu">=</span> [],
-                                  qeOffset <span class="fu">=</span> <span class="kw">Nothing</span>, qeFetchFirst <span class="fu">=</span> <span class="kw">Nothing</span>}))))
+                                  qeGroupBy <span class="fu">=</span> [], qeHaving <span class="fu">=</span> <span class="dt">Nothing</span>, qeOrderBy <span class="fu">=</span> [],
+                                  qeOffset <span class="fu">=</span> <span class="dt">Nothing</span>, qeFetchFirst <span class="fu">=</span> <span class="dt">Nothing</span>}))))
                  (<span class="dt">Name</span> <span class="st">&quot;and&quot;</span>)
                  (<span class="dt">BinOp</span> (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;s_nationkey&quot;</span>)) (<span class="dt">Name</span> <span class="st">&quot;=&quot;</span>)
                     (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;n_nationkey&quot;</span>))))
               (<span class="dt">Name</span> <span class="st">&quot;and&quot;</span>)
               (<span class="dt">BinOp</span> (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;n_name&quot;</span>)) (<span class="dt">Name</span> <span class="st">&quot;=&quot;</span>) (<span class="dt">StringLit</span> <span class="st">&quot;INDIA&quot;</span>))),
        qeGroupBy <span class="fu">=</span> [<span class="dt">SimpleGroup</span> (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;s_name&quot;</span>))],
-       qeHaving <span class="fu">=</span> <span class="kw">Nothing</span>,
+       qeHaving <span class="fu">=</span> <span class="dt">Nothing</span>,
        qeOrderBy <span class="fu">=</span>
          [<span class="dt">SortSpec</span> (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;numwait&quot;</span>)) <span class="dt">Desc</span> <span class="dt">NullsOrderDefault</span>,
           <span class="dt">SortSpec</span> (<span class="dt">Iden</span> (<span class="dt">Name</span> <span class="st">&quot;s_name&quot;</span>)) <span class="dt">Asc</span> <span class="dt">NullsOrderDefault</span>],
-       qeOffset <span class="fu">=</span> <span class="kw">Nothing</span>, qeFetchFirst <span class="fu">=</span> <span class="kw">Just</span> (<span class="dt">NumLit</span> <span class="st">&quot;100&quot;</span>)})</code></pre>
+       qeOffset <span class="fu">=</span> <span class="dt">Nothing</span>, qeFetchFirst <span class="fu">=</span> <span class="dt">Just</span> (<span class="dt">NumLit</span> <span class="st">&quot;100&quot;</span>)})</code></pre></div>
 <p>Output from the simple-sql-parser pretty printer:</p>
-<pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">select</span> s_name, <span class="fu">count</span>(*) <span class="kw">as</span> numwait
+<div class="sourceCode"><pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">select</span> s_name, <span class="fu">count</span>(*) <span class="kw">as</span> numwait
 <span class="kw">from</span> supplier,
      lineitem <span class="kw">as</span> l1,
      orders,
@@ -223,70 +241,160 @@ fetch <span class="fu">first</span> <span class="dv">100</span> <span class="kw"
       <span class="kw">and</span> n_name = <span class="st">&#39;INDIA&#39;</span>
 <span class="kw">group</span> <span class="kw">by</span> s_name
 <span class="kw">order</span> <span class="kw">by</span> numwait <span class="kw">desc</span>, s_name
-fetch <span class="fu">first</span> <span class="dv">100</span> <span class="kw">rows</span> <span class="kw">only</span>;</code></pre>
-<h1 id="feature-support"><a href="#feature-support">Feature support</a></h1>
+fetch <span class="fu">first</span> <span class="dv">100</span> <span class="kw">rows</span> <span class="kw">only</span>;</code></pre></div>
+<h1 id="feature-support">Feature support</h1>
 <ul>
+<li>query expressions</li>
+<li><ul>
 <li>select lists</li>
+</ul></li>
+<li><ul>
 <li>from clause</li>
+</ul></li>
+<li><ul>
 <li>where clause</li>
+</ul></li>
+<li><ul>
 <li>group by clause</li>
+</ul></li>
+<li><ul>
 <li>having clause</li>
+</ul></li>
+<li><ul>
 <li>order by clause</li>
+</ul></li>
+<li><ul>
 <li>offset and fetch</li>
+</ul></li>
+<li><ul>
 <li>set operators</li>
+</ul></li>
+<li><ul>
 <li>common table expressions</li>
+</ul></li>
+<li><ul>
 <li>wide range of value expressions</li>
+</ul></li>
+<li>DDL</li>
+<li><ul>
+<li>TODO</li>
+</ul></li>
+<li>non-query DML</li>
+<li><ul>
+<li>TODO</li>
+</ul></li>
+<li>Access control</li>
+<li><ul>
+<li>TODO</li>
+</ul></li>
+<li>Transaction management</li>
+<li><ul>
+<li>TODO</li>
+</ul></li>
+<li>Session management</li>
+<li><ul>
+<li>TODO</li>
+</ul></li>
 </ul>
-<p>See the <a href="supported_sql.html">supported_sql.html</a> page for details on the supported SQL.</p>
+<p>See the <a href="supported_sql.html" class="uri">supported_sql.html</a> page for details on the supported SQL.</p>
 <p>Here is a document with all the <a href="test_cases.html">simple-sql-parser test cases</a> rendered in a webpage so you can get an idea of what it supports.</p>
-<h1 id="installation"><a href="#installation">Installation</a></h1>
+<h1 id="installation">Installation</h1>
 <p>Installing the latest release from Hackage.</p>
 <pre><code>cabal update &amp;&amp; cabal install simple-sql-parser</code></pre>
-<p>Installing the latest development version. These instructions do not use cabal sandboxes which is bad, you should use sandboxes.</p>
+<p>Working with the latest development version:</p>
 <pre><code>git clone https://github.com/JakeWheat/simple-sql-parser.git
 cd simple-sql-parser
-cabal install</code></pre>
-<h2 id="running-the-tests"><a href="#running-the-tests">Running the tests</a></h2>
+cabal sandbox init
+cabal install --only-dependencies
+cabal build</code></pre>
+<h2 id="running-the-tests">Running the tests</h2>
 <p>Get the source using 'cabal unpack' or 'git clone', then change to the source directory.</p>
 <p>You can run the tests using cabal:</p>
-<pre><code>cabal configure --enable-tests
+<pre><code>cabal sandbox init
+cabal install --only-dependencies --enable-tests
+cabal configure --enable-tests
 cabal test</code></pre>
-<p>Or you can run them directly which gives more options. The tests use test-framework, which provides the command line options.</p>
-<pre><code>cabal configure --enable-tests
+<p>Or you can run them directly which gives more options. The tests use tasty, which provides the command line options.</p>
+<pre><code>cabal sandbox init
+cabal install --only-dependencies --enable-tests
+cabal configure --enable-tests
 cabal build
 dist/build/Tests/Tests</code></pre>
-<p>or, not using cabal at all:</p>
-<pre><code>runghc -itools tools/RunTests.lhs</code></pre>
 <p>--hide-successes is a good option to use:</p>
 <pre><code>dist/build/Tests/Tests --hide-successes</code></pre>
-<h1 id="documentation"><a href="#documentation">Documentation</a></h1>
+<h1 id="documentation">Documentation</h1>
 <ul>
 <li>see the <a href="test_cases.html">simple-sql-parser test cases</a> for examples.</li>
 <li><a href="haddock/index.html">simple-sql-parser haddock</a> (the haddock on Hackage has source links)</li>
 </ul>
-<h1 id="recommended-reading"><a href="#recommended-reading">Recommended reading</a></h1>
-<p>Here is some recommended reading on understanding SQL in depth.<br /><br /><br />SQL: The Complete Reference, 3rd Edition, James R. Groff, Paul N. Weinberg, Andrew J. Oppel</p>
-<p>This is a comprehensive book which covers up to the SQL:1999 standard.<br /><br /><br />SQL in a Nutshell, Kevin Kline, Brand Hunt, Daniel Kline</p>
-<p>This is another good book which covers some of the SQL:2003 and SQL:2008 standards. This means it covers a few newer things like window functions which 'SQL: The Complete Reference' doesn't. It also compares some main SQL product dialects.<br /><br /><br />SQL A Comparative Survey, Hugh Darwen http://bookboon.com/en/sql-a-comparative-survey-ebook</p>
-<p>This is a book about SQL from a relational theory perspective.<br /><br /><br />SQL and Relational Theory, 2nd Edition, Chris Date</p>
-<p>This also covers SQL from a partly theoretical perspective.<br /><br /><br />A Guide to the SQL Standard, C. J. Date, Hugh Darwen</p>
-<p>This is a fantastic book for covering all the little details of the SQL standard in depth. It only covers up to SQL:92.<br /><br /><br />There are several other good books by Chris Date, some with Hugh Darwen and others, for instance 'Introduction to Database Systems', 'Temporal Data &amp; the Relational Model, Databases', 'Types and the Relational Model'. Only the first one (Introduction to Database Systems) really relates to SQL.<br /><br /><br />Database Systems: The Complete Book, Hector Garcia-Molina, Jeff Ullman, and Jennifer Widom.</p>
-<p>This book is very comprehensive and has some interesting sections.<br /><br /><br />Some of the SQL draft standards are available to download for free (follow the links on the wikipedia page for SQL). They are a little tricky to read and understand.<br /><br /><br />TODO: add web links for the pdfs below<br /><br /><br />IBM DB2 10.5 SQL Reference Volume 1</p>
-<p><a href="http://public.dhe.ibm.com/ps/products/db2/info/vr105/pdf/en_US/DB2SQLRefVol1-db2s1e1050.pdf">http://public.dhe.ibm.com/ps/products/db2/info/vr105/pdf/en_US/DB2SQLRefVol1-db2s1e1050.pdf</a><br /><br /><br />Oracle SQL Reference 12c release 1</p>
-<p><a href="http://docs.oracle.com/cd/E16655_01/server.121/e17209.pdf">http://docs.oracle.com/cd/E16655_01/server.121/e17209.pdf</a><br /><br /><br />Teradata:</p>
-<p>TODO<br /><br /><br />Microsoft SQL Server 2012 TSQL reference online. I didn't find a PDF for this.</p>
-<p><a href="http://technet.microsoft.com/en-us/library/bb510741.aspx">http://technet.microsoft.com/en-us/library/bb510741.aspx</a><br /><br /><br />PostgreSQL 9.3 manual:</p>
-<p><a href="http://www.postgresql.org/docs/9.3/interactive/index.html">http://www.postgresql.org/docs/9.3/interactive/index.html</a></p>
-<p>No PDF for the Postgres manual either, but the web pages are very readable.<br /><br /><br />SQL BNF Grammars</p>
+<h1 id="recommended-reading">Recommended reading</h1>
+<p>Here is some recommended reading on understanding SQL in depth.<br />
+<br />
+<br />
+SQL: The Complete Reference, 3rd Edition, James R. Groff, Paul N. Weinberg, Andrew J. Oppel</p>
+<p>This is a comprehensive book which covers up to the SQL:1999 standard.<br />
+<br />
+<br />
+SQL in a Nutshell, Kevin Kline, Brand Hunt, Daniel Kline</p>
+<p>This is another good book which covers some of the SQL:2003 and SQL:2008 standards. This means it covers a few newer things like window functions which 'SQL: The Complete Reference' doesn't. It also compares some main SQL product dialects.<br />
+<br />
+<br />
+SQL A Comparative Survey, Hugh Darwen http://bookboon.com/en/sql-a-comparative-survey-ebook</p>
+<p>This is a book about SQL from a relational theory perspective.<br />
+<br />
+<br />
+SQL and Relational Theory, 2nd Edition, Chris Date</p>
+<p>This also covers SQL from a partly theoretical perspective.<br />
+<br />
+<br />
+A Guide to the SQL Standard, C. J. Date, Hugh Darwen</p>
+<p>This is a fantastic book for covering all the little details of the SQL standard in depth. It only covers up to SQL:92.<br />
+<br />
+<br />
+There are several other good books by Chris Date, some with Hugh Darwen and others, for instance 'Introduction to Database Systems', 'Temporal Data &amp; the Relational Model, Databases', 'Types and the Relational Model'. Only the first one (Introduction to Database Systems) really relates to SQL.<br />
+<br />
+<br />
+Database Systems: The Complete Book, Hector Garcia-Molina, Jeff Ullman, and Jennifer Widom.</p>
+<p>This book is very comprehensive and has some interesting sections.<br />
+<br />
+<br />
+Some of the SQL draft standards are available to download for free (follow the links on the wikipedia page for SQL). They are a little tricky to read and understand.<br />
+<br />
+<br />
+TODO: add web links for the pdfs below<br />
+<br />
+<br />
+IBM DB2 10.5 SQL Reference Volume 1</p>
+<p><a href="http://public.dhe.ibm.com/ps/products/db2/info/vr105/pdf/en_US/DB2SQLRefVol1-db2s1e1050.pdf" class="uri">http://public.dhe.ibm.com/ps/products/db2/info/vr105/pdf/en_US/DB2SQLRefVol1-db2s1e1050.pdf</a><br />
+<br />
+<br />
+Oracle SQL Reference 12c release 1</p>
+<p><a href="http://docs.oracle.com/cd/E16655_01/server.121/e17209.pdf" class="uri">http://docs.oracle.com/cd/E16655_01/server.121/e17209.pdf</a><br />
+<br />
+<br />
+Teradata:</p>
+<p>TODO<br />
+<br />
+<br />
+Microsoft SQL Server 2012 TSQL reference online. I didn't find a PDF for this.</p>
+<p><a href="http://technet.microsoft.com/en-us/library/bb510741.aspx" class="uri">http://technet.microsoft.com/en-us/library/bb510741.aspx</a><br />
+<br />
+<br />
+PostgreSQL 9.3 manual:</p>
+<p><a href="http://www.postgresql.org/docs/9.3/interactive/index.html" class="uri">http://www.postgresql.org/docs/9.3/interactive/index.html</a></p>
+<p>No PDF for the Postgres manual either, but the web pages are very readable.<br />
+<br />
+<br />
+SQL BNF Grammars</p>
 <p>http://savage.net.au/SQL/index.html</p>
-<h1 id="links"><a href="#links">Links</a></h1>
+<h1 id="links">Links</h1>
 <ul>
-<li>Homepage: <a href="http://jakewheat.github.io/simple-sql-parser">http://jakewheat.github.io/simple-sql-parser</a></li>
-<li>Hackage: <a href="http://hackage.haskell.org/package/simple-sql-parser">http://hackage.haskell.org/package/simple-sql-parser</a></li>
-<li>Repository: <a href="https://github.com/JakeWheat/simple-sql-parser">https://github.com/JakeWheat/simple-sql-parser</a></li>
-<li>Bug tracker: <a href="https://github.com/JakeWheat/simple-sql-parser/issues">https://github.com/JakeWheat/simple-sql-parser/issues</a></li>
+<li>Homepage: <a href="http://jakewheat.github.io/simple-sql-parser" class="uri">http://jakewheat.github.io/simple-sql-parser</a></li>
+<li>Hackage: <a href="http://hackage.haskell.org/package/simple-sql-parser" class="uri">http://hackage.haskell.org/package/simple-sql-parser</a></li>
+<li>Repository: <a href="https://github.com/JakeWheat/simple-sql-parser" class="uri">https://github.com/JakeWheat/simple-sql-parser</a></li>
+<li>Bug tracker: <a href="https://github.com/JakeWheat/simple-sql-parser/issues" class="uri">https://github.com/JakeWheat/simple-sql-parser/issues</a></li>
 </ul>
-<h1 id="contact"><a href="#contact">Contact</a></h1>
+<h1 id="contact">Contact</h1>
 <p>jakewheatmail@gmail.com</p>
 </body>
 </html>
