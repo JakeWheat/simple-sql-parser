@@ -40,8 +40,9 @@
 >     ,DefaultClause(..)
 >     ,IdentityWhen(..)
 >     ,SequenceGeneratorOption(..)
->     ,ConstraintDef(..)
->     ,Constraint(..)
+>     ,ColConstraintDef(..)
+>     ,ColConstraint(..)
+>     ,TableConstraint(..)
 >     ,ReferenceMatch(..)
 >     ,ReferentialAction(..)
 >      -- * Dialect
@@ -497,26 +498,37 @@ I'm not sure if this is valid syntax or not.
 > data TableElement =
 >     ColumnDef Name TypeName
 >        (Maybe DefaultClause)
->        [ConstraintDef]
+>        [ColConstraintDef]
 >        -- (Maybe CollateClause)
->   --   | TableConstraintDef
+>   | TableConstraintDef (Maybe [Name]) TableConstraint
 >     deriving (Eq,Show,Read,Data,Typeable)
 
-> data ConstraintDef =
->     ConstraintDef (Maybe [Name]) Constraint
+> data ColConstraintDef =
+>     ColConstraintDef (Maybe [Name]) ColConstraint
 >       -- (Maybe [ConstraintCharacteristics])
 >     deriving (Eq,Show,Read,Data,Typeable)
 
-> data Constraint =
->     NotNullConstraint
->   | UniqueConstraint
->   | PrimaryKeyConstraint
->   | ReferencesConstraint [Name] (Maybe Name)
+> data ColConstraint =
+>     ColNotNullConstraint
+>   | ColUniqueConstraint
+>   | ColPrimaryKeyConstraint
+>   | ColReferencesConstraint [Name] (Maybe Name)
 >        ReferenceMatch
 >        ReferentialAction
 >        ReferentialAction
->   | CheckConstraint ValueExpr
+>   | ColCheckConstraint ValueExpr
 >     deriving (Eq,Show,Read,Data,Typeable)
+
+> data TableConstraint =
+>     TableUniqueConstraint [Name]
+>   | TablePrimaryKeyConstraint [Name]
+>   | TableReferencesConstraint [Name] [Name] (Maybe [Name])
+>        ReferenceMatch
+>        ReferentialAction
+>        ReferentialAction
+>   | TableCheckConstraint ValueExpr
+>     deriving (Eq,Show,Read,Data,Typeable)
+
 
 > data ReferenceMatch =
 >     DefaultReferenceMatch

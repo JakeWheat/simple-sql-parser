@@ -1466,11 +1466,11 @@ TODO: change style
 >     CreateTable
 >     <$> names
 >     -- todo: is this order mandatory or is it a perm?
->     <*> parens (commaSep1 columnDef)
+>     <*> parens (commaSep1 (tableConstraintDef <|> columnDef))
 >   where
 >     columnDef = ColumnDef <$> name <*> typeName
 >                 <*> optionMaybe defaultClause
->                 <*> option [] (many1 constraintDef)
+>                 <*> option [] (many1 colConstraintDef)
 >     defaultClause = choice [
 >         keyword_ "default" >>
 >         DefaultClause <$> valueExpr
@@ -1511,28 +1511,35 @@ TODO: change style
 >     scycle = SGOCycle <$ keyword_ "cycle"
 >     noCycle = SGONoCycle <$ try (keywords_ ["no","cycle"])
 
-
-> constraintDef :: Parser ConstraintDef
-> constraintDef =
->     ConstraintDef
+> tableConstraintDef :: Parser TableElement
+> tableConstraintDef =
+>     TableConstraintDef
 >     <$> (optionMaybe (keyword_ "constraint" *> names))
->     <*> (notNull <|> unique <|> primaryKey <|> check <|> references)
+>     <*> (unique <|> primaryKey <|> check <|> references)
 >   where
->     notNull = NotNullConstraint <$ keywords_ ["not", "null"]
->     unique = UniqueConstraint <$ keyword_ "unique"
->     primaryKey = PrimaryKeyConstraint <$ keywords_ ["primary", "key"]
->     check = keyword_ "check" >> CheckConstraint <$> parens valueExpr
->     references = keyword_ "references" >>
->         (\t c m (ou,od) -> ReferencesConstraint t c m ou od)
->         <$> names
->         <*> optionMaybe (parens name)
->         <*> option DefaultReferenceMatch
+>     unique = keyword_ "unique" >>
+>         TableUniqueConstraint <$> parens (commaSep1 name)
+>     primaryKey = keywords_ ["primary", "key"] >>
+>         TablePrimaryKeyConstraint <$> parens (commaSep1 name)
+>     check = keyword_ "check" >> TableCheckConstraint <$> parens valueExpr
+>     references = keywords_ ["foreign", "key"] >>
+>         (\cs ft ftcs m (u,d) -> TableReferencesConstraint cs ft ftcs m u d)
+>         <$> parens (commaSep1 name)
+>         <*> (keyword_ "references" *> names)
+>         <*> optionMaybe (parens $ commaSep1 name)
+>         <*> refMatch
+>         <*> refActions
+
+> refMatch :: Parser ReferenceMatch
+> refMatch = option DefaultReferenceMatch
 >             (keyword_ "match" *>
 >              choice [MatchFull <$ keyword_ "full"
 >                     ,MatchPartial <$ keyword_ "partial"
 >                     ,MatchSimple <$ keyword_ "simple"])
->         <*> permute ((,) <$?> (DefaultReferentialAction, onUpdate)
->                          <|?> (DefaultReferentialAction, onDelete))
+> refActions :: Parser (ReferentialAction,ReferentialAction)
+> refActions = permute ((,) <$?> (DefaultReferentialAction, onUpdate)
+>                           <|?> (DefaultReferentialAction, onDelete))
+>   where
 >     -- todo: left factor?
 >     onUpdate = try (keywords_ ["on", "update"]) *> referentialAction
 >     onDelete = try (keywords_ ["on", "delete"]) *> referentialAction
@@ -1543,6 +1550,23 @@ TODO: change style
 >         ,RefSetDefault <$ try (keywords_ ["set", "default"])
 >         ,RefRestrict <$ keyword_ "restrict"
 >         ,RefNoAction <$ keywords_ ["no", "action"]]
+
+> colConstraintDef :: Parser ColConstraintDef
+> colConstraintDef =
+>     ColConstraintDef
+>     <$> (optionMaybe (keyword_ "constraint" *> names))
+>     <*> (notNull <|> unique <|> primaryKey <|> check <|> references)
+>   where
+>     notNull = ColNotNullConstraint <$ keywords_ ["not", "null"]
+>     unique = ColUniqueConstraint <$ keyword_ "unique"
+>     primaryKey = ColPrimaryKeyConstraint <$ keywords_ ["primary", "key"]
+>     check = keyword_ "check" >> ColCheckConstraint <$> parens valueExpr
+>     references = keyword_ "references" >>
+>         (\t c m (ou,od) -> ColReferencesConstraint t c m ou od)
+>         <$> names
+>         <*> optionMaybe (parens name)
+>         <*> refMatch
+>         <*> refActions
 
 slightly hacky parser for signed integers
 

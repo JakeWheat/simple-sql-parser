@@ -476,6 +476,24 @@ which have been changed to try to improve the layout of the output.
 >                          [] -> empty
 >                          os -> parens (sep $ map sgo os))
 >       <+> sep (map cdef cons)
+>     cd (TableConstraintDef n con) =
+>         maybe empty (\s -> text "constraint" <+> names s) n
+>         <+> ptcon con
+>     ptcon (TableUniqueConstraint ns) =
+>          text "unique" <+> parens (commaSep $ map name ns)
+>     ptcon (TablePrimaryKeyConstraint ns) =
+>         texts ["primary","key"] <+> parens (commaSep $ map name ns)
+>     ptcon (TableReferencesConstraint cs t tcs m u del) =
+>         texts ["foreign", "key"]
+>         <+> parens (commaSep $ map name cs)
+>         <+> text "references"
+>         <+> names t
+>         <+> maybe empty (\c' -> parens (commaSep $ map name c')) tcs
+>         <+> refMatch m
+>         <+> refAct "update" u
+>         <+> refAct "delete" del
+>     ptcon (TableCheckConstraint v) = text "check" <+> parens (valueExpr d v)
+
 >     sgo (SGOStartWith i) = texts ["start",  "with", show i]
 >     sgo (SGOIncrementBy i) = texts ["increment", "by", show i]
 >     sgo (SGOMaxValue i) = texts ["maxvalue", show i]
@@ -484,36 +502,32 @@ which have been changed to try to improve the layout of the output.
 >     sgo SGONoMinValue = texts ["no", "minvalue"]
 >     sgo SGOCycle = text "cycle"
 >     sgo SGONoCycle = text "no cycle"
->     cdef (ConstraintDef cnm con) =
+>     cdef (ColConstraintDef cnm con) =
 >         maybe empty (\s -> text "constraint" <+> names s) cnm
 >         <+> pcon con
->     pcon NotNullConstraint = texts ["not","null"]
->     pcon UniqueConstraint = text "unique"
->     pcon PrimaryKeyConstraint = texts ["primary","key"]
->     pcon (CheckConstraint v) = text "check" <+> parens (valueExpr d v)
->     pcon (ReferencesConstraint t c m u del) =
+>     pcon ColNotNullConstraint = texts ["not","null"]
+>     pcon ColUniqueConstraint = text "unique"
+>     pcon ColPrimaryKeyConstraint = texts ["primary","key"]
+>     pcon (ColCheckConstraint v) = text "check" <+> parens (valueExpr d v)
+>     pcon (ColReferencesConstraint t c m u del) =
 >         text "references"
 >         <+> names t
 >         <+> maybe empty (\c' -> parens (name c')) c
->         <+> (case m of
->                  DefaultReferenceMatch -> empty
->                  MatchFull -> texts ["match", "full"]
->                  MatchPartial -> texts ["match","partial"]
->                  MatchSimple -> texts ["match", "simple"])
->         <+> (case u of
->                  DefaultReferentialAction -> empty
->                  RefCascade -> texts ["on", "update", "cascade"]
->                  RefSetNull -> texts ["on", "update", "set", "null"]
->                  RefSetDefault -> texts ["on", "update", "set", "default"]
->                  RefRestrict -> texts ["on", "update", "restrict"]
->                  RefNoAction -> texts ["on", "update", "no", "action"])
->         <+> (case del of
->                  DefaultReferentialAction -> empty
->                  RefCascade -> texts ["on", "delete", "cascade"]
->                  RefSetNull -> texts ["on", "delete", "set", "null"]
->                  RefSetDefault -> texts ["on", "delete", "set", "default"]
->                  RefRestrict -> texts ["on", "delete", "restrict"]
->                  RefNoAction -> texts ["on", "delete", "no", "action"])
+>         <+> refMatch m
+>         <+> refAct "update" u
+>         <+> refAct "delete" del
+>     refMatch m = case m of
+>                      DefaultReferenceMatch -> empty
+>                      MatchFull -> texts ["match", "full"]
+>                      MatchPartial -> texts ["match","partial"]
+>                      MatchSimple -> texts ["match", "simple"]
+>     refAct t a = case a of
+>                      DefaultReferentialAction -> empty
+>                      RefCascade -> texts ["on", t, "cascade"]
+>                      RefSetNull -> texts ["on", t, "set", "null"]
+>                      RefSetDefault -> texts ["on", t, "set", "default"]
+>                      RefRestrict -> texts ["on", t, "restrict"]
+>                      RefNoAction -> texts ["on", t, "no", "action"]
 
 > statement _ (DropSchema nm db) =
 >     text "drop" <+> text "schema" <+> names nm <+> dropBehav db
