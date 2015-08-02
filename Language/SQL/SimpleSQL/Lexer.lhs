@@ -25,6 +25,7 @@ parsec
 >                    ,many,runParser,lookAhead,satisfy
 >                    ,setPosition,getPosition
 >                    ,setSourceColumn,setSourceLine
+>                    ,sourceName, setSourceName
 >                    ,sourceLine, sourceColumn)
 > import Language.SQL.SimpleSQL.Combinators
 > import Language.SQL.SimpleSQL.Errors
@@ -136,19 +137,22 @@ TODO: try to make all parsers applicative only
 >                -> String
 >                   -- ^ the SQL source to lex
 >                -> Either ParseError [((String,Int,Int),Token)]
-> lexSQL dialect fn p src =
->     let (l,c) = fromMaybe (1,1) p
+> lexSQL dialect fn' p src =
+>     let (l',c') = fromMaybe (1,1) p
 >     in either (Left . convParseError src) Right
->        $ runParser (setPos (l,c) *> many (sqlToken dialect) <* eof) () fn src
+>        $ runParser (setPos (fn',l',c') *> many (sqlToken dialect) <* eof) () fn' src
 >   where
->     setPos (l,c) = fmap up getPosition >>= setPosition
->        where up = flip setSourceColumn c . flip setSourceLine l
+>     setPos (fn,l,c) = do
+>         fmap (flip setSourceName fn
+>                . flip setSourceLine l
+>                . flip setSourceColumn c) getPosition
+>           >>= setPosition
 
 > -- | parser for a sql token
 > sqlToken :: Dialect -> Parser ((String,Int,Int),Token)
 > sqlToken d = do
 >     p' <- getPosition
->     let p = ("",sourceLine p', sourceColumn p')
+>     let p = (sourceName p',sourceLine p', sourceColumn p')
 
 The order of parsers is important: strings and quoted identifiers can
 start out looking like normal identifiers, so we try to parse these
@@ -295,8 +299,15 @@ character symbols in the two lists below.
 >     (\s -> LineComment $ concat ["--",s]) <$>
 >     -- try is used here in case we see a - symbol
 >     -- once we read two -- then we commit to the comment token
->     (try (string "--") *>
->      manyTill anyChar (void (char '\n') <|> eof))
+>     (try (string "--") *> (
+>         -- todo: there must be a better way to do this
+>      conc <$> manyTill anyChar (lookAhead lineCommentEnd) <*> lineCommentEnd))
+>   where
+>     conc a Nothing = a
+>     conc a (Just b) = a ++ b
+>     lineCommentEnd =
+>         Just "\n" <$ char '\n'
+>         <|> Nothing <$ eof
 
 Try is used in the block comment for the two symbol bits because we
 want to backtrack if we read the first symbol but the second symbol

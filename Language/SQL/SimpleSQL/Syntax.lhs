@@ -489,7 +489,7 @@ I'm not sure if this is valid syntax or not.
 
 > data TableElement =
 >     ColumnDef Name TypeName
->        (Maybe DefaultClause)
+>        -- (Maybe DefaultClause)
 >        -- (Maybe ColumnConstraintDef)
 >        -- (Maybe CollateClause)
 >   --   | TableConstraintDef
@@ -498,10 +498,10 @@ I'm not sure if this is valid syntax or not.
 > {-data TableConstraintDef
 >     deriving (Eq,Show,Read,Data,Typeable) -}
 
-> data DefaultClause =
+> {-data DefaultClause =
 >      DefaultClause ValueExpr
 >    | IdentityColumnSpec
->    | GenerationClause
+>    | GenerationClause-}
 
 > {-data ColumnConstraintDef =
 >     | NotNullConstraint

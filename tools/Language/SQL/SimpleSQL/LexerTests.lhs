@@ -76,6 +76,7 @@ number number (todo: double check more carefully)
 >     ]
 >     ++ map (uncurry $ LexerTest SQL2011)
 >        [("", [])
+>        ,("-- line com\nstuff", [LineComment "-- line com\n",Identifier "stuff"])
 >        ]
 
 >  where
