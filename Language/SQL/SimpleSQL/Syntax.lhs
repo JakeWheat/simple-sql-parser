@@ -48,6 +48,7 @@
 >     ,ReferentialAction(..)
 >     ,AlterTableAction(..)
 >     ,CheckOption(..)
+>     ,AlterDomainAction(..)
 >      -- * Dialect
 >     ,Dialect(..)
 >      -- * Comment
@@ -410,10 +411,11 @@ I'm not sure if this is valid syntax or not.
 >   | CreateView Bool [Name] (Maybe [Name])
 >         QueryExpr (Maybe CheckOption)
 >   | DropView [Name]  DropBehaviour
->   {-  | CreateDomain
->   | AlterDomain
->   | DropDomain
->   | CreateCharacterSet
+>   | CreateDomain [Name] TypeName (Maybe ValueExpr)
+>        [(Maybe [Name], ValueExpr)]
+>   | AlterDomain [Name] AlterDomainAction
+>   | DropDomain [Name] DropBehaviour
+>   {- | CreateCharacterSet
 >   | DropCharacterSet
 >   | CreateCollation
 >   | DropCollation
@@ -623,6 +625,13 @@ I'm not sure if this is valid syntax or not.
 >     DefaultCheckOption
 >   | CascadedCheckOption
 >   | LocalCheckOption
+>     deriving (Eq,Show,Read,Data,Typeable)
+
+> data AlterDomainAction =
+>     ADSetDefault ValueExpr
+>   | ADDropDefault
+>   | ADAddConstraint (Maybe [Name]) ValueExpr
+>   | ADDropConstraint [Name]
 >     deriving (Eq,Show,Read,Data,Typeable)
 
 

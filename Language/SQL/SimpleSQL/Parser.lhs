@@ -189,7 +189,7 @@ fixing them in the syntax but leaving them till the semantic checking
 > import Data.Char (toLower, isDigit)
 > import Text.Parsec (setPosition,setSourceColumn,setSourceLine,getPosition
 >                    ,option,between,sepBy,sepBy1
->                    ,try,many1,(<|>),choice,eof
+>                    ,try,many,many1,(<|>),choice,eof
 >                    ,optionMaybe,optional,runParser
 >                    ,chainl1, chainr1,(<?>))
 > -- import Text.Parsec.String (Parser)
@@ -1443,11 +1443,14 @@ TODO: change style
 > statement = choice
 >     [keyword_ "create" *> choice [createSchema
 >                                  ,createTable
->                                  ,createView]
->     ,keyword_ "alter" *> choice [alterTable]
+>                                  ,createView
+>                                  ,createDomain]
+>     ,keyword_ "alter" *> choice [alterTable
+>                                 ,alterDomain]
 >     ,keyword_ "drop" *> choice [dropSchema
 >                                ,dropTable
->                                ,dropView]
+>                                ,dropView
+>                                ,dropDomain]
 >     ,delete
 >     ,truncateSt
 >     ,insert
@@ -1638,6 +1641,35 @@ slightly hacky parser for signed integers
 > dropView = keyword_ "view" >>
 >     DropView <$> names <*> dropBehaviour
 
+> createDomain :: Parser Statement
+> createDomain = keyword_ "domain" >>
+>     CreateDomain
+>     <$> names
+>     <*> (optional (keyword_ "as") *> typeName)
+>     <*> optionMaybe (keyword_ "default" *> valueExpr)
+>     <*> many con
+>   where
+>     con = (,) <$> optionMaybe (keyword_ "constraint" *> names)
+>           <*> (keyword_ "check" *> parens valueExpr)
+
+> alterDomain :: Parser Statement
+> alterDomain = keyword_ "domain" >>
+>     AlterDomain
+>     <$> names
+>     <*> (setDefault <|> constraint
+>          <|> (keyword_ "drop" *> (dropDefault <|> dropConstraint)))
+>   where
+>     setDefault = keywords_ ["set", "default"] >> ADSetDefault <$> valueExpr
+>     constraint = keyword_ "add" >>
+>        ADAddConstraint
+>        <$> optionMaybe (keyword_ "constraint" *> names)
+>        <*> (keyword_ "check" *> parens valueExpr)
+>     dropDefault = ADDropDefault <$ keyword_ "default"
+>     dropConstraint = keyword_ "constraint" >> ADDropConstraint <$> names
+
+> dropDomain :: Parser Statement
+> dropDomain = keyword_ "domain" >>
+>     DropDomain <$> names <*> dropBehaviour
 
 -----------------
 

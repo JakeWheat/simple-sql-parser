@@ -1152,6 +1152,40 @@ defintely skip
   [ <constraint name definition> ] <check constraint definition> [
       <constraint characteristics> ]
 
+>     ,(TestStatement SQL2011
+>       "create domain my_int int"
+>      $ CreateDomain [Name "my_int"]
+>           (TypeName [Name "int"])
+>           Nothing [])
+
+>     ,(TestStatement SQL2011
+>       "create domain my_int as int"
+>      $ CreateDomain [Name "my_int"]
+>           (TypeName [Name "int"])
+>           Nothing [])
+
+>     ,(TestStatement SQL2011
+>       "create domain my_int int default 0"
+>      $ CreateDomain [Name "my_int"]
+>           (TypeName [Name "int"])
+>           (Just (NumLit "0")) [])
+
+>     ,(TestStatement SQL2011
+>       "create domain my_int int check (value > 5)"
+>      $ CreateDomain [Name "my_int"]
+>           (TypeName [Name "int"])
+>           Nothing [(Nothing
+>                    ,BinOp (Iden [Name "value"]) [Name ">"] (NumLit "5"))])
+
+>     ,(TestStatement SQL2011
+>       "create domain my_int int constraint gt5 check (value > 5)"
+>      $ CreateDomain [Name "my_int"]
+>           (TypeName [Name "int"])
+>           Nothing [(Just [Name "gt5"]
+>                    ,BinOp (Iden [Name "value"]) [Name ">"] (NumLit "5"))])
+
+
+
 11.35 <alter domain statement>
 
 <alter domain statement> ::=
@@ -1168,25 +1202,65 @@ defintely skip
 <set domain default clause> ::=
   SET <default clause>
 
+>     ,(TestStatement SQL2011
+>       "alter domain my_int set default 0"
+>      $ AlterDomain [Name "my_int"]
+>        $ ADSetDefault $ NumLit "0")
+
+
 11.37 <drop domain default clause>
 
 <drop domain default clause> ::=
   DROP DEFAULT
+
+>     ,(TestStatement SQL2011
+>       "alter domain my_int drop default"
+>      $ AlterDomain [Name "my_int"]
+>        $ ADDropDefault)
+
 
 11.38 <add domain constraint definition>
 
 <add domain constraint definition> ::=
   ADD <domain constraint>
 
+>     ,(TestStatement SQL2011
+>       "alter domain my_int add check (value > 6)"
+>      $ AlterDomain [Name "my_int"]
+>        $ ADAddConstraint Nothing
+>          $ BinOp (Iden [Name "value"]) [Name ">"] (NumLit "6"))
+
+>     ,(TestStatement SQL2011
+>       "alter domain my_int add constraint gt6 check (value > 6)"
+>      $ AlterDomain [Name "my_int"]
+>        $ ADAddConstraint (Just [Name "gt6"])
+>          $ BinOp (Iden [Name "value"]) [Name ">"] (NumLit "6"))
+
+
 11.39 <drop domain constraint definition>
 
 <drop domain constraint definition> ::=
   DROP CONSTRAINT <constraint name>
 
+>     ,(TestStatement SQL2011
+>       "alter domain my_int drop constraint gt6"
+>      $ AlterDomain [Name "my_int"]
+>        $ ADDropConstraint [Name "gt6"])
+
 11.40 <drop domain statement>
 
 <drop domain statement> ::=
   DROP DOMAIN <domain name> <drop behavior>
+
+>     ,(TestStatement SQL2011
+>       "drop domain my_int"
+>      $ DropDomain [Name "my_int"] DefaultDropBehaviour)
+
+>     ,(TestStatement SQL2011
+>       "drop domain my_int cascade"
+>      $ DropDomain [Name "my_int"] Cascade)
+
+
 
 11.41 <character set definition>
 

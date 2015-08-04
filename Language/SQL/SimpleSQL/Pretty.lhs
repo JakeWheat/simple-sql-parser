@@ -469,6 +469,34 @@ which have been changed to try to improve the layout of the output.
 > statement _ (DropSchema nm db) =
 >     text "drop" <+> text "schema" <+> names nm <+> dropBehav db
 
+> statement d (CreateDomain nm ty def cs) =
+>     text "create" <+> text "domain" <+> names nm
+>     <+> typeName ty
+>     <+> maybe empty (\def' -> text "default" <+> valueExpr d def') def
+>     <+> sep (map con cs)
+>   where
+>     con (cn, e) =
+>         maybe empty (\cn' -> text "constraint" <+> names cn') cn
+>         <+> text "check" <> parens (valueExpr d e)
+
+> statement d (AlterDomain nm act) =
+>     texts ["alter","domain"]
+>     <+> names nm
+>     <+> a act
+>   where
+>     a (ADSetDefault v) = texts ["set","default"] <+> valueExpr d v
+>     a (ADDropDefault) = texts ["drop","default"]
+>     a (ADAddConstraint nm e) =
+>         text "add"
+>         <+> maybe empty (\nm' -> text "constraint" <+> names nm') nm
+>         <+> text "check" <> parens (valueExpr d e)
+>     a (ADDropConstraint nm) = texts ["drop", "constraint"]
+>                               <+> names nm
+
+
+> statement _ (DropDomain nm db) =
+>     text "drop" <+> text "domain" <+> names nm <+> dropBehav db
+
 == dml
 
 > statement d (SelectStatement q) = queryExpr d q
