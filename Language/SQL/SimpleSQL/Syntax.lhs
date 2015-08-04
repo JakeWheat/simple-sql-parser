@@ -415,28 +415,32 @@ I'm not sure if this is valid syntax or not.
 >        [(Maybe [Name], ValueExpr)]
 >   | AlterDomain [Name] AlterDomainAction
 >   | DropDomain [Name] DropBehaviour
+
+>     -- probably won't do character sets, collations
+>     -- and translations because I think they are too far from
+>     -- reality
 >   {- | CreateCharacterSet
 >   | DropCharacterSet
 >   | CreateCollation
 >   | DropCollation
 >   | CreateTranslation
->   | DropTranslation
->   | CreateAssertion
+>   | DropTranslation -}
+>   {-  | CreateAssertion
 >   | DropAssertion
 >   | CreateTrigger
 >   | DropTrigger
 >   | CreateType
 >   | AlterType
 >   | DropType
->     -- routine stuff?
+>     -- routine stuff? TODO
 >   | CreateCast
 >   | DropCast
 >   | CreateOrdering
->   | DropOrdering
+>   | DropOrdering -}
 >     -- transforms
->   | CreateSequence
->   | AlterSequence
->   | DropSequence -}
+>   | CreateSequence [Name] [SequenceGeneratorOption]
+>   | AlterSequence [Name] [SequenceGeneratorOption]
+>   | DropSequence [Name] DropBehaviour
 >     -- dml
 >   | SelectStatement QueryExpr
 >   {-    | DeclareCursor
@@ -611,7 +615,9 @@ I'm not sure if this is valid syntax or not.
 >     deriving (Eq,Show,Read,Data,Typeable)
 
 > data SequenceGeneratorOption =
->     SGOStartWith Integer
+>     SGODataType TypeName
+>   | SGOStartWith Integer
+>   | SGORestart (Maybe Integer)
 >   | SGOIncrementBy Integer
 >   | SGOMaxValue Integer
 >   | SGONoMaxValue

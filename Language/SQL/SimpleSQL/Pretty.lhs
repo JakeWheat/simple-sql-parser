@@ -486,16 +486,27 @@ which have been changed to try to improve the layout of the output.
 >   where
 >     a (ADSetDefault v) = texts ["set","default"] <+> valueExpr d v
 >     a (ADDropDefault) = texts ["drop","default"]
->     a (ADAddConstraint nm e) =
+>     a (ADAddConstraint cnm e) =
 >         text "add"
->         <+> maybe empty (\nm' -> text "constraint" <+> names nm') nm
+>         <+> maybe empty (\cnm' -> text "constraint" <+> names cnm') cnm
 >         <+> text "check" <> parens (valueExpr d e)
->     a (ADDropConstraint nm) = texts ["drop", "constraint"]
->                               <+> names nm
+>     a (ADDropConstraint cnm) = texts ["drop", "constraint"]
+>                                <+> names cnm
 
 
 > statement _ (DropDomain nm db) =
 >     text "drop" <+> text "domain" <+> names nm <+> dropBehav db
+
+> statement _ (CreateSequence nm sgos) =
+>   texts ["create","sequence"] <+> names nm
+>   <+> sep (map sequenceGeneratorOption sgos)
+
+> statement _ (AlterSequence nm sgos) =
+>   texts ["alter","sequence"] <+> names nm
+>   <+> sep (map sequenceGeneratorOption sgos)
+
+> statement _ (DropSequence nm db) =
+>     text "drop" <+> text "sequence" <+> names nm <+> dropBehav db
 
 == dml
 
@@ -581,17 +592,9 @@ which have been changed to try to improve the layout of the output.
 >                  <+> text "as" <+> text "identity"
 >                  <+> (case o of
 >                          [] -> empty
->                          os -> parens (sep $ map sgo os))
+>                          os -> parens (sep $ map sequenceGeneratorOption os))
 >       <+> sep (map cdef cons)
 >   where
->     sgo (SGOStartWith i) = texts ["start",  "with", show i]
->     sgo (SGOIncrementBy i) = texts ["increment", "by", show i]
->     sgo (SGOMaxValue i) = texts ["maxvalue", show i]
->     sgo SGONoMaxValue = texts ["no", "maxvalue"]
->     sgo (SGOMinValue i) = texts ["minvalue", show i]
->     sgo SGONoMinValue = texts ["no", "minvalue"]
->     sgo SGOCycle = text "cycle"
->     sgo SGONoCycle = text "no cycle"
 >     cdef (ColConstraintDef cnm con) =
 >         maybe empty (\s -> text "constraint" <+> names s) cnm
 >         <+> pcon con
@@ -606,6 +609,20 @@ which have been changed to try to improve the layout of the output.
 >         <+> refMatch m
 >         <+> refAct "update" u
 >         <+> refAct "delete" del
+
+> sequenceGeneratorOption :: SequenceGeneratorOption -> Doc
+> sequenceGeneratorOption (SGODataType t) =
+>     text "as" <+> typeName t
+> sequenceGeneratorOption (SGORestart mi) =
+>     text "restart" <+> maybe empty (\mi' -> texts ["with", show mi']) mi
+> sequenceGeneratorOption (SGOStartWith i) = texts ["start",  "with", show i]
+> sequenceGeneratorOption (SGOIncrementBy i) = texts ["increment", "by", show i]
+> sequenceGeneratorOption (SGOMaxValue i) = texts ["maxvalue", show i]
+> sequenceGeneratorOption SGONoMaxValue = texts ["no", "maxvalue"]
+> sequenceGeneratorOption (SGOMinValue i) = texts ["minvalue", show i]
+> sequenceGeneratorOption SGONoMinValue = texts ["no", "minvalue"]
+> sequenceGeneratorOption SGOCycle = text "cycle"
+> sequenceGeneratorOption SGONoCycle = text "no cycle"
 
 > refMatch :: ReferenceMatch -> Doc
 > refMatch m = case m of

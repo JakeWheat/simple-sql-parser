@@ -890,6 +890,10 @@ is there no way to do this:
 alter table t alter column c set generated as (a * 3)
 ??
 
+UPDATE: alter sequence uses same syntax as create sequence, which is
+the same sytnax as identity in create table, so overrule the sql
+standard and use the same syntax in alter identity.
+
 PLAN: TODO
 
 don't implement alter table alter column generated now
@@ -1965,6 +1969,23 @@ defintely skip
     CYCLE
   | NO CYCLE
 
+>     ,(TestStatement SQL2011
+>       "create sequence seq"
+>      $ CreateSequence [Name "seq"] [])
+
+>     ,(TestStatement SQL2011
+>       "create sequence seq as bigint"
+>      $ CreateSequence [Name "seq"]
+>         [SGODataType $ TypeName [Name "bigint"]])
+
+>     ,(TestStatement SQL2011
+>       "create sequence seq as bigint start with 5"
+>      $ CreateSequence [Name "seq"]
+>         [SGOStartWith 5
+>         ,SGODataType $ TypeName [Name "bigint"]
+>         ])
+
+
 11.73 <alter sequence generator statement>
 
 <alter sequence generator statement> ::=
@@ -1983,9 +2004,35 @@ defintely skip
 <sequence generator restart value> ::=
   <signed numeric literal>
 
+>     ,(TestStatement SQL2011
+>       "alter sequence seq restart"
+>      $ AlterSequence [Name "seq"]
+>         [SGORestart Nothing])
+
+>     ,(TestStatement SQL2011
+>       "alter sequence seq restart with 5"
+>      $ AlterSequence [Name "seq"]
+>         [SGORestart $ Just 5])
+
+>     ,(TestStatement SQL2011
+>       "alter sequence seq restart with 5 increment by 5"
+>      $ AlterSequence [Name "seq"]
+>         [SGORestart $ Just 5
+>         ,SGOIncrementBy 5])
+
+
 11.74 <drop sequence generator statement>
 
 <drop sequence generator statement> ::=
   DROP SEQUENCE <sequence generator name> <drop behavior>
+
+>     ,(TestStatement SQL2011
+>       "drop sequence seq"
+>      $ DropSequence [Name "seq"] DefaultDropBehaviour)
+
+>     ,(TestStatement SQL2011
+>       "drop sequence seq restrict"
+>      $ DropSequence [Name "seq"] Restrict)
+
 
 >     ]

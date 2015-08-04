@@ -1444,13 +1444,16 @@ TODO: change style
 >     [keyword_ "create" *> choice [createSchema
 >                                  ,createTable
 >                                  ,createView
->                                  ,createDomain]
+>                                  ,createDomain
+>                                  ,createSequence]
 >     ,keyword_ "alter" *> choice [alterTable
->                                 ,alterDomain]
+>                                 ,alterDomain
+>                                 ,alterSequence]
 >     ,keyword_ "drop" *> choice [dropSchema
 >                                ,dropTable
 >                                ,dropView
->                                ,dropDomain]
+>                                ,dropDomain
+>                                ,dropSequence]
 >     ,delete
 >     ,truncateSt
 >     ,insert
@@ -1488,31 +1491,6 @@ TODO: change style
 >         <*> (keywords_ ["as", "identity"] *>
 >              option [] (parens sequenceGeneratorOptions))
 >        ]
->     sequenceGeneratorOptions =
->          -- todo: could try to combine exclusive options
->          -- such as cycle and nocycle
->          permute ((\a b c d e f g h -> catMaybes [a,b,c,d,e,f,g,h])
->                   <$?> (Nothing, Just <$> startWith)
->                   <|?> (Nothing, Just <$> incrementBy)
->                   <|?> (Nothing, Just <$> maxValue)
->                   <|?> (Nothing, Just <$> noMaxValue)
->                   <|?> (Nothing, Just <$> minValue)
->                   <|?> (Nothing, Just <$> noMinValue)
->                   <|?> (Nothing, Just <$> scycle)
->                   <|?> (Nothing, Just <$> noCycle)
->                  )
->     startWith = keywords_ ["start", "with"] >>
->                 SGOStartWith <$> signedInteger
->     incrementBy = keywords_ ["increment", "by"] >>
->                 SGOIncrementBy <$> signedInteger
->     maxValue = keyword_ "maxvalue" >>
->                 SGOMaxValue <$> signedInteger
->     noMaxValue = SGONoMaxValue <$ try (keywords_ ["no","maxvalue"])
->     minValue = keyword_ "minvalue" >>
->                 SGOMinValue <$> signedInteger
->     noMinValue = SGONoMinValue <$ try (keywords_ ["no","minvalue"])
->     scycle = SGOCycle <$ keyword_ "cycle"
->     noCycle = SGONoCycle <$ try (keywords_ ["no","cycle"])
 
 > tableConstraintDef :: Parser (Maybe [Name], TableConstraint)
 > tableConstraintDef =
@@ -1577,6 +1555,44 @@ slightly hacky parser for signed integers
 > signedInteger =
 >     (*) <$> option 1 (1 <$ symbol "+" <|> (-1) <$ symbol "-")
 >     <*> unsignedInteger
+
+> sequenceGeneratorOptions :: Parser [SequenceGeneratorOption]
+> sequenceGeneratorOptions =
+>          -- todo: could try to combine exclusive options
+>          -- such as cycle and nocycle
+>          -- sort out options which are sometimes not allowed
+>          -- as datatype, and restart with
+>     permute ((\a b c d e f g h j k -> catMaybes [a,b,c,d,e,f,g,h,j,k])
+>                   <$?> nj startWith
+>                   <|?> nj dataType
+>                   <|?> nj restart
+>                   <|?> nj incrementBy
+>                   <|?> nj maxValue
+>                   <|?> nj noMaxValue
+>                   <|?> nj minValue
+>                   <|?> nj noMinValue
+>                   <|?> nj scycle
+>                   <|?> nj noCycle
+>                  )
+>   where
+>     nj p = (Nothing,Just <$> p)
+>     startWith = keywords_ ["start", "with"] >>
+>                 SGOStartWith <$> signedInteger
+>     dataType = keyword_ "as" >>
+>                SGODataType <$> typeName
+>     restart = keyword_ "restart" >>
+>               SGORestart <$> optionMaybe (keyword_ "with" *> signedInteger)
+>     incrementBy = keywords_ ["increment", "by"] >>
+>                 SGOIncrementBy <$> signedInteger
+>     maxValue = keyword_ "maxvalue" >>
+>                 SGOMaxValue <$> signedInteger
+>     noMaxValue = SGONoMaxValue <$ try (keywords_ ["no","maxvalue"])
+>     minValue = keyword_ "minvalue" >>
+>                 SGOMinValue <$> signedInteger
+>     noMinValue = SGONoMinValue <$ try (keywords_ ["no","minvalue"])
+>     scycle = SGOCycle <$ keyword_ "cycle"
+>     noCycle = SGONoCycle <$ try (keywords_ ["no","cycle"])
+
 
 > alterTable :: Parser Statement
 > alterTable = keyword_ "table" >>
@@ -1670,6 +1686,22 @@ slightly hacky parser for signed integers
 > dropDomain :: Parser Statement
 > dropDomain = keyword_ "domain" >>
 >     DropDomain <$> names <*> dropBehaviour
+
+> createSequence :: Parser Statement
+> createSequence = keyword_ "sequence" >>
+>     CreateSequence
+>     <$> names
+>     <*> sequenceGeneratorOptions
+
+> alterSequence :: Parser Statement
+> alterSequence = keyword_ "sequence" >>
+>     AlterSequence
+>     <$> names
+>     <*> sequenceGeneratorOptions
+
+> dropSequence :: Parser Statement
+> dropSequence = keyword_ "sequence" >>
+>     DropSequence <$> names <*> dropBehaviour
 
 -----------------
 
