@@ -465,12 +465,13 @@ I'm not sure if this is valid syntax or not.
 >   | RevokePrivilege
 >   | RevokeRole -}
 >     -- transaction management
->   {-  | StartTransaction
->   | SetTransaction
->   | SetContraints
->   | SavePoint
->   | ReleaseSavePoint
->   | Rollback -}
+>   | StartTransaction
+>   --  | SetTransaction
+>   --  | SetContraints
+>   | Savepoint Name
+>   | ReleaseSavepoint Name
+>   | Commit
+>   | Rollback (Maybe Name)
 >     -- session
 >   {-  | SetSessionCharacteristics
 >   | SetSessionAuthorization

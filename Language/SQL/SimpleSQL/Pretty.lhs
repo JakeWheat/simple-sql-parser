@@ -562,6 +562,22 @@ which have been changed to try to improve the layout of the output.
 
 == access control
 
+> statement _ StartTransaction =
+>     texts ["start", "transaction"]
+
+> statement _ (Savepoint nm) =
+>     text "savepoint" <+> name nm
+
+> statement _ (ReleaseSavepoint nm) =
+>     texts ["release", "savepoint"] <+> name nm
+
+> statement _ Commit =
+>     text "commit"
+
+> statement _ (Rollback mn) =
+>     text "rollback"
+>     <+> maybe empty (\n -> texts ["to","savepoint"] <+> name n) mn
+
 == transactions
 
 == sessions

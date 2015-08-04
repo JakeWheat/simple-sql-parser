@@ -1458,6 +1458,11 @@ TODO: change style
 >     ,truncateSt
 >     ,insert
 >     ,update
+>     ,startTransaction
+>     ,savepoint
+>     ,releaseSavepoint
+>     ,commit
+>     ,rollback
 >     ,SelectStatement <$> queryExpr
 >     ]
 
@@ -1751,6 +1756,28 @@ slightly hacky parser for signed integers
 >     option DefaultDropBehaviour
 >     (Restrict <$ keyword_ "restrict"
 >     <|> Cascade <$ keyword_ "cascade")
+
+-----------------------------
+
+= access control
+
+> startTransaction :: Parser Statement
+> startTransaction = StartTransaction <$ keywords_ ["start","transaction"]
+
+> savepoint :: Parser Statement
+> savepoint = keyword_ "savepoint" >>
+>     Savepoint <$> name
+
+> releaseSavepoint :: Parser Statement
+> releaseSavepoint = keywords_ ["release","savepoint"] >>
+>     ReleaseSavepoint <$> name
+
+> commit :: Parser Statement
+> commit = Commit <$ keyword_ "commit" <* optional (keyword_ "work")
+
+> rollback :: Parser Statement
+> rollback = keyword_ "rollback" >> optional (keyword_ "work") >>
+>     Rollback <$> optionMaybe (keywords_ ["to", "savepoint"] *> name)
 
 ----------------------------
 

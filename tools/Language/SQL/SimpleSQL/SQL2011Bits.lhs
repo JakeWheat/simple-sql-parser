@@ -8,9 +8,10 @@ commit, savepoint, etc.), and session management (set).
 > module Language.SQL.SimpleSQL.SQL2011Bits (sql2011BitsTests) where
 
 > import Language.SQL.SimpleSQL.TestTypes
+> import Language.SQL.SimpleSQL.Syntax
 
 > sql2011BitsTests :: TestItem
-> sql2011BitsTests = Group "sql 2011 bits tests" []
+> sql2011BitsTests = Group "sql 2011 bits tests" [
 
 17 Transaction management
 
@@ -20,6 +21,10 @@ commit, savepoint, etc.), and session management (set).
   START TRANSACTION [ <transaction characteristics> ]
 
 BEGIN is not in the standard!
+
+>      (TestStatement SQL2011
+>       "start transaction"
+>      $ StartTransaction)
 
 17.2 <set transaction statement>
 
@@ -72,15 +77,34 @@ BEGIN is not in the standard!
 <savepoint specifier> ::=
   <savepoint name>
 
+>     ,(TestStatement SQL2011
+>       "savepoint difficult_bit"
+>      $ Savepoint $ Name "difficult_bit")
+
+
 17.6 <release savepoint statement>
 
 <release savepoint statement> ::=
   RELEASE SAVEPOINT <savepoint specifier>
 
+>     ,(TestStatement SQL2011
+>       "release savepoint difficult_bit"
+>      $ ReleaseSavepoint $ Name "difficult_bit")
+
+
 17.7 <commit statement>
 
 <commit statement> ::=
   COMMIT [ WORK ] [ AND [ NO ] CHAIN ]
+
+>     ,(TestStatement SQL2011
+>       "commit"
+>      $ Commit)
+
+>     ,(TestStatement SQL2011
+>       "commit work"
+>      $ Commit)
+
 
 17.8 <rollback statement>
 
@@ -89,6 +113,18 @@ BEGIN is not in the standard!
 
 <savepoint clause> ::=
   TO SAVEPOINT <savepoint specifier>
+
+>     ,(TestStatement SQL2011
+>       "rollback"
+>      $ Rollback Nothing)
+
+>     ,(TestStatement SQL2011
+>       "rollback work"
+>      $ Rollback Nothing)
+
+>     ,(TestStatement SQL2011
+>       "rollback to savepoint difficult_bit"
+>      $ Rollback $ Just $ Name "difficult_bit")
 
 
 19 Session management
@@ -179,3 +215,5 @@ BEGIN is not in the standard!
 
 <collation specification> ::=
   <value specification>
+
+>    ]
