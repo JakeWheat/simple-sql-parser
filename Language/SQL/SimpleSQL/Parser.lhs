@@ -1082,7 +1082,9 @@ messages, but both of these are too important.
 >          ,prefixSym "~"
 >          ,binarySym "&" E.AssocRight
 >          ,binarySym "|" E.AssocRight]
+
 >         ,[binaryKeyword "overlaps" E.AssocNone]
+
 >         ,[binaryKeyword "like" E.AssocNone
 >          -- have to use try with inSuffix because of a conflict
 >          -- with 'in' in position function, and not between
@@ -1090,12 +1092,13 @@ messages, but both of these are too important.
 >          -- ambiguity
 >          ,E.Postfix $ try inSuffix
 >          ,E.Postfix betweenSuffix]
->          -- todo: figure out where to put the try 
+>          -- todo: figure out where to put the try?
 >          ++ [binaryKeywords $ makeKeywordTree
 >              ["not like"
 >              ,"is similar to"
 >              ,"is not similar to"]]
 >          ++ [multisetBinOp]
+
 >         ,[binarySym "<" E.AssocNone
 >          ,binarySym ">" E.AssocNone
 >          ,binarySym ">=" E.AssocNone
@@ -1103,6 +1106,7 @@ messages, but both of these are too important.
 >          ,binarySym "!=" E.AssocRight
 >          ,binarySym "<>" E.AssocRight
 >          ,binarySym "=" E.AssocRight]
+
 >         ,[postfixKeywords $ makeKeywordTree
 >              ["is null"
 >              ,"is not null"
@@ -1111,12 +1115,17 @@ messages, but both of these are too important.
 >              ,"is false"
 >              ,"is not false"
 >              ,"is unknown"
->              ,"is not unknown"
->              ,"is distinct from"
+>              ,"is not unknown"]]
+>          ++ [binaryKeywords $ makeKeywordTree
+>              ["is distinct from"
 >              ,"is not distinct from"]]
+
 >         ,[prefixKeyword "not"]
+
 >         ,if bExpr then [] else [binaryKeyword "and" E.AssocLeft]
+
 >         ,[binaryKeyword "or" E.AssocLeft]
+
 >        ]
 >   where
 >     binarySym nm assoc = binary (symbol_ nm) nm assoc
