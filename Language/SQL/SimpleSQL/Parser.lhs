@@ -1060,34 +1060,50 @@ messages, but both of these are too important.
 >          [E.Postfix $ try quantifiedComparisonSuffix
 >          ,E.Postfix matchPredicateSuffix
 >          ]
+
 >         ,[binarySym "." E.AssocLeft]
+
 >         ,[postfix' arraySuffix
 >          ,postfix' escapeSuffix
 >          ,postfix' collateSuffix]
+
 >         ,[prefixSym "+", prefixSym "-"]
+
 >         ,[binarySym "^" E.AssocLeft]
+
 >         ,[binarySym "*" E.AssocLeft
 >          ,binarySym "/" E.AssocLeft
 >          ,binarySym "%" E.AssocLeft]
+
 >         ,[binarySym "+" E.AssocLeft
 >          ,binarySym "-" E.AssocLeft]
->         ,[binarySym ">=" E.AssocNone
->          ,binarySym "<=" E.AssocNone
->          ,binarySym "!=" E.AssocRight
->          ,binarySym "<>" E.AssocRight
->          ,binarySym "||" E.AssocRight
+
+>         ,[binarySym "||" E.AssocRight
 >          ,prefixSym "~"
 >          ,binarySym "&" E.AssocRight
->          ,binarySym "|" E.AssocRight
->          ,binaryKeyword "like" E.AssocNone
->          ,binaryKeyword "overlaps" E.AssocNone]
+>          ,binarySym "|" E.AssocRight]
+>         ,[binaryKeyword "overlaps" E.AssocNone]
+>         ,[binaryKeyword "like" E.AssocNone
+>          -- have to use try with inSuffix because of a conflict
+>          -- with 'in' in position function, and not between
+>          -- between also has a try in it to deal with 'not'
+>          -- ambiguity
+>          ,E.Postfix $ try inSuffix
+>          ,E.Postfix betweenSuffix]
+>          -- todo: figure out where to put the try 
 >          ++ [binaryKeywords $ makeKeywordTree
 >              ["not like"
 >              ,"is similar to"
->              ,"is not similar to"
->              ,"is distinct from"
->              ,"is not distinct from"]
->             ,postfixKeywords $ makeKeywordTree
+>              ,"is not similar to"]]
+>          ++ [multisetBinOp]
+>         ,[binarySym "<" E.AssocNone
+>          ,binarySym ">" E.AssocNone
+>          ,binarySym ">=" E.AssocNone
+>          ,binarySym "<=" E.AssocNone
+>          ,binarySym "!=" E.AssocRight
+>          ,binarySym "<>" E.AssocRight
+>          ,binarySym "=" E.AssocRight]
+>         ,[postfixKeywords $ makeKeywordTree
 >              ["is null"
 >              ,"is not null"
 >              ,"is true"
@@ -1095,24 +1111,13 @@ messages, but both of these are too important.
 >              ,"is false"
 >              ,"is not false"
 >              ,"is unknown"
->              ,"is not unknown"]
->             ]
->          ++ [multisetBinOp]
->          -- have to use try with inSuffix because of a conflict
->          -- with 'in' in position function, and not between
->          -- between also has a try in it to deal with 'not'
->          -- ambiguity
->           ++ [E.Postfix $ try inSuffix,E.Postfix betweenSuffix]
->         ]
->         ++
->         [[binarySym "<" E.AssocNone
->          ,binarySym ">" E.AssocNone]
->         ,[binarySym "=" E.AssocRight]
->         ,[prefixKeyword "not"]]
->         ++
->         if bExpr then [] else [[binaryKeyword "and" E.AssocLeft]]
->         ++
->         [[binaryKeyword "or" E.AssocLeft]]
+>              ,"is not unknown"
+>              ,"is distinct from"
+>              ,"is not distinct from"]]
+>         ,[prefixKeyword "not"]
+>         ,if bExpr then [] else [binaryKeyword "and" E.AssocLeft]
+>         ,[binaryKeyword "or" E.AssocLeft]
+>        ]
 >   where
 >     binarySym nm assoc = binary (symbol_ nm) nm assoc
 >     binaryKeyword nm assoc = binary (keyword_ nm) nm assoc
