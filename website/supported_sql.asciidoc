@@ -26,12 +26,6 @@ prohibit everything that the standard doesn't allow.
 Apart from this permissiveness, some work has been put into trying to
 get the best parser error messages possible.
 
-Although the parser and syntax support some character set constructs,
-any source is always parsed in the default system encoding which
-Haskell uses, and any encoding/decoding is left to the system. I think
-this effectively means that you will usually be using utf-8 character
-set for the sql source.
-
 == Queries
 
 === Select lists

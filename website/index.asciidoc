@@ -252,7 +252,7 @@ fetch first 100 rows only;
 * Session management
 ** TODO
 
-See the link:supported_sql.html page for details on
+See the link:supported_sql.html[] page for details on
 the supported SQL.
 
 Here is a document with all the link:test_cases.html[simple-sql-parser
