@@ -13,7 +13,11 @@ cp website/ocean.css build
 # index
 asciidoctor website/index.asciidoc -o build/index.html
 #pandoc --from=markdown --to=html website/index.txt -o build/index.html -c main.css --title=simple-sql-parser --toc
-pandoc --from=markdown --to=html website/supported_sql.txt -o build/supported_sql.html -c main.css '--title=simple-sql-parser supported SQL' --toc
+asciidoctor website/supported_sql.asciidoc -o build/supported_sql.html
+#pandoc --from=markdown --to=html website/supported_sql.txt -o build/supported_sql.html -c main.css '--title=simple-sql-parser supported SQL' --toc
+
+
+
 # tpch sql file
 # pandoc src/tpch.sql -s --highlight-style kate -o tpch.sql.html
 # rendered test cases
