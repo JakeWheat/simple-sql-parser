@@ -295,3 +295,13 @@ sqlite
 sap dbmss (can't work out what are separate products or what are the
    dialects)
 
+
+
+here is an idea for a little feature:
+crunch sql: this takes sql and tries to make it as small as possible
+  (basically, combining nested selects where possible and inlining
+   ctes)
+expand sql:
+  breaks apart complex sql using nested queries and ctes, try to make
+   queries easier to understand in stages
+
