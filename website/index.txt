@@ -1,0 +1,416 @@
+# simple-sql-parser
+
+A parser for SQL in Haskell. Also includes a pretty printer which
+formats output nicely. Current target is to parse most SQL:2011
+queries, plus a good subset of DDL, non-query DML, transaction
+management, access control and session management.
+
+This is the documentation for version 0.5.0.
+
+Status: Covers a lot of queries already, but the public API is
+probably not very stable, since adding support for all the
+not-yet-supported ANSI SQL syntax, then other dialects of SQL is
+likely to change the abstract syntax types considerably.
+
+Tested with GHC 7.10.2, 7.8.4 and 7.6.3.
+
+# Examples
+
+Simple expression:
+
+~~~~{.sql}
+select a + b * c
+~~~~
+
+Parsed AST:
+
+~~~~{.haskell}
+Select{qeSetQuantifier = All,
+       qeSelectList =
+         [(BinOp (Iden (Name "a")) (Name "+")
+             (BinOp (Iden (Name "b")) (Name "*") (Iden (Name "c"))),
+           Nothing)],
+       qeFrom = [], qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
+       qeOrderBy = [], qeOffset = Nothing, qeFetchFirst = Nothing}
+~~~~
+
+TPC-H query 21:
+
+~~~~{.sql}
+select
+        s_name,
+        count(*) as numwait
+from
+        supplier,
+        lineitem l1,
+        orders,
+        nation
+where
+        s_suppkey = l1.l_suppkey
+        and o_orderkey = l1.l_orderkey
+        and o_orderstatus = 'F'
+        and l1.l_receiptdate > l1.l_commitdate
+        and exists (
+                select
+                        *
+                from
+                        lineitem l2
+                where
+                        l2.l_orderkey = l1.l_orderkey
+                        and l2.l_suppkey <> l1.l_suppkey
+        )
+        and not exists (
+                select
+                        *
+                from
+                        lineitem l3
+                where
+                        l3.l_orderkey = l1.l_orderkey
+                        and l3.l_suppkey <> l1.l_suppkey
+                        and l3.l_receiptdate > l3.l_commitdate
+        )
+        and s_nationkey = n_nationkey
+        and n_name = 'INDIA'
+group by
+        s_name
+order by
+        numwait desc,
+        s_name
+fetch first 100 rows only;
+~~~~
+
+Parsed:
+
+~~~~{.haskell}
+Select{qeSetQuantifier = All,
+       qeSelectList =
+         [(Iden (Name "s_name"), Nothing),
+          (App (Name "count") [Star], Just (Name "numwait"))],
+       qeFrom =
+         [TRSimple (Name "supplier"),
+          TRAlias (TRSimple (Name "lineitem")) (Alias (Name "l1") Nothing),
+          TRSimple (Name "orders"), TRSimple (Name "nation")],
+       qeWhere =
+         Just
+           (BinOp
+              (BinOp
+                 (BinOp
+                    (BinOp
+                       (BinOp
+                          (BinOp
+                             (BinOp
+                                (BinOp (Iden (Name "s_suppkey")) (Name "=")
+                                   (BinOp (Iden (Name "l1")) (Name ".")
+                                      (Iden (Name "l_suppkey"))))
+                                (Name "and")
+                                (BinOp (Iden (Name "o_orderkey")) (Name "=")
+                                   (BinOp (Iden (Name "l1")) (Name ".")
+                                      (Iden (Name "l_orderkey")))))
+                             (Name "and")
+                             (BinOp (Iden (Name "o_orderstatus")) (Name "=") (StringLit "F")))
+                          (Name "and")
+                          (BinOp
+                             (BinOp (Iden (Name "l1")) (Name ".") (Iden (Name "l_receiptdate")))
+                             (Name ">")
+                             (BinOp (Iden (Name "l1")) (Name ".")
+                                (Iden (Name "l_commitdate")))))
+                       (Name "and")
+                       (SubQueryExpr SqExists
+                          (Select{qeSetQuantifier = All, qeSelectList = [(Star, Nothing)],
+                                  qeFrom =
+                                    [TRAlias (TRSimple (Name "lineitem"))
+                                       (Alias (Name "l2") Nothing)],
+                                  qeWhere =
+                                    Just
+                                      (BinOp
+                                         (BinOp
+                                            (BinOp (Iden (Name "l2")) (Name ".")
+                                               (Iden (Name "l_orderkey")))
+                                            (Name "=")
+                                            (BinOp (Iden (Name "l1")) (Name ".")
+                                               (Iden (Name "l_orderkey"))))
+                                         (Name "and")
+                                         (BinOp
+                                            (BinOp (Iden (Name "l2")) (Name ".")
+                                               (Iden (Name "l_suppkey")))
+                                            (Name "<>")
+                                            (BinOp (Iden (Name "l1")) (Name ".")
+                                               (Iden (Name "l_suppkey"))))),
+                                  qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
+                                  qeOffset = Nothing, qeFetchFirst = Nothing})))
+                    (Name "and")
+                    (PrefixOp (Name "not")
+                       (SubQueryExpr SqExists
+                          (Select{qeSetQuantifier = All, qeSelectList = [(Star, Nothing)],
+                                  qeFrom =
+                                    [TRAlias (TRSimple (Name "lineitem"))
+                                       (Alias (Name "l3") Nothing)],
+                                  qeWhere =
+                                    Just
+                                      (BinOp
+                                         (BinOp
+                                            (BinOp
+                                               (BinOp (Iden (Name "l3")) (Name ".")
+                                                  (Iden (Name "l_orderkey")))
+                                               (Name "=")
+                                               (BinOp (Iden (Name "l1")) (Name ".")
+                                                  (Iden (Name "l_orderkey"))))
+                                            (Name "and")
+                                            (BinOp
+                                               (BinOp (Iden (Name "l3")) (Name ".")
+                                                  (Iden (Name "l_suppkey")))
+                                               (Name "<>")
+                                               (BinOp (Iden (Name "l1")) (Name ".")
+                                                  (Iden (Name "l_suppkey")))))
+                                         (Name "and")
+                                         (BinOp
+                                            (BinOp (Iden (Name "l3")) (Name ".")
+                                               (Iden (Name "l_receiptdate")))
+                                            (Name ">")
+                                            (BinOp (Iden (Name "l3")) (Name ".")
+                                               (Iden (Name "l_commitdate"))))),
+                                  qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
+                                  qeOffset = Nothing, qeFetchFirst = Nothing}))))
+                 (Name "and")
+                 (BinOp (Iden (Name "s_nationkey")) (Name "=")
+                    (Iden (Name "n_nationkey"))))
+              (Name "and")
+              (BinOp (Iden (Name "n_name")) (Name "=") (StringLit "INDIA"))),
+       qeGroupBy = [SimpleGroup (Iden (Name "s_name"))],
+       qeHaving = Nothing,
+       qeOrderBy =
+         [SortSpec (Iden (Name "numwait")) Desc NullsOrderDefault,
+          SortSpec (Iden (Name "s_name")) Asc NullsOrderDefault],
+       qeOffset = Nothing, qeFetchFirst = Just (NumLit "100")})
+
+~~~~
+
+Output from the simple-sql-parser pretty printer:
+
+~~~~{.sql}
+select s_name, count(*) as numwait
+from supplier,
+     lineitem as l1,
+     orders,
+     nation
+where s_suppkey = l1.l_suppkey
+      and o_orderkey = l1.l_orderkey
+      and o_orderstatus = 'F'
+      and l1.l_receiptdate > l1.l_commitdate
+      and exists (select *
+                  from lineitem as l2
+                  where l2.l_orderkey = l1.l_orderkey
+                        and l2.l_suppkey <> l1.l_suppkey)
+      and not exists (select *
+                      from lineitem as l3
+                      where l3.l_orderkey = l1.l_orderkey
+                            and l3.l_suppkey <> l1.l_suppkey
+                            and l3.l_receiptdate > l3.l_commitdate)
+      and s_nationkey = n_nationkey
+      and n_name = 'INDIA'
+group by s_name
+order by numwait desc, s_name
+fetch first 100 rows only;
+~~~~
+
+# Feature support
+
+* query expressions
+* * select lists
+* * from clause
+* * where clause
+* * group by clause
+* * having clause
+* * order by clause
+* * offset and fetch
+* * set operators
+* * common table expressions
+* * wide range of value expressions
+* DDL
+* * TODO
+* non-query DML
+* * TODO
+* Access control
+* * TODO
+* Transaction management
+* * TODO
+* Session management
+* * TODO
+
+See the [supported_sql.html](supported_sql.html) page for details on
+the supported SQL.
+
+Here is a document with all the [simple-sql-parser test
+cases](test_cases.html) rendered in a webpage so you can get an idea
+of what it supports.
+
+# Installation
+
+Installing the latest release from Hackage.
+
+~~~~
+cabal update && cabal install simple-sql-parser
+~~~~
+
+Working with the latest development version:
+
+~~~~
+git clone https://github.com/JakeWheat/simple-sql-parser.git
+cd simple-sql-parser
+cabal sandbox init
+cabal install --only-dependencies
+cabal build
+~~~~
+
+## Running the tests
+
+Get the source using 'cabal unpack' or 'git clone', then change to the
+source directory.
+
+You can run the tests using cabal:
+
+~~~~
+cabal sandbox init
+cabal install --only-dependencies --enable-tests
+cabal configure --enable-tests
+cabal test
+~~~~
+
+Or you can run them directly which gives more options. The tests use
+tasty, which provides the command line options.
+
+~~~~
+cabal sandbox init
+cabal install --only-dependencies --enable-tests
+cabal configure --enable-tests
+cabal build
+dist/build/Tests/Tests
+~~~~
+
+--hide-successes is a good option to use:
+
+~~~~
+dist/build/Tests/Tests --hide-successes
+~~~~
+
+# Documentation
+
+* see the [simple-sql-parser test cases](test_cases.html) for
+  examples.
+* [simple-sql-parser haddock](haddock/index.html) (the haddock on
+  Hackage has source links)
+
+# Recommended reading
+
+Here is some recommended reading on understanding SQL in depth.
+\
+\
+\
+SQL: The Complete Reference, 3rd Edition, James R. Groff, Paul
+N. Weinberg, Andrew J. Oppel
+
+This is a comprehensive book which covers up to the SQL:1999 standard.
+\
+\
+\
+SQL in a Nutshell, Kevin Kline, Brand Hunt, Daniel Kline
+
+This is another good book which covers some of the SQL:2003 and
+SQL:2008 standards. This means it covers a few newer things like
+window functions which 'SQL: The Complete Reference' doesn't. It also
+compares some main SQL product dialects.
+\
+\
+\
+SQL A Comparative Survey, Hugh Darwen
+http://bookboon.com/en/sql-a-comparative-survey-ebook
+
+This is a book about SQL from a relational theory perspective.
+\
+\
+\
+SQL and Relational Theory, 2nd Edition, Chris Date
+
+This also covers SQL from a partly theoretical perspective.
+\
+\
+\
+A Guide to the SQL Standard, C. J. Date, Hugh Darwen
+
+This is a fantastic book for covering all the little details of the
+SQL standard in depth. It only covers up to SQL:92.
+\
+\
+\
+There are several other good books by Chris Date, some with Hugh
+Darwen and others, for instance 'Introduction to Database Systems',
+'Temporal Data & the Relational Model, Databases', 'Types and the
+Relational Model'. Only the first one (Introduction to
+Database Systems) really relates to SQL.
+\
+\
+\
+Database Systems: The Complete Book, Hector Garcia-Molina, Jeff Ullman, and Jennifer Widom.
+
+This book is very comprehensive and has some interesting sections.
+\
+\
+\
+Some of the SQL draft standards are available to download for free (follow the
+links on the wikipedia page for SQL). They are a little tricky to
+read and understand.
+\
+\
+\
+TODO: add web links for the pdfs below
+\
+\
+\
+IBM DB2 10.5 SQL Reference Volume 1
+
+<http://public.dhe.ibm.com/ps/products/db2/info/vr105/pdf/en_US/DB2SQLRefVol1-db2s1e1050.pdf>
+\
+\
+\
+Oracle SQL Reference 12c release 1
+
+<http://docs.oracle.com/cd/E16655_01/server.121/e17209.pdf>
+\
+\
+\
+Teradata:
+
+TODO
+\
+\
+\
+Microsoft SQL Server 2012 TSQL reference online. I didn't find a PDF
+for this.
+
+<http://technet.microsoft.com/en-us/library/bb510741.aspx>
+\
+\
+\
+PostgreSQL 9.3 manual:
+
+<http://www.postgresql.org/docs/9.3/interactive/index.html>
+
+No PDF for the Postgres manual either, but the web pages are very
+readable.
+\
+\
+\
+SQL BNF Grammars
+
+http://savage.net.au/SQL/index.html
+
+# Links
+
+* Homepage: <http://jakewheat.github.io/simple-sql-parser>
+* Hackage: <http://hackage.haskell.org/package/simple-sql-parser>
+* Repository: <https://github.com/JakeWheat/simple-sql-parser>
+* Bug tracker: <https://github.com/JakeWheat/simple-sql-parser/issues>
+
+# Contact
+
+jakewheatmail@gmail.com

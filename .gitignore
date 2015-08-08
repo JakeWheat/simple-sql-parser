@@ -2,3 +2,4 @@
 /logchanges
 /cabal.sandbox.config
 /.cabal-sandbox/
+/build/
