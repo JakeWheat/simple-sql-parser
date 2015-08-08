@@ -1,4 +1,12 @@
-# simple-sql-parser
+
+:toc: right
+:sectnums:
+:toclevels: 10
+:source-highlighter: pygments
+
+= simple-sql-parser
+
+== Overview
 
 A parser for SQL in Haskell. Also includes a pretty printer which
 formats output nicely. Current target is to parse most SQL:2011
@@ -7,24 +15,26 @@ management, access control and session management.
 
 This is the documentation for version 0.5.0.
 
-Status: Covers a lot of queries already, but the public API is
+Status: covers a lot of queries already, but the public API is
 probably not very stable, since adding support for all the
 not-yet-supported ANSI SQL syntax, then other dialects of SQL is
 likely to change the abstract syntax types considerably.
 
 Tested with GHC 7.10.2, 7.8.4 and 7.6.3.
 
-# Examples
+== Examples
 
 Simple expression:
 
-~~~~{.sql}
+[source,sql]
+----
 select a + b * c
-~~~~
+----
 
 Parsed AST:
 
-~~~~{.haskell}
+[source,haskell]
+----
 Select{qeSetQuantifier = All,
        qeSelectList =
          [(BinOp (Iden (Name "a")) (Name "+")
@@ -32,11 +42,12 @@ Select{qeSetQuantifier = All,
            Nothing)],
        qeFrom = [], qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
        qeOrderBy = [], qeOffset = Nothing, qeFetchFirst = Nothing}
-~~~~
+----
 
 TPC-H query 21:
 
-~~~~{.sql}
+[source,sql]
+----
 select
         s_name,
         count(*) as numwait
@@ -77,11 +88,12 @@ order by
         numwait desc,
         s_name
 fetch first 100 rows only;
-~~~~
+----
 
 Parsed:
 
-~~~~{.haskell}
+[source,haskell]
+----
 Select{qeSetQuantifier = All,
        qeSelectList =
          [(Iden (Name "s_name"), Nothing),
@@ -183,11 +195,13 @@ Select{qeSetQuantifier = All,
           SortSpec (Iden (Name "s_name")) Asc NullsOrderDefault],
        qeOffset = Nothing, qeFetchFirst = Just (NumLit "100")})
 
-~~~~
+----
+
 
 Output from the simple-sql-parser pretty printer:
 
-~~~~{.sql}
+[source,sql]
+----
 select s_name, count(*) as numwait
 from supplier,
      lineitem as l1,
@@ -211,206 +225,200 @@ where s_suppkey = l1.l_suppkey
 group by s_name
 order by numwait desc, s_name
 fetch first 100 rows only;
-~~~~
+----
 
-# Feature support
+
+== Feature support
 
 * query expressions
-* * select lists
-* * from clause
-* * where clause
-* * group by clause
-* * having clause
-* * order by clause
-* * offset and fetch
-* * set operators
-* * common table expressions
-* * wide range of value expressions
+** select lists
+** from clause
+** where clause
+** group by clause
+** having clause
+** order by clause
+** offset and fetch
+** set operators
+** common table expressions
+** wide range of value expressions
 * DDL
-* * TODO
+** TODO
 * non-query DML
-* * TODO
+** TODO
 * Access control
-* * TODO
+** TODO
 * Transaction management
-* * TODO
+** TODO
 * Session management
-* * TODO
+** TODO
 
-See the [supported_sql.html](supported_sql.html) page for details on
+See the link:supported_sql.html page for details on
 the supported SQL.
 
-Here is a document with all the [simple-sql-parser test
-cases](test_cases.html) rendered in a webpage so you can get an idea
-of what it supports.
+Here is a document with all the link:test_cases.html[simple-sql-parser
+test cases] rendered in a webpage so you can get an idea of what it
+supports.
 
-# Installation
+== Installation
 
 Installing the latest release from Hackage.
 
-~~~~
+----
 cabal update && cabal install simple-sql-parser
-~~~~
+----
 
 Working with the latest development version:
 
-~~~~
+----
 git clone https://github.com/JakeWheat/simple-sql-parser.git
 cd simple-sql-parser
 cabal sandbox init
 cabal install --only-dependencies
 cabal build
-~~~~
+----
 
-## Running the tests
+=== Running the tests
 
 Get the source using 'cabal unpack' or 'git clone', then change to the
 source directory.
 
 You can run the tests using cabal:
 
-~~~~
+----
 cabal sandbox init
 cabal install --only-dependencies --enable-tests
 cabal configure --enable-tests
 cabal test
-~~~~
+----
 
 Or you can run them directly which gives more options. The tests use
 tasty, which provides the command line options.
 
-~~~~
+----
 cabal sandbox init
 cabal install --only-dependencies --enable-tests
 cabal configure --enable-tests
 cabal build
 dist/build/Tests/Tests
-~~~~
+----
 
 --hide-successes is a good option to use:
 
-~~~~
+----
 dist/build/Tests/Tests --hide-successes
-~~~~
+----
 
-# Documentation
+== Documentation
 
-* see the [simple-sql-parser test cases](test_cases.html) for
-  examples.
-* [simple-sql-parser haddock](haddock/index.html) (the haddock on
-  Hackage has source links)
+* See the link:test_cases.html[simple-sql-parser test cases] for
+  examples;
+* link:haddock/index.html[simple-sql-parser haddock] (the haddock on
+  Hackage has source links).
 
-# Recommended reading
+== Recommended reading
 
 Here is some recommended reading on understanding SQL in depth.
-\
-\
-\
+ +
+ +
 SQL: The Complete Reference, 3rd Edition, James R. Groff, Paul
 N. Weinberg, Andrew J. Oppel
 
 This is a comprehensive book which covers up to the SQL:1999 standard.
-\
-\
-\
+ +
+ +
+ +
 SQL in a Nutshell, Kevin Kline, Brand Hunt, Daniel Kline
 
 This is another good book which covers some of the SQL:2003 and
 SQL:2008 standards. This means it covers a few newer things like
 window functions which 'SQL: The Complete Reference' doesn't. It also
 compares some main SQL product dialects.
-\
-\
-\
-SQL A Comparative Survey, Hugh Darwen
+ +
+ +
+ +
+SQL A Comparative Survey, Hugh Darwen +
 http://bookboon.com/en/sql-a-comparative-survey-ebook
 
 This is a book about SQL from a relational theory perspective.
-\
-\
-\
+ +
+ +
+ +
 SQL and Relational Theory, 2nd Edition, Chris Date
 
 This also covers SQL from a partly theoretical perspective.
-\
-\
-\
+ +
+ +
+ +
 A Guide to the SQL Standard, C. J. Date, Hugh Darwen
 
 This is a fantastic book for covering all the little details of the
 SQL standard in depth. It only covers up to SQL:92.
-\
-\
-\
+ +
+ +
+ +
 There are several other good books by Chris Date, some with Hugh
 Darwen and others, for instance 'Introduction to Database Systems',
 'Temporal Data & the Relational Model, Databases', 'Types and the
 Relational Model'. Only the first one (Introduction to
 Database Systems) really relates to SQL.
-\
-\
-\
+ +
+ +
+ +
 Database Systems: The Complete Book, Hector Garcia-Molina, Jeff Ullman, and Jennifer Widom.
 
 This book is very comprehensive and has some interesting sections.
-\
-\
-\
+ +
+ +
+ +
 Some of the SQL draft standards are available to download for free (follow the
 links on the wikipedia page for SQL). They are a little tricky to
-read and understand.
-\
-\
-\
-TODO: add web links for the pdfs below
-\
-\
-\
-IBM DB2 10.5 SQL Reference Volume 1
-
-<http://public.dhe.ibm.com/ps/products/db2/info/vr105/pdf/en_US/DB2SQLRefVol1-db2s1e1050.pdf>
-\
-\
-\
-Oracle SQL Reference 12c release 1
-
-<http://docs.oracle.com/cd/E16655_01/server.121/e17209.pdf>
-\
-\
-\
-Teradata:
-
-TODO
-\
-\
-\
-Microsoft SQL Server 2012 TSQL reference online. I didn't find a PDF
-for this.
-
-<http://technet.microsoft.com/en-us/library/bb510741.aspx>
-\
-\
-\
-PostgreSQL 9.3 manual:
-
-<http://www.postgresql.org/docs/9.3/interactive/index.html>
-
-No PDF for the Postgres manual either, but the web pages are very
-readable.
-\
-\
-\
-SQL BNF Grammars
+read and understand. You can find some stuff at these links.
 
 http://savage.net.au/SQL/index.html
 
-# Links
+http://www.wiscorp.com/SQLStandards.html
+ +
+ +
+ +
+IBM DB2 10.5 SQL Reference Volume 1
 
-* Homepage: <http://jakewheat.github.io/simple-sql-parser>
-* Hackage: <http://hackage.haskell.org/package/simple-sql-parser>
-* Repository: <https://github.com/JakeWheat/simple-sql-parser>
-* Bug tracker: <https://github.com/JakeWheat/simple-sql-parser/issues>
+http://public.dhe.ibm.com/ps/products/db2/info/vr105/pdf/en_US/DB2SQLRefVol1-db2s1e1050.pdf
+ +
+ +
+ +
+Oracle SQL Reference 12c release 1
 
-# Contact
+http://docs.oracle.com/cd/E16655_01/server.121/e17209.pdf
+ +
+ +
+ +
+Teradata:
 
-jakewheatmail@gmail.com
+TODO
+ +
+ +
+ +
+Microsoft SQL Server 2012 TSQL reference online. I didn't find a PDF
+for this.
+
+http://technet.microsoft.com/en-us/library/bb510741.aspx
+ +
+ +
+ +
+PostgreSQL 9.4 manual:
+
+http://www.postgresql.org/docs/9.4/interactive/index.html
+
+No PDF for the Postgres manual either, but the web pages are very
+readable.
+
+== Links
+
+* Homepage: http://jakewheat.github.io/simple-sql-parser
+* Hackage: http://hackage.haskell.org/package/simple-sql-parser
+* Repository: https://github.com/JakeWheat/simple-sql-parser
+* Bug tracker: https://github.com/JakeWheat/simple-sql-parser/issues
+
+== Contact
+
++++jakewheatmail@gmail.com+++
