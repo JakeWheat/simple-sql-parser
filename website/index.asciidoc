@@ -418,6 +418,7 @@ readable.
 * Hackage: http://hackage.haskell.org/package/simple-sql-parser
 * Repository: https://github.com/JakeWheat/simple-sql-parser
 * Bug tracker: https://github.com/JakeWheat/simple-sql-parser/issues
+* Changes: https://github.com/JakeWheat/simple-sql-parser/blob/master/changelog
 
 == Contact
 

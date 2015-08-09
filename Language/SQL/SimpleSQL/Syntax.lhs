@@ -190,7 +190,7 @@
 >           | QName String
 >           | UQName String
 >           | DQName String String String
->             -- ^ dialect quoted name, the fields are start quote, end quote and the string itself, e.g. `something` is parsed to DQName "`" "`" "something, and $a$ test $a$ is parsed to DQName "$a$" "$a" " test "
+>             -- ^ dialect quoted name, the fields are start quote, end quote and the string itself, e.g. `something` is parsed to DQName "`" "`" "something, and $a$ test $a$ is parsed to DQName "$a$" "$a$" " test "
 >             deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | Represents a type name, used in casts.
@@ -419,7 +419,7 @@ I'm not sure if this is valid syntax or not.
 >     -- probably won't do character sets, collations
 >     -- and translations because I think they are too far from
 >     -- reality
->   {- | CreateCharacterSet
+>   {-  | CreateCharacterSet
 >   | DropCharacterSet
 >   | CreateCollation
 >   | DropCollation

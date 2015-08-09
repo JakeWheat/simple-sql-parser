@@ -1773,7 +1773,7 @@ slightly hacky parser for signed integers
 
 -----------------------------
 
-= access control
+= transaction management
 
 > startTransaction :: Parser Statement
 > startTransaction = StartTransaction <$ keywords_ ["start","transaction"]
