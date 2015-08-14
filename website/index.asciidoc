@@ -13,7 +13,9 @@ formats output nicely. Current target is to parse most SQL:2011
 queries, plus a good subset of DDL, non-query DML, transaction
 management, access control and session management.
 
-This is the documentation for version 0.5.0.
+This is the documentation for version 0.5.0. Documentation for other
+versions is available here:
+http://jakewheat.github.io/simple-sql-parser/.
 
 Status: covers a lot of queries already, but the public API is
 probably not very stable, since adding support for all the
@@ -21,6 +23,51 @@ not-yet-supported ANSI SQL syntax, then other dialects of SQL is
 likely to change the abstract syntax types considerably.
 
 Tested with GHC 7.10.2, 7.8.4 and 7.6.3.
+
+== Links
+
+* Local haddock: link:haddock/index.html[]
+* Supported SQL:link:supported_sql.html[]
+* Examples: link:test_cases.html[simple-sql-parser test cases]
+* Homepage: http://jakewheat.github.io/simple-sql-parser/latest
+* Hackage: http://hackage.haskell.org/package/simple-sql-parser
+* Repository: https://github.com/JakeWheat/simple-sql-parser
+* Bug tracker: https://github.com/JakeWheat/simple-sql-parser/issues
+* Changes: https://github.com/JakeWheat/simple-sql-parser/blob/master/changelog
+* Other versions: http://jakewheat.github.io/simple-sql-parser/
+* Parent project: http://jakewheat.github.io/
+* Contact: +++jakewheatmail@gmail.com+++
+
+== Feature support
+
+* query expressions
+** select lists
+** from clause
+** where clause
+** group by clause
+** having clause
+** order by clause
+** offset and fetch
+** set operators
+** common table expressions
+** wide range of value expressions
+* DDL
+** TODO
+* non-query DML
+** TODO
+* Access control
+** TODO
+* Transaction management
+** TODO
+* Session management
+** TODO
+
+See the link:supported_sql.html[] page for details on
+the supported SQL.
+
+Here is a document with all the link:test_cases.html[simple-sql-parser
+test cases] rendered in a webpage so you can get an idea of what it
+supports.
 
 == Examples
 
@@ -227,38 +274,6 @@ order by numwait desc, s_name
 fetch first 100 rows only;
 ----
 
-
-== Feature support
-
-* query expressions
-** select lists
-** from clause
-** where clause
-** group by clause
-** having clause
-** order by clause
-** offset and fetch
-** set operators
-** common table expressions
-** wide range of value expressions
-* DDL
-** TODO
-* non-query DML
-** TODO
-* Access control
-** TODO
-* Transaction management
-** TODO
-* Session management
-** TODO
-
-See the link:supported_sql.html[] page for details on
-the supported SQL.
-
-Here is a document with all the link:test_cases.html[simple-sql-parser
-test cases] rendered in a webpage so you can get an idea of what it
-supports.
-
 == Installation
 
 Installing the latest release from Hackage.
@@ -307,119 +322,3 @@ dist/build/Tests/Tests
 ----
 dist/build/Tests/Tests --hide-successes
 ----
-
-== Documentation
-
-* See the link:test_cases.html[simple-sql-parser test cases] for
-  examples;
-* link:haddock/index.html[simple-sql-parser haddock] (the haddock on
-  Hackage has source links).
-
-== Recommended reading
-
-Here is some recommended reading on understanding SQL in depth.
- +
- +
-SQL: The Complete Reference, 3rd Edition, James R. Groff, Paul
-N. Weinberg, Andrew J. Oppel
-
-This is a comprehensive book which covers up to the SQL:1999 standard.
- +
- +
- +
-SQL in a Nutshell, Kevin Kline, Brand Hunt, Daniel Kline
-
-This is another good book which covers some of the SQL:2003 and
-SQL:2008 standards. This means it covers a few newer things like
-window functions which 'SQL: The Complete Reference' doesn't. It also
-compares some main SQL product dialects.
- +
- +
- +
-SQL A Comparative Survey, Hugh Darwen +
-http://bookboon.com/en/sql-a-comparative-survey-ebook
-
-This is a book about SQL from a relational theory perspective.
- +
- +
- +
-SQL and Relational Theory, 2nd Edition, Chris Date
-
-This also covers SQL from a partly theoretical perspective.
- +
- +
- +
-A Guide to the SQL Standard, C. J. Date, Hugh Darwen
-
-This is a fantastic book for covering all the little details of the
-SQL standard in depth. It only covers up to SQL:92.
- +
- +
- +
-There are several other good books by Chris Date, some with Hugh
-Darwen and others, for instance 'Introduction to Database Systems',
-'Temporal Data & the Relational Model, Databases', 'Types and the
-Relational Model'. Only the first one (Introduction to
-Database Systems) really relates to SQL.
- +
- +
- +
-Database Systems: The Complete Book, Hector Garcia-Molina, Jeff Ullman, and Jennifer Widom.
-
-This book is very comprehensive and has some interesting sections.
- +
- +
- +
-Some of the SQL draft standards are available to download for free (follow the
-links on the wikipedia page for SQL). They are a little tricky to
-read and understand. You can find some stuff at these links.
-
-http://savage.net.au/SQL/index.html
-
-http://www.wiscorp.com/SQLStandards.html
- +
- +
- +
-IBM DB2 10.5 SQL Reference Volume 1
-
-http://public.dhe.ibm.com/ps/products/db2/info/vr105/pdf/en_US/DB2SQLRefVol1-db2s1e1050.pdf
- +
- +
- +
-Oracle SQL Reference 12c release 1
-
-http://docs.oracle.com/cd/E16655_01/server.121/e17209.pdf
- +
- +
- +
-Teradata:
-
-TODO
- +
- +
- +
-Microsoft SQL Server 2012 TSQL reference online. I didn't find a PDF
-for this.
-
-http://technet.microsoft.com/en-us/library/bb510741.aspx
- +
- +
- +
-PostgreSQL 9.4 manual:
-
-http://www.postgresql.org/docs/9.4/interactive/index.html
-
-No PDF for the Postgres manual either, but the web pages are very
-readable.
-
-== Links
-
-* Homepage: http://jakewheat.github.io/simple-sql-parser
-* Hackage: http://hackage.haskell.org/package/simple-sql-parser
-* Repository: https://github.com/JakeWheat/simple-sql-parser
-* Bug tracker: https://github.com/JakeWheat/simple-sql-parser/issues
-* Changes: https://github.com/JakeWheat/simple-sql-parser/blob/master/changelog
-
-== Contact
-
-+++jakewheatmail@gmail.com+++
