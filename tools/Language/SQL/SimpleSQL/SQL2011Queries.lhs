@@ -1024,11 +1024,10 @@ new multipliers
 
 create a list of type name variations:
 
-> typeNames :: [(String,TypeName)]
+> typeNames :: ([(String,TypeName)],[(String,TypeName)])
 > typeNames =
->     basicTypes
->     ++ concatMap makeArray basicTypes
->     ++ map makeMultiset basicTypes
+>     (basicTypes, concatMap makeArray basicTypes
+>                  ++ map makeMultiset basicTypes)
 >   where
 >     makeArray (s,t) = [(s ++ " array", ArrayTypeName t Nothing)
 >                       ,(s ++ " array[5]", ArrayTypeName t (Just 5))]
@@ -1188,13 +1187,21 @@ Now test each variation in both cast expression and typed literal
 expression
 
 > typeNameTests :: TestItem
-> typeNameTests = Group "type names" $ map (uncurry (TestValueExpr SQL2011))
->     $ concatMap makeTests typeNames
+> typeNameTests = Group "type names"
+>     [Group "type names" $ map (uncurry (TestValueExpr SQL2011))
+>                           $ concatMap makeSimpleTests $ fst typeNames
+>     ,Group "generated casts" $ map (uncurry (TestValueExpr SQL2011))
+>                           $ concatMap makeCastTests $ fst typeNames
+>     ,Group "generated typename" $ map (uncurry (TestValueExpr SQL2011))
+>                           $ concatMap makeTests $ snd typeNames]
 >   where
->     makeTests (ctn, stn) =
->         [("cast('test' as " ++ ctn ++ ")", Cast (StringLit "test") stn)
->         ,(ctn ++ " 'test'", TypedLit stn "test")
+>     makeSimpleTests (ctn, stn) =
+>         [(ctn ++ " 'test'", TypedLit stn "test")
 >         ]
+>     makeCastTests (ctn, stn) =
+>         [("cast('test' as " ++ ctn ++ ")", Cast (StringLit "test") stn)
+>         ]
+>     makeTests a = makeSimpleTests a ++ makeCastTests a
 
 
 == 6.2 <field definition>

@@ -57,8 +57,8 @@ Test for the lexer
 
 > lexerTests :: TestItem
 > lexerTests = Group "lexerTests" $
->     [LexerTest SQL2011 s t |  (s,t) <- lexerTable]
->     ++
+>     [Group "lexer token tests" $ [LexerTest SQL2011 s t |  (s,t) <- lexerTable]
+>     ,Group "generated combination lexer tests" $
 >     [ LexerTest SQL2011 (s ++ s1) (t ++ t1)
 >     | (s,t) <- lexerTable
 >     , (s1,t1) <- lexerTable
@@ -74,10 +74,12 @@ number number (todo: double check more carefully)
 >     , isGood $ t ++ t1
 
 >     ]
->     ++ map (uncurry $ LexerTest SQL2011)
+>     ,Group "adhoc lexer tests" $
+>        map (uncurry $ LexerTest SQL2011)
 >        [("", [])
 >        ,("-- line com\nstuff", [LineComment "-- line com\n",Identifier "stuff"])
 >        ]
+>      ]
 
 >  where
 >    isGood :: [Token] -> Bool

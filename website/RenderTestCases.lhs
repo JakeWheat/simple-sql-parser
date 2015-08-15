@@ -6,11 +6,14 @@ Converts the test data to asciidoc
 > import Control.Monad.State
 > import Language.SQL.SimpleSQL.Parser
 > import Language.SQL.SimpleSQL.Lexer
+> import Data.List
 
 > data TableItem = Heading Int String
 >                | Row String String
 
 > doc :: Int -> TestItem -> [TableItem]
+> -- filter out some groups of tests
+> doc n (Group nm _) | "generated" `isInfixOf` nm = []
 > doc n (Group nm is) =
 >     Heading n nm
 >     : concatMap (doc (n + 1)) is
@@ -30,14 +33,7 @@ Converts the test data to asciidoc
 >     [Row str (ppShow $ parseValueExpr d "" Nothing str)]
 
 > doc _ (LexerTest d str t) =
->   -- todo: figure out how to handle this:
->   -- too many entries, but want to show the lexing
->   -- a bit
->     -- [Row str (ppShow $ lexSQL d "" Nothing str)]
->     []
->     -- should probably think about doing something similar
->     -- with other generated combination tests such as the typename
->     -- tests
+>     [Row str (ppShow $ lexSQL d "" Nothing str)]
 
 TODO: should put the dialect in the html output
 
