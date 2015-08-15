@@ -7,9 +7,9 @@ description:         A parser for SQL. Parses most SQL:2011
                      transaction management and session management
                      syntax. Please see the homepage for more
                      information
-                     <http://jakewheat.github.io/simple-sql-parser/>.
+                     <http://jakewheat.github.io/simple-sql-parser/latest>.
 
-homepage:            http://jakewheat.github.io/simple-sql-parser/
+homepage:            http://jakewheat.github.io/simple-sql-parser/latest
 license:             BSD3
 license-file:        LICENSE
 author:              Jake Wheat

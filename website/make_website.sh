@@ -1,6 +1,5 @@
 #! /bin/sh
 
-set -x
 set -e
 
 # todo: check this is run from the project root and not the website/
@@ -11,9 +10,11 @@ cp website/main.css build
 cp website/ocean.css build
 
 # index
-asciidoctor website/index.asciidoc -o build/index.html
+asciidoctor website/index.asciidoc -o - | runhaskell website/AddLinks.lhs > build/index.html
 #pandoc --from=markdown --to=html website/index.txt -o build/index.html -c main.css --title=simple-sql-parser --toc
-asciidoctor website/supported_sql.asciidoc -o build/supported_sql.html
+asciidoctor website/supported_sql.asciidoc -o - | runhaskell website/AddLinks.lhs > build/supported_sql.html
+
+
 #pandoc --from=markdown --to=html website/supported_sql.txt -o build/supported_sql.html -c main.css '--title=simple-sql-parser supported SQL' --toc
 
 

@@ -26,9 +26,9 @@ Tested with GHC 7.10.2, 7.8.4 and 7.6.3.
 
 == Links
 
-* Local haddock: link:haddock/index.html[]
-* Supported SQL:link:supported_sql.html[]
-* Examples: link:test_cases.html[simple-sql-parser test cases]
+* Haddock: link:haddock/index.html[]
+* Supported SQL: link:supported_sql.html[]
+* Test cases: link:test_cases.html[simple-sql-parser test cases]
 * Homepage: http://jakewheat.github.io/simple-sql-parser/latest
 * Hackage: http://hackage.haskell.org/package/simple-sql-parser
 * Repository: https://github.com/JakeWheat/simple-sql-parser
@@ -37,6 +37,12 @@ Tested with GHC 7.10.2, 7.8.4 and 7.6.3.
 * Other versions: http://jakewheat.github.io/simple-sql-parser/
 * Parent project: http://jakewheat.github.io/
 * Contact: +++jakewheatmail@gmail.com+++
+
+The simple-sql-parser is a lot less simple than it used to be. If you
+just need to parse much simpler SQL than this, or want to start with a
+simpler parser and modify it slightly, you could also look at the
+basic query parser in the intro_to_parsing project, the code is here:
+link:https://github.com/JakeWheat/intro_to_parsing/blob/master/SimpleSQLQueryParser0.lhs[SimpleSQLQueryParser].
 
 == Feature support
 
@@ -65,9 +71,8 @@ Tested with GHC 7.10.2, 7.8.4 and 7.6.3.
 See the link:supported_sql.html[] page for details on
 the supported SQL.
 
-Here is a document with all the link:test_cases.html[simple-sql-parser
-test cases] rendered in a webpage so you can get an idea of what it
-supports.
+Here is all the link:test_cases.html[simple-sql-parser test cases]
+rendered in a webpage so you can get an idea of what it supports.
 
 == Examples
 
