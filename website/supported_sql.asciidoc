@@ -14,11 +14,11 @@ See the link:test_cases.html[simple-sql-parser test cases] page for
 examples.
 
 The target dialect of SQL at this time is ISO/ANSI SQL:2011. The
-parser supports queries, DDL, non-query DML, access control, transaction
-management and session management syntax. The parser and syntax does
-not follow the standard grammar closely - they permit a lot of things
-which the grammar in the standard forbids. The intended usage is that
-an additional pass over the ast can be made if you want to carefully
+parser supports queries, DDL, non-query DML, access control and
+transaction management syntax. The parser and syntax does not follow
+the standard grammar closely - they permit a lot of things which the
+grammar in the standard forbids. The intended usage is that an
+additional pass over the ast can be made if you want to carefully
 prohibit everything that the standard doesn't allow.
 
 Apart from this permissiveness, some work has been put into trying to
@@ -152,9 +152,5 @@ todo
 todo
 
 == Transaction management
-
-todo
-
-== Session management
 
 todo

@@ -1459,7 +1459,8 @@ TODO: change style
 >                                  ,createTable
 >                                  ,createView
 >                                  ,createDomain
->                                  ,createSequence]
+>                                  ,createSequence
+>                                  ,createRole]
 >     ,keyword_ "alter" *> choice [alterTable
 >                                 ,alterDomain
 >                                 ,alterSequence]
@@ -1467,7 +1468,8 @@ TODO: change style
 >                                ,dropTable
 >                                ,dropView
 >                                ,dropDomain
->                                ,dropSequence]
+>                                ,dropSequence
+>                                ,dropRole]
 >     ,delete
 >     ,truncateSt
 >     ,insert
@@ -1477,6 +1479,8 @@ TODO: change style
 >     ,releaseSavepoint
 >     ,commit
 >     ,rollback
+>     ,grant
+>     ,revoke
 >     ,SelectStatement <$> queryExpr
 >     ]
 
@@ -1792,6 +1796,82 @@ slightly hacky parser for signed integers
 > rollback :: Parser Statement
 > rollback = keyword_ "rollback" >> optional (keyword_ "work") >>
 >     Rollback <$> optionMaybe (keywords_ ["to", "savepoint"] *> name)
+
+
+------------------------------
+
+= Access control
+
+TODO: fix try at the 'on'
+
+> grant :: Parser Statement
+> grant = keyword_ "grant" >> (try priv <|> role)
+>   where
+>     priv = GrantPrivilege
+>            <$> commaSep privilegeAction
+>            <*> (keyword_ "on" *> privilegeObject)
+>            <*> (keyword_ "to" *> commaSep name)
+>            <*> option WithoutGrantOption
+>                (WithGrantOption <$ keywords_ ["with","grant","option"])
+>     role = GrantRole
+>            <$> commaSep name
+>            <*> (keyword_ "to" *> commaSep name)
+>            <*> option WithoutAdminOption
+>                (WithAdminOption <$ keywords_ ["with","admin","option"])
+
+> createRole :: Parser Statement
+> createRole = keyword_ "role" >>
+>     CreateRole <$> name
+
+> dropRole :: Parser Statement
+> dropRole = keyword_ "role" >>
+>     DropRole <$> name
+
+TODO: fix try at the 'on'
+
+> revoke :: Parser Statement
+> revoke = keyword_ "revoke" >> (try priv <|> role)
+>   where
+>     priv = RevokePrivilege
+>            <$> option NoGrantOptionFor
+>                (GrantOptionFor <$ keywords_ ["grant","option","for"])
+>            <*> commaSep privilegeAction
+>            <*> (keyword_ "on" *> privilegeObject)
+>            <*> (keyword_ "from" *> commaSep name)
+>            <*> dropBehaviour
+>     role = RevokeRole
+>            <$> option NoAdminOptionFor
+>                (AdminOptionFor <$ keywords_ ["admin","option", "for"])
+>            <*> commaSep name
+>            <*> (keyword_ "from" *> commaSep name)
+>            <*> dropBehaviour
+
+> privilegeAction :: Parser PrivilegeAction
+> privilegeAction = choice
+>     [PrivAll <$ keywords_ ["all","privileges"]
+>     ,keyword_ "select" >>
+>      PrivSelect <$> option [] (parens $ commaSep name)
+>     ,PrivDelete <$ keyword_ "delete"
+>     ,PrivUsage <$ keyword_ "usage"
+>     ,PrivTrigger <$ keyword_ "trigger"
+>     ,PrivExecute <$ keyword_ "execute"
+>     ,keyword_ "insert" >>
+>      PrivInsert <$> option [] (parens $ commaSep name)
+>     ,keyword_ "update" >>
+>      PrivUpdate <$> option [] (parens $ commaSep name)
+>     ,keyword_ "references" >>
+>      PrivReferences <$> option [] (parens $ commaSep name)
+>     ]
+
+> privilegeObject :: Parser PrivilegeObject
+> privilegeObject = choice
+>     [keyword_ "domain" >> PrivDomain <$> names
+>     ,keyword_ "type" >> PrivType <$> names
+>     ,keyword_ "sequence" >> PrivSequence <$> names
+>     ,keywords_ ["specific","function"] >> PrivFunction <$> names
+>     ,optional (keyword_ "table") >> PrivTable <$> names
+>     ]
+
 
 ----------------------------
 

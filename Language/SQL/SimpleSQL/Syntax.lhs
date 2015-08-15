@@ -49,6 +49,12 @@
 >     ,AlterTableAction(..)
 >     ,CheckOption(..)
 >     ,AlterDomainAction(..)
+>     ,AdminOption(..)
+>     ,GrantOption(..)
+>     ,PrivilegeObject(..)
+>     ,PrivilegeAction(..)
+>     ,AdminOptionFor(..)
+>     ,GrantOptionFor(..)
 >      -- * Dialect
 >     ,Dialect(..)
 >      -- * Comment
@@ -458,12 +464,13 @@ I'm not sure if this is valid syntax or not.
 >   | FreeLocator
 >   | HoldLocator  -}
 >     -- access control
->   {-  | GrantPrivilege
->   | GrantRole
->   | CreateRole
->   | DropRole
->   | RevokePrivilege
->   | RevokeRole -}
+>   | GrantPrivilege [PrivilegeAction] PrivilegeObject [Name] GrantOption
+>   | GrantRole [Name] [Name] AdminOption
+>   | CreateRole Name
+>   | DropRole Name
+>   | RevokePrivilege GrantOptionFor [PrivilegeAction] PrivilegeObject
+>             [Name] DropBehaviour
+>   | RevokeRole AdminOptionFor [Name] [Name] DropBehaviour
 >     -- transaction management
 >   | StartTransaction
 >   --  | SetTransaction
@@ -641,6 +648,38 @@ I'm not sure if this is valid syntax or not.
 >   | ADDropConstraint [Name]
 >     deriving (Eq,Show,Read,Data,Typeable)
 
+
+> data AdminOption = WithAdminOption | WithoutAdminOption
+>     deriving (Eq,Show,Read,Data,Typeable)
+
+> data GrantOption = WithGrantOption | WithoutGrantOption
+>     deriving (Eq,Show,Read,Data,Typeable)
+
+> data AdminOptionFor = AdminOptionFor | NoAdminOptionFor
+>     deriving (Eq,Show,Read,Data,Typeable)
+
+> data GrantOptionFor = GrantOptionFor | NoGrantOptionFor
+>     deriving (Eq,Show,Read,Data,Typeable)
+
+> data PrivilegeObject =
+>       PrivTable [Name]
+>     | PrivDomain [Name]
+>     | PrivType [Name]
+>     | PrivSequence [Name]
+>     | PrivFunction [Name]
+>     deriving (Eq,Show,Read,Data,Typeable)
+
+> data PrivilegeAction =
+>       PrivAll
+>     | PrivSelect [Name]
+>     | PrivDelete
+>     | PrivInsert [Name]
+>     | PrivUpdate [Name]
+>     | PrivReferences [Name]
+>     | PrivUsage
+>     | PrivTrigger
+>     | PrivExecute
+>     deriving (Eq,Show,Read,Data,Typeable)
 
 --------------------------
 

@@ -65,8 +65,6 @@ link:https://github.com/JakeWheat/intro_to_parsing/blob/master/SimpleSQLQueryPar
 ** TODO
 * Transaction management
 ** TODO
-* Session management
-** TODO
 
 See the link:supported_sql.html[] page for details on
 the supported SQL.

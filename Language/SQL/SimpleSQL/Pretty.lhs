@@ -560,7 +560,7 @@ which have been changed to try to improve the layout of the output.
 >     text "drop" <+> text "view" <+> names n <+> dropBehav b
 
 
-== access control
+== transactions
 
 > statement _ StartTransaction =
 >     texts ["start", "transaction"]
@@ -578,7 +578,52 @@ which have been changed to try to improve the layout of the output.
 >     text "rollback"
 >     <+> maybe empty (\n -> texts ["to","savepoint"] <+> name n) mn
 
-== transactions
+== access control
+
+> statement _ (GrantPrivilege pas po rs go) =
+>     text "grant" <+> commaSep (map privAct pas)
+>     <+> text "on" <+> privObj po
+>     <+> text "to" <+> commaSep (map name rs)
+>     <+> grantOpt go
+>   where
+>     grantOpt WithGrantOption = texts ["with","grant","option"]
+>     grantOpt WithoutGrantOption = empty
+
+> statement _ (GrantRole rs trs ao) =
+>     text "grant" <+> commaSep (map name rs)
+>     <+> text "to" <+> commaSep (map name trs)
+>     <+> adminOpt ao
+>   where
+>     adminOpt WithAdminOption = texts ["with","admin","option"]
+>     adminOpt WithoutAdminOption = empty
+
+> statement _ (CreateRole nm) =
+>     texts ["create","role"] <+> name nm
+
+> statement _ (DropRole nm) =
+>     texts ["drop","role"] <+> name nm
+
+> statement _ (RevokePrivilege go pas po rs db) =
+>     text "revoke"
+>     <+> grantOptFor go
+>     <+> commaSep (map privAct pas)
+>     <+> text "on" <+> privObj po
+>     <+> text "from" <+> commaSep (map name rs)
+>     <+> dropBehav db
+>   where
+>     grantOptFor GrantOptionFor = texts ["grant","option","for"]
+>     grantOptFor NoGrantOptionFor = empty
+
+> statement _ (RevokeRole ao rs trs db) =
+>     text "revoke"
+>     <+> adminOptFor ao
+>     <+> commaSep (map name rs)
+>     <+> text "from" <+> commaSep (map name trs)
+>     <+> dropBehav db
+>   where
+>     adminOptFor AdminOptionFor = texts ["admin","option","for"]
+>     adminOptFor NoAdminOptionFor = empty
+
 
 == sessions
 
@@ -718,6 +763,29 @@ which have been changed to try to improve the layout of the output.
 > tableConstraint d (TableCheckConstraint v) = text "check" <+> parens (valueExpr d v)
 
 
+> privAct :: PrivilegeAction -> Doc
+> privAct PrivAll = texts ["all","privileges"]
+> privAct (PrivSelect cs) = text "select" <+> maybeColList cs
+> privAct (PrivInsert cs) = text "insert" <+> maybeColList cs
+> privAct (PrivUpdate cs) = text "update" <+> maybeColList cs
+> privAct (PrivReferences cs) = text "references" <+> maybeColList cs
+> privAct PrivDelete = text "delete"
+> privAct PrivUsage = text "usage"
+> privAct PrivTrigger = text "trigger"
+> privAct PrivExecute = text "execute"
+
+> maybeColList :: [Name] -> Doc
+> maybeColList cs =
+>     if null cs
+>     then empty
+>     else parens (commaSep $ map name cs)
+
+> privObj :: PrivilegeObject -> Doc
+> privObj (PrivTable nm) = names nm
+> privObj (PrivDomain nm) = text "domain" <+> names nm
+> privObj (PrivType nm) = text "type" <+> names nm
+> privObj (PrivSequence nm) = text "sequence" <+> names nm
+> privObj (PrivFunction nm) = texts ["specific", "function"] <+> names nm
 
 = utils
 
