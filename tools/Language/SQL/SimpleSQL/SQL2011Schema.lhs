@@ -1332,10 +1332,29 @@ defintely skip
          CHECK <left paren> <search condition> <right paren>
          [ <constraint characteristics> ]
 
+>     ,(TestStatement SQL2011
+>       "create assertion t1_not_empty CHECK ((select count(*) from t1) > 0);"
+>      $ CreateAssertion [Name "t1_not_empty"]
+>         $ BinOp (SubQueryExpr SqSq $
+>                  makeSelect
+>                  {qeSelectList = [(App [Name "count"] [Star],Nothing)]
+>                  ,qeFrom = [TRSimple [Name "t1"]]
+>                  })
+>                 [Name ">"] (NumLit "0"))
+
 11.48 <drop assertion statement>
 
 <drop assertion statement> ::=
   DROP ASSERTION <constraint name> [ <drop behavior> ]
+
+>     ,(TestStatement SQL2011
+>       "drop assertion t1_not_empty;"
+>      $ DropAssertion [Name "t1_not_empty"] DefaultDropBehaviour)
+
+>     ,(TestStatement SQL2011
+>       "drop assertion t1_not_empty cascade;"
+>      $ DropAssertion [Name "t1_not_empty"] Cascade)
+
 
 11.49 <trigger definition>
 

@@ -1460,7 +1460,8 @@ TODO: change style
 >                                  ,createView
 >                                  ,createDomain
 >                                  ,createSequence
->                                  ,createRole]
+>                                  ,createRole
+>                                  ,createAssertion]
 >     ,keyword_ "alter" *> choice [alterTable
 >                                 ,alterDomain
 >                                 ,alterSequence]
@@ -1469,7 +1470,8 @@ TODO: change style
 >                                ,dropView
 >                                ,dropDomain
 >                                ,dropSequence
->                                ,dropRole]
+>                                ,dropRole
+>                                ,dropAssertion]
 >     ,delete
 >     ,truncateSt
 >     ,insert
@@ -1725,6 +1727,17 @@ slightly hacky parser for signed integers
 > dropSequence :: Parser Statement
 > dropSequence = keyword_ "sequence" >>
 >     DropSequence <$> names <*> dropBehaviour
+
+> createAssertion :: Parser Statement
+> createAssertion = keyword_ "assertion" >>
+>     CreateAssertion
+>     <$> names
+>     <*> (keyword_ "check" *> parens valueExpr)
+
+
+> dropAssertion :: Parser Statement
+> dropAssertion = keyword_ "assertion" >>
+>     DropAssertion <$> names <*> dropBehaviour
 
 -----------------
 

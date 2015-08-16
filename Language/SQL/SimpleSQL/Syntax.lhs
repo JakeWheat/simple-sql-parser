@@ -431,9 +431,9 @@ I'm not sure if this is valid syntax or not.
 >   | DropCollation
 >   | CreateTranslation
 >   | DropTranslation -}
->   {-  | CreateAssertion
->   | DropAssertion
->   | CreateTrigger
+>   | CreateAssertion [Name] ValueExpr
+>   | DropAssertion [Name] DropBehaviour
+>   {-   | CreateTrigger
 >   | DropTrigger
 >   | CreateType
 >   | AlterType

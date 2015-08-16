@@ -508,6 +508,14 @@ which have been changed to try to improve the layout of the output.
 > statement _ (DropSequence nm db) =
 >     text "drop" <+> text "sequence" <+> names nm <+> dropBehav db
 
+
+> statement d (CreateAssertion nm ex) =
+>   texts ["create","assertion"] <+> names nm
+>   <+> text "check" <+> parens (valueExpr d ex)
+
+> statement _ (DropAssertion nm db) =
+>     text "drop" <+> text "assertion" <+> names nm <+> dropBehav db
+
 == dml
 
 > statement d (SelectStatement q) = queryExpr d q
