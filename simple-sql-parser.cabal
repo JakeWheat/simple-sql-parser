@@ -32,8 +32,8 @@ Flag parserexe
 
 library
   exposed-modules:     Language.SQL.SimpleSQL.Pretty,
-                       Language.SQL.SimpleSQL.Parser,
-                       Language.SQL.SimpleSQL.Lexer,
+                       Language.SQL.SimpleSQL.Parse,
+                       Language.SQL.SimpleSQL.Lex,
                        Language.SQL.SimpleSQL.Syntax
   Other-Modules:       Language.SQL.SimpleSQL.Errors,
                        Language.SQL.SimpleSQL.Combinators
@@ -59,8 +59,8 @@ Test-Suite Tests
                        tasty-hunit >= 0.9 && < 0.10
 
   Other-Modules:       Language.SQL.SimpleSQL.Pretty,
-                       Language.SQL.SimpleSQL.Parser,
-                       Language.SQL.SimpleSQL.Lexer,
+                       Language.SQL.SimpleSQL.Parse,
+                       Language.SQL.SimpleSQL.Lex,
                        Language.SQL.SimpleSQL.Syntax,
                        Language.SQL.SimpleSQL.Errors,
                        Language.SQL.SimpleSQL.Combinators

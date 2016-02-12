@@ -10,7 +10,7 @@ parsec
 
 > -- | This is the module contains a Lexer for SQL.
 > {-# LANGUAGE TupleSections #-}
-> module Language.SQL.SimpleSQL.Lexer
+> module Language.SQL.SimpleSQL.Lex
 >     (Token(..)
 >     ,lexSQL
 >     ,prettyToken

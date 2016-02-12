@@ -14,8 +14,8 @@ test data to the Test.Framework tests.
 
 > --import Language.SQL.SimpleSQL.Syntax
 > import Language.SQL.SimpleSQL.Pretty
-> import Language.SQL.SimpleSQL.Parser
-> import Language.SQL.SimpleSQL.Lexer
+> import Language.SQL.SimpleSQL.Parse
+> import Language.SQL.SimpleSQL.Lex
 
 > import Language.SQL.SimpleSQL.TestTypes
 

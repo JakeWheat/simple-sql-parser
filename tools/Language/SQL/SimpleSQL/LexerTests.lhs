@@ -5,7 +5,7 @@ Test for the lexer
 > module Language.SQL.SimpleSQL.LexerTests (lexerTests) where
 
 > import Language.SQL.SimpleSQL.TestTypes
-> import Language.SQL.SimpleSQL.Lexer (Token(..))
+> import Language.SQL.SimpleSQL.Lex (Token(..))
 > --import Debug.Trace
 
 > lexerTable :: [(String,[Token])]

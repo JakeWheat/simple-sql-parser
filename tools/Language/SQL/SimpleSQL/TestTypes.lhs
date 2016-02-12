@@ -7,7 +7,7 @@ Tests.lhs module for the 'interpreter'.
 >     ,Dialect(..)) where
 
 > import Language.SQL.SimpleSQL.Syntax
-> import Language.SQL.SimpleSQL.Lexer (Token)
+> import Language.SQL.SimpleSQL.Lex (Token)
 
 TODO: maybe make the dialect args into [dialect], then each test
 checks all the dialects mentioned work, and all the dialects not

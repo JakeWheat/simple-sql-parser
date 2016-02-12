@@ -176,7 +176,7 @@ fixing them in the syntax but leaving them till the semantic checking
 
 > {-# LANGUAGE TupleSections #-}
 > -- | This is the module with the parser functions.
-> module Language.SQL.SimpleSQL.Parser
+> module Language.SQL.SimpleSQL.Parse
 >     (parseQueryExpr
 >     ,parseValueExpr
 >     ,parseStatement
@@ -202,7 +202,7 @@ fixing them in the syntax but leaving them till the semantic checking
 > import Language.SQL.SimpleSQL.Syntax
 > import Language.SQL.SimpleSQL.Combinators
 > import Language.SQL.SimpleSQL.Errors
-> import qualified Language.SQL.SimpleSQL.Lexer as L
+> import qualified Language.SQL.SimpleSQL.Lex as L
 > import Data.Maybe
 > import Text.Parsec.String (GenParser)
 
