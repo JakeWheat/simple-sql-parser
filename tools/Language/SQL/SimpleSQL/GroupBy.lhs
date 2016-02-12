@@ -17,19 +17,19 @@ Here are the tests for the group by component of query exprs
 > simpleGroupBy :: TestItem
 > simpleGroupBy = Group "simpleGroupBy" $ map (uncurry (TestQueryExpr ansi2011))
 >     [("select a,sum(b) from t group by a"
->      ,makeSelect {qeSelectList = [(Iden [Name "a"],Nothing)
->                                  ,(App [Name "sum"] [Iden [Name "b"]],Nothing)]
->                  ,qeFrom = [TRSimple [Name "t"]]
->                  ,qeGroupBy = [SimpleGroup $ Iden [Name "a"]]
+>      ,makeSelect {qeSelectList = [(Iden [Name Nothing "a"],Nothing)
+>                                  ,(App [Name Nothing "sum"] [Iden [Name Nothing "b"]],Nothing)]
+>                  ,qeFrom = [TRSimple [Name Nothing "t"]]
+>                  ,qeGroupBy = [SimpleGroup $ Iden [Name Nothing "a"]]
 >                  })
 
 >     ,("select a,b,sum(c) from t group by a,b"
->      ,makeSelect {qeSelectList = [(Iden [Name "a"],Nothing)
->                                  ,(Iden [Name "b"],Nothing)
->                                  ,(App [Name "sum"] [Iden [Name "c"]],Nothing)]
->                  ,qeFrom = [TRSimple [Name "t"]]
->                  ,qeGroupBy = [SimpleGroup $ Iden [Name "a"]
->                               ,SimpleGroup $ Iden [Name "b"]]
+>      ,makeSelect {qeSelectList = [(Iden [Name Nothing "a"],Nothing)
+>                                  ,(Iden [Name Nothing "b"],Nothing)
+>                                  ,(App [Name Nothing "sum"] [Iden [Name Nothing "c"]],Nothing)]
+>                  ,qeFrom = [TRSimple [Name Nothing "t"]]
+>                  ,qeGroupBy = [SimpleGroup $ Iden [Name Nothing "a"]
+>                               ,SimpleGroup $ Iden [Name Nothing "b"]]
 >                  })
 >     ]
 
@@ -41,15 +41,15 @@ sure which sql version they were introduced, 1999 or 2003 I think).
 >     [("select * from t group by ()", ms [GroupingParens []])
 >     ,("select * from t group by grouping sets ((), (a))"
 >      ,ms [GroupingSets [GroupingParens []
->                        ,GroupingParens [SimpleGroup $ Iden [Name "a"]]]])
+>                        ,GroupingParens [SimpleGroup $ Iden [Name Nothing "a"]]]])
 >     ,("select * from t group by cube(a,b)"
->      ,ms [Cube [SimpleGroup $ Iden [Name "a"], SimpleGroup $ Iden [Name "b"]]])
+>      ,ms [Cube [SimpleGroup $ Iden [Name Nothing "a"], SimpleGroup $ Iden [Name Nothing "b"]]])
 >     ,("select * from t group by rollup(a,b)"
->      ,ms [Rollup [SimpleGroup $ Iden [Name "a"], SimpleGroup $ Iden [Name "b"]]])
+>      ,ms [Rollup [SimpleGroup $ Iden [Name Nothing "a"], SimpleGroup $ Iden [Name Nothing "b"]]])
 >     ]
 >   where
 >     ms g = makeSelect {qeSelectList = [(Star,Nothing)]
->                       ,qeFrom = [TRSimple [Name "t"]]
+>                       ,qeFrom = [TRSimple [Name Nothing "t"]]
 >                       ,qeGroupBy = g}
 
 > randomGroupBy :: TestItem

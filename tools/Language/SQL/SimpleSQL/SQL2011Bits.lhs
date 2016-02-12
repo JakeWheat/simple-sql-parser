@@ -79,7 +79,7 @@ BEGIN is not in the standard!
 
 >     ,(TestStatement ansi2011
 >       "savepoint difficult_bit"
->      $ Savepoint $ Name "difficult_bit")
+>      $ Savepoint $ Name Nothing "difficult_bit")
 
 
 17.6 <release savepoint statement>
@@ -89,7 +89,7 @@ BEGIN is not in the standard!
 
 >     ,(TestStatement ansi2011
 >       "release savepoint difficult_bit"
->      $ ReleaseSavepoint $ Name "difficult_bit")
+>      $ ReleaseSavepoint $ Name Nothing "difficult_bit")
 
 
 17.7 <commit statement>
@@ -124,7 +124,7 @@ BEGIN is not in the standard!
 
 >     ,(TestStatement ansi2011
 >       "rollback to savepoint difficult_bit"
->      $ Rollback $ Just $ Name "difficult_bit")
+>      $ Rollback $ Just $ Name Nothing "difficult_bit")
 
 
 19 Session management

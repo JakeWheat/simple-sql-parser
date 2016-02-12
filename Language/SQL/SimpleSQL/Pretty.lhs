@@ -100,13 +100,13 @@ which have been changed to try to improve the layout of the output.
 >     fpd (Preceding e) = valueExpr d e <+> text "preceding"
 >     fpd (Following e) = valueExpr d e <+> text "following"
 
-> valueExpr dia (SpecialOp nm [a,b,c]) | nm `elem` [[Name "between"]
->                                                  ,[Name "not between"]] =
+> valueExpr dia (SpecialOp nm [a,b,c]) | nm `elem` [[Name Nothing "between"]
+>                                                  ,[Name Nothing "not between"]] =
 >   sep [valueExpr dia a
 >       ,names nm <+> valueExpr dia b
 >       ,nest (length (unnames nm) + 1) $ text "and" <+> valueExpr dia c]
 
-> valueExpr d (SpecialOp [Name "rowctor"] as) =
+> valueExpr d (SpecialOp [Name Nothing "rowctor"] as) =
 >     parens $ commaSep $ map (valueExpr d) as
 
 > valueExpr d (SpecialOp nm es) =
@@ -119,7 +119,8 @@ which have been changed to try to improve the layout of the output.
 
 > valueExpr d (PrefixOp f e) = names f <+> valueExpr d e
 > valueExpr d (PostfixOp f e) = valueExpr d e <+> names f
-> valueExpr d e@(BinOp _ op _) | op `elem` [[Name "and"], [Name "or"]] =
+> valueExpr d e@(BinOp _ op _) | op `elem` [[Name Nothing "and"]
+>                                          ,[Name Nothing "or"]] =
 >     -- special case for and, or, get all the ands so we can vcat them
 >     -- nicely
 >     case ands e of
@@ -130,7 +131,7 @@ which have been changed to try to improve the layout of the output.
 >     ands (BinOp a op' b) | op == op' = ands a ++ ands b
 >     ands x = [x]
 > -- special case for . we don't use whitespace
-> valueExpr d (BinOp e0 [Name "."] e1) =
+> valueExpr d (BinOp e0 [Name Nothing "."] e1) =
 >     valueExpr d e0 <> text "." <> valueExpr d e1
 > valueExpr d (BinOp e0 f e1) =
 >     valueExpr d e0 <+> names f <+> valueExpr d e1
@@ -211,11 +212,11 @@ which have been changed to try to improve the layout of the output.
 >          Distinct -> text "distinct"
 >     ,valueExpr d b]
 
-> valueExpr d (Escape v e) =
+> {-valueExpr d (Escape v e) =
 >     valueExpr d v <+> text "escape" <+> text [e]
 
 > valueExpr d (UEscape v e) =
->     valueExpr d v <+> text "uescape" <+> text [e]
+>     valueExpr d v <+> text "uescape" <+> text [e]-}
 
 > valueExpr d (Collate v c) =
 >     valueExpr d v <+> text "collate" <+> names c
@@ -239,8 +240,8 @@ which have been changed to try to improve the layout of the output.
 
 
 > unname :: Name -> String
-> unname (Name n) = n
-> unname (QuotedName s e n) =
+> unname (Name Nothing n) = n
+> unname (Name (Just (s,e)) n) =
 >     s ++ (if '"' `elem` s then doubleUpDoubleQuotes n else n) ++ e
 
 > unnames :: [Name] -> String
@@ -248,8 +249,8 @@ which have been changed to try to improve the layout of the output.
 
 
 > name :: Name -> Doc
-> name (Name n) = text n
-> name (QuotedName s e n) =
+> name (Name Nothing n) = text n
+> name (Name (Just (s,e)) n) =
 >     text s <> text (if '"' `elem` s then doubleUpDoubleQuotes n else n) <> text e
 
 > names :: [Name] -> Doc

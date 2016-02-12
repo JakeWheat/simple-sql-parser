@@ -17,16 +17,16 @@ Test for the lexer
 >     ++ map (\s -> (s,[Symbol s])) [">=","<=","!=","<>","||"]
 >     ++ (let idens = ["a", "_a", "test", "table", "Stuff", "STUFF"]
 >         -- simple identifiers
->         in map (\i -> (i, [Identifier i])) idens
->            ++ map (\i -> ("\"" ++ i ++ "\"", [QuotedIdentifier "\"" "\"" i])) idens
+>         in map (\i -> (i, [Identifier Nothing i])) idens
+>            ++ map (\i -> ("\"" ++ i ++ "\"", [Identifier (Just ("\"","\"")) i])) idens
 >            -- todo: in order to make lex . pretty id, need to
 >            -- preserve the case of the u
->            ++ map (\i -> ("u&\"" ++ i ++ "\"", [QuotedIdentifier "u&\"" "\"" i])) idens
+>            ++ map (\i -> ("u&\"" ++ i ++ "\"", [Identifier (Just ("u&\"","\"")) i])) idens
 >            -- host param
 >            ++ map (\i -> (':':i, [HostParam i])) idens
 >        )
 >     -- quoted identifiers with embedded double quotes
->     ++ [("\"normal \"\" iden\"", [QuotedIdentifier "\"" "\"" "normal \" iden"])]
+>     ++ [("\"normal \"\" iden\"", [Identifier (Just ("\"","\"")) "normal \" iden"])]
 >     -- strings
 >     ++ [("'string'", [SqlString "'" "'" "string"])
 >        ,("'normal '' quote'", [SqlString "'" "'" "normal ' quote"])
@@ -82,7 +82,7 @@ number number (todo: double check more carefully)
 >     ,Group "adhoc lexer tests" $
 >        map (uncurry $ LexerTest ansi2011)
 >        [("", [])
->        ,("-- line com\nstuff", [LineComment "-- line com\n",Identifier "stuff"])
+>        ,("-- line com\nstuff", [LineComment "-- line com\n",Identifier Nothing "stuff"])
 >        ]
 >      ]
 
@@ -121,11 +121,11 @@ number number (todo: double check more carefully)
 >                ,(isHostParam, isNumber)
 >                ,(isMinus, isLineComment)
 >                ]
->    isIdentifier (Identifier _) = True
+>    isIdentifier (Identifier Nothing _) = True
 >    isIdentifier _ = False
->    isDQIdentifier (QuotedIdentifier "\"" _ _) = True
+>    isDQIdentifier (Identifier (Just ("\"",_)) _) = True
 >    isDQIdentifier _ = False
->    isCQIdentifier (QuotedIdentifier (x:_) _ _) | isAlpha x = True
+>    isCQIdentifier (Identifier (Just ((x:_),_)) _) | isAlpha x = True
 >    isCQIdentifier _ = False
 >    isCsString (SqlString (x:_) _ _) | isAlpha x = True
 >    isCsString _ = False

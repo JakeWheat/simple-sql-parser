@@ -19,7 +19,7 @@ limit syntax
 
 > backtickQuotes :: TestItem
 > backtickQuotes = Group "backtickQuotes" (map (uncurry (TestValueExpr mysql))
->     [("`test`", Iden [QuotedName "`" "`" "test"])
+>     [("`test`", Iden [Name (Just ("`","`")) "test"])
 >     ]
 >     ++ [ParseValueExprFails ansi2011 "`test`"]
 >     )
@@ -36,5 +36,5 @@ limit syntax
 >   where
 >     sel = makeSelect
 >           {qeSelectList = [(Star, Nothing)]
->           ,qeFrom = [TRSimple [Name "t"]]
+>           ,qeFrom = [TRSimple [Name Nothing "t"]]
 >           }

@@ -330,9 +330,7 @@ u&"example quoted"
 > name :: Parser Name
 > name = do
 >     d <- getState
->     choice [Name <$> identifierTok (blacklist d) Nothing
->            ,(\(s,e,t) -> QuotedName s e t) <$> qidentifierTok
->            ]
+>     uncurry Name <$> identifierTok (blacklist d)
 
 todo: replace (:[]) with a named function all over
 
@@ -506,7 +504,7 @@ factoring in this function, and it is a little dense.
 >     -- this parser handles the fixed set of multi word
 >     -- type names, plus all the type names which are
 >     -- reserved words
->     reservedTypeNames = (:[]) . Name . unwords <$> makeKeywordTree
+>     reservedTypeNames = (:[]) . Name Nothing . unwords <$> makeKeywordTree
 >         ["double precision"
 >         ,"character varying"
 >         ,"char varying"
@@ -598,7 +596,7 @@ value expression parens, row ctor and scalar subquery
 >     ,ctor <$> commaSep1 valueExpr]
 >   where
 >     ctor [a] = Parens a
->     ctor as = SpecialOp [Name "rowctor"] as
+>     ctor as = SpecialOp [Name Nothing "rowctor"] as
 
 == case, cast, exists, unique, array/multiset constructor, interval
 
@@ -643,7 +641,7 @@ subquery expression:
 > arrayCtor = keyword_ "array" >>
 >     choice
 >     [ArrayCtor <$> parens queryExpr
->     ,Array (Iden [Name "array"]) <$> brackets (commaSep valueExpr)]
+>     ,Array (Iden [Name Nothing "array"]) <$> brackets (commaSep valueExpr)]
 
 As far as I can tell, table(query expr) is just syntax sugar for
 multiset(query expr). It must be there for compatibility or something.
@@ -689,7 +687,7 @@ this. also fix the monad -> applicative
 >     q <- optionMaybe intervalQualifier
 >     mkIt s lit q)
 >   where
->     mkIt Nothing val Nothing = pure $ TypedLit (TypeName [Name "interval"]) val
+>     mkIt Nothing val Nothing = pure $ TypedLit (TypeName [Name Nothing "interval"]) val
 >     mkIt s val (Just (a,b)) = pure $ IntervalLit s val a b
 >     mkIt (Just {}) _val Nothing = fail "cannot use sign without interval qualifier"
 
@@ -718,7 +716,7 @@ all the value expressions which start with an identifier
 >     -- this is a special case because set is a reserved keyword
 >     -- and the names parser won't parse it
 >     multisetSetFunction =
->         App [Name "set"] . (:[]) <$>
+>         App [Name Nothing "set"] . (:[]) <$>
 >         (try (keyword_ "set" *> openParen)
 >          *> valueExpr <* closeParen)
 
@@ -750,7 +748,7 @@ operatorname(firstArg keyword0 arg0 keyword1 arg1 etc.)
 >               -- check we haven't parsed the first
 >               -- keyword as an identifier
 >               case (e,kws) of
->                   (Iden [Name i], (k,_):_)
+>                   (Iden [Name Nothing i], (k,_):_)
 >                       | map toLower i == k ->
 >                           fail $ "cannot use keyword here: " ++ i
 >                   _ -> return ()
@@ -761,7 +759,7 @@ operatorname(firstArg keyword0 arg0 keyword1 arg1 etc.)
 >          SOKMandatory -> Just <$> pfa
 >     as <- mapM parseArg kws
 >     void closeParen
->     pure $ SpecialOpK [Name opName] fa $ catMaybes as
+>     pure $ SpecialOpK [Name Nothing opName] fa $ catMaybes as
 >   where
 >     parseArg (nm,mand) =
 >         let p = keyword_ nm >> valueExpr
@@ -833,7 +831,7 @@ in the source
 >                    ,"trailing" <$ keyword_ "trailing"
 >                    ,"both" <$ keyword_ "both"]
 >     mkTrim fa ch fr =
->       SpecialOpK [Name "trim"] Nothing
+>       SpecialOpK [Name Nothing "trim"] Nothing
 >           $ catMaybes [Just (fa,StringLit "'" "'" ch)
 >                       ,Just ("from", fr)]
 
@@ -959,7 +957,7 @@ and operator. This is the call to valueExprB.
 
 > betweenSuffix :: Parser (ValueExpr -> ValueExpr)
 > betweenSuffix =
->     makeOp <$> Name <$> opName
+>     makeOp <$> Name Nothing <$> opName
 >            <*> valueExprB
 >            <*> (keyword_ "and" *> valueExprB)
 >   where
@@ -979,7 +977,7 @@ a = any (select * from t)
 >     q <- parens queryExpr
 >     pure $ \v -> QuantifiedComparison v [c] cq q
 >   where
->     comp = Name <$> choice (map symbol
+>     comp = Name Nothing <$> choice (map symbol
 >            ["=", "<>", "<=", "<", ">", ">="])
 >     compQuan = choice
 >                [CPAny <$ keyword_ "any"
@@ -1009,7 +1007,10 @@ a match (select a from t)
 It is going to be really difficult to support an arbitrary character
 for the escape now there is a separate lexer ...
 
-> escapeSuffix :: Parser (ValueExpr -> ValueExpr)
+TODO: this needs fixing. Escape is only part of other nodes, and not a
+separate suffix.
+
+> {-escapeSuffix :: Parser (ValueExpr -> ValueExpr)
 > escapeSuffix = do
 >     ctor <- choice
 >             [Escape <$ keyword_ "escape"
@@ -1023,6 +1024,7 @@ for the escape now there is a separate lexer ...
 >     oneOnly c = case c of
 >                    [c'] -> return c'
 >                    _ -> fail "escape char must be single char"
+> -}
 
 === collate
 
@@ -1060,7 +1062,6 @@ messages, but both of these are too important.
 >         ,[binarySym "." E.AssocLeft]
 
 >         ,[postfix' arraySuffix
->          ,postfix' escapeSuffix
 >          ,postfix' collateSuffix]
 
 >         ,[prefixSym "+", prefixSym "-"]
@@ -1129,14 +1130,14 @@ messages, but both of these are too important.
 >     binaryKeywords p =
 >         E.Infix (do
 >                  o <- try p
->                  pure (\a b -> BinOp a [Name $ unwords o] b))
+>                  pure (\a b -> BinOp a [Name Nothing $ unwords o] b))
 >             E.AssocNone
 >     postfixKeywords p =
 >       postfix' $ do
 >           o <- try p
->           pure $ PostfixOp [Name $ unwords o]
+>           pure $ PostfixOp [Name Nothing $ unwords o]
 >     binary p nm assoc =
->       E.Infix (p >> pure (\a b -> BinOp a [Name nm] b)) assoc
+>       E.Infix (p >> pure (\a b -> BinOp a [Name Nothing nm] b)) assoc
 >     multisetBinOp = E.Infix (do
 >         keyword_ "multiset"
 >         o <- choice [Union <$ keyword_ "union"
@@ -1147,7 +1148,7 @@ messages, but both of these are too important.
 >           E.AssocLeft
 >     prefixKeyword nm = prefix (keyword_ nm) nm
 >     prefixSym nm = prefix (symbol_ nm) nm
->     prefix p nm = prefix' (p >> pure (PrefixOp [Name nm]))
+>     prefix p nm = prefix' (p >> pure (PrefixOp [Name Nothing nm]))
 >     -- hack from here
 >     -- http://stackoverflow.com/questions/10475337/parsec-expr-repeated-prefix-postfix-operator-not-supported
 >     -- not implemented properly yet
@@ -1996,17 +1997,17 @@ It is only allowed when all the strings are quoted with ' atm.
 >       (Just s, L.Symbol p) | s == p -> Just p
 >       _ -> Nothing)
 
-> identifierTok :: [String] -> Maybe String -> Parser String
-> identifierTok blackList kw = mytoken (\tok ->
->     case (kw,tok) of
->       (Nothing, L.Identifier p) | map toLower p `notElem` blackList -> Just p
->       (Just k, L.Identifier p) | k == map toLower p -> Just p
+> identifierTok :: [String] -> Parser (Maybe (String,String), String)
+> identifierTok blackList = mytoken (\tok ->
+>     case tok of
+>       L.Identifier q p | map toLower p `notElem` blackList -> Just (q,p)
 >       _ -> Nothing)
 
-> qidentifierTok :: Parser (String,String,String)
-> qidentifierTok = mytoken (\tok ->
->     case tok of
->       L.QuotedIdentifier s e t -> Just (s,e,t)
+> unquotedIdentifierTok :: [String] -> Maybe String -> Parser String
+> unquotedIdentifierTok blackList kw = mytoken (\tok ->
+>     case (kw,tok) of
+>       (Nothing, L.Identifier Nothing p) | map toLower p `notElem` blackList -> Just p
+>       (Just k, L.Identifier Nothing p) | k == map toLower p -> Just p
 >       _ -> Nothing)
 
 > mytoken :: (L.Token -> Maybe a) -> Parser a
@@ -2052,7 +2053,7 @@ todo: work out the symbol parsing better
 = helper functions
 
 > keyword :: String -> Parser String
-> keyword k = identifierTok [] (Just k) <?> k
+> keyword k = unquotedIdentifierTok [] (Just k) <?> k
 
 helper function to improve error messages
 

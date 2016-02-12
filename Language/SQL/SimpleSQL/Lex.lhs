@@ -46,16 +46,11 @@ parsec
 >     --
 >     = Symbol String
 >
->     -- | This is an identifier or keyword.
->     --
->     | Identifier String
->
->     -- | This is a quoted identifier, the quotes can be " or u&,
->     -- etc. or something dialect specific like []
->     -- the first two fields are the start and end quotes
->     | QuotedIdentifier String -- start quote
->                        String -- end quote
->                        String -- content
+>     -- | This is an identifier or keyword. The first field is
+>     -- the quotes used, or nothing if no quotes were used. The quotes
+>     -- can be " or u& or something dialect specific like []
+>     | Identifier (Maybe (String,String)) String
+
 >     -- | This is a host param symbol, e.g. :param
 >     | HostParam String
 >
@@ -88,10 +83,13 @@ parsec
 > -- print them, should should get back exactly the same string
 > prettyToken :: Dialect -> Token -> String
 > prettyToken _ (Symbol s) = s
-> prettyToken _ (Identifier t) = t
-> prettyToken _ (QuotedIdentifier q1 q2 t) =
+> prettyToken _ (Identifier Nothing t) = t
+> prettyToken _ (Identifier (Just (q1,q2)) t) =
 >     q1 ++
 >     -- todo: a bit hacky, do a better design
+>     -- the dialect will know how to escape and unescape
+>     -- contents, but the parser here also needs to know
+>     -- about parsing escaped quotes
 >     (if '"' `elem` q1 then doubleChars '"' t else t)
 >     ++ q2
 > --prettyToken _ (UQIdentifier t) =
@@ -179,14 +177,14 @@ u&"unicode quoted identifier"
 > identifier :: Dialect -> Parser Token
 > identifier d =
 >     choice
->     [QuotedIdentifier "\"" "\"" <$> qiden
+>     [Identifier (Just ("\"","\"")) <$> qiden
 >      -- try is used here to avoid a conflict with identifiers
 >      -- and quoted strings which also start with a 'u'
->     ,QuotedIdentifier "u&\"" "\"" <$> (try (string "u&") *> qiden)
->     ,QuotedIdentifier "U&\"" "\"" <$> (try (string "U&") *> qiden)
->     ,Identifier <$> identifierString
+>     ,Identifier (Just ("u&\"","\"")) <$> (try (string "u&") *> qiden)
+>     ,Identifier (Just ("U&\"","\"")) <$> (try (string "U&") *> qiden)
+>     ,Identifier Nothing <$> identifierString
 >      -- todo: dialect protection
->     ,QuotedIdentifier "`" "`" <$> mySqlQIden
+>     ,Identifier (Just ("`","`")) <$> mySqlQIden
 >     ]
 >   where
 >     qiden = char '"' *> qidenSuffix ""

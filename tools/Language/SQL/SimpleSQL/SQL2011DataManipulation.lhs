@@ -109,19 +109,19 @@ Section 14 in Foundation
       [ WHERE <search condition> ]
 
 >      (TestStatement ansi2011 "delete from t"
->      $ Delete [Name "t"] Nothing Nothing)
+>      $ Delete [Name Nothing "t"] Nothing Nothing)
 
 >     ,(TestStatement ansi2011 "delete from t as u"
->      $ Delete [Name "t"] (Just (Name "u")) Nothing)
+>      $ Delete [Name Nothing "t"] (Just (Name Nothing "u")) Nothing)
 
 >     ,(TestStatement ansi2011 "delete from t where x = 5"
->      $ Delete [Name "t"] Nothing
->        (Just $ BinOp (Iden [Name "x"]) [Name "="] (NumLit "5")))
+>      $ Delete [Name Nothing "t"] Nothing
+>        (Just $ BinOp (Iden [Name Nothing "x"]) [Name Nothing "="] (NumLit "5")))
 
 
 >     ,(TestStatement ansi2011 "delete from t as u where u.x = 5"
->      $ Delete [Name "t"] (Just (Name "u"))
->        (Just $ BinOp (Iden [Name "u", Name "x"]) [Name "="] (NumLit "5")))
+>      $ Delete [Name Nothing "t"] (Just (Name Nothing "u"))
+>        (Just $ BinOp (Iden [Name Nothing "u", Name Nothing "x"]) [Name Nothing "="] (NumLit "5")))
 
 14.10 <truncate table statement>
 
@@ -133,13 +133,13 @@ Section 14 in Foundation
   | RESTART IDENTITY
 
 >     ,(TestStatement ansi2011 "truncate table t"
->      $ Truncate [Name "t"] DefaultIdentityRestart)
+>      $ Truncate [Name Nothing "t"] DefaultIdentityRestart)
 
 >     ,(TestStatement ansi2011 "truncate table t continue identity"
->      $ Truncate [Name "t"] ContinueIdentity)
+>      $ Truncate [Name Nothing "t"] ContinueIdentity)
 
 >     ,(TestStatement ansi2011 "truncate table t restart identity"
->      $ Truncate [Name "t"] RestartIdentity)
+>      $ Truncate [Name Nothing "t"] RestartIdentity)
 
 
 14.11 <insert statement>
@@ -176,35 +176,35 @@ Section 14 in Foundation
   <column name list>
 
 >     ,(TestStatement ansi2011 "insert into t select * from u"
->      $ Insert [Name "t"] Nothing
+>      $ Insert [Name Nothing "t"] Nothing
 >        $ InsertQuery makeSelect
 >          {qeSelectList = [(Star, Nothing)]
->          ,qeFrom = [TRSimple [Name "u"]]})
+>          ,qeFrom = [TRSimple [Name Nothing "u"]]})
 
 >     ,(TestStatement ansi2011 "insert into t(a,b,c) select * from u"
->      $ Insert [Name "t"] (Just [Name "a", Name "b", Name "c"])
+>      $ Insert [Name Nothing "t"] (Just [Name Nothing "a", Name Nothing "b", Name Nothing "c"])
 >        $ InsertQuery makeSelect
 >          {qeSelectList = [(Star, Nothing)]
->          ,qeFrom = [TRSimple [Name "u"]]})
+>          ,qeFrom = [TRSimple [Name Nothing "u"]]})
 
 >     ,(TestStatement ansi2011 "insert into t default values"
->      $ Insert [Name "t"] Nothing DefaultInsertValues)
+>      $ Insert [Name Nothing "t"] Nothing DefaultInsertValues)
 
 >     ,(TestStatement ansi2011 "insert into t values(1,2)"
->      $ Insert [Name "t"] Nothing
+>      $ Insert [Name Nothing "t"] Nothing
 >        $ InsertQuery $ Values [[NumLit "1", NumLit "2"]])
 
 >     ,(TestStatement ansi2011 "insert into t values (1,2),(3,4)"
->      $ Insert [Name "t"] Nothing
+>      $ Insert [Name Nothing "t"] Nothing
 >        $ InsertQuery $ Values [[NumLit "1", NumLit "2"]
 >                               ,[NumLit "3", NumLit "4"]])
 
 >     ,(TestStatement ansi2011
 >       "insert into t values (default,null,array[],multiset[])"
->      $ Insert [Name "t"] Nothing
->        $ InsertQuery $ Values [[Iden [Name "default"]
->                                ,Iden [Name "null"]
->                                ,Array (Iden [Name "array"]) []
+>      $ Insert [Name Nothing "t"] Nothing
+>        $ InsertQuery $ Values [[Iden [Name Nothing "default"]
+>                                ,Iden [Name Nothing "null"]
+>                                ,Array (Iden [Name Nothing "array"]) []
 >                                ,MultisetCtor []]])
 
 
@@ -448,30 +448,30 @@ FROM CentralOfficeAccounts;
 
 
 >     ,(TestStatement ansi2011 "update t set a=b"
->      $ Update [Name "t"] Nothing
->        [Set [Name "a"] (Iden [Name "b"])] Nothing)
+>      $ Update [Name Nothing "t"] Nothing
+>        [Set [Name Nothing "a"] (Iden [Name Nothing "b"])] Nothing)
 
 >     ,(TestStatement ansi2011 "update t set a=b, c=5"
->      $ Update [Name "t"] Nothing
->        [Set [Name "a"] (Iden [Name "b"])
->        ,Set [Name "c"] (NumLit "5")] Nothing)
+>      $ Update [Name Nothing "t"] Nothing
+>        [Set [Name Nothing "a"] (Iden [Name Nothing "b"])
+>        ,Set [Name Nothing "c"] (NumLit "5")] Nothing)
 
 
 >     ,(TestStatement ansi2011 "update t set a=b where a>5"
->      $ Update [Name "t"] Nothing
->        [Set [Name "a"] (Iden [Name "b"])]
->        $ Just $ BinOp (Iden [Name "a"]) [Name ">"] (NumLit "5"))
+>      $ Update [Name Nothing "t"] Nothing
+>        [Set [Name Nothing "a"] (Iden [Name Nothing "b"])]
+>        $ Just $ BinOp (Iden [Name Nothing "a"]) [Name Nothing ">"] (NumLit "5"))
 
 
 >     ,(TestStatement ansi2011 "update t as u set a=b where u.a>5"
->      $ Update [Name "t"] (Just $ Name "u")
->        [Set [Name "a"] (Iden [Name "b"])]
->        $ Just $ BinOp (Iden [Name "u",Name "a"])
->                       [Name ">"] (NumLit "5"))
+>      $ Update [Name Nothing "t"] (Just $ Name Nothing "u")
+>        [Set [Name Nothing "a"] (Iden [Name Nothing "b"])]
+>        $ Just $ BinOp (Iden [Name Nothing "u",Name Nothing "a"])
+>                       [Name Nothing ">"] (NumLit "5"))
 
 >     ,(TestStatement ansi2011 "update t set (a,b)=(3,5)"
->      $ Update [Name "t"] Nothing
->        [SetMultiple [[Name "a"],[Name "b"]]
+>      $ Update [Name Nothing "t"] Nothing
+>        [SetMultiple [[Name Nothing "a"],[Name Nothing "b"]]
 >                     [NumLit "3", NumLit "5"]] Nothing)
 
 

@@ -11,8 +11,8 @@ Some tests for parsing full queries.
 > fullQueriesTests = Group "queries" $ map (uncurry (TestQueryExpr ansi2011))
 >     [("select count(*) from t"
 >      ,makeSelect
->       {qeSelectList = [(App [Name "count"] [Star], Nothing)]
->       ,qeFrom = [TRSimple [Name "t"]]
+>       {qeSelectList = [(App [Name Nothing "count"] [Star], Nothing)]
+>       ,qeFrom = [TRSimple [Name Nothing "t"]]
 >       }
 >      )
 
@@ -23,17 +23,17 @@ Some tests for parsing full queries.
 >       \  having count(1) > 5\n\
 >       \  order by s"
 >      ,makeSelect
->       {qeSelectList = [(Iden [Name "a"], Nothing)
->                       ,(App [Name "sum"]
->                         [BinOp (Iden [Name "c"])
->                                [Name "+"] (Iden [Name "d"])]
->                        ,Just $ Name "s")]
->       ,qeFrom = [TRSimple [Name "t"], TRSimple [Name "u"]]
->       ,qeWhere = Just $ BinOp (Iden [Name "a"]) [Name ">"] (NumLit "5")
->       ,qeGroupBy = [SimpleGroup $ Iden [Name "a"]]
->       ,qeHaving = Just $ BinOp (App [Name "count"] [NumLit "1"])
->                                [Name ">"] (NumLit "5")
->       ,qeOrderBy = [SortSpec (Iden [Name "s"]) DirDefault NullsOrderDefault]
+>       {qeSelectList = [(Iden [Name Nothing "a"], Nothing)
+>                       ,(App [Name Nothing "sum"]
+>                         [BinOp (Iden [Name Nothing "c"])
+>                                [Name Nothing "+"] (Iden [Name Nothing "d"])]
+>                        ,Just $ Name Nothing "s")]
+>       ,qeFrom = [TRSimple [Name Nothing "t"], TRSimple [Name Nothing "u"]]
+>       ,qeWhere = Just $ BinOp (Iden [Name Nothing "a"]) [Name Nothing ">"] (NumLit "5")
+>       ,qeGroupBy = [SimpleGroup $ Iden [Name Nothing "a"]]
+>       ,qeHaving = Just $ BinOp (App [Name Nothing "count"] [NumLit "1"])
+>                                [Name Nothing ">"] (NumLit "5")
+>       ,qeOrderBy = [SortSpec (Iden [Name Nothing "s"]) DirDefault NullsOrderDefault]
 >       }
 >      )
 >     ]

@@ -206,8 +206,8 @@
 todo: special syntax for like, similar with escape - escape cannot go
 in other places
 
->     | Escape ValueExpr Char
->     | UEscape ValueExpr Char
+>     --  | Escape ValueExpr Char
+>     --  | UEscape ValueExpr Char
 >     | Collate ValueExpr [Name]
 >     | MultisetBinOp ValueExpr CombineOp SetQuantifier ValueExpr
 >     | MultisetCtor [ValueExpr]
@@ -217,9 +217,13 @@ in other places
 >       deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | Represents an identifier name, which can be quoted or unquoted.
-> data Name = Name String
->           | QuotedName String String String
->             -- ^ quoted name, the fields are start quote, end quote and the string itself, these will usually be ", others are possible e.g. `something` is parsed to QuotedName "`" "`" "something, and $a$ test $a$ is parsed to QuotedName "$a$" "$a$" " test "
+> -- examples:
+> --
+> -- * test -> Name Nothing "test"
+> -- * "test" -> Name (Just "\"","\"") "test"
+> -- * `something` -> Name (Just ("`","`") "something"
+> -- * [ms] -> Name (Just ("[","]") "ms"
+> data Name = Name (Maybe (String,String)) String
 >             deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | Represents a type name, used in casts.
