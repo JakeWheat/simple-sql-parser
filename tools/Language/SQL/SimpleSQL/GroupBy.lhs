@@ -15,7 +15,7 @@ Here are the tests for the group by component of query exprs
 >     ]
 
 > simpleGroupBy :: TestItem
-> simpleGroupBy = Group "simpleGroupBy" $ map (uncurry (TestQueryExpr SQL2011))
+> simpleGroupBy = Group "simpleGroupBy" $ map (uncurry (TestQueryExpr ansi2011))
 >     [("select a,sum(b) from t group by a"
 >      ,makeSelect {qeSelectList = [(Iden [Name "a"],Nothing)
 >                                  ,(App [Name "sum"] [Iden [Name "b"]],Nothing)]
@@ -37,7 +37,7 @@ test the new group by (), grouping sets, cube and rollup syntax (not
 sure which sql version they were introduced, 1999 or 2003 I think).
 
 > newGroupBy :: TestItem
-> newGroupBy = Group "newGroupBy" $ map (uncurry (TestQueryExpr SQL2011))
+> newGroupBy = Group "newGroupBy" $ map (uncurry (TestQueryExpr ansi2011))
 >     [("select * from t group by ()", ms [GroupingParens []])
 >     ,("select * from t group by grouping sets ((), (a))"
 >      ,ms [GroupingSets [GroupingParens []
@@ -53,7 +53,7 @@ sure which sql version they were introduced, 1999 or 2003 I think).
 >                       ,qeGroupBy = g}
 
 > randomGroupBy :: TestItem
-> randomGroupBy = Group "randomGroupBy" $ map (ParseQueryExpr SQL2011)
+> randomGroupBy = Group "randomGroupBy" $ map (ParseQueryExpr ansi2011)
 >     ["select * from t GROUP BY a"
 >     ,"select * from t GROUP BY GROUPING SETS((a))"
 >     ,"select * from t GROUP BY a,b,c"

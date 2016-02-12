@@ -18,7 +18,7 @@ parsec
 >     ,ParseError(..)
 >     ,Dialect(..)) where
 
-> import Language.SQL.SimpleSQL.Syntax (Dialect(..))
+> import Language.SQL.SimpleSQL.Dialect
 
 > import Text.Parsec (option,string,manyTill,anyChar
 >                    ,try,string,many1,oneOf,digit,(<|>),choice,char,eof
@@ -200,7 +200,7 @@ u&"unicode quoted identifier"
 >                ,return $ concat [t,s]]
 >     -- mysql can quote identifiers with `
 >     mySqlQIden = do
->         guard (d == MySQL)
+>         guard (diSyntaxFlavour d == MySQL)
 >         char '`' *> takeWhile1 (/='`') <* char '`'
 
 This parses a valid identifier without quotes.

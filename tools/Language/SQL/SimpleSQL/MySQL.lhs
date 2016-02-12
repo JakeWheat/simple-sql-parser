@@ -18,20 +18,20 @@ limit syntax
 [LIMIT {[offset,] row_count | row_count OFFSET offset}]
 
 > backtickQuotes :: TestItem
-> backtickQuotes = Group "backtickQuotes" (map (uncurry (TestValueExpr MySQL))
+> backtickQuotes = Group "backtickQuotes" (map (uncurry (TestValueExpr mysql))
 >     [("`test`", Iden [DQName "`" "`" "test"])
 >     ]
->     ++ [ParseValueExprFails SQL2011 "`test`"]
+>     ++ [ParseValueExprFails ansi2011 "`test`"]
 >     )
 
 > limit :: TestItem
-> limit = Group "queries" ( map (uncurry (TestQueryExpr MySQL))
+> limit = Group "queries" ( map (uncurry (TestQueryExpr mysql))
 >     [("select * from t limit 5"
 >      ,sel {qeFetchFirst = Just (NumLit "5")}
 >      )
 >     ]
->     ++ [ParseQueryExprFails MySQL "select a from t fetch next 10 rows only;"
->        ,ParseQueryExprFails SQL2011 "select * from t limit 5"]
+>     ++ [ParseQueryExprFails mysql "select a from t fetch next 10 rows only;"
+>        ,ParseQueryExprFails ansi2011 "select * from t limit 5"]
 >     )
 >   where
 >     sel = makeSelect

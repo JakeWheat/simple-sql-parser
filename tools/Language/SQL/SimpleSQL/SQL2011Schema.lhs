@@ -20,7 +20,7 @@ This module covers the tests for parsing schema and DDL statements.
       [ <schema character set or path> ]
       [ <schema element>... ]
 
->      (TestStatement SQL2011 "create schema my_schema"
+>      (TestStatement ansi2011 "create schema my_schema"
 >      $ CreateSchema [Name "my_schema"])
 
 todo: schema name can have .
@@ -79,11 +79,11 @@ add schema element support:
   | RESTRICT
 
 
->     ,(TestStatement SQL2011 "drop schema my_schema"
+>     ,(TestStatement ansi2011 "drop schema my_schema"
 >      $ DropSchema [Name "my_schema"] DefaultDropBehaviour)
->     ,(TestStatement SQL2011 "drop schema my_schema cascade"
+>     ,(TestStatement ansi2011 "drop schema my_schema cascade"
 >      $ DropSchema [Name "my_schema"] Cascade)
->     ,(TestStatement SQL2011 "drop schema my_schema restrict"
+>     ,(TestStatement ansi2011 "drop schema my_schema restrict"
 >      $ DropSchema [Name "my_schema"] Restrict)
 
 11.3 <table definition>
@@ -94,7 +94,7 @@ add schema element support:
       [ WITH <system versioning clause> ]
       [ ON COMMIT <table commit action> ROWS ]
 
->     ,(TestStatement SQL2011 "create table t (a int, b int);"
+>     ,(TestStatement ansi2011 "create table t (a int, b int);"
 >      $ CreateTable [Name "t"]
 >        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing []
 >        ,TableColumnDef $ ColumnDef (Name "b") (TypeName [Name "int"]) Nothing []])
@@ -310,25 +310,25 @@ not null | unique | references | check
 todo: constraint characteristics
 
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create table t (a int not null);"
 >      $ CreateTable [Name "t"]
 >        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
 >         [ColConstraintDef Nothing ColNotNullConstraint]])
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create table t (a int constraint a_not_null not null);"
 >      $ CreateTable [Name "t"]
 >        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
 >         [ColConstraintDef (Just [Name "a_not_null"]) ColNotNullConstraint]])
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create table t (a int unique);"
 >      $ CreateTable [Name "t"]
 >        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
 >         [ColConstraintDef Nothing ColUniqueConstraint]])
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create table t (a int primary key);"
 >      $ CreateTable [Name "t"]
 >        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
@@ -339,7 +339,7 @@ references t(a,b)
   [perm: on update [cascade | set null | set default | restrict | no action]
          on delete ""
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create table t (a int references u);"
 >      $ CreateTable [Name "t"]
 >        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
@@ -347,7 +347,7 @@ references t(a,b)
 >          [Name "u"] Nothing DefaultReferenceMatch
 >          DefaultReferentialAction DefaultReferentialAction]])
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create table t (a int references u(a));"
 >      $ CreateTable [Name "t"]
 >        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
@@ -355,7 +355,7 @@ references t(a,b)
 >          [Name "u"] (Just $ Name "a") DefaultReferenceMatch
 >          DefaultReferentialAction DefaultReferentialAction]])
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create table t (a int references u match full);"
 >      $ CreateTable [Name "t"]
 >        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
@@ -363,7 +363,7 @@ references t(a,b)
 >          [Name "u"] Nothing MatchFull
 >          DefaultReferentialAction DefaultReferentialAction]])
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create table t (a int references u match partial);"
 >      $ CreateTable [Name "t"]
 >        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
@@ -371,7 +371,7 @@ references t(a,b)
 >          [Name "u"] Nothing MatchPartial
 >          DefaultReferentialAction DefaultReferentialAction]])
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create table t (a int references u match simple);"
 >      $ CreateTable [Name "t"]
 >        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
@@ -379,7 +379,7 @@ references t(a,b)
 >          [Name "u"] Nothing MatchSimple
 >          DefaultReferentialAction DefaultReferentialAction]])
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create table t (a int references u on update cascade );"
 >      $ CreateTable [Name "t"]
 >        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
@@ -387,7 +387,7 @@ references t(a,b)
 >          [Name "u"] Nothing DefaultReferenceMatch
 >          RefCascade DefaultReferentialAction]])
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create table t (a int references u on update set null );"
 >      $ CreateTable [Name "t"]
 >        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
@@ -395,7 +395,7 @@ references t(a,b)
 >          [Name "u"] Nothing DefaultReferenceMatch
 >          RefSetNull DefaultReferentialAction]])
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create table t (a int references u on update set default );"
 >      $ CreateTable [Name "t"]
 >        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
@@ -403,7 +403,7 @@ references t(a,b)
 >          [Name "u"] Nothing DefaultReferenceMatch
 >          RefSetDefault DefaultReferentialAction]])
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create table t (a int references u on update no action );"
 >      $ CreateTable [Name "t"]
 >        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
@@ -411,7 +411,7 @@ references t(a,b)
 >          [Name "u"] Nothing DefaultReferenceMatch
 >          RefNoAction DefaultReferentialAction]])
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create table t (a int references u on delete cascade );"
 >      $ CreateTable [Name "t"]
 >        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
@@ -420,7 +420,7 @@ references t(a,b)
 >          DefaultReferentialAction RefCascade]])
 
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create table t (a int references u on update cascade on delete restrict );"
 >      $ CreateTable [Name "t"]
 >        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
@@ -428,7 +428,7 @@ references t(a,b)
 >          [Name "u"] Nothing DefaultReferenceMatch
 >          RefCascade RefRestrict]])
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create table t (a int references u on delete restrict on update cascade );"
 >      $ CreateTable [Name "t"]
 >        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
@@ -440,7 +440,7 @@ TODO: try combinations and permutations of column constraints and
 options
 
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create table t (a int check (a>5));"
 >      $ CreateTable [Name "t"]
 >        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing
@@ -455,18 +455,18 @@ options
   GENERATED { ALWAYS | BY DEFAULT } AS IDENTITY
       [ <left paren> <common sequence generator options> <right paren> ]
 
->     ,(TestStatement SQL2011 "create table t (a int generated always as identity);"
+>     ,(TestStatement ansi2011 "create table t (a int generated always as identity);"
 >      $ CreateTable [Name "t"]
 >        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"])
 >         (Just $ IdentityColumnSpec GeneratedAlways []) []])
 
->     ,(TestStatement SQL2011 "create table t (a int generated by default as identity);"
+>     ,(TestStatement ansi2011 "create table t (a int generated by default as identity);"
 >      $ CreateTable [Name "t"]
 >        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"])
 >         (Just $ IdentityColumnSpec GeneratedByDefault []) []])
 
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create table t (a int generated always as identity\n\
 >       \  ( start with 5 increment by 5 maxvalue 500 minvalue 5 cycle ));"
 >      $ CreateTable [Name "t"]
@@ -478,7 +478,7 @@ options
 >          ,SGOMinValue 5
 >          ,SGOCycle]) []])
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create table t (a int generated always as identity\n\
 >       \  ( start with -4 no maxvalue no minvalue no cycle ));"
 >      $ CreateTable [Name "t"]
@@ -506,7 +506,7 @@ generated always (valueexpr)
 <generation expression> ::=
   <left paren> <value expression> <right paren>
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create table t (a int, \n\
 >       \                a2 int generated always as (a * 2));"
 >      $ CreateTable [Name "t"]
@@ -536,7 +536,7 @@ generated always (valueexpr)
   | <implicitly typed value specification>
 
 
->     ,(TestStatement SQL2011 "create table t (a int default 0);"
+>     ,(TestStatement ansi2011 "create table t (a int default 0);"
 >      $ CreateTable [Name "t"]
 >        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"])
 >         (Just $ DefaultClause $ NumLit "0") []])
@@ -568,14 +568,14 @@ generated always (valueexpr)
 <unique column list> ::=
   <column name list>
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create table t (a int, unique (a));"
 >      $ CreateTable [Name "t"]
 >        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing []
 >        ,TableConstraintDef Nothing $ TableUniqueConstraint [Name "a"]
 >         ])
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create table t (a int, constraint a_unique unique (a));"
 >      $ CreateTable [Name "t"]
 >        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing []
@@ -585,7 +585,7 @@ generated always (valueexpr)
 
 todo: test permutations of column defs and table constraints
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create table t (a int, b int, unique (a,b));"
 >      $ CreateTable [Name "t"]
 >        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing []
@@ -594,7 +594,7 @@ todo: test permutations of column defs and table constraints
 >             TableUniqueConstraint [Name "a", Name "b"]
 >         ])
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create table t (a int, b int, primary key (a,b));"
 >      $ CreateTable [Name "t"]
 >        [TableColumnDef $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing []
@@ -618,7 +618,7 @@ defintely skip
       <references specification>
 
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create table t (a int, b int,\n\
 >       \                foreign key (a,b) references u(c,d) match full on update cascade on delete restrict );"
 >      $ CreateTable [Name "t"]
@@ -632,7 +632,7 @@ defintely skip
 >                 MatchFull RefCascade RefRestrict
 >        ])
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create table t (a int,\n\
 >       \                constraint tfku1 foreign key (a) references u);"
 >      $ CreateTable [Name "t"]
@@ -700,7 +700,7 @@ defintely skip
 <check  constraint definition> ::=
      CHECK <left paren> <search condition> <right paren>
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create table t (a int, b int, \n\
 >       \                check (a > b));"
 >      $ CreateTable [Name "t"]
@@ -712,7 +712,7 @@ defintely skip
 >        ])
 
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create table t (a int, b int, \n\
 >       \                constraint agtb check (a > b));"
 >      $ CreateTable [Name "t"]
@@ -753,7 +753,7 @@ alter table t add column a int
 alter table t add a int
 alter table t add a int unique not null check (a>0)
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "alter table t add column a int"
 >      $ AlterTable [Name "t"] $ AddColumnDef
 >        $ ColumnDef (Name "a") (TypeName [Name "int"]) Nothing []
@@ -785,7 +785,7 @@ todo: more add column
   SET <default clause>
 
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "alter table t alter column c set default 0"
 >      $ AlterTable [Name "t"] $ AlterColumnSetDefault (Name "c")
 >        $ NumLit "0")
@@ -795,7 +795,7 @@ todo: more add column
 <drop column default clause> ::=
   DROP DEFAULT
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "alter table t alter column c drop default"
 >      $ AlterTable [Name "t"] $ AlterColumnDropDefault (Name "c"))
 
@@ -805,7 +805,7 @@ todo: more add column
 <set column not null clause> ::=
   SET NOT NULL
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "alter table t alter column c set not null"
 >      $ AlterTable [Name "t"] $ AlterColumnSetNotNull (Name "c"))
 
@@ -814,7 +814,7 @@ todo: more add column
 <drop column not null clause> ::=
   DROP NOT NULL
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "alter table t alter column c drop not null"
 >      $ AlterTable [Name "t"] $ AlterColumnDropNotNull (Name "c"))
 
@@ -833,7 +833,7 @@ todo: more add column
 <alter column data type clause> ::=
   SET DATA TYPE <data type>
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "alter table t alter column c set data type int;"
 >      $ AlterTable [Name "t"] $
 >        AlterColumnSetDataType (Name "c") (TypeName [Name "int"]))
@@ -932,17 +932,17 @@ included in the generated plan above
 <drop column definition> ::=
   DROP [ COLUMN ] <column name> <drop behavior>
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "alter table t drop column c"
 >      $ AlterTable [Name "t"] $
 >        DropColumn (Name "c") DefaultDropBehaviour)
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "alter table t drop c cascade"
 >      $ AlterTable [Name "t"] $
 >        DropColumn (Name "c") Cascade)
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "alter table t drop c restrict"
 >      $ AlterTable [Name "t"] $
 >        DropColumn (Name "c") Restrict)
@@ -954,13 +954,13 @@ included in the generated plan above
 <add table constraint definition> ::=
   ADD <table constraint definition>
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "alter table t add constraint c unique (a,b)"
 >      $ AlterTable [Name "t"] $
 >        AddTableConstraintDef (Just [Name "c"])
 >             $ TableUniqueConstraint [Name "a", Name "b"])
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "alter table t add unique (a,b)"
 >      $ AlterTable [Name "t"] $
 >        AddTableConstraintDef Nothing
@@ -978,12 +978,12 @@ todo
 <drop table constraint definition> ::=
   DROP CONSTRAINT <constraint name> <drop behavior>
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "alter table t drop constraint c"
 >      $ AlterTable [Name "t"] $
 >        DropTableConstraintDef [Name "c"] DefaultDropBehaviour)
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "alter table t drop constraint c restrict"
 >      $ AlterTable [Name "t"] $
 >        DropTableConstraintDef [Name "c"] Restrict)
@@ -1036,11 +1036,11 @@ defintely skip
 <drop table statement> ::=
   DROP TABLE <table name> <drop behavior>
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "drop table t"
 >      $ DropTable [Name "t"] DefaultDropBehaviour)
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "drop table t restrict"
 >      $ DropTable [Name "t"] Restrict)
 
@@ -1082,7 +1082,7 @@ defintely skip
 <view column list> ::=
   <column name list>
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create view v as select * from t"
 >      $ CreateView False [Name "v"] Nothing (makeSelect
 >          {qeSelectList = [(Star, Nothing)]
@@ -1090,14 +1090,14 @@ defintely skip
 >          }) Nothing)
 
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create recursive view v as select * from t"
 >      $ CreateView True [Name "v"] Nothing (makeSelect
 >          {qeSelectList = [(Star, Nothing)]
 >          ,qeFrom = [TRSimple [Name "t"]]
 >          }) Nothing)
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create view v(a,b) as select * from t"
 >      $ CreateView False [Name "v"] (Just [Name "a", Name "b"])
 >          (makeSelect
@@ -1106,21 +1106,21 @@ defintely skip
 >          }) Nothing)
 
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create view v as select * from t with check option"
 >      $ CreateView False [Name "v"] Nothing (makeSelect
 >          {qeSelectList = [(Star, Nothing)]
 >          ,qeFrom = [TRSimple [Name "t"]]
 >          }) (Just DefaultCheckOption))
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create view v as select * from t with cascaded check option"
 >      $ CreateView False [Name "v"] Nothing (makeSelect
 >          {qeSelectList = [(Star, Nothing)]
 >          ,qeFrom = [TRSimple [Name "t"]]
 >          }) (Just CascadedCheckOption))
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create view v as select * from t with local check option"
 >      $ CreateView False [Name "v"] Nothing
 >          (makeSelect
@@ -1135,11 +1135,11 @@ defintely skip
   DROP VIEW <table name> <drop behavior>
 
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "drop view v"
 >      $ DropView [Name "v"] DefaultDropBehaviour)
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "drop view v cascade"
 >      $ DropView [Name "v"] Cascade)
 
@@ -1156,32 +1156,32 @@ defintely skip
   [ <constraint name definition> ] <check constraint definition> [
       <constraint characteristics> ]
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create domain my_int int"
 >      $ CreateDomain [Name "my_int"]
 >           (TypeName [Name "int"])
 >           Nothing [])
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create domain my_int as int"
 >      $ CreateDomain [Name "my_int"]
 >           (TypeName [Name "int"])
 >           Nothing [])
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create domain my_int int default 0"
 >      $ CreateDomain [Name "my_int"]
 >           (TypeName [Name "int"])
 >           (Just (NumLit "0")) [])
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create domain my_int int check (value > 5)"
 >      $ CreateDomain [Name "my_int"]
 >           (TypeName [Name "int"])
 >           Nothing [(Nothing
 >                    ,BinOp (Iden [Name "value"]) [Name ">"] (NumLit "5"))])
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create domain my_int int constraint gt5 check (value > 5)"
 >      $ CreateDomain [Name "my_int"]
 >           (TypeName [Name "int"])
@@ -1206,7 +1206,7 @@ defintely skip
 <set domain default clause> ::=
   SET <default clause>
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "alter domain my_int set default 0"
 >      $ AlterDomain [Name "my_int"]
 >        $ ADSetDefault $ NumLit "0")
@@ -1217,7 +1217,7 @@ defintely skip
 <drop domain default clause> ::=
   DROP DEFAULT
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "alter domain my_int drop default"
 >      $ AlterDomain [Name "my_int"]
 >        $ ADDropDefault)
@@ -1228,13 +1228,13 @@ defintely skip
 <add domain constraint definition> ::=
   ADD <domain constraint>
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "alter domain my_int add check (value > 6)"
 >      $ AlterDomain [Name "my_int"]
 >        $ ADAddConstraint Nothing
 >          $ BinOp (Iden [Name "value"]) [Name ">"] (NumLit "6"))
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "alter domain my_int add constraint gt6 check (value > 6)"
 >      $ AlterDomain [Name "my_int"]
 >        $ ADAddConstraint (Just [Name "gt6"])
@@ -1246,7 +1246,7 @@ defintely skip
 <drop domain constraint definition> ::=
   DROP CONSTRAINT <constraint name>
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "alter domain my_int drop constraint gt6"
 >      $ AlterDomain [Name "my_int"]
 >        $ ADDropConstraint [Name "gt6"])
@@ -1256,11 +1256,11 @@ defintely skip
 <drop domain statement> ::=
   DROP DOMAIN <domain name> <drop behavior>
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "drop domain my_int"
 >      $ DropDomain [Name "my_int"] DefaultDropBehaviour)
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "drop domain my_int cascade"
 >      $ DropDomain [Name "my_int"] Cascade)
 
@@ -1332,7 +1332,7 @@ defintely skip
          CHECK <left paren> <search condition> <right paren>
          [ <constraint characteristics> ]
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create assertion t1_not_empty CHECK ((select count(*) from t1) > 0);"
 >      $ CreateAssertion [Name "t1_not_empty"]
 >         $ BinOp (SubQueryExpr SqSq $
@@ -1347,11 +1347,11 @@ defintely skip
 <drop assertion statement> ::=
   DROP ASSERTION <constraint name> [ <drop behavior> ]
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "drop assertion t1_not_empty;"
 >      $ DropAssertion [Name "t1_not_empty"] DefaultDropBehaviour)
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "drop assertion t1_not_empty cascade;"
 >      $ DropAssertion [Name "t1_not_empty"] Cascade)
 
@@ -1988,16 +1988,16 @@ defintely skip
     CYCLE
   | NO CYCLE
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create sequence seq"
 >      $ CreateSequence [Name "seq"] [])
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create sequence seq as bigint"
 >      $ CreateSequence [Name "seq"]
 >         [SGODataType $ TypeName [Name "bigint"]])
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create sequence seq as bigint start with 5"
 >      $ CreateSequence [Name "seq"]
 >         [SGOStartWith 5
@@ -2023,17 +2023,17 @@ defintely skip
 <sequence generator restart value> ::=
   <signed numeric literal>
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "alter sequence seq restart"
 >      $ AlterSequence [Name "seq"]
 >         [SGORestart Nothing])
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "alter sequence seq restart with 5"
 >      $ AlterSequence [Name "seq"]
 >         [SGORestart $ Just 5])
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "alter sequence seq restart with 5 increment by 5"
 >      $ AlterSequence [Name "seq"]
 >         [SGORestart $ Just 5
@@ -2045,11 +2045,11 @@ defintely skip
 <drop sequence generator statement> ::=
   DROP SEQUENCE <sequence generator name> <drop behavior>
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "drop sequence seq"
 >      $ DropSequence [Name "seq"] DefaultDropBehaviour)
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "drop sequence seq restrict"
 >      $ DropSequence [Name "seq"] Restrict)
 

@@ -8,7 +8,7 @@ revisited when the dialect support is added.
 > import Language.SQL.SimpleSQL.TestTypes
 
 > postgresTests :: TestItem
-> postgresTests = Group "postgresTests" $ map (ParseQueryExpr SQL2011)
+> postgresTests = Group "postgresTests" $ map (ParseQueryExpr ansi2011)
 
 lexical syntax section
 

@@ -504,7 +504,7 @@ Specify a non-null value.
 
 > characterStringLiterals :: TestItem
 > characterStringLiterals = Group "character string literals"
->     $ map (uncurry (TestValueExpr SQL2011))
+>     $ map (uncurry (TestValueExpr ansi2011))
 >     [("'a regular string literal'"
 >      ,StringLit "a regular string literal")
 >     ,("'something' ' some more' 'and more'"
@@ -532,7 +532,7 @@ character set allows them.
 
 > nationalCharacterStringLiterals :: TestItem
 > nationalCharacterStringLiterals = Group "national character string literals"
->     $ map (uncurry (TestValueExpr SQL2011))
+>     $ map (uncurry (TestValueExpr ansi2011))
 >     [("N'something'", CSStringLit "N" "something")
 >     ,("n'something'", CSStringLit "n" "something")
 >     ]
@@ -549,7 +549,7 @@ character set allows them.
 
 > unicodeCharacterStringLiterals :: TestItem
 > unicodeCharacterStringLiterals = Group "unicode character string literals"
->     $ map (uncurry (TestValueExpr SQL2011))
+>     $ map (uncurry (TestValueExpr ansi2011))
 >     [("U&'something'", CSStringLit "U&" "something")
 >     ,("u&'something' escape ="
 >      ,Escape (CSStringLit "u&" "something") '=')
@@ -568,7 +568,7 @@ TODO: unicode escape
 
 > binaryStringLiterals :: TestItem
 > binaryStringLiterals = Group "binary string literals"
->     $ map (uncurry (TestValueExpr SQL2011))
+>     $ map (uncurry (TestValueExpr ansi2011))
 >     [--("B'101010'", CSStringLit "B" "101010")
 >      ("X'7f7f7f'", CSStringLit "X" "7f7f7f")
 >     ,("X'7f7f7f' escape z", Escape (CSStringLit "X" "7f7f7f") 'z')
@@ -598,7 +598,7 @@ TODO: unicode escape
 
 > numericLiterals :: TestItem
 > numericLiterals = Group "numeric literals"
->     $ map (uncurry (TestValueExpr SQL2011))
+>     $ map (uncurry (TestValueExpr ansi2011))
 >     [("11", NumLit "11")
 >     ,("11.11", NumLit "11.11")
 
@@ -704,7 +704,7 @@ TODO: unicode escape
 
 > intervalLiterals :: TestItem
 > intervalLiterals = Group "intervalLiterals literals"
->     $ map (uncurry (TestValueExpr SQL2011))
+>     $ map (uncurry (TestValueExpr ansi2011))
 >     [("interval '1'", TypedLit (TypeName [Name "interval"]) "1")
 >     ,("interval '1' day"
 >      ,IntervalLit Nothing "1" (Itf "day" Nothing) Nothing)
@@ -727,7 +727,7 @@ TODO: unicode escape
 
 > booleanLiterals :: TestItem
 > booleanLiterals = Group "boolean literals"
->     $ map (uncurry (TestValueExpr SQL2011))
+>     $ map (uncurry (TestValueExpr ansi2011))
 >     [("true", Iden [Name "true"])
 >     ,("false", Iden [Name "false"])
 >     ,("unknown", Iden [Name "unknown"])
@@ -747,7 +747,7 @@ Specify names.
 
 > identifiers :: TestItem
 > identifiers = Group "identifiers"
->     $ map (uncurry (TestValueExpr SQL2011))
+>     $ map (uncurry (TestValueExpr ansi2011))
 >     [("test",Iden [Name "test"])
 >     ,("_test",Iden [Name "_test"])
 >     ,("t1",Iden [Name "t1"])
@@ -1188,11 +1188,11 @@ expression
 
 > typeNameTests :: TestItem
 > typeNameTests = Group "type names"
->     [Group "type names" $ map (uncurry (TestValueExpr SQL2011))
+>     [Group "type names" $ map (uncurry (TestValueExpr ansi2011))
 >                           $ concatMap makeSimpleTests $ fst typeNames
->     ,Group "generated casts" $ map (uncurry (TestValueExpr SQL2011))
+>     ,Group "generated casts" $ map (uncurry (TestValueExpr ansi2011))
 >                           $ concatMap makeCastTests $ fst typeNames
->     ,Group "generated typename" $ map (uncurry (TestValueExpr SQL2011))
+>     ,Group "generated typename" $ map (uncurry (TestValueExpr ansi2011))
 >                           $ concatMap makeTests $ snd typeNames]
 >   where
 >     makeSimpleTests (ctn, stn) =
@@ -1213,7 +1213,7 @@ Define a field of a row type.
 
 > fieldDefinition :: TestItem
 > fieldDefinition = Group "field definition"
->     $ map (uncurry (TestValueExpr SQL2011))
+>     $ map (uncurry (TestValueExpr ansi2011))
 >     [("cast('(1,2)' as row(a int,b char))"
 >      ,Cast (StringLit "(1,2)")
 >      $ RowTypeName [(Name "a", TypeName [Name "int"])
@@ -1293,7 +1293,7 @@ Specify a value that is syntactically self-delimited.
 
 > parenthesizedValueExpression :: TestItem
 > parenthesizedValueExpression = Group "parenthesized value expression"
->     $ map (uncurry (TestValueExpr SQL2011))
+>     $ map (uncurry (TestValueExpr ansi2011))
 >     [("(3)", Parens (NumLit "3"))
 >     ,("((3))", Parens $ Parens (NumLit "3"))
 >     ]
@@ -1329,7 +1329,7 @@ Specify one or more values, host parameters, SQL parameters, dynamic parameters,
 
 > generalValueSpecification :: TestItem
 > generalValueSpecification = Group "general value specification"
->     $ map (uncurry (TestValueExpr SQL2011)) $
+>     $ map (uncurry (TestValueExpr ansi2011)) $
 >     map mkIden ["CURRENT_DEFAULT_TRANSFORM_GROUP"
 >                ,"CURRENT_PATH"
 >                ,"CURRENT_ROLE"
@@ -1383,7 +1383,7 @@ TODO: add the missing bits
 
 > parameterSpecification :: TestItem
 > parameterSpecification = Group "parameter specification"
->     $ map (uncurry (TestValueExpr SQL2011))
+>     $ map (uncurry (TestValueExpr ansi2011))
 >     [(":hostparam", HostParameter "hostparam" Nothing)
 >     ,(":hostparam indicator :another_host_param"
 >      ,HostParameter "hostparam" $ Just "another_host_param")
@@ -1420,7 +1420,7 @@ Specify a value whose data type is to be inferred from its context.
 > contextuallyTypedValueSpecification :: TestItem
 > contextuallyTypedValueSpecification =
 >     Group "contextually typed value specification"
->     $ map (uncurry (TestValueExpr SQL2011))
+>     $ map (uncurry (TestValueExpr ansi2011))
 >     [("null", Iden [Name "null"])
 >     ,("array[]", Array (Iden [Name "array"]) [])
 >     ,("multiset[]", MultisetCtor [])
@@ -1438,7 +1438,7 @@ Disambiguate a <period>-separated chain of identifiers.
 
 > identifierChain :: TestItem
 > identifierChain = Group "identifier chain"
->     $ map (uncurry (TestValueExpr SQL2011))
+>     $ map (uncurry (TestValueExpr ansi2011))
 >     [("a.b", Iden [Name "a",Name "b"])]
 
 == 6.7 <column reference>
@@ -1452,7 +1452,7 @@ Reference a column.
 
 > columnReference :: TestItem
 > columnReference = Group "column reference"
->     $ map (uncurry (TestValueExpr SQL2011))
+>     $ map (uncurry (TestValueExpr ansi2011))
 >     [("module.a.b", Iden [Name "module",Name "a",Name "b"])]
 
 == 6.8 <SQL parameter reference>
@@ -1475,7 +1475,7 @@ Specify a value derived by the application of a function to an argument.
 
 > setFunctionSpecification :: TestItem
 > setFunctionSpecification = Group "set function specification"
->     $ map (uncurry (TestQueryExpr SQL2011))
+>     $ map (uncurry (TestQueryExpr ansi2011))
 >     [("SELECT SalesQuota, SUM(SalesYTD) TotalSalesYTD,\n\
 >       \   GROUPING(SalesQuota) AS Grouping\n\
 >       \FROM Sales.SalesPerson\n\
@@ -1676,7 +1676,7 @@ Specify a data conversion.
 
 > castSpecification :: TestItem
 > castSpecification = Group "cast specification"
->     $ map (uncurry (TestValueExpr SQL2011))
+>     $ map (uncurry (TestValueExpr ansi2011))
 >     [("cast(a as int)"
 >      ,Cast (Iden [Name "a"]) (TypeName [Name "int"]))
 >     ]
@@ -1690,7 +1690,7 @@ Return the next value of a sequence generator.
 
 > nextValueExpression :: TestItem
 > nextValueExpression = Group "next value expression"
->     $ map (uncurry (TestValueExpr SQL2011))
+>     $ map (uncurry (TestValueExpr ansi2011))
 >     [("next value for a.b", NextValueFor [Name "a", Name "b"])
 >     ]
 
@@ -1703,7 +1703,7 @@ Reference a field of a row value.
 
 > fieldReference :: TestItem
 > fieldReference = Group "field reference"
->     $ map (uncurry (TestValueExpr SQL2011))
+>     $ map (uncurry (TestValueExpr ansi2011))
 >     [("f(something).a"
 >       ,BinOp (App [Name "f"] [Iden [Name "something"]])
 >        [Name "."]
@@ -1827,7 +1827,7 @@ Return an element of an array.
 
 > arrayElementReference :: TestItem
 > arrayElementReference = Group "array element reference"
->     $ map (uncurry (TestValueExpr SQL2011))
+>     $ map (uncurry (TestValueExpr ansi2011))
 >     [("something[3]"
 >      ,Array (Iden [Name "something"]) [NumLit "3"])
 >     ,("(something(a))[x]"
@@ -1850,7 +1850,7 @@ Return the sole element of a multiset of one element.
 
 > multisetElementReference :: TestItem
 > multisetElementReference = Group "multisetElementReference"
->     $ map (uncurry (TestValueExpr SQL2011))
+>     $ map (uncurry (TestValueExpr ansi2011))
 >     [("element(something)"
 >      ,App [Name "element"] [Iden [Name "something"]])
 >     ]
@@ -1900,7 +1900,7 @@ Specify a numeric value.
 
 > numericValueExpression :: TestItem
 > numericValueExpression = Group "numeric value expression"
->     $ map (uncurry (TestValueExpr SQL2011))
+>     $ map (uncurry (TestValueExpr ansi2011))
 >     [("a + b", binOp "+")
 >     ,("a - b", binOp "-")
 >     ,("a * b", binOp "*")
@@ -2357,7 +2357,7 @@ Specify a boolean value.
 
 > booleanValueExpression :: TestItem
 > booleanValueExpression = Group "booleab value expression"
->     $ map (uncurry (TestValueExpr SQL2011))
+>     $ map (uncurry (TestValueExpr ansi2011))
 >     [("a or b", BinOp a [Name "or"] b)
 >     ,("a and b", BinOp a [Name "and"] b)
 >     ,("not a", PrefixOp [Name "not"] a)
@@ -2432,7 +2432,7 @@ Specify construction of an array.
 
 > arrayValueConstructor :: TestItem
 > arrayValueConstructor = Group "array value constructor"
->     $ map (uncurry (TestValueExpr SQL2011))
+>     $ map (uncurry (TestValueExpr ansi2011))
 >     [("array[1,2,3]"
 >      ,Array (Iden [Name "array"])
 >       [NumLit "1", NumLit "2", NumLit "3"])
@@ -2470,7 +2470,7 @@ Specify a multiset value.
 
 > multisetValueExpression :: TestItem
 > multisetValueExpression = Group "multiset value expression"
->    $ map (uncurry (TestValueExpr SQL2011))
+>    $ map (uncurry (TestValueExpr ansi2011))
 >    [("a multiset union b"
 >     ,MultisetBinOp (Iden [Name "a"]) Union SQDefault (Iden [Name "b"]))
 >    ,("a multiset union all b"
@@ -2500,7 +2500,7 @@ special case term.
 
 > multisetValueFunction :: TestItem
 > multisetValueFunction = Group "multiset value function"
->    $ map (uncurry (TestValueExpr SQL2011))
+>    $ map (uncurry (TestValueExpr ansi2011))
 >    [("set(a)", App [Name "set"] [Iden [Name "a"]])
 >    ]
 
@@ -2528,7 +2528,7 @@ Specify construction of a multiset.
 
 > multisetValueConstructor :: TestItem
 > multisetValueConstructor = Group "multiset value constructor"
->    $ map (uncurry (TestValueExpr SQL2011))
+>    $ map (uncurry (TestValueExpr ansi2011))
 >    [("multiset[a,b,c]", MultisetCtor[Iden [Name "a"]
 >                                     ,Iden [Name "b"], Iden [Name "c"]])
 >    ,("multiset(select * from t)", MultisetQueryCtor qe)
@@ -2606,7 +2606,7 @@ Specify a value or list of values to be constructed into a row.
 
 > rowValueConstructor :: TestItem
 > rowValueConstructor = Group "row value constructor"
->     $ map (uncurry (TestValueExpr SQL2011))
+>     $ map (uncurry (TestValueExpr ansi2011))
 >     [("(a,b)"
 >      ,SpecialOp [Name "rowctor"] [Iden [Name "a"], Iden [Name "b"]])
 >     ,("row(1)",App [Name "row"] [NumLit "1"])
@@ -2657,7 +2657,7 @@ Specify a set of <row value expression>s to be constructed into a table.
 
 > tableValueConstructor :: TestItem
 > tableValueConstructor = Group "table value constructor"
->     $ map (uncurry (TestQueryExpr SQL2011))
+>     $ map (uncurry (TestQueryExpr ansi2011))
 >     [("values (1,2), (a+b,(select count(*) from t));"
 >      ,Values [[NumLit "1", NumLit "2"]
 >              ,[BinOp (Iden [Name "a"]) [Name "+"]
@@ -2692,7 +2692,7 @@ Specify a table derived from one or more tables.
 
 > fromClause :: TestItem
 > fromClause = Group "fromClause"
->     $ map (uncurry (TestQueryExpr SQL2011))
+>     $ map (uncurry (TestQueryExpr ansi2011))
 >     [("select * from tbl1,tbl2"
 >      ,makeSelect
 >       {qeSelectList = [(Star, Nothing)]
@@ -2707,7 +2707,7 @@ Reference a table.
 
 > tableReference :: TestItem
 > tableReference = Group "table reference"
->     $ map (uncurry (TestQueryExpr SQL2011))
+>     $ map (uncurry (TestQueryExpr ansi2011))
 >     [("select * from t", sel)
 
 <table reference> ::= <table factor> | <joined table>
@@ -2888,7 +2888,7 @@ Specify a table derived from a Cartesian product, inner join, or outer join.
 
 > joinedTable :: TestItem
 > joinedTable = Group "joined table"
->     $ map (uncurry (TestQueryExpr SQL2011))
+>     $ map (uncurry (TestQueryExpr ansi2011))
 >     [("select * from a cross join b"
 >      ,sel $ TRJoin a False JCross b Nothing)
 >     ,("select * from a join b on true"
@@ -2945,7 +2945,7 @@ the result of the preceding <from clause>.
 
 > whereClause :: TestItem
 > whereClause = Group "where clause"
->     $ map (uncurry (TestQueryExpr SQL2011))
+>     $ map (uncurry (TestQueryExpr ansi2011))
 >     [("select * from t where a = 5"
 >     ,makeSelect
 >      {qeSelectList = [(Star,Nothing)]
@@ -3005,7 +3005,7 @@ clause> to the result of the previously specified clause.
 
 > groupByClause :: TestItem
 > groupByClause = Group "group by clause"
->     $ map (uncurry (TestQueryExpr SQL2011))
+>     $ map (uncurry (TestQueryExpr ansi2011))
 >     [("select a,sum(x) from t group by a"
 >      ,qe [SimpleGroup $ Iden [Name "a"]])
 >      ,("select a,sum(x) from t group by a collate c"
@@ -3053,7 +3053,7 @@ not satisfy a <search condition>.
 
 > havingClause :: TestItem
 > havingClause = Group "having clause"
->     $ map (uncurry (TestQueryExpr SQL2011))
+>     $ map (uncurry (TestQueryExpr ansi2011))
 >     [("select a,sum(x) from t group by a having sum(x) > 1000"
 >      ,makeSelect
 >       {qeSelectList = [(Iden [Name "a"], Nothing)
@@ -3176,7 +3176,7 @@ Specify a table derived from the result of a <table expression>.
 
 > querySpecification :: TestItem
 > querySpecification = Group "query specification"
->     $ map (uncurry (TestQueryExpr SQL2011))
+>     $ map (uncurry (TestQueryExpr ansi2011))
 >     [("select a from t",qe)
 >     ,("select all a from t",qe {qeSetQuantifier = All})
 >     ,("select distinct a from t",qe {qeSetQuantifier = Distinct})
@@ -3244,7 +3244,7 @@ Specify a table.
 
 > setOpQueryExpression :: TestItem
 > setOpQueryExpression= Group "set operation query expression"
->     $ map (uncurry (TestQueryExpr SQL2011))
+>     $ map (uncurry (TestQueryExpr ansi2011))
 >     -- todo: complete setop query expression tests
 >     [{-("select * from t union select * from t"
 >      ,undefined)
@@ -3281,7 +3281,7 @@ everywhere
 
 > explicitTableQueryExpression :: TestItem
 > explicitTableQueryExpression= Group "explicit table query expression"
->     $ map (uncurry (TestQueryExpr SQL2011))
+>     $ map (uncurry (TestQueryExpr ansi2011))
 >     [("table t", Table [Name "t"])
 >     ]
 
@@ -3303,7 +3303,7 @@ everywhere
 
 > orderOffsetFetchQueryExpression :: TestItem
 > orderOffsetFetchQueryExpression = Group "order, offset, fetch query expression"
->     $ map (uncurry (TestQueryExpr SQL2011))
+>     $ map (uncurry (TestQueryExpr ansi2011))
 >     [-- todo: finish tests for order offset and fetch
 >      ("select a from t order by a"
 >      ,qe {qeOrderBy = [SortSpec (Iden [Name "a"])
@@ -3460,7 +3460,7 @@ Specify a comparison of two row values.
 
 > comparisonPredicates :: TestItem
 > comparisonPredicates = Group "comparison predicates"
->     $ map (uncurry (TestValueExpr SQL2011))
+>     $ map (uncurry (TestValueExpr ansi2011))
 >     $ map mkOp ["=", "<>", "<", ">", "<=", ">="]
 >     ++ [("ROW(a) = ROW(b)"
 >         ,BinOp (App [Name "ROW"] [a])
@@ -3664,7 +3664,7 @@ Specify a quantified comparison.
 
 > quantifiedComparisonPredicate :: TestItem
 > quantifiedComparisonPredicate = Group "quantified comparison predicate"
->     $ map (uncurry (TestValueExpr SQL2011))
+>     $ map (uncurry (TestValueExpr ansi2011))
 
 >     [("a = any (select * from t)"
 >      ,QuantifiedComparison (Iden [Name "a"]) [Name "="] CPAny qe)
@@ -3691,7 +3691,7 @@ Specify a test for a non-empty set.
 
 > existsPredicate :: TestItem
 > existsPredicate = Group "exists predicate"
->     $ map (uncurry (TestValueExpr SQL2011))
+>     $ map (uncurry (TestValueExpr ansi2011))
 >     [("exists(select * from t where a = 4)"
 >      ,SubQueryExpr SqExists
 >       $ makeSelect
@@ -3710,7 +3710,7 @@ Specify a test for the absence of duplicate rows.
 
 > uniquePredicate :: TestItem
 > uniquePredicate = Group "unique predicate"
->     $ map (uncurry (TestValueExpr SQL2011))
+>     $ map (uncurry (TestValueExpr ansi2011))
 >     [("unique(select * from t where a = 4)"
 >      ,SubQueryExpr SqUnique
 >       $ makeSelect
@@ -3746,7 +3746,7 @@ Specify a test for matching rows.
 
 > matchPredicate :: TestItem
 > matchPredicate = Group "match predicate"
->     $ map (uncurry (TestValueExpr SQL2011))
+>     $ map (uncurry (TestValueExpr ansi2011))
 >     [("a match (select a from t)"
 >      ,Match (Iden [Name "a"]) False qe)
 >     ,("(a,b) match (select a,b from t)"
@@ -4098,7 +4098,7 @@ Specify a default collation.
 
 > collateClause :: TestItem
 > collateClause = Group "collate clause"
->     $ map (uncurry (TestValueExpr SQL2011))
+>     $ map (uncurry (TestValueExpr ansi2011))
 >     [("a collate my_collation"
 >      ,Collate (Iden [Name "a"]) [Name "my_collation"])]
 
@@ -4209,7 +4209,7 @@ Specify a value computed from a collection of rows.
 
 > aggregateFunction :: TestItem
 > aggregateFunction = Group "aggregate function"
->     $ map (uncurry (TestValueExpr SQL2011)) $
+>     $ map (uncurry (TestValueExpr ansi2011)) $
 >     [("count(*)",App [Name "count"] [Star])
 >     ,("count(*) filter (where something > 5)"
 >      ,AggregateApp [Name "count"] SQDefault [Star] [] fil)
@@ -4304,7 +4304,7 @@ Specify a sort order.
 
 > sortSpecificationList :: TestItem
 > sortSpecificationList = Group "sort specification list"
->     $ map (uncurry (TestQueryExpr SQL2011))
+>     $ map (uncurry (TestQueryExpr ansi2011))
 >     [("select * from t order by a"
 >      ,qe {qeOrderBy = [SortSpec (Iden [Name "a"])
 >                            DirDefault NullsOrderDefault]})

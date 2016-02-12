@@ -23,7 +23,7 @@ Tests for parsing value expressions
 >     ]
 
 > literals :: TestItem
-> literals = Group "literals" $ map (uncurry (TestValueExpr SQL2011))
+> literals = Group "literals" $ map (uncurry (TestValueExpr ansi2011))
 >     [("3", NumLit "3")
 >      ,("3.", NumLit "3.")
 >      ,("3.3", NumLit "3.3")
@@ -45,27 +45,27 @@ Tests for parsing value expressions
 >     ]
 
 > identifiers :: TestItem
-> identifiers = Group "identifiers" $ map (uncurry (TestValueExpr SQL2011))
+> identifiers = Group "identifiers" $ map (uncurry (TestValueExpr ansi2011))
 >     [("iden1", Iden [Name "iden1"])
 >     --,("t.a", Iden2 "t" "a")
 >     ,("\"quoted identifier\"", Iden [QName "quoted identifier"])
 >     ]
 
 > star :: TestItem
-> star = Group "star" $ map (uncurry (TestValueExpr SQL2011))
+> star = Group "star" $ map (uncurry (TestValueExpr ansi2011))
 >     [("*", Star)
 >     --,("t.*", Star2 "t")
 >     --,("ROW(t.*,42)", App "ROW" [Star2 "t", NumLit "42"])
 >     ]
 
 > parameter :: TestItem
-> parameter = Group "parameter" $ map (uncurry (TestValueExpr SQL2011))
+> parameter = Group "parameter" $ map (uncurry (TestValueExpr ansi2011))
 >     [("?", Parameter)
 >     ]
 
 
 > dots :: TestItem
-> dots = Group "dot" $ map (uncurry (TestValueExpr SQL2011))
+> dots = Group "dot" $ map (uncurry (TestValueExpr ansi2011))
 >     [("t.a", Iden [Name "t",Name "a"])
 >     ,("t.*", BinOp (Iden [Name "t"]) [Name "."] Star)
 >     ,("a.b.c", Iden [Name "a",Name "b",Name "c"])
@@ -73,14 +73,14 @@ Tests for parsing value expressions
 >     ]
 
 > app :: TestItem
-> app = Group "app" $ map (uncurry (TestValueExpr SQL2011))
+> app = Group "app" $ map (uncurry (TestValueExpr ansi2011))
 >     [("f()", App [Name "f"] [])
 >     ,("f(a)", App [Name "f"] [Iden [Name "a"]])
 >     ,("f(a,b)", App [Name "f"] [Iden [Name "a"], Iden [Name "b"]])
 >     ]
 
 > caseexp :: TestItem
-> caseexp = Group "caseexp" $ map (uncurry (TestValueExpr SQL2011))
+> caseexp = Group "caseexp" $ map (uncurry (TestValueExpr ansi2011))
 >     [("case a when 1 then 2 end"
 >      ,Case (Just $ Iden [Name "a"]) [([NumLit "1"]
 >                               ,NumLit "2")] Nothing)
@@ -116,7 +116,7 @@ Tests for parsing value expressions
 >     ,miscOps]
 
 > binaryOperators :: TestItem
-> binaryOperators = Group "binaryOperators" $ map (uncurry (TestValueExpr SQL2011))
+> binaryOperators = Group "binaryOperators" $ map (uncurry (TestValueExpr ansi2011))
 >     [("a + b", BinOp (Iden [Name "a"]) [Name "+"] (Iden [Name "b"]))
 >      -- sanity check fixities
 >      -- todo: add more fixity checking
@@ -131,7 +131,7 @@ Tests for parsing value expressions
 >     ]
 
 > unaryOperators :: TestItem
-> unaryOperators = Group "unaryOperators" $ map (uncurry (TestValueExpr SQL2011))
+> unaryOperators = Group "unaryOperators" $ map (uncurry (TestValueExpr ansi2011))
 >     [("not a", PrefixOp [Name "not"] $ Iden [Name "a"])
 >     ,("not not a", PrefixOp [Name "not"] $ PrefixOp [Name "not"] $ Iden [Name "a"])
 >     ,("+a", PrefixOp [Name "+"] $ Iden [Name "a"])
@@ -140,7 +140,7 @@ Tests for parsing value expressions
 
 
 > casts :: TestItem
-> casts = Group "operators" $ map (uncurry (TestValueExpr SQL2011))
+> casts = Group "operators" $ map (uncurry (TestValueExpr ansi2011))
 >     [("cast('1' as int)"
 >      ,Cast (StringLit "1") $ TypeName [Name "int"])
 
@@ -162,7 +162,7 @@ Tests for parsing value expressions
 >     ]
 
 > subqueries :: TestItem
-> subqueries = Group "unaryOperators" $ map (uncurry (TestValueExpr SQL2011))
+> subqueries = Group "unaryOperators" $ map (uncurry (TestValueExpr ansi2011))
 >     [("exists (select a from t)", SubQueryExpr SqExists ms)
 >     ,("(select a from t)", SubQueryExpr SqSq ms)
 
@@ -188,7 +188,7 @@ Tests for parsing value expressions
 >          }
 
 > miscOps :: TestItem
-> miscOps = Group "unaryOperators" $ map (uncurry (TestValueExpr SQL2011))
+> miscOps = Group "unaryOperators" $ map (uncurry (TestValueExpr ansi2011))
 >     [("a in (1,2,3)"
 >      ,In True (Iden [Name "a"]) $ InList $ map NumLit ["1","2","3"])
 
@@ -326,7 +326,7 @@ target_string
 >     ]
 
 > aggregates :: TestItem
-> aggregates = Group "aggregates" $ map (uncurry (TestValueExpr SQL2011))
+> aggregates = Group "aggregates" $ map (uncurry (TestValueExpr ansi2011))
 >     [("count(*)",App [Name "count"] [Star])
 
 >     ,("sum(a order by a)"
@@ -341,7 +341,7 @@ target_string
 >     ]
 
 > windowFunctions :: TestItem
-> windowFunctions = Group "windowFunctions" $ map (uncurry (TestValueExpr SQL2011))
+> windowFunctions = Group "windowFunctions" $ map (uncurry (TestValueExpr ansi2011))
 >     [("max(a) over ()", WindowApp [Name "max"] [Iden [Name "a"]] [] [] Nothing)
 >     ,("count(*) over ()", WindowApp [Name "count"] [Star] [] [] Nothing)
 
@@ -400,7 +400,7 @@ target_string
 >     ]
 
 > parens :: TestItem
-> parens = Group "parens" $ map (uncurry (TestValueExpr SQL2011))
+> parens = Group "parens" $ map (uncurry (TestValueExpr ansi2011))
 >     [("(a)", Parens (Iden [Name "a"]))
 >     ,("(a + b)", Parens (BinOp (Iden [Name "a"]) [Name "+"] (Iden [Name "b"])))
 >     ]

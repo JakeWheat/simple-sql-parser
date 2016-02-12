@@ -55,13 +55,19 @@
 >     ,PrivilegeAction(..)
 >     ,AdminOptionFor(..)
 >     ,GrantOptionFor(..)
->      -- * Dialect
->     ,Dialect(..)
+>      -- * Dialects
+>     ,Dialect
+>     ,ansi2011
+>     ,mysql
+>     ,postgres
+>     ,oracle
+>     ,sqlserver
 >      -- * Comment
 >     ,Comment(..)
 >     ) where
 
 > import Data.Data
+> import Language.SQL.SimpleSQL.Dialect
 
 > -- | Represents a value expression. This is used for the expressions
 > -- in select lists. It is also used for expressions in where, group
@@ -701,15 +707,6 @@ I'm not sure if this is valid syntax or not.
 >     | PrivTrigger
 >     | PrivExecute
 >     deriving (Eq,Show,Read,Data,Typeable)
-
---------------------------
-
-> -- | Used to set the dialect used for parsing and pretty printing,
-> -- very unfinished at the moment.
-> data Dialect = SQL2011
->              | MySQL
->                deriving (Eq,Show,Read,Data,Typeable)
-
 
 > -- | Comment. Useful when generating SQL code programmatically. The
 > -- parser doesn't produce these.

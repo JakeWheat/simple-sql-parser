@@ -202,6 +202,7 @@ fixing them in the syntax but leaving them till the semantic checking
 > import Language.SQL.SimpleSQL.Syntax
 > import Language.SQL.SimpleSQL.Combinators
 > import Language.SQL.SimpleSQL.Errors
+> import Language.SQL.SimpleSQL.Dialect
 > import qualified Language.SQL.SimpleSQL.Lex as L
 > import Data.Maybe
 > import Text.Parsec.String (GenParser)
@@ -1359,7 +1360,7 @@ allows offset and fetch in either order
 > fetch :: Parser ValueExpr
 > fetch = fetchFirst <|> limit
 >   where
->     fetchFirst = guardDialect [SQL2011]
+>     fetchFirst = guardDialect [ANSI2011]
 >                  *> fs *> valueExpr <* ro
 >     fs = makeKeywordTree ["fetch first", "fetch next"]
 >     ro = makeKeywordTree ["rows only", "row only"]
@@ -2107,7 +2108,7 @@ keywords (I'm not sure what exactly being an unreserved keyword
 means).
 
 > reservedWord :: Dialect -> [String]
-> reservedWord SQL2011 =
+> reservedWord d | diSyntaxFlavour d == ANSI2011 =
 >     ["abs"
 >     --,"all"
 >     ,"allocate"
@@ -2435,9 +2436,9 @@ means).
 >     ]
 
 TODO: create this list properly
+      move this list into the dialect data type
 
-> reservedWord MySQL = reservedWord SQL2011 ++ ["limit"]
-
+> reservedWord _ = reservedWord ansi2011 ++ ["limit"]
 
 -----------
 
@@ -2450,10 +2451,10 @@ different parsers can be used for different dialects
 
 > type Parser = GenParser Token ParseState
 
-> guardDialect :: [Dialect] -> Parser ()
+> guardDialect :: [SyntaxFlavour] -> Parser ()
 > guardDialect ds = do
 >     d <- getState
->     guard (d `elem` ds)
+>     guard (diSyntaxFlavour d `elem` ds)
 
 TODO: the ParseState and the Dialect argument should be turned into a
 flags struct. Part (or all?) of this struct is the dialect

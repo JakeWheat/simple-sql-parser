@@ -108,18 +108,18 @@ Section 14 in Foundation
       [ [ AS ] <correlation name> ]
       [ WHERE <search condition> ]
 
->      (TestStatement SQL2011 "delete from t"
+>      (TestStatement ansi2011 "delete from t"
 >      $ Delete [Name "t"] Nothing Nothing)
 
->     ,(TestStatement SQL2011 "delete from t as u"
+>     ,(TestStatement ansi2011 "delete from t as u"
 >      $ Delete [Name "t"] (Just (Name "u")) Nothing)
 
->     ,(TestStatement SQL2011 "delete from t where x = 5"
+>     ,(TestStatement ansi2011 "delete from t where x = 5"
 >      $ Delete [Name "t"] Nothing
 >        (Just $ BinOp (Iden [Name "x"]) [Name "="] (NumLit "5")))
 
 
->     ,(TestStatement SQL2011 "delete from t as u where u.x = 5"
+>     ,(TestStatement ansi2011 "delete from t as u where u.x = 5"
 >      $ Delete [Name "t"] (Just (Name "u"))
 >        (Just $ BinOp (Iden [Name "u", Name "x"]) [Name "="] (NumLit "5")))
 
@@ -132,13 +132,13 @@ Section 14 in Foundation
     CONTINUE IDENTITY
   | RESTART IDENTITY
 
->     ,(TestStatement SQL2011 "truncate table t"
+>     ,(TestStatement ansi2011 "truncate table t"
 >      $ Truncate [Name "t"] DefaultIdentityRestart)
 
->     ,(TestStatement SQL2011 "truncate table t continue identity"
+>     ,(TestStatement ansi2011 "truncate table t continue identity"
 >      $ Truncate [Name "t"] ContinueIdentity)
 
->     ,(TestStatement SQL2011 "truncate table t restart identity"
+>     ,(TestStatement ansi2011 "truncate table t restart identity"
 >      $ Truncate [Name "t"] RestartIdentity)
 
 
@@ -175,31 +175,31 @@ Section 14 in Foundation
 <insert column list> ::=
   <column name list>
 
->     ,(TestStatement SQL2011 "insert into t select * from u"
+>     ,(TestStatement ansi2011 "insert into t select * from u"
 >      $ Insert [Name "t"] Nothing
 >        $ InsertQuery makeSelect
 >          {qeSelectList = [(Star, Nothing)]
 >          ,qeFrom = [TRSimple [Name "u"]]})
 
->     ,(TestStatement SQL2011 "insert into t(a,b,c) select * from u"
+>     ,(TestStatement ansi2011 "insert into t(a,b,c) select * from u"
 >      $ Insert [Name "t"] (Just [Name "a", Name "b", Name "c"])
 >        $ InsertQuery makeSelect
 >          {qeSelectList = [(Star, Nothing)]
 >          ,qeFrom = [TRSimple [Name "u"]]})
 
->     ,(TestStatement SQL2011 "insert into t default values"
+>     ,(TestStatement ansi2011 "insert into t default values"
 >      $ Insert [Name "t"] Nothing DefaultInsertValues)
 
->     ,(TestStatement SQL2011 "insert into t values(1,2)"
+>     ,(TestStatement ansi2011 "insert into t values(1,2)"
 >      $ Insert [Name "t"] Nothing
 >        $ InsertQuery $ Values [[NumLit "1", NumLit "2"]])
 
->     ,(TestStatement SQL2011 "insert into t values (1,2),(3,4)"
+>     ,(TestStatement ansi2011 "insert into t values (1,2),(3,4)"
 >      $ Insert [Name "t"] Nothing
 >        $ InsertQuery $ Values [[NumLit "1", NumLit "2"]
 >                               ,[NumLit "3", NumLit "4"]])
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "insert into t values (default,null,array[],multiset[])"
 >      $ Insert [Name "t"] Nothing
 >        $ InsertQuery $ Values [[Iden [Name "default"]
@@ -447,29 +447,29 @@ FROM CentralOfficeAccounts;
       [ WHERE <search condition> ]
 
 
->     ,(TestStatement SQL2011 "update t set a=b"
+>     ,(TestStatement ansi2011 "update t set a=b"
 >      $ Update [Name "t"] Nothing
 >        [Set [Name "a"] (Iden [Name "b"])] Nothing)
 
->     ,(TestStatement SQL2011 "update t set a=b, c=5"
+>     ,(TestStatement ansi2011 "update t set a=b, c=5"
 >      $ Update [Name "t"] Nothing
 >        [Set [Name "a"] (Iden [Name "b"])
 >        ,Set [Name "c"] (NumLit "5")] Nothing)
 
 
->     ,(TestStatement SQL2011 "update t set a=b where a>5"
+>     ,(TestStatement ansi2011 "update t set a=b where a>5"
 >      $ Update [Name "t"] Nothing
 >        [Set [Name "a"] (Iden [Name "b"])]
 >        $ Just $ BinOp (Iden [Name "a"]) [Name ">"] (NumLit "5"))
 
 
->     ,(TestStatement SQL2011 "update t as u set a=b where u.a>5"
+>     ,(TestStatement ansi2011 "update t as u set a=b where u.a>5"
 >      $ Update [Name "t"] (Just $ Name "u")
 >        [Set [Name "a"] (Iden [Name "b"])]
 >        $ Just $ BinOp (Iden [Name "u",Name "a"])
 >                       [Name ">"] (NumLit "5"))
 
->     ,(TestStatement SQL2011 "update t set (a,b)=(3,5)"
+>     ,(TestStatement ansi2011 "update t set (a,b)=(3,5)"
 >      $ Update [Name "t"] Nothing
 >        [SetMultiple [[Name "a"],[Name "b"]]
 >                     [NumLit "3", NumLit "5"]] Nothing)

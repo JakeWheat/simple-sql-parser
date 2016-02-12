@@ -22,7 +22,7 @@ commit, savepoint, etc.), and session management (set).
 
 BEGIN is not in the standard!
 
->      (TestStatement SQL2011
+>      (TestStatement ansi2011
 >       "start transaction"
 >      $ StartTransaction)
 
@@ -77,7 +77,7 @@ BEGIN is not in the standard!
 <savepoint specifier> ::=
   <savepoint name>
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "savepoint difficult_bit"
 >      $ Savepoint $ Name "difficult_bit")
 
@@ -87,7 +87,7 @@ BEGIN is not in the standard!
 <release savepoint statement> ::=
   RELEASE SAVEPOINT <savepoint specifier>
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "release savepoint difficult_bit"
 >      $ ReleaseSavepoint $ Name "difficult_bit")
 
@@ -97,11 +97,11 @@ BEGIN is not in the standard!
 <commit statement> ::=
   COMMIT [ WORK ] [ AND [ NO ] CHAIN ]
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "commit"
 >      $ Commit)
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "commit work"
 >      $ Commit)
 
@@ -114,15 +114,15 @@ BEGIN is not in the standard!
 <savepoint clause> ::=
   TO SAVEPOINT <savepoint specifier>
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "rollback"
 >      $ Rollback Nothing)
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "rollback work"
 >      $ Rollback Nothing)
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "rollback to savepoint difficult_bit"
 >      $ Rollback $ Just $ Name "difficult_bit")
 

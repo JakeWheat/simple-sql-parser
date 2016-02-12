@@ -28,7 +28,7 @@ These are a few misc tests which don't fit anywhere else.
 
 
 > duplicates :: TestItem
-> duplicates = Group "duplicates" $ map (uncurry (TestQueryExpr SQL2011))
+> duplicates = Group "duplicates" $ map (uncurry (TestQueryExpr ansi2011))
 >     [("select a from t" ,ms SQDefault)
 >     ,("select all a from t" ,ms All)
 >     ,("select distinct a from t", ms Distinct)
@@ -40,7 +40,7 @@ These are a few misc tests which don't fit anywhere else.
 >           ,qeFrom = [TRSimple [Name "t"]]}
 
 > selectLists :: TestItem
-> selectLists = Group "selectLists" $ map (uncurry (TestQueryExpr SQL2011))
+> selectLists = Group "selectLists" $ map (uncurry (TestQueryExpr ansi2011))
 >     [("select 1",
 >       makeSelect {qeSelectList = [(NumLit "1",Nothing)]})
 
@@ -73,7 +73,7 @@ These are a few misc tests which don't fit anywhere else.
 >     ]
 
 > whereClause :: TestItem
-> whereClause = Group "whereClause" $ map (uncurry (TestQueryExpr SQL2011))
+> whereClause = Group "whereClause" $ map (uncurry (TestQueryExpr ansi2011))
 >     [("select a from t where a = 5"
 >      ,makeSelect {qeSelectList = [(Iden [Name "a"],Nothing)]
 >                  ,qeFrom = [TRSimple [Name "t"]]
@@ -81,7 +81,7 @@ These are a few misc tests which don't fit anywhere else.
 >     ]
 
 > having :: TestItem
-> having = Group "having" $ map (uncurry (TestQueryExpr SQL2011))
+> having = Group "having" $ map (uncurry (TestQueryExpr ansi2011))
 >     [("select a,sum(b) from t group by a having sum(b) > 5"
 >      ,makeSelect {qeSelectList = [(Iden [Name "a"],Nothing)
 >                                  ,(App [Name "sum"] [Iden [Name "b"]],Nothing)]
@@ -93,7 +93,7 @@ These are a few misc tests which don't fit anywhere else.
 >     ]
 
 > orderBy :: TestItem
-> orderBy = Group "orderBy" $ map (uncurry (TestQueryExpr SQL2011))
+> orderBy = Group "orderBy" $ map (uncurry (TestQueryExpr ansi2011))
 >     [("select a from t order by a"
 >      ,ms [SortSpec (Iden [Name "a"]) DirDefault NullsOrderDefault])
 
@@ -119,7 +119,7 @@ These are a few misc tests which don't fit anywhere else.
 >                       ,qeOrderBy = o}
 
 > offsetFetch :: TestItem
-> offsetFetch = Group "offsetFetch" $ map (uncurry (TestQueryExpr SQL2011))
+> offsetFetch = Group "offsetFetch" $ map (uncurry (TestQueryExpr ansi2011))
 >     [-- ansi standard
 >      ("select a from t offset 5 rows fetch next 10 rows only"
 >      ,ms (Just $ NumLit "5") (Just $ NumLit "10"))
@@ -142,7 +142,7 @@ These are a few misc tests which don't fit anywhere else.
 >              ,qeFetchFirst = l}
 
 > combos :: TestItem
-> combos = Group "combos" $ map (uncurry (TestQueryExpr SQL2011))
+> combos = Group "combos" $ map (uncurry (TestQueryExpr ansi2011))
 >     [("select a from t union select b from u"
 >      ,CombineQueryExpr ms1 Union SQDefault Respectively ms2)
 
@@ -173,7 +173,7 @@ These are a few misc tests which don't fit anywhere else.
 
 
 > withQueries :: TestItem
-> withQueries = Group "with queries" $ map (uncurry (TestQueryExpr SQL2011))
+> withQueries = Group "with queries" $ map (uncurry (TestQueryExpr ansi2011))
 >     [("with u as (select a from t) select a from u"
 >      ,With False [(Alias (Name "u") Nothing, ms1)] ms2)
 
@@ -197,13 +197,13 @@ These are a few misc tests which don't fit anywhere else.
 >    ms3 = ms "a" "x"
 
 > values :: TestItem
-> values = Group "values" $ map (uncurry (TestQueryExpr SQL2011))
+> values = Group "values" $ map (uncurry (TestQueryExpr ansi2011))
 >     [("values (1,2),(3,4)"
 >       ,Values [[NumLit "1", NumLit "2"]
 >               ,[NumLit "3", NumLit "4"]])
 >     ]
 
 > tables :: TestItem
-> tables = Group "tables" $ map (uncurry (TestQueryExpr SQL2011))
+> tables = Group "tables" $ map (uncurry (TestQueryExpr ansi2011))
 >     [("table tbl", Table [Name "tbl"])
 >     ]

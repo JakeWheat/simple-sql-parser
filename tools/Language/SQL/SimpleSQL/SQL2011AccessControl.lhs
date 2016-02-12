@@ -73,124 +73,124 @@ grant, etc
     CURRENT_USER
   | CURRENT_ROLE
 
->      (TestStatement SQL2011
+>      (TestStatement ansi2011
 >       "grant all privileges on tbl1 to role1"
 >      $ GrantPrivilege [PrivAll]
 >        (PrivTable [Name "tbl1"])
 >        [Name "role1"] WithoutGrantOption)
 
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "grant all privileges on tbl1 to role1,role2"
 >      $ GrantPrivilege [PrivAll]
 >        (PrivTable [Name "tbl1"])
 >        [Name "role1",Name "role2"] WithoutGrantOption)
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "grant all privileges on tbl1 to role1 with grant option"
 >      $ GrantPrivilege [PrivAll]
 >        (PrivTable [Name "tbl1"])
 >        [Name "role1"] WithGrantOption)
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "grant all privileges on table tbl1 to role1"
 >      $ GrantPrivilege [PrivAll]
 >        (PrivTable [Name "tbl1"])
 >        [Name "role1"] WithoutGrantOption)
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "grant all privileges on domain mydom to role1"
 >      $ GrantPrivilege [PrivAll]
 >        (PrivDomain [Name "mydom"])
 >        [Name "role1"] WithoutGrantOption)
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "grant all privileges on type t1 to role1"
 >      $ GrantPrivilege [PrivAll]
 >        (PrivType [Name "t1"])
 >        [Name "role1"] WithoutGrantOption)
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "grant all privileges on sequence s1 to role1"
 >      $ GrantPrivilege [PrivAll]
 >        (PrivSequence [Name "s1"])
 >        [Name "role1"] WithoutGrantOption)
 
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "grant select on table t1 to role1"
 >      $ GrantPrivilege [PrivSelect []]
 >        (PrivTable [Name "t1"])
 >        [Name "role1"] WithoutGrantOption)
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "grant select(a,b) on table t1 to role1"
 >      $ GrantPrivilege [PrivSelect [Name "a", Name "b"]]
 >        (PrivTable [Name "t1"])
 >        [Name "role1"] WithoutGrantOption)
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "grant delete on table t1 to role1"
 >      $ GrantPrivilege [PrivDelete]
 >        (PrivTable [Name "t1"])
 >        [Name "role1"] WithoutGrantOption)
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "grant insert on table t1 to role1"
 >      $ GrantPrivilege [PrivInsert []]
 >        (PrivTable [Name "t1"])
 >        [Name "role1"] WithoutGrantOption)
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "grant insert(a,b) on table t1 to role1"
 >      $ GrantPrivilege [PrivInsert [Name "a", Name "b"]]
 >        (PrivTable [Name "t1"])
 >        [Name "role1"] WithoutGrantOption)
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "grant update on table t1 to role1"
 >      $ GrantPrivilege [PrivUpdate []]
 >        (PrivTable [Name "t1"])
 >        [Name "role1"] WithoutGrantOption)
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "grant update(a,b) on table t1 to role1"
 >      $ GrantPrivilege [PrivUpdate [Name "a", Name "b"]]
 >        (PrivTable [Name "t1"])
 >        [Name "role1"] WithoutGrantOption)
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "grant references on table t1 to role1"
 >      $ GrantPrivilege [PrivReferences []]
 >        (PrivTable [Name "t1"])
 >        [Name "role1"] WithoutGrantOption)
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "grant references(a,b) on table t1 to role1"
 >      $ GrantPrivilege [PrivReferences [Name "a", Name "b"]]
 >        (PrivTable [Name "t1"])
 >        [Name "role1"] WithoutGrantOption)
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "grant usage on table t1 to role1"
 >      $ GrantPrivilege [PrivUsage]
 >        (PrivTable [Name "t1"])
 >        [Name "role1"] WithoutGrantOption)
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "grant trigger on table t1 to role1"
 >      $ GrantPrivilege [PrivTrigger]
 >        (PrivTable [Name "t1"])
 >        [Name "role1"] WithoutGrantOption)
 
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "grant execute on specific function f to role1"
 >      $ GrantPrivilege [PrivExecute]
 >        (PrivFunction [Name "f"])
 >        [Name "role1"] WithoutGrantOption)
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "grant select,delete on table t1 to role1"
 >      $ GrantPrivilege [PrivSelect [], PrivDelete]
 >        (PrivTable [Name "t1"])
@@ -217,7 +217,7 @@ functions, etc., by argument types since they can be overloaded
 <role definition> ::=
   CREATE ROLE <role name> [ WITH ADMIN <grantor> ]
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "create role rolee"
 >      $ CreateRole (Name "rolee"))
 
@@ -233,16 +233,16 @@ functions, etc., by argument types since they can be overloaded
 <role granted> ::=
   <role name>
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "grant role1 to public"
 >      $ GrantRole [Name "role1"] [Name "public"] WithoutAdminOption)
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "grant role1,role2 to role3,role4"
 >      $ GrantRole [Name "role1",Name "role2"]
 >                  [Name "role3", Name "role4"] WithoutAdminOption)
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "grant role1 to role3 with admin option"
 >      $ GrantRole [Name "role1"] [Name "role3"] WithAdminOption)
 
@@ -252,7 +252,7 @@ functions, etc., by argument types since they can be overloaded
 <drop role statement> ::=
   DROP ROLE <role name>
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "drop role rolee"
 >      $ DropRole (Name "rolee"))
 
@@ -274,13 +274,13 @@ functions, etc., by argument types since they can be overloaded
   | HIERARCHY OPTION FOR
 
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "revoke select on t1 from role1"
 >      $ RevokePrivilege NoGrantOptionFor [PrivSelect []]
 >               (PrivTable [Name "t1"])
 >               [Name "role1"] DefaultDropBehaviour)
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "revoke grant option for select on t1 from role1,role2 cascade"
 >      $ RevokePrivilege GrantOptionFor [PrivSelect []]
 >                        (PrivTable [Name "t1"])
@@ -296,18 +296,18 @@ functions, etc., by argument types since they can be overloaded
 <role revoked> ::=
   <role name>
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "revoke role1 from role2"
 >      $ RevokeRole NoAdminOptionFor [Name "role1"]
 >                   [Name "role2"] DefaultDropBehaviour)
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "revoke role1,role2 from role3,role4"
 >      $ RevokeRole NoAdminOptionFor [Name "role1",Name "role2"]
 >                   [Name "role3",Name "role4"] DefaultDropBehaviour)
 
 
->     ,(TestStatement SQL2011
+>     ,(TestStatement ansi2011
 >       "revoke admin option for role1 from role2 cascade"
 >      $ RevokeRole AdminOptionFor [Name "role1"] [Name "role2"] Cascade)
 
