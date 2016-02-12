@@ -7,6 +7,7 @@
 .PHONY : init
 init :
 	cabal sandbox init
+	cabal install happy
 	cabal install --only-dependencies --enable-tests
 	cabal configure --enable-tests
 
