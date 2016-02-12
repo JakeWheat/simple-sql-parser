@@ -50,26 +50,20 @@ parsec
 >     --
 >     | Identifier String
 >
->     -- | This is an identifier quoted with "
->     | QIdentifier String
->     -- | This is an identifier quoted with u&"
->     | UQIdentifier String
-
->     -- | This is a dialect specific quoted identifier with the quote
->     -- characters explicit. The first and second fields are the
->     -- starting and ending quote characters.
->     | DQIdentifier String String String
->
+>     -- | This is a quoted identifier, the quotes can be " or u&,
+>     -- etc. or something dialect specific like []
+>     -- the first two fields are the start and end quotes
+>     | QuotedIdentifier String -- start quote
+>                        String -- end quote
+>                        String -- content
 >     -- | This is a host param symbol, e.g. :param
 >     | HostParam String
 >
->     -- | This is a string literal.
->     | SqlString String
->
->     -- | This is a character set string literal. The first field is
->     -- the character set (one of nNbBxX, or u&, U&).
->     | CSSqlString String String
->
+>     -- | This is a string literal. The first two fields are the --
+>     -- start and end quotes, which are usually both ', but can be
+>     -- the character set (one of nNbBxX, or u&, U&), or a dialect
+>     -- specific string quoting (such as $$ in postgres)
+>     | SqlString String String String
 >     -- | A number literal (integral or otherwise), stored in original format
 >     -- unchanged
 >     | SqlNumber String
@@ -95,15 +89,19 @@ parsec
 > prettyToken :: Dialect -> Token -> String
 > prettyToken _ (Symbol s) = s
 > prettyToken _ (Identifier t) = t
-> prettyToken _ (QIdentifier t) =
->     "\"" ++ doubleChars '"' t ++ "\""
-> prettyToken _ (UQIdentifier t) =
->     "u&\"" ++ doubleChars '"' t ++ "\""
-> prettyToken _ (DQIdentifier s e t) =
->     s ++ t ++ e
+> prettyToken _ (QuotedIdentifier q1 q2 t) =
+>     q1 ++
+>     -- todo: a bit hacky, do a better design
+>     (if '"' `elem` q1 then doubleChars '"' t else t)
+>     ++ q2
+> --prettyToken _ (UQIdentifier t) =
+> --    "u&\"" ++ doubleChars '"' t ++ "\""
+> --prettyToken _ (DQIdentifier s e t) =
+> --    s ++ t ++ e
 > prettyToken _ (HostParam p) = ':':p
-> prettyToken _ (SqlString t) = "'" ++ doubleChars '\'' t ++ "'"
-> prettyToken _ (CSSqlString cs t) = cs ++ "'" ++ t ++ "'"
+> prettyToken _ (SqlString s e t) =
+>     s ++ (if '\'' `elem` s then doubleChars '\'' t else t) ++ e
+> --prettyToken _ (CSSqlString cs t) = cs ++ "'" ++ t ++ "'"
 > prettyToken _ (SqlNumber r) = r
 > prettyToken _ (Whitespace t) = t
 > prettyToken _ (LineComment l) = l
@@ -181,12 +179,14 @@ u&"unicode quoted identifier"
 > identifier :: Dialect -> Parser Token
 > identifier d =
 >     choice
->     [QIdentifier <$> qiden
+>     [QuotedIdentifier "\"" "\"" <$> qiden
 >      -- try is used here to avoid a conflict with identifiers
 >      -- and quoted strings which also start with a 'u'
->     ,UQIdentifier <$> ((try (string "u&" <|> string "U&")) *> qiden)
+>     ,QuotedIdentifier "u&\"" "\"" <$> (try (string "u&") *> qiden)
+>     ,QuotedIdentifier "U&\"" "\"" <$> (try (string "U&") *> qiden)
 >     ,Identifier <$> identifierString
->     ,DQIdentifier "`" "`" <$> mySqlQIden
+>      -- todo: dialect protection
+>     ,QuotedIdentifier "`" "`" <$> mySqlQIden
 >     ]
 >   where
 >     qiden = char '"' *> qidenSuffix ""
@@ -226,7 +226,7 @@ x'hexidecimal string'
 >            ,normalString
 >            ]
 >   where
->     normalString = SqlString {-"'"-} <$> (char '\'' *> normalStringSuffix "")
+>     normalString = SqlString "'" "'" <$> (char '\'' *> normalStringSuffix "")
 >     normalStringSuffix t = do
 >         s <- takeTill (=='\'')
 >         void $ char '\''
@@ -239,10 +239,10 @@ x'hexidecimal string'
 >     -- identifiers which can start with n,b,x,u
 >     -- once we read the quote type and the starting '
 >     -- then we commit to a string
->     csString = CSSqlString <$> try (cs  <* char '\'') <*> normalStringSuffix ""
->     cs = choice [(:[]) <$> oneOf "nNbBxX"
->                 ,string "u&"
->                 ,string "U&"]
+>     csString = SqlString <$> try cs <*> return "'" <*> normalStringSuffix ""
+>     cs = choice $ (map (\x -> string ([x] ++ "'")) "nNbBxX")
+>                   ++ [string "u&'"
+>                      ,string "U&'"]
 
 > hostParam :: Dialect -> Parser Token
 > hostParam _ = HostParam <$> (char ':' *> identifierString)
@@ -283,13 +283,15 @@ A symbol is one of the two character symbols, or one of the single
 character symbols in the two lists below.
 
 > symbol :: Dialect -> Parser Token
-> symbol _ = Symbol <$> choice (many1 (char '.') :
+> symbol _ = Symbol <$>
+>     choice (
+>             many1 (char '.') :
 >                  -- try is used because most of the first
 >                  -- characters of the two character symbols
 >                  -- can also be part of a single character symbol
 >                  -- maybe this would be better with left factoring?
->                  map (try . string) [">=","<=","!=","<>","||"]
->                  ++ map (string . (:[])) "+-^*/%~&|?<>[]=,;()")
+>                 map (try . string) [">=","<=","!=","<>","||"]
+>                 ++ map (string . (:[])) "+-^*/%~&|?<>[]=,;()")
 
 > sqlWhitespace :: Dialect -> Parser Token
 > sqlWhitespace _ = Whitespace <$> many1 (satisfy isSpace)

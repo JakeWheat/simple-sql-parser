@@ -330,10 +330,8 @@ u&"example quoted"
 > name :: Parser Name
 > name = do
 >     d <- getState
->     choice [QName <$> qidentifierTok
->            ,UQName <$> uqidentifierTok
->            ,Name <$> identifierTok (blacklist d) Nothing
->            ,(\(s,e,t) -> DQName s e t) <$> dqidentifierTok
+>     choice [Name <$> identifierTok (blacklist d) Nothing
+>            ,(\(s,e,t) -> QuotedName s e t) <$> qidentifierTok
 >            ]
 
 todo: replace (:[]) with a named function all over
@@ -558,16 +556,13 @@ factoring in this function, and it is a little dense.
 See the stringToken lexer below for notes on string literal syntax.
 
 > stringLit :: Parser ValueExpr
-> stringLit = StringLit <$> stringTokExtend
+> stringLit = (\(s,e,t) -> StringLit s e t) <$> stringTokExtend
 
 > numberLit :: Parser ValueExpr
 > numberLit = NumLit <$> sqlNumberTok False
 
-> characterSetLit :: Parser ValueExpr
-> characterSetLit = uncurry CSStringLit <$> csSqlStringLitTok
-
 > simpleLiteral :: Parser ValueExpr
-> simpleLiteral = numberLit <|> stringLit <|> characterSetLit
+> simpleLiteral = numberLit <|> stringLit
 
 == star, param, host param
 
@@ -690,7 +685,7 @@ this. also fix the monad -> applicative
 > intervalLit = try (keyword_ "interval" >> do
 >     s <- optionMaybe $ choice [True <$ symbol_ "+"
 >                               ,False <$ symbol_ "-"]
->     lit <- stringTok
+>     lit <- singleQuotesOnlyStringTok
 >     q <- optionMaybe intervalQualifier
 >     mkIt s lit q)
 >   where
@@ -716,7 +711,7 @@ all the value expressions which start with an identifier
 > idenExpr :: Parser ValueExpr
 > idenExpr =
 >     -- todo: work out how to left factor this
->     try (TypedLit <$> typeName <*> stringTokExtend)
+>     try (TypedLit <$> typeName <*> singleQuotesOnlyStringTok)
 >     <|> multisetSetFunction
 >     <|> (names <**> option Iden app)
 >   where
@@ -831,7 +826,7 @@ in the source
 >     keyword "trim" >>
 >     parens (mkTrim
 >             <$> option "both" sides
->             <*> option " " stringTok
+>             <*> option " " singleQuotesOnlyStringTok
 >             <*> (keyword_ "from" *> valueExpr))
 >   where
 >     sides = choice ["leading" <$ keyword_ "leading"
@@ -839,7 +834,7 @@ in the source
 >                    ,"both" <$ keyword_ "both"]
 >     mkTrim fa ch fr =
 >       SpecialOpK [Name "trim"] Nothing
->           $ catMaybes [Just (fa,StringLit ch)
+>           $ catMaybes [Just (fa,StringLit "'" "'" ch)
 >                       ,Just ("from", fr)]
 
 === app, aggregate, window
@@ -1951,28 +1946,34 @@ unsigned integer match
 symbol matching
 keyword matching
 
-> csSqlStringLitTok :: Parser (String,String)
-> csSqlStringLitTok = mytoken (\tok ->
->     case tok of
->       L.CSSqlString p s -> Just (p,s)
->       _ -> Nothing)
-
-> stringTok :: Parser String
+> stringTok :: Parser (String,String,String)
 > stringTok = mytoken (\tok ->
 >     case tok of
->       L.SqlString s -> Just s
+>       L.SqlString s e t -> Just (s,e,t)
+>       _ -> Nothing)
+
+> singleQuotesOnlyStringTok :: Parser String
+> singleQuotesOnlyStringTok = mytoken (\tok ->
+>     case tok of
+>       L.SqlString "'" "'" t -> Just t
 >       _ -> Nothing)
 
 This is to support SQL strings where you can write
 'part of a string' ' another part'
 and it will parse as a single string
 
-> stringTokExtend :: Parser String
+It is only allowed when all the strings are quoted with ' atm.
+
+> stringTokExtend :: Parser (String,String,String)
 > stringTokExtend = do
->     x <- stringTok
+>     (s,e,x) <- stringTok
 >     choice [
->         ((x++) <$> stringTokExtend)
->         ,return x
+>          do
+>          guard (s == "'" && e == "'")
+>          (s',e',y) <- stringTokExtend
+>          guard (s' == "'" && e' == "'")
+>          return $ (s,e,x ++ y)
+>         ,return (s,e,x)
 >         ]
 
 > hostParamTok :: Parser String
@@ -2002,24 +2003,11 @@ and it will parse as a single string
 >       (Just k, L.Identifier p) | k == map toLower p -> Just p
 >       _ -> Nothing)
 
-> qidentifierTok :: Parser String
+> qidentifierTok :: Parser (String,String,String)
 > qidentifierTok = mytoken (\tok ->
 >     case tok of
->       L.QIdentifier p -> Just p
+>       L.QuotedIdentifier s e t -> Just (s,e,t)
 >       _ -> Nothing)
-
-> dqidentifierTok :: Parser (String,String,String)
-> dqidentifierTok = mytoken (\tok ->
->     case tok of
->       L.DQIdentifier s e t -> Just (s,e,t)
->       _ -> Nothing)
-
-> uqidentifierTok :: Parser String
-> uqidentifierTok = mytoken (\tok ->
->     case tok of
->       L.UQIdentifier p -> Just p
->       _ -> Nothing)
-
 
 > mytoken :: (L.Token -> Maybe a) -> Parser a
 > mytoken test = token showToken posToken testToken

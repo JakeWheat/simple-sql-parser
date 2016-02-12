@@ -506,17 +506,17 @@ Specify a non-null value.
 > characterStringLiterals = Group "character string literals"
 >     $ map (uncurry (TestValueExpr ansi2011))
 >     [("'a regular string literal'"
->      ,StringLit "a regular string literal")
+>      ,StringLit "'" "'" "a regular string literal")
 >     ,("'something' ' some more' 'and more'"
->      ,StringLit "something some moreand more")
+>      ,StringLit "'" "'" "something some moreand more")
 >     ,("'something' \n ' some more' \t 'and more'"
->      ,StringLit "something some moreand more")
+>      ,StringLit "'" "'" "something some moreand more")
 >     ,("'something' -- a comment\n ' some more' /*another comment*/ 'and more'"
->      ,StringLit "something some moreand more")
+>      ,StringLit "'" "'" "something some moreand more")
 >     ,("'a quote: '', stuff'"
->      ,StringLit "a quote: ', stuff")
+>      ,StringLit "'" "'" "a quote: ', stuff")
 >     ,("''"
->      ,StringLit "")
+>      ,StringLit "'" "'" "")
 
 I'm not sure how this should work. Maybe the parser should reject non
 ascii characters in strings and identifiers unless the current SQL
@@ -533,8 +533,8 @@ character set allows them.
 > nationalCharacterStringLiterals :: TestItem
 > nationalCharacterStringLiterals = Group "national character string literals"
 >     $ map (uncurry (TestValueExpr ansi2011))
->     [("N'something'", CSStringLit "N" "something")
->     ,("n'something'", CSStringLit "n" "something")
+>     [("N'something'", StringLit "N'" "'" "something")
+>     ,("n'something'", StringLit "n'" "'" "something")
 >     ]
 
 <Unicode character string literal> ::=
@@ -550,11 +550,11 @@ character set allows them.
 > unicodeCharacterStringLiterals :: TestItem
 > unicodeCharacterStringLiterals = Group "unicode character string literals"
 >     $ map (uncurry (TestValueExpr ansi2011))
->     [("U&'something'", CSStringLit "U&" "something")
+>     [("U&'something'", StringLit "U&'" "'" "something")
 >     ,("u&'something' escape ="
->      ,Escape (CSStringLit "u&" "something") '=')
+>      ,Escape (StringLit "u&'" "'" "something") '=')
 >     ,("u&'something' uescape ="
->      ,UEscape (CSStringLit "u&" "something") '=')
+>      ,UEscape (StringLit "u&'" "'" "something") '=')
 >     ]
 
 TODO: unicode escape
@@ -570,8 +570,8 @@ TODO: unicode escape
 > binaryStringLiterals = Group "binary string literals"
 >     $ map (uncurry (TestValueExpr ansi2011))
 >     [--("B'101010'", CSStringLit "B" "101010")
->      ("X'7f7f7f'", CSStringLit "X" "7f7f7f")
->     ,("X'7f7f7f' escape z", Escape (CSStringLit "X" "7f7f7f") 'z')
+>      ("X'7f7f7f'", StringLit "X'" "'" "7f7f7f")
+>     ,("X'7f7f7f' escape z", Escape (StringLit "X'" "'" "7f7f7f") 'z')
 >     ]
 
 <signed numeric literal> ::= [ <sign> ] <unsigned numeric literal>
@@ -753,10 +753,10 @@ Specify names.
 >     ,("t1",Iden [Name "t1"])
 >     ,("a.b",Iden [Name "a", Name "b"])
 >     ,("a.b.c",Iden [Name "a", Name "b", Name "c"])
->     ,("\"quoted iden\"", Iden [QName "quoted iden"])
->     ,("\"quoted \"\" iden\"", Iden [QName "quoted \" iden"])
->     ,("U&\"quoted iden\"", Iden [UQName "quoted iden"])
->     ,("U&\"quoted \"\" iden\"", Iden [UQName "quoted \" iden"])
+>     ,("\"quoted iden\"", Iden [QuotedName "\"" "\"" "quoted iden"])
+>     ,("\"quoted \"\" iden\"", Iden [QuotedName "\"" "\"" "quoted \" iden"])
+>     ,("U&\"quoted iden\"", Iden [QuotedName "U&\"" "\"" "quoted iden"])
+>     ,("U&\"quoted \"\" iden\"", Iden [QuotedName "U&\"" "\"" "quoted \" iden"])
 >     ]
 
 TODO: more identifiers, e.g. unicode escapes?, mixed quoted/unquoted
@@ -1100,8 +1100,8 @@ create a list of type name variations:
 >          -- 1 with and without tz
 >          ,("time with time zone"
 >           ,TimeTypeName [Name "time"] Nothing True)
->          ,("timestamp(3) without time zone"
->           ,TimeTypeName [Name "timestamp"] (Just 3) False)
+>          ,("datetime(3) without time zone"
+>           ,TimeTypeName [Name "datetime"] (Just 3) False)
 >          -- chars: (single/multiname) x prec x charset x collate
 >          -- 1111
 >          ,("char varying(5) character set something collate something_insensitive"
@@ -1199,7 +1199,7 @@ expression
 >         [(ctn ++ " 'test'", TypedLit stn "test")
 >         ]
 >     makeCastTests (ctn, stn) =
->         [("cast('test' as " ++ ctn ++ ")", Cast (StringLit "test") stn)
+>         [("cast('test' as " ++ ctn ++ ")", Cast (StringLit "'" "'" "test") stn)
 >         ]
 >     makeTests a = makeSimpleTests a ++ makeCastTests a
 
@@ -1215,7 +1215,7 @@ Define a field of a row type.
 > fieldDefinition = Group "field definition"
 >     $ map (uncurry (TestValueExpr ansi2011))
 >     [("cast('(1,2)' as row(a int,b char))"
->      ,Cast (StringLit "(1,2)")
+>      ,Cast (StringLit "'" "'" "(1,2)")
 >      $ RowTypeName [(Name "a", TypeName [Name "int"])
 >                    ,(Name "b", TypeName [Name "char"])])]
 

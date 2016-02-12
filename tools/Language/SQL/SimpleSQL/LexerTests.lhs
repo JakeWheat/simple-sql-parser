@@ -7,9 +7,10 @@ Test for the lexer
 > import Language.SQL.SimpleSQL.TestTypes
 > import Language.SQL.SimpleSQL.Lex (Token(..))
 > --import Debug.Trace
+> import Data.Char (isAlpha)
 
-> lexerTable :: [(String,[Token])]
-> lexerTable =
+> ansiLexerTable :: [(String,[Token])]
+> ansiLexerTable =
 >     -- single char symbols
 >     map (\s -> ([s],[Symbol [s]])) "+-^*/%~&|?<>[]=,;()"
 >     -- multi char symbols
@@ -17,21 +18,21 @@ Test for the lexer
 >     ++ (let idens = ["a", "_a", "test", "table", "Stuff", "STUFF"]
 >         -- simple identifiers
 >         in map (\i -> (i, [Identifier i])) idens
->            ++ map (\i -> ("\"" ++ i ++ "\"", [QIdentifier i])) idens
+>            ++ map (\i -> ("\"" ++ i ++ "\"", [QuotedIdentifier "\"" "\"" i])) idens
 >            -- todo: in order to make lex . pretty id, need to
 >            -- preserve the case of the u
->            ++ map (\i -> ("u&\"" ++ i ++ "\"", [UQIdentifier i])) idens
+>            ++ map (\i -> ("u&\"" ++ i ++ "\"", [QuotedIdentifier "u&\"" "\"" i])) idens
 >            -- host param
 >            ++ map (\i -> (':':i, [HostParam i])) idens
 >        )
 >     -- quoted identifiers with embedded double quotes
->     ++ [("\"normal \"\" iden\"", [QIdentifier "normal \" iden"])]
+>     ++ [("\"normal \"\" iden\"", [QuotedIdentifier "\"" "\"" "normal \" iden"])]
 >     -- strings
->     ++ [("'string'", [SqlString "string"])
->        ,("'normal '' quote'", [SqlString "normal ' quote"])
->        ,("'normalendquote '''", [SqlString "normalendquote '"])]
+>     ++ [("'string'", [SqlString "'" "'" "string"])
+>        ,("'normal '' quote'", [SqlString "'" "'" "normal ' quote"])
+>        ,("'normalendquote '''", [SqlString "'" "'" "normalendquote '"])]
 >     -- csstrings
->     ++ map (\c -> (c ++ "'test'", [CSSqlString c "test"]))
+>     ++ map (\c -> (c ++ "'test'", [SqlString (c ++ "'") "'" "test"]))
 >        ["n", "N","b", "B","x", "X", "u&"]
 >     -- numbers
 >     ++ [("10", [SqlNumber "10"])
@@ -54,14 +55,18 @@ Test for the lexer
 >        ,"/* this *is/ a comment */"
 >        ]
 
-
 > lexerTests :: TestItem
 > lexerTests = Group "lexerTests" $
->     [Group "lexer token tests" $ [LexerTest ansi2011 s t |  (s,t) <- lexerTable]
->     ,Group "generated combination lexer tests" $
+>     [Group "lexer token tests" [ansiLexerTests]]
+
+
+> ansiLexerTests :: TestItem
+> ansiLexerTests = Group "ansiLexerTests" $
+>     [Group "ansi lexer token tests" $ [LexerTest ansi2011 s t |  (s,t) <- ansiLexerTable]
+>     ,Group "ansi generated combination lexer tests" $
 >     [ LexerTest ansi2011 (s ++ s1) (t ++ t1)
->     | (s,t) <- lexerTable
->     , (s1,t1) <- lexerTable
+>     | (s,t) <- ansiLexerTable
+>     , (s1,t1) <- ansiLexerTable
 
 which combinations won't work:
 <> <= >= || two single symbols which make a double char symbol
@@ -101,17 +106,16 @@ number number (todo: double check more carefully)
 >                ,symbolPair "*" "/"
 
 >                ,(isIdentifier, isIdentifier)
->                ,(isQIdentifier, isQIdentifier)
->                ,(isUQIdentifier, isQIdentifier)
->                ,(isString, isString)
->                ,(isCsString, isString)
+>                ,(isDQIdentifier, isDQIdentifier)
+>                ,(isCQIdentifier, isDQIdentifier)
+>                ,(isString, isNonCsString)
 >                ,(isEofLineComment, const True)
 >                ,(isNumber, isNumber)
 >                ,(isHostParam,isIdentifier)
 >                ,(isHostParam,isCsString)
->                ,(isHostParam,isUQIdentifier)
+>                ,(isHostParam,isCQIdentifier)
 >                ,(isIdentifier,isCsString)
->                ,(isIdentifier,isUQIdentifier)
+>                ,(isIdentifier,isCQIdentifier)
 >                ,(isWhitespace, isWhitespace)
 >                ,(isIdentifier, isNumber)
 >                ,(isHostParam, isNumber)
@@ -119,12 +123,17 @@ number number (todo: double check more carefully)
 >                ]
 >    isIdentifier (Identifier _) = True
 >    isIdentifier _ = False
->    isQIdentifier (QIdentifier _) = True
->    isQIdentifier _ = False
->    isUQIdentifier (UQIdentifier _) = True
->    isUQIdentifier _ = False
->    isCsString (CSSqlString {}) = True
+>    isDQIdentifier (QuotedIdentifier "\"" _ _) = True
+>    isDQIdentifier _ = False
+>    isCQIdentifier (QuotedIdentifier (x:_) _ _) | isAlpha x = True
+>    isCQIdentifier _ = False
+>    isCsString (SqlString (x:_) _ _) | isAlpha x = True
 >    isCsString _ = False
+>    isString (SqlString _ _ _) = True
+>    isString _ = False
+>    isNonCsString (SqlString [] _ _) = True
+>    isNonCsString (SqlString (x:_) _ _) | not (isAlpha x) = True
+>    isNonCsString _ = False
 >    isEofLineComment (LineComment s) = last s /= '\n'
 >    isEofLineComment _ = False
 >    isLineComment (LineComment {}) = True
@@ -137,9 +146,6 @@ number number (todo: double check more carefully)
 >    isWhitespace _ = False
 >    isMinus (Symbol "-") = True
 >    isMinus _ = False
-
->    isString (SqlString _) = True
->    isString _ = False
 >    symbolPair a b = ((==Symbol a), (==Symbol b))
 >    listPred :: ((Token -> Bool),(Token -> Bool)) -> [Token] -> Bool
 >    listPred _ [] = False

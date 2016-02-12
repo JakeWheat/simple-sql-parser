@@ -88,9 +88,9 @@
 >       --
 >       -- * 12.34e-6
 >       NumLit String
->       -- | string literal, currently only basic strings between
->       -- single quotes with a single quote escaped using ''
->     | StringLit String
+>       -- | string literal, with the start and end quote
+>       -- e.g. 'test' -> StringLit "'" "'" "test"
+>     | StringLit String String String
 >       -- | text of interval literal, units of interval precision,
 >       -- e.g. interval 3 days (3)
 >     | IntervalLit
@@ -203,8 +203,6 @@
 >                                   -- second is the subscripts/ctor args
 >     | ArrayCtor QueryExpr -- ^ this is used for the query expression version of array constructors, e.g. array(select * from t)
 
->     | CSStringLit String String
-
 todo: special syntax for like, similar with escape - escape cannot go
 in other places
 
@@ -220,10 +218,8 @@ in other places
 
 > -- | Represents an identifier name, which can be quoted or unquoted.
 > data Name = Name String
->           | QName String
->           | UQName String
->           | DQName String String String
->             -- ^ dialect quoted name, the fields are start quote, end quote and the string itself, e.g. `something` is parsed to DQName "`" "`" "something, and $a$ test $a$ is parsed to DQName "$a$" "$a$" " test "
+>           | QuotedName String String String
+>             -- ^ quoted name, the fields are start quote, end quote and the string itself, these will usually be ", others are possible e.g. `something` is parsed to QuotedName "`" "`" "something, and $a$ test $a$ is parsed to QuotedName "$a$" "$a$" " test "
 >             deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | Represents a type name, used in casts.

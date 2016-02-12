@@ -19,7 +19,7 @@ limit syntax
 
 > backtickQuotes :: TestItem
 > backtickQuotes = Group "backtickQuotes" (map (uncurry (TestValueExpr mysql))
->     [("`test`", Iden [DQName "`" "`" "test"])
+>     [("`test`", Iden [QuotedName "`" "`" "test"])
 >     ]
 >     ++ [ParseValueExprFails ansi2011 "`test`"]
 >     )

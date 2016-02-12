@@ -16,7 +16,7 @@ which have been changed to try to improve the layout of the output.
 > import Language.SQL.SimpleSQL.Dialect
 > import Text.PrettyPrint (render, vcat, text, (<>), (<+>), empty, parens,
 >                          nest, Doc, punctuate, comma, sep, quotes,
->                          doubleQuotes, brackets,hcat)
+>                          brackets,hcat)
 > import Data.Maybe (maybeToList, catMaybes)
 > import Data.List (intercalate)
 
@@ -40,7 +40,8 @@ which have been changed to try to improve the layout of the output.
 = value expressions
 
 > valueExpr :: Dialect -> ValueExpr -> Doc
-> valueExpr _ (StringLit s) = quotes $ text $ doubleUpQuotes s
+> valueExpr _ (StringLit s e t) =
+>     text (s ++ (if '\'' `elem` s then doubleUpQuotes t else t) ++ e)
 
 > valueExpr _ (NumLit s) = text s
 > valueExpr _ (IntervalLit s v f t) =
@@ -210,11 +211,6 @@ which have been changed to try to improve the layout of the output.
 >          Distinct -> text "distinct"
 >     ,valueExpr d b]
 
-
-
-> valueExpr _ (CSStringLit cs st) =
->   text cs <> quotes (text $ doubleUpQuotes st)
-
 > valueExpr d (Escape v e) =
 >     valueExpr d v <+> text "escape" <+> text [e]
 
@@ -243,21 +239,18 @@ which have been changed to try to improve the layout of the output.
 
 
 > unname :: Name -> String
-> unname (QName n) = "\"" ++ doubleUpDoubleQuotes n ++ "\""
-> unname (UQName n) = "U&\"" ++ doubleUpDoubleQuotes n ++ "\""
 > unname (Name n) = n
-> unname (DQName s e n) = s ++ n ++ e
+> unname (QuotedName s e n) =
+>     s ++ (if '"' `elem` s then doubleUpDoubleQuotes n else n) ++ e
 
 > unnames :: [Name] -> String
 > unnames ns = intercalate "." $ map unname ns
 
 
 > name :: Name -> Doc
-> name (QName n) = doubleQuotes $ text $ doubleUpDoubleQuotes n
-> name (UQName n) =
->     text "U&" <> doubleQuotes (text $ doubleUpDoubleQuotes n)
 > name (Name n) = text n
-> name (DQName s e n) = text s <> text n <> text e
+> name (QuotedName s e n) =
+>     text s <> text (if '"' `elem` s then doubleUpDoubleQuotes n else n) <> text e
 
 > names :: [Name] -> Doc
 > names ns = hcat $ punctuate (text ".") $ map name ns

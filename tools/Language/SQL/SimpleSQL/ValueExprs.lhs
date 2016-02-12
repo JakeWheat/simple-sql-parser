@@ -34,9 +34,9 @@ Tests for parsing value expressions
 >      ,("3e3", NumLit "3e3")
 >      ,("3e+3", NumLit "3e+3")
 >      ,("3e-3", NumLit "3e-3")
->      ,("'string'", StringLit "string")
->      ,("'string with a '' quote'", StringLit "string with a ' quote")
->      ,("'1'", StringLit "1")
+>      ,("'string'", StringLit "'" "'" "string")
+>      ,("'string with a '' quote'", StringLit "'" "'" "string with a ' quote")
+>      ,("'1'", StringLit "'" "'" "1")
 >      ,("interval '3' day"
 >       ,IntervalLit Nothing "3" (Itf "day" Nothing) Nothing)
 >      ,("interval '3' day (3)"
@@ -48,7 +48,7 @@ Tests for parsing value expressions
 > identifiers = Group "identifiers" $ map (uncurry (TestValueExpr ansi2011))
 >     [("iden1", Iden [Name "iden1"])
 >     --,("t.a", Iden2 "t" "a")
->     ,("\"quoted identifier\"", Iden [QName "quoted identifier"])
+>     ,("\"quoted identifier\"", Iden [QuotedName "\"" "\"" "quoted identifier"])
 >     ]
 
 > star :: TestItem
@@ -142,19 +142,19 @@ Tests for parsing value expressions
 > casts :: TestItem
 > casts = Group "operators" $ map (uncurry (TestValueExpr ansi2011))
 >     [("cast('1' as int)"
->      ,Cast (StringLit "1") $ TypeName [Name "int"])
+>      ,Cast (StringLit "'" "'" "1") $ TypeName [Name "int"])
 
 >     ,("int '3'"
 >      ,TypedLit (TypeName [Name "int"]) "3")
 
 >     ,("cast('1' as double precision)"
->      ,Cast (StringLit "1") $ TypeName [Name "double precision"])
+>      ,Cast (StringLit "'" "'" "1") $ TypeName [Name "double precision"])
 
 >     ,("cast('1' as float(8))"
->      ,Cast (StringLit "1") $ PrecTypeName [Name "float"] 8)
+>      ,Cast (StringLit "'" "'" "1") $ PrecTypeName [Name "float"] 8)
 
 >     ,("cast('1' as decimal(15,2))"
->      ,Cast (StringLit "1") $ PrecScaleTypeName [Name "decimal"] 15 2)
+>      ,Cast (StringLit "'" "'" "1") $ PrecScaleTypeName [Name "decimal"] 15 2)
 
 
 >     ,("double precision '3'"
@@ -283,43 +283,43 @@ target_string
 
 >     ,("trim(from target_string)"
 >      ,SpecialOpK [Name "trim"] Nothing
->           [("both", StringLit " ")
+>           [("both", StringLit "'" "'" " ")
 >           ,("from", Iden [Name "target_string"])])
 
 >     ,("trim(leading from target_string)"
 >      ,SpecialOpK [Name "trim"] Nothing
->           [("leading", StringLit " ")
+>           [("leading", StringLit "'" "'" " ")
 >           ,("from", Iden [Name "target_string"])])
 
 >     ,("trim(trailing from target_string)"
 >      ,SpecialOpK [Name "trim"] Nothing
->           [("trailing", StringLit " ")
+>           [("trailing", StringLit "'" "'" " ")
 >           ,("from", Iden [Name "target_string"])])
 
 >     ,("trim(both from target_string)"
 >      ,SpecialOpK [Name "trim"] Nothing
->           [("both", StringLit " ")
+>           [("both", StringLit "'" "'" " ")
 >           ,("from", Iden [Name "target_string"])])
 
 
 >     ,("trim(leading 'x' from target_string)"
 >      ,SpecialOpK [Name "trim"] Nothing
->           [("leading", StringLit "x")
+>           [("leading", StringLit "'" "'" "x")
 >           ,("from", Iden [Name "target_string"])])
 
 >     ,("trim(trailing 'y' from target_string)"
 >      ,SpecialOpK [Name "trim"] Nothing
->           [("trailing", StringLit "y")
+>           [("trailing", StringLit "'" "'" "y")
 >           ,("from", Iden [Name "target_string"])])
 
 >     ,("trim(both 'z' from target_string collate C)"
 >      ,SpecialOpK [Name "trim"] Nothing
->           [("both", StringLit "z")
+>           [("both", StringLit "'" "'" "z")
 >           ,("from", Collate (Iden [Name "target_string"]) [Name "C"])])
 
 >     ,("trim(leading from target_string)"
 >      ,SpecialOpK [Name "trim"] Nothing
->           [("leading", StringLit " ")
+>           [("leading", StringLit "'" "'" " ")
 >           ,("from", Iden [Name "target_string"])])
 
 
