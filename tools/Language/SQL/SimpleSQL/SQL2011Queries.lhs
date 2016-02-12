@@ -1100,8 +1100,8 @@ create a list of type name variations:
 >          -- 1 with and without tz
 >          ,("time with time zone"
 >           ,TimeTypeName [Name "time"] Nothing True)
->          ,("datetime(3) without time zone"
->           ,TimeTypeName [Name "datetime"] (Just 3) False)
+>          ,("timestamp(3) without time zone"
+>           ,TimeTypeName [Name "timestamp"] (Just 3) False)
 >          -- chars: (single/multiname) x prec x charset x collate
 >          -- 1111
 >          ,("char varying(5) character set something collate something_insensitive"

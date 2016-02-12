@@ -93,13 +93,43 @@
 >       ,ilFrom :: IntervalTypeField
 >       ,ilTo :: Maybe IntervalTypeField
 >       }
+
+>       -- | prefix 'typed literal', e.g. int '42'
+>     | TypedLit TypeName String
+
 >       -- | identifier with parts separated by dots
 >     | Iden [Name]
 >       -- | star, as in select *, t.*, count(*)
 >     | Star
+
+>     | Parameter -- ^ Represents a ? in a parameterized query
+>     | HostParameter String (Maybe String) -- ^ represents a host
+>                                           -- parameter, e.g. :a. The
+>                                           -- Maybe String is for the
+>                                           -- indicator, e.g. :var
+>                                           -- indicator :nl
+
+
+>       -- | Infix binary operators. This is used for symbol operators
+>       -- (a + b), keyword operators (a and b) and multiple keyword
+>       -- operators (a is similar to b)
+>     | BinOp ValueExpr [Name] ValueExpr
+>       -- | Prefix unary operators. This is used for symbol
+>       -- operators, keyword operators and multiple keyword operators.
+>     | PrefixOp [Name] ValueExpr
+>       -- | Postfix unary operators. This is used for symbol
+>       -- operators, keyword operators and multiple keyword operators.
+>     | PostfixOp [Name] ValueExpr
+>       -- | Used for ternary, mixfix and other non orthodox
+>       -- operators. Currently used for row constructors, and for
+>       -- between.
+>     | SpecialOp [Name] [ValueExpr]
+
 >       -- | function application (anything that looks like c style
 >       -- function application syntactically)
 >     | App [Name] [ValueExpr]
+
+
 >       -- | aggregate application, which adds distinct or all, and
 >       -- order by, to regular function application
 >     | AggregateApp
@@ -125,53 +155,39 @@
 >       ,wnOrderBy :: [SortSpec] -- ^ order by
 >       ,wnFrame :: Maybe Frame -- ^ frame clause
 >       }
->       -- | Infix binary operators. This is used for symbol operators
->       -- (a + b), keyword operators (a and b) and multiple keyword
->       -- operators (a is similar to b)
->     | BinOp ValueExpr [Name] ValueExpr
->       -- | Prefix unary operators. This is used for symbol
->       -- operators, keyword operators and multiple keyword operators.
->     | PrefixOp [Name] ValueExpr
->       -- | Postfix unary operators. This is used for symbol
->       -- operators, keyword operators and multiple keyword operators.
->     | PostfixOp [Name] ValueExpr
->       -- | Used for ternary, mixfix and other non orthodox
->       -- operators. Currently used for row constructors, and for
->       -- between.
->     | SpecialOp [Name] [ValueExpr]
+
 >       -- | Used for the operators which look like functions
 >       -- except the arguments are separated by keywords instead
 >       -- of commas. The maybe is for the first unnamed argument
 >       -- if it is present, and the list is for the keyword argument
 >       -- pairs.
 >     | SpecialOpK [Name] (Maybe ValueExpr) [(String,ValueExpr)]
+
+>       -- | cast(a as typename)
+>     | Cast ValueExpr TypeName
+
 >       -- | case expression. both flavours supported
 >     | Case
 >       {caseTest :: Maybe ValueExpr -- ^ test value
 >       ,caseWhens :: [([ValueExpr],ValueExpr)] -- ^ when branches
 >       ,caseElse :: Maybe ValueExpr -- ^ else value
 >       }
+
 >     | Parens ValueExpr
->       -- | cast(a as typename)
->     | Cast ValueExpr TypeName
->       -- | prefix 'typed literal', e.g. int '42'
->     | TypedLit TypeName String
->       -- | exists, all, any, some subqueries
->     | SubQueryExpr SubQueryExprType QueryExpr
+
 >       -- | in list literal and in subquery, if the bool is false it
 >       -- means not in was used ('a not in (1,2)')
 >     | In Bool ValueExpr InPredValue
->     | Parameter -- ^ Represents a ? in a parameterized query
->     | HostParameter String (Maybe String) -- ^ represents a host
->                                           -- parameter, e.g. :a. The
->                                           -- Maybe String is for the
->                                           -- indicator, e.g. :var
->                                           -- indicator :nl
+
+>       -- | exists, all, any, some subqueries
+>     | SubQueryExpr SubQueryExprType QueryExpr
+
 >     | QuantifiedComparison
 >             ValueExpr
 >             [Name] -- operator
 >             CompPredQuantifier
 >             QueryExpr
+
 >     | Match ValueExpr Bool -- true if unique
 >           QueryExpr
 >     | Array ValueExpr [ValueExpr] -- ^ represents an array
@@ -180,7 +196,12 @@
 >                                   -- valueExpr is the array, the
 >                                   -- second is the subscripts/ctor args
 >     | ArrayCtor QueryExpr -- ^ this is used for the query expression version of array constructors, e.g. array(select * from t)
+
 >     | CSStringLit String String
+
+todo: special syntax for like, similar with escape - escape cannot go
+in other places
+
 >     | Escape ValueExpr Char
 >     | UEscape ValueExpr Char
 >     | Collate ValueExpr [Name]
