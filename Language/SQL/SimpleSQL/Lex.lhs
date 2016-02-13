@@ -228,30 +228,32 @@ x'hexidecimal string'
 
 
 > sqlString :: Dialect -> Parser Token
-> sqlString d =
->     choice [csString
->            ,normalString
->            ]
+> sqlString d = dollarString <|> csString <|> normalString
 >   where
->     normalString = SqlString "'" "'" <$> (char '\'' *> normalStringSuffix "")
->     normalStringSuffix t
->       | diSyntaxFlavour d == Postgres = do
->         s <- takeTill (`elem` "'\\")
+>     dollarString = do
+>         guard $ diSyntaxFlavour d == Postgres
+>         -- use try because of ambiguity with symbols and with
+>         -- positional arg
+>         s <- choice
+>              [do
+>               i <- try (char '$' *> identifierString <* char '$')
+>               return $ "$" ++ i ++ "$"
+>              ,try (string "$$")
+>              ]
+>         str <- manyTill anyChar (try $ string s)
+>         return $ SqlString s s str
+>     normalString = SqlString "'" "'" <$> (char '\'' *> normalStringSuffix False "")
+>     normalStringSuffix allowBackslash t = do
+>         s <- takeTill $ if allowBackslash
+>                         then (`elem` "'\\")
+>                         else (== '\'')
 >         -- deal with '' or \' as literal quote character
 >         choice [do
 >                 ctu <- choice ["''" <$ try (string "''")
 >                               ,"\\'" <$ string "\\'"
 >                               ,"\\" <$ char '\\']
->                 normalStringSuffix $ concat [t,s,ctu]
+>                 normalStringSuffix allowBackslash $ concat [t,s,ctu]
 >                ,concat [t,s] <$ char '\'']
->       | otherwise = do
->         s <- takeTill (=='\'')
->         void $ char '\''
->         -- deal with '' as literal quote character
->         choice [do
->                 void $ char '\''
->                 normalStringSuffix $ concat [t,s,"''"]
->                ,return $ concat [t,s]]
 >     -- try is used to to avoid conflicts with
 >     -- identifiers which can start with n,b,x,u
 >     -- once we read the quote type and the starting '
@@ -260,9 +262,17 @@ x'hexidecimal string'
 >     -- but only pathalogical stuff, and I think the improved
 >     -- error messages and user predictability make it a good
 >     -- pragmatic choice
->     csString = SqlString <$> try cs <*> return "'" <*> normalStringSuffix ""
->     csPrefixes | diSyntaxFlavour d == Postgres = "nNbBxXEe"
->                | otherwise = "nNbBxX"
+>     csString
+>       | diSyntaxFlavour d == Postgres =
+>         choice [SqlString <$> try (string "e'" <|> string "E'")
+>                           <*> return "'" <*> normalStringSuffix True ""
+>                ,csString']
+>       | otherwise = csString'
+>     csString' = SqlString
+>                 <$> try cs
+>                 <*> return "'"
+>                 <*> normalStringSuffix False ""
+>     csPrefixes = "nNbBxX"
 >     cs = choice $ (map (\x -> string ([x] ++ "'")) csPrefixes)
 >                   ++ [string "u&'"
 >                      ,string "U&'"]

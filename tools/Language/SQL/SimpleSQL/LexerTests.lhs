@@ -196,10 +196,12 @@ assurance.
 >        ,("'normalendquote '''", [SqlString "'" "'" "normalendquote ''"])
 >        ,("e'this '' quote'", [SqlString "e'" "'" "this '' quote"])
 >        ,("e'this \\' quote'", [SqlString "e'" "'" "this \\' quote"])
->         -- todo: implement only allowing \' in e quoted strings
->        {-,("'not this \\' quote", [SqlString "'" "'" "not this \\"
->                                  ,Whitespace " "
->                                  ,Identifier Nothing "quote"])-}
+>        ,("'not this \\' quote", [SqlString "'" "'" "not this \\"
+>                                 ,Whitespace " "
+>                                 ,Identifier Nothing "quote"])
+>        ,("$$ string 1 $$", [SqlString "$$" "$$" " string 1 "])
+>        ,("$$ string $ 2 $$", [SqlString "$$" "$$" " string $ 2 "])
+>        ,("$a$ $$string 3$$ $a$", [SqlString "$a$" "$a$" " $$string 3$$ "])
 >        ]
 >     -- csstrings
 >     ++ map (\c -> (c ++ "'test'", [SqlString (c ++ "'") "'" "test"]))
