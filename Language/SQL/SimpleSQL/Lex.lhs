@@ -4,9 +4,37 @@ The parser uses a separate lexer for two reasons:
 1. sql syntax is very awkward to parse, the separate lexer makes it
 easier to handle this in most places (in some places it makes it
 harder or impossible, the fix is to switch to something better than
-parsec
+parsec)
 
-2. using a separate lexer gives a huge speed boost
+2. using a separate lexer gives a huge speed boost because it reduces
+backtracking. (We could get this by making the parsing code a lot more
+complex also.)
+
+= Lexing and dialects
+
+The main dialect differences:
+
+symbols follow different rules in different dialects
+
+e.g. postgresql has a flexible extensible-ready syntax for operators
+which are parsed here as symbols
+
+sql server using [] for quoting identifiers, and so they don't parse
+as symbols here (in other dialects including ansi, these are used for
+array operations)
+
+quoting of identifiers is different in different dialects
+
+there are various other identifier differences:
+ansi has :host_param
+there are variants on these like in @sql_server adn in #oracle
+
+string quoting follows different rules in different dialects,
+e.g. postgresql has $$ quoting
+
+todo: public documentation on dialect definition - and dialect flags
+
+
 
 > -- | This is the module contains a Lexer for SQL.
 > {-# LANGUAGE TupleSections #-}
@@ -355,3 +383,184 @@ Some helper combinators
 > peekSatisfy :: (Char -> Bool) -> Parser ()
 > peekSatisfy p = do
 >     void $ lookAhead (satisfy p)
+
+
+postgresql notes:
+u&
+SELECT 'foo'
+'bar';
+is equivalent to:
+SELECT 'foobar';
+
+SELECT 'foo'      'bar';
+is invalid
+
+(this should be in ansi also)
+
+definitely do major review and docs:
+when can escapes and prefixes be using with syntactic string literals
+when can they be combined
+when can e.g. dollar quoting be used
+what escaping should there be, including unicode escapes
+
+
+E'string'
+
+with a range of escapes which should appear in the dialect data type
+
+dollar quoted strings
+never with prefixes/escapes
+
+B''
+X''
+
+numbers
+
+:: cast
+
+
+type 'string' -  literals only, not array types
+  ansi allows for some specific types
+'string'::type
+cast('string' as type)
+
+can use dollar quoting here
+typename('string') (not all types)
+check these in the parser for keyword issues
+
+extended operator rules
+
+$1 positional parameter
+()
+[]
+,
+;
+: array slices and variable names/hostparam
+*
+.
+
+some operator precedence notes
+
+SELECT 3 OPERATOR(pg_catalog.+) 4;
+
+diff from ansi:
+
+all the same symbols + more + different rules about parsing multi char
+symbols (ansi is trivial here, postgresql is not trivial and
+extensible)
+
+identifiers: same, doublecheck the u&
+hostparam: same, but with implementation issues because : is also a
+  symbol in postgresql. this might be a little tricky to deal with
+
+string literals:
+u&?, does pg support n?
+
+numbers: same
+whitespace, comments: same
+
+make sure there is a list of lexical syntax which is valid in postgres
+and not in ansi, and vice versa, and have explicit tests for
+these. There might also be situations here where a string is valid in
+both, but lexes differently. There is definitely cases like this in
+the main syntax.
+
+
+action plan:
+no abstract syntax changes are needed
+write down a spec for ansi and for postgresql lexical syntax
+create a list of tests for postgresql
+  include eveything from ansi which is the same: maybe refactor the
+  tests to make this maintainable
+
+design for escaping issues
+  (affects ansi also)
+design for string literal-like syntax and for continuation strings
+  (affects ansi also)
+
+the test approach in general is first to parse basic examples of each
+kind of token, then to manually come up with some edge cases to test,
+and then to generate a good representative set of tokens (probably the
+same set as the previous two categories), and create the cross product
+of pairs of these tokens, eliminate ones when the tokens are next to
+each other and it doesn't parse as the two separate tokens, using
+manually written rules (want to be super accurate here - no false
+positives or negatives), then test these all parse good as
+well. Separating out the lexing in this way and doing this approach I
+think gives a very good chance of minimising bugs in the basic
+parsing, especially in the hairy bits.
+
+
+= lexical syntax
+
+One possible gotcha: there isn't a one-one correpsondence between e.g
+identifiers and string literals in the lexical syntax, and identifiers
+and string literals in the main syntax.
+
+== ansi
+
+=== symbol
+=== identifier
++ escaping
+=== quoted identifier
++ escaping, prefixes
+=== host param
+
+=== string literal-like
++ escaping, prefixes
+
+=== number literals
+
+=== whitespace
+
+=== comments
+
+== postgresql
+
+=== symbol
+
+=== identifier
+
+== postgresql
+
+=== symbol
+extended set of symbols + extensibility + special cases
+: is a symbol and also part of host param
+
+=== identifier
+
+same as ansi? is the character set the same?
+
+=== quoted identifier
+
+same as ansi?
+
+=== host param
+
+same as ansi (check char set)
+
+=== string literal-like
+
+dollar quoting
+E quoting
+missing n'?
+
+
+=== number literals
+
+same as ansi, i think
+
+=== whitespace
+
+same as ansi
+
+=== comments
+
+same as ansi
+
+=== additions
+$1 positional parameter
+
+---- find what else is in hssqlppp to support mysql, oracle, sql
+     server
+
