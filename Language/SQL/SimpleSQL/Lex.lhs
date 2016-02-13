@@ -366,49 +366,43 @@ which allows the last character of a multi character symbol to be + or
 >    -- these are the symbols when if part of a multi character
 >    -- operator permit the operator to end with a + or - symbol
 >    exceptionOpSymbols = "~!@#%^&|`?"
-> 
+
 >    -- special case for parsing a single + or - symbol
 >    singlePlusMinus = try $ do
->      c <- choice $ map char "+-"
->      -- todo: deal with e.g. --- +-- +/* ?
->      notFollowedBy $ choice $ map char allOpSymbols
+>      c <- oneOf "+-"
+>      -- todo: make sure it deals with e.g. --- +-- +/* -/*?
+>      notFollowedBy $ oneOf allOpSymbols
 >      return [c]
 
 >    -- this is used when we are parsing a potentially multi symbol
 >    -- operator and we have alread seen one of the 'exception chars'
 >    -- and so we can end with a + or -
 >    moreOpCharsException = do
->        c <- choice (map char allOpSymbolsNoCommentStarters
->                     -- make sure we don't parse a comment starting token
->                     -- as part of an operator
->                     ++ [try (char '/' <* notFollowedBy (char '*'))
->                        ,try (char '-' <* notFollowedBy (char '-'))])
+>        c <- oneOf allOpSymbolsNoCommentStarters
+>             -- make sure we don't parse a comment starting token
+>             -- as part of an operator
+>             <|> try (char '/' <* notFollowedBy (char '*'))
+>             <|> try (char '-' <* notFollowedBy (char '-'))
 >        (c:) <$> option [] moreOpCharsException
 
 >    opMoreChars = choice
->        [do
->         -- parse an exception char, now we can finish with a + -
->         c <- choice $ map char exceptionOpSymbols
->         (c:) <$> option [] moreOpCharsException
->        ,do
->         -- parse + or -, make sure it isn't the last symbol
->         c <- try (char '+'
->                   -- make sure there is another symbol
->                   <* lookAhead (choice $ map char allOpSymbols))
->         (c:) <$> option [] opMoreChars
->        ,do
->         c <- try (char '-'
->                   -- check for comment
+>        [-- parse an exception char, now we can finish with a + -
+>         (:)
+>         <$> oneOf exceptionOpSymbols
+>         <*> option [] moreOpCharsException
+>        ,(:)
+>         <$> (-- parse +, make sure it isn't the last symbol
+>              try (char '+' <* lookAhead (oneOf allOpSymbols))
+>              <|> -- parse -, make sure it isn't the last symbol
+>                  -- or the start of a -- comment
+>              try (char '-'
 >                   <* notFollowedBy (char '-')
->                   -- make sure there is another symbol
->                   <* lookAhead (choice $ map char allOpSymbols))
->         (c:) <$> option [] opMoreChars
->        ,do
->         -- parse one of the other ansi operator symbols
->         c <- choice (-- check / isn't start of comment /*
->                      try (char '/' <* notFollowedBy (char '*'))
->                      : map char "*<>=")
->         (c:) <$> option [] opMoreChars
+>                   <* lookAhead (oneOf allOpSymbols))
+>              <|> -- parse / check it isn't the start of a /* comment
+>              try (char '/' <* notFollowedBy (char '*'))
+>              <|> -- any other ansi operator symbol
+>              oneOf "*<>=")
+>         <*> option [] opMoreChars
 >        ]
 
 
