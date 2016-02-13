@@ -11,7 +11,8 @@ Test for the lexer
 
 > lexerTests :: TestItem
 > lexerTests = Group "lexerTests" $
->     [Group "lexer token tests" [ansiLexerTests]]
+>     [Group "lexer token tests" [ansiLexerTests
+>                                ,postgresLexerTests]]
 
 > ansiLexerTable :: [(String,[Token])]
 > ansiLexerTable =
@@ -170,11 +171,11 @@ assurance.
 > postgresLexerTable :: [(String,[Token])]
 > postgresLexerTable =
 >     -- single char symbols
->     map (\s -> ([s],[Symbol [s]])) "+-^*/%~&|?<>[]=,;()"
+>     map (\s -> ([s],[Symbol [s]])) "+-^*/%~&|?<>[]=,;():"
 >     -- multi char symbols
->     ++ map (\s -> (s,[Symbol s])) [">=","<=","!=","<>","||"]
->     -- symbols to add: :, ::, .. :=
->     -- plus generic symbols
+>     ++ map (\s -> (s,[Symbol s])) [">=","<=","!=","<>","||", "::","..",":="]
+>     -- todo: add many examples of generic symbols
+>     -- also: do the testing for the ansi compatibility special cases
 >     ++ (let idens = ["a", "_a", "test", "table", "Stuff", "STUFF"]
 >         -- simple identifiers
 >         in map (\i -> (i, [Identifier Nothing i])) idens
@@ -186,14 +187,19 @@ assurance.
 >            ++ map (\i -> (':':i, [HostParam i])) idens
 >        )
 >     -- positional var
+>     ++ [("$1", [PositionalArg 1])]
 >     -- quoted identifiers with embedded double quotes
->     ++ [("\"normal \"\" iden\"", [Identifier (Just ("\"","\"")) "normal \" iden"])]
+>     ++ [("\"normal \"\" iden\"", [Identifier (Just ("\"","\"")) "normal \"\" iden"])]
 >     -- strings
 >     ++ [("'string'", [SqlString "'" "'" "string"])
 >        ,("'normal '' quote'", [SqlString "'" "'" "normal '' quote"])
->        ,("'normalendquote '''", [SqlString "'" "'" "normalendquote '"])
->        ,("e'this '' quote''", [SqlString "e'" "'" "this '' quote '"])
->        ,("e'this \' quote''", [SqlString "e'" "'" "this \' quote '"])
+>        ,("'normalendquote '''", [SqlString "'" "'" "normalendquote ''"])
+>        ,("e'this '' quote'", [SqlString "e'" "'" "this '' quote"])
+>        ,("e'this \\' quote'", [SqlString "e'" "'" "this \\' quote"])
+>         -- todo: implement only allowing \' in e quoted strings
+>        {-,("'not this \\' quote", [SqlString "'" "'" "not this \\"
+>                                  ,Whitespace " "
+>                                  ,Identifier Nothing "quote"])-}
 >        ]
 >     -- csstrings
 >     ++ map (\c -> (c ++ "'test'", [SqlString (c ++ "'") "'" "test"]))
@@ -218,3 +224,8 @@ assurance.
 >        ["/**/", "/* */","/* this is a comment */"
 >        ,"/* this *is/ a comment */"
 >        ]
+
+> postgresLexerTests :: TestItem
+> postgresLexerTests = Group "postgresLexerTests" $
+>     [Group "postgres lexer token tests" $ [LexerTest postgres s t |  (s,t) <- postgresLexerTable]
+>     ]

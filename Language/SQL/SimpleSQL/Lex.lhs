@@ -81,6 +81,10 @@ todo: public documentation on dialect definition - and dialect flags
 
 >     -- | This is a host param symbol, e.g. :param
 >     | HostParam String
+
+
+>     -- | This is a positional arg identifier e.g. $1
+>     | PositionalArg Int
 >
 >     -- | This is a string literal. The first two fields are the --
 >     -- start and end quotes, which are usually both ', but can be
@@ -114,6 +118,7 @@ todo: public documentation on dialect definition - and dialect flags
 > prettyToken _ (Identifier Nothing t) = t
 > prettyToken _ (Identifier (Just (q1,q2)) t) = q1 ++ t ++ q2
 > prettyToken _ (HostParam p) = ':':p
+> prettyToken _ (PositionalArg p) = '$':show p
 > prettyToken _ (SqlString s e t) = s ++ t ++ e
 > prettyToken _ (SqlNumber r) = r
 > prettyToken _ (Whitespace t) = t
@@ -166,6 +171,7 @@ this is also tried before symbol (a .1 will be parsed as a number, but
 >                     ,lineComment d
 >                     ,blockComment d
 >                     ,sqlNumber d
+>                     ,positionalArg d
 >                     ,symbol d
 >                     ,sqlWhitespace d]
 
@@ -222,13 +228,23 @@ x'hexidecimal string'
 
 
 > sqlString :: Dialect -> Parser Token
-> sqlString _ =
+> sqlString d =
 >     choice [csString
 >            ,normalString
 >            ]
 >   where
 >     normalString = SqlString "'" "'" <$> (char '\'' *> normalStringSuffix "")
->     normalStringSuffix t = do
+>     normalStringSuffix t
+>       | diSyntaxFlavour d == Postgres = do
+>         s <- takeTill (`elem` "'\\")
+>         -- deal with '' or \' as literal quote character
+>         choice [do
+>                 ctu <- choice ["''" <$ try (string "''")
+>                               ,"\\'" <$ string "\\'"
+>                               ,"\\" <$ char '\\']
+>                 normalStringSuffix $ concat [t,s,ctu]
+>                ,concat [t,s] <$ char '\'']
+>       | otherwise = do
 >         s <- takeTill (=='\'')
 >         void $ char '\''
 >         -- deal with '' as literal quote character
@@ -245,13 +261,27 @@ x'hexidecimal string'
 >     -- error messages and user predictability make it a good
 >     -- pragmatic choice
 >     csString = SqlString <$> try cs <*> return "'" <*> normalStringSuffix ""
->     cs = choice $ (map (\x -> string ([x] ++ "'")) "nNbBxX")
+>     csPrefixes | diSyntaxFlavour d == Postgres = "nNbBxXEe"
+>                | otherwise = "nNbBxX"
+>     cs = choice $ (map (\x -> string ([x] ++ "'")) csPrefixes)
 >                   ++ [string "u&'"
 >                      ,string "U&'"]
 
 > hostParam :: Dialect -> Parser Token
+
+use try for postgres because we also support : and :: as symbols
+There might be a problem with parsing e.g. a[1:b]
+
+> hostParam d | diSyntaxFlavour d == Postgres =
+>     HostParam <$> try (char ':' *> identifierString)
+
 > hostParam _ = HostParam <$> (char ':' *> identifierString)
 
+> positionalArg :: Dialect -> Parser Token
+> positionalArg d | diSyntaxFlavour d == Postgres =
+>   -- use try to avoid ambiguities with other syntax which starts with dollar
+>   PositionalArg <$> try (char '$' *> (read <$> many1 digit))
+> positionalArg _ = guard False *> error "unpossible"
 
 
 digits
@@ -288,6 +318,13 @@ A symbol is one of the two character symbols, or one of the single
 character symbols in the two lists below.
 
 > symbol :: Dialect -> Parser Token
+> symbol d | diSyntaxFlavour d == Postgres =
+>     Symbol <$>
+>     choice (
+>             many1 (char '.') :
+>                 map (try . string) [">=","<=","!=","<>","||", "::", ":="]
+>                 ++ map (string . (:[])) "+-^*/%~&|?<>[]=,;():")
+
 > symbol _ = Symbol <$>
 >     choice (
 >             many1 (char '.') :
