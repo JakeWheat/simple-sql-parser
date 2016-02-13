@@ -3,3 +3,4 @@
 /cabal.sandbox.config
 /.cabal-sandbox/
 /build/
+/.stack-work/
