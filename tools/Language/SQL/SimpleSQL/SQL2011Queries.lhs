@@ -514,7 +514,7 @@ Specify a non-null value.
 >     ,("'something' -- a comment\n ' some more' /*another comment*/ 'and more'"
 >      ,StringLit "'" "'" "something some moreand more")
 >     ,("'a quote: '', stuff'"
->      ,StringLit "'" "'" "a quote: ', stuff")
+>      ,StringLit "'" "'" "a quote: '', stuff")
 >     ,("''"
 >      ,StringLit "'" "'" "")
 
@@ -754,9 +754,9 @@ Specify names.
 >     ,("a.b",Iden [Name Nothing "a", Name Nothing "b"])
 >     ,("a.b.c",Iden [Name Nothing "a", Name Nothing "b", Name Nothing "c"])
 >     ,("\"quoted iden\"", Iden [Name (Just ("\"","\"")) "quoted iden"])
->     ,("\"quoted \"\" iden\"", Iden [Name (Just ("\"","\"")) "quoted \" iden"])
+>     ,("\"quoted \"\" iden\"", Iden [Name (Just ("\"","\"")) "quoted \"\" iden"])
 >     ,("U&\"quoted iden\"", Iden [Name (Just ("U&\"","\"")) "quoted iden"])
->     ,("U&\"quoted \"\" iden\"", Iden [Name (Just ("U&\"","\"")) "quoted \" iden"])
+>     ,("U&\"quoted \"\" iden\"", Iden [Name (Just ("U&\"","\"")) "quoted \"\" iden"])
 >     ]
 
 TODO: more identifiers, e.g. unicode escapes?, mixed quoted/unquoted

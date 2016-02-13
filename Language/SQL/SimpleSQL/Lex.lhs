@@ -112,22 +112,9 @@ todo: public documentation on dialect definition - and dialect flags
 > prettyToken :: Dialect -> Token -> String
 > prettyToken _ (Symbol s) = s
 > prettyToken _ (Identifier Nothing t) = t
-> prettyToken _ (Identifier (Just (q1,q2)) t) =
->     q1 ++
->     -- todo: a bit hacky, do a better design
->     -- the dialect will know how to escape and unescape
->     -- contents, but the parser here also needs to know
->     -- about parsing escaped quotes
->     (if '"' `elem` q1 then doubleChars '"' t else t)
->     ++ q2
-> --prettyToken _ (UQIdentifier t) =
-> --    "u&\"" ++ doubleChars '"' t ++ "\""
-> --prettyToken _ (DQIdentifier s e t) =
-> --    s ++ t ++ e
+> prettyToken _ (Identifier (Just (q1,q2)) t) = q1 ++ t ++ q2
 > prettyToken _ (HostParam p) = ':':p
-> prettyToken _ (SqlString s e t) =
->     s ++ (if '\'' `elem` s then doubleChars '\'' t else t) ++ e
-> --prettyToken _ (CSSqlString cs t) = cs ++ "'" ++ t ++ "'"
+> prettyToken _ (SqlString s e t) = s ++ t ++ e
 > prettyToken _ (SqlNumber r) = r
 > prettyToken _ (Whitespace t) = t
 > prettyToken _ (LineComment l) = l
@@ -135,18 +122,6 @@ todo: public documentation on dialect definition - and dialect flags
 
 > prettyTokens :: Dialect -> [Token] -> String
 > prettyTokens d ts = concat $ map (prettyToken d) ts
-
-When parsing a quoted identifier, you can have a double quote
-character in the identifier like this: "quotes""identifier" ->
-quoted"identifer. The double double quotes character is changed to a
-single character in the lexer and expanded back to two characters in
-the pretty printer. This also applies to strings, which can embed a
-single quote like this: 'string''with quote'.
-
-> doubleChars :: Char -> String -> String
-> doubleChars _ [] = []
-> doubleChars c (d:ds) | c == d = c:d:doubleChars c ds
->                      | otherwise = d:doubleChars c ds
 
 TODO: try to make all parsers applicative only
 
@@ -222,7 +197,7 @@ u&"unicode quoted identifier"
 >         -- deal with "" as literal double quote character
 >         choice [do
 >                 void $ char '"'
->                 qidenSuffix $ concat [t,s,"\""]
+>                 qidenSuffix $ concat [t,s,"\"\""]
 >                ,return $ concat [t,s]]
 >     -- mysql can quote identifiers with `
 >     mySqlQIden = do
@@ -259,12 +234,16 @@ x'hexidecimal string'
 >         -- deal with '' as literal quote character
 >         choice [do
 >                 void $ char '\''
->                 normalStringSuffix $ concat [t,s,"'"]
+>                 normalStringSuffix $ concat [t,s,"''"]
 >                ,return $ concat [t,s]]
 >     -- try is used to to avoid conflicts with
 >     -- identifiers which can start with n,b,x,u
 >     -- once we read the quote type and the starting '
 >     -- then we commit to a string
+>     -- it's possible that this will reject some valid syntax
+>     -- but only pathalogical stuff, and I think the improved
+>     -- error messages and user predictability make it a good
+>     -- pragmatic choice
 >     csString = SqlString <$> try cs <*> return "'" <*> normalStringSuffix ""
 >     cs = choice $ (map (\x -> string ([x] ++ "'")) "nNbBxX")
 >                   ++ [string "u&'"

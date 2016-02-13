@@ -40,8 +40,7 @@ which have been changed to try to improve the layout of the output.
 = value expressions
 
 > valueExpr :: Dialect -> ValueExpr -> Doc
-> valueExpr _ (StringLit s e t) =
->     text (s ++ (if '\'' `elem` s then doubleUpQuotes t else t) ++ e)
+> valueExpr _ (StringLit s e t) = text s <> text t <> text e
 
 > valueExpr _ (NumLit s) = text s
 > valueExpr _ (IntervalLit s v f t) =
@@ -227,22 +226,10 @@ which have been changed to try to improve the layout of the output.
 > valueExpr d (VEComment cmt v) =
 >     vcat $ map comment cmt ++ [valueExpr d v]
 
-> doubleUpQuotes :: String -> String
-> doubleUpQuotes [] = []
-> doubleUpQuotes ('\'':cs) = '\'':'\'':doubleUpQuotes cs
-> doubleUpQuotes (c:cs) = c:doubleUpQuotes cs
-
-> doubleUpDoubleQuotes :: String -> String
-> doubleUpDoubleQuotes [] = []
-> doubleUpDoubleQuotes ('"':cs) = '"':'"':doubleUpDoubleQuotes cs
-> doubleUpDoubleQuotes (c:cs) = c:doubleUpDoubleQuotes cs
-
-
-
 > unname :: Name -> String
 > unname (Name Nothing n) = n
 > unname (Name (Just (s,e)) n) =
->     s ++ (if '"' `elem` s then doubleUpDoubleQuotes n else n) ++ e
+>     s ++ n ++ e
 
 > unnames :: [Name] -> String
 > unnames ns = intercalate "." $ map unname ns
@@ -250,8 +237,7 @@ which have been changed to try to improve the layout of the output.
 
 > name :: Name -> Doc
 > name (Name Nothing n) = text n
-> name (Name (Just (s,e)) n) =
->     text s <> text (if '"' `elem` s then doubleUpDoubleQuotes n else n) <> text e
+> name (Name (Just (s,e)) n) = text s <> text n <> text e
 
 > names :: [Name] -> Doc
 > names ns = hcat $ punctuate (text ".") $ map name ns

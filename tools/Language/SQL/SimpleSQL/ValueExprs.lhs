@@ -35,7 +35,7 @@ Tests for parsing value expressions
 >      ,("3e+3", NumLit "3e+3")
 >      ,("3e-3", NumLit "3e-3")
 >      ,("'string'", StringLit "'" "'" "string")
->      ,("'string with a '' quote'", StringLit "'" "'" "string with a ' quote")
+>      ,("'string with a '' quote'", StringLit "'" "'" "string with a '' quote")
 >      ,("'1'", StringLit "'" "'" "1")
 >      ,("interval '3' day"
 >       ,IntervalLit Nothing "3" (Itf "day" Nothing) Nothing)
