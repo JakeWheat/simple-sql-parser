@@ -54,7 +54,8 @@ todo: public documentation on dialect definition - and dialect flags
 >                    ,setPosition,getPosition
 >                    ,setSourceColumn,setSourceLine
 >                    ,sourceName, setSourceName
->                    ,sourceLine, sourceColumn)
+>                    ,sourceLine, sourceColumn
+>                    ,notFollowedBy)
 > import Language.SQL.SimpleSQL.Combinators
 > import Language.SQL.SimpleSQL.Errors
 > import Control.Applicative hiding ((<|>), many)
@@ -329,21 +330,101 @@ character symbols in the two lists below.
 
 > symbol :: Dialect -> Parser Token
 > symbol d | diSyntaxFlavour d == Postgres =
->     Symbol <$>
->     choice (
->             many1 (char '.') :
->                 map (try . string) [">=","<=","!=","<>","||", "::", ":="]
->                 ++ map (string . (:[])) "+-^*/%~&|?<>[]=,;():")
+>     Symbol <$> choice (otherSymbol ++ [singlePlusMinus,opMoreChars])
 
-> symbol _ = Symbol <$>
->     choice (
->             many1 (char '.') :
->                  -- try is used because most of the first
->                  -- characters of the two character symbols
->                  -- can also be part of a single character symbol
->                  -- maybe this would be better with left factoring?
->                 map (try . string) [">=","<=","!=","<>","||"]
->                 ++ map (string . (:[])) "+-^*/%~&|?<>[]=,;()")
+rules
+
+An operator name is a sequence of up to NAMEDATALEN-1 (63 by default) characters from the following list:
+
++ - * / < > = ~ ! @ # % ^ & | ` ?
+
+There are a few restrictions on operator names, however:
+-- and /* cannot appear anywhere in an operator name, since they will be taken as the start of a comment.
+
+A multiple-character operator name cannot end in + or -, unless the name also contains at least one of these characters:
+
+~ ! @ # % ^ & | ` ?
+
+>  where
+>    -- other symbols are all the tokens which parse as symbols in
+>    -- this lexer which aren't considered operators in postgresql
+>    -- a single ? is parsed as a operator here instead of an other
+>    -- symbol because this is the least complex way to do it
+>    otherSymbol = many1 (char '.') :
+>                  (map (try . string) ["::", ":="]
+>                   ++ map (string . (:[])) "[],;():")
+
+exception char is one of:
+~ ! @ # % ^ & | ` ?
+which allows the last character of a multi character symbol to be + or
+-
+
+>    allOpSymbols = "+-*/<>=~!@#%^&|`?"
+>    -- all symbols except - and / which can be used to start
+>    -- a comment token
+>    allOpSymbolsNoCommentStarters = filter (`notElem` "-/") allOpSymbols
+>    -- these are the symbols when if part of a multi character
+>    -- operator permit the operator to end with a + or - symbol
+>    exceptionOpSymbols = "~!@#%^&|`?"
+> 
+>    -- special case for parsing a single + or - symbol
+>    singlePlusMinus = try $ do
+>      c <- choice $ map char "+-"
+>      -- todo: deal with e.g. --- +-- +/* ?
+>      notFollowedBy $ choice $ map char allOpSymbols
+>      return [c]
+
+>    -- this is used when we are parsing a potentially multi symbol
+>    -- operator and we have alread seen one of the 'exception chars'
+>    -- and so we can end with a + or -
+>    moreOpCharsException = do
+>        c <- choice (map char allOpSymbolsNoCommentStarters
+>                     -- make sure we don't parse a comment starting token
+>                     -- as part of an operator
+>                     ++ [try (char '/' <* notFollowedBy (char '*'))
+>                        ,try (char '-' <* notFollowedBy (char '-'))])
+>        (c:) <$> option [] moreOpCharsException
+
+>    opMoreChars = choice
+>        [do
+>         -- parse an exception char, now we can finish with a + -
+>         c <- choice $ map char exceptionOpSymbols
+>         (c:) <$> option [] moreOpCharsException
+>        ,do
+>         -- parse + or -, make sure it isn't the last symbol
+>         c <- try (char '+'
+>                   -- make sure there is another symbol
+>                   <* lookAhead (choice $ map char allOpSymbols))
+>         (c:) <$> option [] opMoreChars
+>        ,do
+>         c <- try (char '-'
+>                   -- check for comment
+>                   <* notFollowedBy (char '-')
+>                   -- make sure there is another symbol
+>                   <* lookAhead (choice $ map char allOpSymbols))
+>         (c:) <$> option [] opMoreChars
+>        ,do
+>         -- parse one of the other ansi operator symbols
+>         c <- choice (-- check / isn't start of comment /*
+>                      try (char '/' <* notFollowedBy (char '*'))
+>                      : map char "*<>=")
+>         (c:) <$> option [] opMoreChars
+>        ]
+
+
+> symbol _ =
+>    Symbol <$> choice (otherSymbol ++ regularOp)
+>  where
+>    otherSymbol = many1 (char '.') :
+>                  map (string . (:[])) "[],;():?"
+
+try is used because most of the first characters of the two character
+symbols can also be part of a single character symbol
+
+>    regularOp = map (try . string) [">=","<=","!=","<>","||"]
+>                ++ map (string . (:[])) "+-^*/%~&|<>="
+
+
 
 > sqlWhitespace :: Dialect -> Parser Token
 > sqlWhitespace _ = Whitespace <$> many1 (satisfy isSpace)

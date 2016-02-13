@@ -8,6 +8,7 @@ Test for the lexer
 > import Language.SQL.SimpleSQL.Lex (Token(..))
 > --import Debug.Trace
 > import Data.Char (isAlpha)
+> import Data.List
 
 > lexerTests :: TestItem
 > lexerTests = Group "lexerTests" $
@@ -77,6 +78,12 @@ string string
 csstring string
 line comment anything (can add newline?)
 number number (todo: double check more carefully)
+
+new idea:
+
+create a function which will say if a series of lexical tokens should
+survive the pretty -> lex cycle unchanged. Maybe this will lead to
+clearer/more maintainable code.
 
 >     , isGood $ t ++ t1
 
@@ -174,8 +181,28 @@ assurance.
 >     map (\s -> ([s],[Symbol [s]])) "+-^*/%~&|?<>[]=,;():"
 >     -- multi char symbols
 >     ++ map (\s -> (s,[Symbol s])) [">=","<=","!=","<>","||", "::","..",":="]
->     -- todo: add many examples of generic symbols
->     -- also: do the testing for the ansi compatibility special cases
+>     -- generic symbols
+
+An operator name is a sequence of up to NAMEDATALEN-1 (63 by default) characters from the following list:
+
++ - * / < > = ~ ! @ # % ^ & | ` ?
+
+There are a few restrictions on operator names, however:
+-- and /* cannot appear anywhere in an operator name, since they will be taken as the start of a comment.
+
+A multiple-character operator name cannot end in + or -, unless the name also contains at least one of these characters:
+
+~ ! @ # % ^ & | ` ?
+
+todo: 'negative' tests
+symbol then --
+symbol then /*
+operators without one of the exception chars
+  followed by + or - without whitespace
+
+also: do the testing for the ansi compatibility special cases
+
+>     ++ [ (x, [Symbol x]) | x <- someValidPostgresOperators 4]
 >     ++ (let idens = ["a", "_a", "test", "table", "Stuff", "STUFF"]
 >         -- simple identifiers
 >         in map (\i -> (i, [Identifier Nothing i])) idens
@@ -227,7 +254,52 @@ assurance.
 >        ,"/* this *is/ a comment */"
 >        ]
 
+> someValidPostgresOperators :: Int -> [String]
+> someValidPostgresOperators l =
+>        [ x
+>        | n <- [1..l]
+>        , x <- combos "+-*/<>=~!@#%^&|`?" n
+>        , not ("--" `isInfixOf` x || "/*" `isInfixOf` x)
+>        , not (last x `elem` "+-")
+>          || or (map (`elem` x) "~!@#%^&|`?")
+>        ]
+
+These are postgres operators, which if followed immediately by a + or
+-, will lex as separate operators rather than one operator including
+the + or -.
+
+> somePostgresOpsWhichWontAddTrailingPlusMinus :: Int -> [String]
+> somePostgresOpsWhichWontAddTrailingPlusMinus l =
+>        [ x
+>        | n <- [1..l]
+>        , x <- combos "+-*/<>=" n
+>        , not ("--" `isInfixOf` x || "/*" `isInfixOf` x)
+>        , not (last x `elem` "+-")
+>        ]
+
+
 > postgresLexerTests :: TestItem
 > postgresLexerTests = Group "postgresLexerTests" $
->     [Group "postgres lexer token tests" $ [LexerTest postgres s t |  (s,t) <- postgresLexerTable]
+>     [Group "postgres lexer token tests" $
+>      [LexerTest postgres s t | (s,t) <- postgresLexerTable]
+>     ,Group "adhoc lexer tests" $
+>      [LexerTest postgres s t
+>      | (s,t) <- edgeCaseCommentOps ++ edgeCasePlusMinusOps ]
 >     ]
+>  where
+>    edgeCaseCommentOps = concat
+>      [ [ (x ++ "/*<test*/", [Symbol x, BlockComment "/*<test*/"])
+>        , (x ++ "--<test", [Symbol x, LineComment "--<test"]) ]
+>      | x <- someValidPostgresOperators 2
+>      , not (last x == '-')
+>      ]
+>    edgeCasePlusMinusOps = concat
+>      [ [ (x ++ "+", [Symbol x, Symbol "+"])
+>        , (x ++ "-", [Symbol x, Symbol "-"]) ]
+>      | x <- somePostgresOpsWhichWontAddTrailingPlusMinus 2
+>      ]
+
+
+> combos :: [a] -> Int -> [[a]]
+> combos _ 0 = [[]]
+> combos l n = [ x:tl | x <- l, tl <- combos l (n - 1) ]
