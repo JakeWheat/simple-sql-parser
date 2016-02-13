@@ -284,7 +284,9 @@ the + or -.
 >      [LexerTest postgres s t | (s,t) <- postgresLexerTable]
 >     ,Group "adhoc lexer tests" $
 >      [LexerTest postgres s t
->      | (s,t) <- edgeCaseCommentOps ++ edgeCasePlusMinusOps ]
+>      | (s,t) <- edgeCaseCommentOps
+>                 ++ edgeCasePlusMinusOps
+>                 ++ edgeCasePlusMinusComments]
 >     ]
 >  where
 >    edgeCaseCommentOps = concat
@@ -297,6 +299,12 @@ the + or -.
 >      [ [ (x ++ "+", [Symbol x, Symbol "+"])
 >        , (x ++ "-", [Symbol x, Symbol "-"]) ]
 >      | x <- somePostgresOpsWhichWontAddTrailingPlusMinus 2
+>      ]
+>    edgeCasePlusMinusComments =
+>      [("---", [LineComment "---"])
+>      ,("+--", [Symbol "+", LineComment "--"])
+>      ,("-/**/", [Symbol "-", BlockComment "/**/"])
+>      ,("+/**/", [Symbol "+", BlockComment "/**/"])
 >      ]
 
 

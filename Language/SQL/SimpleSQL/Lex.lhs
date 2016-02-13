@@ -370,7 +370,6 @@ which allows the last character of a multi character symbol to be + or
 >    -- special case for parsing a single + or - symbol
 >    singlePlusMinus = try $ do
 >      c <- oneOf "+-"
->      -- todo: make sure it deals with e.g. --- +-- +/* -/*?
 >      notFollowedBy $ oneOf allOpSymbols
 >      return [c]
 
