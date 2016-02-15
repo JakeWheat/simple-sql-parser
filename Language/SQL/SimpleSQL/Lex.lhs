@@ -176,6 +176,7 @@ this is also tried before symbol (a .1 will be parsed as a number, but
 >                     ,blockComment d
 >                     ,sqlNumber d
 >                     ,positionalArg d
+>                     ,dontParseEndBlockComment d
 >                     ,symbol d
 >                     ,sqlWhitespace d]
 
@@ -312,15 +313,20 @@ considered part of the constant; it is an operator applied to the
 constant.
 
 > sqlNumber :: Dialect -> Parser Token
-> sqlNumber _ = SqlNumber <$>
->     (int <??> (pp dot <??.> pp int)
->      -- try is used in case we read a dot
->      -- and it isn't part of a number
->      -- if there are any following digits, then we commit
->      -- to it being a number and not something else
->      <|> try ((++) <$> dot <*> int))
->     <??> pp expon
+> sqlNumber _ =
+>     SqlNumber <$> completeNumber
+>     -- this is for definitely avoiding possibly ambiguous source
+>     <* notFollowedBy (oneOf "eE.")
 >   where
+>     completeNumber =
+>       (int <??> (pp dot <??.> pp int)
+>       -- try is used in case we read a dot
+>       -- and it isn't part of a number
+>       -- if there are any following digits, then we commit
+>       -- to it being a number and not something else
+>       <|> try ((++) <$> dot <*> int))
+>       <??> pp expon
+
 >     int = many1 digit
 >     dot = string "."
 >     expon = (:) <$> oneOf "eE" <*> sInt
@@ -363,9 +369,6 @@ which allows the last character of a multi character symbol to be + or
 -
 
 >    allOpSymbols = "+-*/<>=~!@#%^&|`?"
->    -- all symbols except - and / which can be used to start
->    -- a comment token
->    allOpSymbolsNoCommentStarters = filter (`notElem` "-/") allOpSymbols
 >    -- these are the symbols when if part of a multi character
 >    -- operator permit the operator to end with a + or - symbol
 >    exceptionOpSymbols = "~!@#%^&|`?"
@@ -380,11 +383,14 @@ which allows the last character of a multi character symbol to be + or
 >    -- operator and we have alread seen one of the 'exception chars'
 >    -- and so we can end with a + or -
 >    moreOpCharsException = do
->        c <- oneOf allOpSymbolsNoCommentStarters
+>        c <- oneOf (filter (`notElem` "-/*") allOpSymbols)
 >             -- make sure we don't parse a comment starting token
 >             -- as part of an operator
 >             <|> try (char '/' <* notFollowedBy (char '*'))
 >             <|> try (char '-' <* notFollowedBy (char '-'))
+>             -- and make sure we don't parse a block comment end
+>             -- as part of another symbol
+>             <|> try (char '*' <* notFollowedBy (char '/'))
 >        (c:) <$> option [] moreOpCharsException
 
 >    opMoreChars = choice
@@ -402,8 +408,10 @@ which allows the last character of a multi character symbol to be + or
 >                   <* lookAhead (oneOf allOpSymbols))
 >              <|> -- parse / check it isn't the start of a /* comment
 >              try (char '/' <* notFollowedBy (char '*'))
+>              <|> -- make sure we don't parse */ as part of a symbol
+>              try (char '*' <* notFollowedBy (char '/'))
 >              <|> -- any other ansi operator symbol
->              oneOf "*<>=")
+>              oneOf "<>=")
 >         <*> option [] opMoreChars
 >        ]
 
@@ -416,9 +424,11 @@ which allows the last character of a multi character symbol to be + or
 try is used because most of the first characters of the two character
 symbols can also be part of a single character symbol
 
->    regularOp = map (try . string) [">=","<=","!=","<>","||"]
->                ++ map (string . (:[])) "+-^*/%~&|<>="
-
+>    regularOp = map (try . string) [">=","<=","!=","<>"]
+>                ++ map (string . (:[])) "+-^*/%~&<>="
+>                ++ [char '|' *>
+>                    choice ["||" <$ char '|' <* notFollowedBy (char '|')
+>                           ,return "|"]]
 
 > symbol _ =
 >    Symbol <$> choice (otherSymbol ++ regularOp)
@@ -429,8 +439,11 @@ symbols can also be part of a single character symbol
 try is used because most of the first characters of the two character
 symbols can also be part of a single character symbol
 
->    regularOp = map (try . string) [">=","<=","!=","<>","||"]
->                ++ map (string . (:[])) "+-^*/%~&|<>="
+>    regularOp = map (try . string) [">=","<=","!=","<>"]
+>                ++ map (string . (:[])) "+-^*/%~&<>=[]"
+>                ++ [char '|' *>
+>                    choice ["||" <$ char '|' <* notFollowedBy (char '|')
+>                           ,return "|"]]
 
 
 
@@ -477,6 +490,18 @@ isn't there.
 >              ,(\c s -> x ++ [c] ++ s) <$> anyChar <*> commentSuffix n]
 
 
+This is to improve user experience: provide an error if we see */
+outside a comment. This could potentially break postgres ops with */
+in (which is a stupid thing to do). In other cases, the user should
+write * / instead (I can't think of any cases when this would be valid
+syntax though).
+
+> dontParseEndBlockComment :: Dialect -> Parser Token
+> dontParseEndBlockComment _ =
+>     -- don't use try, then it should commit to the error
+>     try (string "*/") *> fail "comment end without comment start"
+
+
 Some helper combinators
 
 > startsWith :: (Char -> Bool) -> (Char -> Bool) -> Parser String
@@ -513,6 +538,10 @@ maybe do some quick checking to make sure this function only gives
 true negatives: check pairs which return false actually fail to lex or
 give different symbols in return
 
+a good sanity test for this function is to change it to always return
+true, then check that the automated tests return the same number of
+successes.
+
 > tokenListWillPrintAndLex :: Dialect -> [Token] -> Bool
 > tokenListWillPrintAndLex _ [] = True
 > tokenListWillPrintAndLex _ [_] = True
@@ -535,7 +564,8 @@ two symbols next to eachother will fail if the symbols can combine and
 (possibly just the prefix) look like a different symbol, or if they
 combine to look like comment markers
 
-
+check if the end of one symbol and the start of the next can form a
+comment token
 
 > tokensWillPrintAndLex d a@(Symbol {}) b@(Symbol {})
 >     | a'@(_:_) <- prettyToken d a
@@ -553,17 +583,13 @@ combine to look like comment markers
 >    ,(">","=")
 >    ,("!","=")
 >    ,("|","|")
->    -- todo: make the lexer special case reject ||| and so on
->    -- because it is ambiguous
->    --,("||","|")
+>    ,("||","|")
 >    ,("|","||")
->    --,("||","||")
+>    ,("||","||")
 >    ,("<",">=")
 >    ,("-","-")
 >    ,("/","*")
->    -- todo: special case make the lexer reject */ next to eachother
->    -- because trying to interpret it as *,/ will lead to much worse error messages
->    --,("*","/")
+>    ,("*","/")
 >    ]
 
 two whitespaces will be combined
@@ -593,11 +619,17 @@ some of the symbol
 >        (_:_) -> last s /= '-'
 >        _ -> True
 
-in other situations a trailing line comment or a leading or trailing
-block comment will work
+in other situations a trailing line comment will work
 
 > tokensWillPrintAndLex _ _ LineComment {} = True
-> tokensWillPrintAndLex _ _ BlockComment {} = True
+
+block comments: make sure there isn't a * symbol immediately before the comment opening
+
+> tokensWillPrintAndLex d a BlockComment {} =
+>     case prettyToken d a of
+>         a'@(_:_) | last a' == '*' -> False
+>         _ -> True
+
 > tokensWillPrintAndLex _ BlockComment {} _ = True
 
 
@@ -708,6 +740,11 @@ is an unambiguous parse
 
 TODO:
 
+refactor the tokenswillprintlex to be based on pretty printing the
+individual tokens
+
+start adding negative / different parse dialect tests
+
 lex @variable in sql server
 lex [quoted identifier] in sql server
 lex #variable in oracle
@@ -715,22 +752,11 @@ lex #variable in oracle
 make a new ctor for @var, #var
 
 add token tables and tests for oracle, sql server
+review existing tables
+look for refactoring opportunities
 
 add odbc as a dialect flag and include {} as symbols when enabled
 
-add negative / different parse dialect tests
-
-refactor the tokenswillprintlex to be based on pretty printing the
-individual tokens
-
-add special cases to lexer:
-||| three or more pipes is a syntax error (except for postgres)
-    (and not ||,| or |,|| e.g.)
-extra ., e after number without whitespace is a syntax error
-
-reject a */ pair of chars instead of parsing it as a symbol or several
-symbols. Can this appear inside an operator in postgres? Let's make it
-not possible anywhere since this could be really confusing.
 
 do some user documentation on lexing, and lexing/dialects
 

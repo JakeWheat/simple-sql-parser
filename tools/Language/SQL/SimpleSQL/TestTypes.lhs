@@ -30,5 +30,6 @@ check that the string given fails to parse
 
 >               | ParseQueryExprFails Dialect String
 >               | ParseValueExprFails Dialect String
->               | LexerTest Dialect String [Token]
+>               | LexTest Dialect String [Token]
+>               | LexFails Dialect String
 >                 deriving (Eq,Show)

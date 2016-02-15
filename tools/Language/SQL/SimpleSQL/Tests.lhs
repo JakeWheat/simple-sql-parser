@@ -86,7 +86,8 @@ order on the generated documentation.
 > itemToTest (ParseValueExprFails d str) =
 >     toFTest parseValueExpr prettyValueExpr d str
 
-> itemToTest (LexerTest d s ts) = makeLexerTest d s ts
+> itemToTest (LexTest d s ts) = makeLexerTest d s ts
+> itemToTest (LexFails d s) = makeLexingFailsTest d s
 
 > makeLexerTest :: Dialect -> String -> [Token] -> T.TestTree
 > makeLexerTest d s ts = H.testCase s $ do
@@ -94,6 +95,13 @@ order on the generated documentation.
 >     H.assertEqual "" ts $ map snd lx
 >     let s' = prettyTokens d $ map snd lx
 >     H.assertEqual "pretty print" s s'
+
+> makeLexingFailsTest :: Dialect -> String -> T.TestTree
+> makeLexingFailsTest d s = H.testCase s $ do
+>     case lexSQL d "" Nothing s of
+>          Right x -> H.assertFailure $ "lexing should have failed: " ++ s ++ "\ngot: " ++ show x
+>          Left _ -> return ()
+
 
 > toTest :: (Eq a, Show a) =>
 >           (Dialect -> String -> Maybe (Int,Int) -> String -> Either ParseError a)

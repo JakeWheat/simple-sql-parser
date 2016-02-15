@@ -68,19 +68,38 @@ Test for the lexer
 
 > ansiLexerTests :: TestItem
 > ansiLexerTests = Group "ansiLexerTests" $
->     [Group "ansi lexer token tests" $ [LexerTest ansi2011 s t |  (s,t) <- ansiLexerTable]
+>     [Group "ansi lexer token tests" $ [LexTest ansi2011 s t |  (s,t) <- ansiLexerTable]
 >     ,Group "ansi generated combination lexer tests" $
->     [ LexerTest ansi2011 (s ++ s1) (t ++ t1)
+>     [ LexTest ansi2011 (s ++ s1) (t ++ t1)
 >     | (s,t) <- ansiLexerTable
 >     , (s1,t1) <- ansiLexerTable
 >     , tokenListWillPrintAndLex ansi2011 $ t ++ t1
 
 >     ]
->     ,Group "adhoc lexer tests" $
->        map (uncurry $ LexerTest ansi2011)
+>     ,Group "ansiadhoclexertests" $
+>        map (uncurry $ LexTest ansi2011)
 >        [("", [])
 >        ,("-- line com\nstuff", [LineComment "-- line com\n",Identifier Nothing "stuff"])
->        ]
+>        ] ++
+>        [-- want to make sure this gives a parse error
+>         LexFails ansi2011 "*/"
+>         -- combinations of pipes: make sure they fail because they could be
+>         -- ambiguous and it is really unclear when they are or not, and
+>         -- what the result is even when they are not ambiguous
+>        ,LexFails ansi2011 "|||"
+>        ,LexFails ansi2011 "||||"
+>        ,LexFails ansi2011 "|||||"
+>        -- another user experience thing: make sure extra trailing
+>        -- number chars are rejected rather than attempting to parse
+>        -- if the user means to write something that is rejected by this code,
+>        -- then they can use whitespace to make it clear and then it will parse
+>        ,LexFails ansi2011 "12e3e4"
+>        ,LexFails ansi2011 "12e3e4"
+>        ,LexFails ansi2011 "12e3e4"
+>        ,LexFails ansi2011 "12e3.4"
+>        ,LexFails ansi2011 "12.4.5"
+>        ,LexFails ansi2011 "12.4e5.6"
+>        ,LexFails ansi2011 "12.4e5e7"]
 >      ]
 
 todo: lexing tests
@@ -187,7 +206,7 @@ also: do the testing for the ansi compatibility special cases
 >        [ x
 >        | n <- [1..l]
 >        , x <- combos "+-*/<>=~!@#%^&|`?" n
->        , not ("--" `isInfixOf` x || "/*" `isInfixOf` x)
+>        , not ("--" `isInfixOf` x || "/*" `isInfixOf` x || "*/" `isInfixOf` x)
 >        , not (last x `elem` "+-")
 >          || or (map (`elem` x) "~!@#%^&|`?")
 >        ]
@@ -201,7 +220,7 @@ the + or -.
 >        [ x
 >        | n <- [1..l]
 >        , x <- combos "+-*/<>=" n
->        , not ("--" `isInfixOf` x || "/*" `isInfixOf` x)
+>        , not ("--" `isInfixOf` x || "/*" `isInfixOf` x || "*/" `isInfixOf` x)
 >        , not (last x `elem` "+-")
 >        ]
 
@@ -209,27 +228,44 @@ the + or -.
 > postgresLexerTests :: TestItem
 > postgresLexerTests = Group "postgresLexerTests" $
 >     [Group "postgres lexer token tests" $
->      [LexerTest postgres s t | (s,t) <- postgresLexerTable ++ postgresExtraOperatorTable]
+>      [LexTest postgres s t | (s,t) <- postgresLexerTable ++ postgresExtraOperatorTable]
 >     ,Group "postgres generated combination lexer tests" $
->     [ LexerTest postgres (s ++ s1) (t ++ t1)
+>     [ LexTest postgres (s ++ s1) (t ++ t1)
 >     | (s,t) <- postgresLexerTable
 >     , (s1,t1) <- postgresLexerTable
 >     , tokenListWillPrintAndLex postgres $ t ++ t1
 
 >     ]
->     ,Group "adhoc postgres lexer tests" $
->      [LexerTest postgres s t
+>     ,Group "adhoc postgres lexertests" $
+>      [LexTest postgres s t
 >      | (s,t) <- edgeCaseCommentOps
 >                 ++ edgeCasePlusMinusOps
 >                 ++ edgeCasePlusMinusComments]
+>      ++
+>       -- need more tests for */ to make sure it is caught if it is in the middle of a
+>       -- sequence of symbol letters
+>         [LexFails postgres "*/"
+>         ,LexFails postgres "@*/"
+>         ,LexFails postgres "-*/"
+>         ,LexFails postgres "12e3e4"
+>         ,LexFails postgres "12e3e4"
+>         ,LexFails postgres "12e3e4"
+>         ,LexFails postgres "12e3.4"
+>         ,LexFails postgres "12.4.5"
+>         ,LexFails postgres "12.4e5.6"
+>         ,LexFails postgres "12.4e5e7"]
 >     ]
 >  where
->    edgeCaseCommentOps = concat
->      [ [ (x ++ "/*<test*/", [Symbol x, BlockComment "/*<test*/"])
->        , (x ++ "--<test", [Symbol x, LineComment "--<test"]) ]
->      | x <- someValidPostgresOperators 2
+>    edgeCaseCommentOps =
+>      [ (x ++ "/*<test*/", [Symbol x, BlockComment "/*<test*/"])
+>      | x <- eccops
+>      , not (last x == '*')
+>      ] ++
+>      [ (x ++ "--<test", [Symbol x, LineComment "--<test"])
+>      | x <- eccops
 >      , not (last x == '-')
 >      ]
+>    eccops = someValidPostgresOperators 2
 >    edgeCasePlusMinusOps = concat
 >      [ [ (x ++ "+", [Symbol x, Symbol "+"])
 >        , (x ++ "-", [Symbol x, Symbol "-"]) ]
@@ -244,22 +280,22 @@ the + or -.
 
 
 > sqlServerLexerTests :: TestItem
-> sqlServerLexerTests = Group "sqlServerLexerTests" $
->     [ LexerTest sqlserver s t | (s,t) <-
+> sqlServerLexerTests = Group "sqlServerLexTests" $
+>     [ LexTest sqlserver s t | (s,t) <-
 >     [--("@variable", [(Identifier (Just ("@", "")) "variable")])
 >     --,("[quoted identifier]", [(Identifier (Just ("[", "]")) "variable")])
 >     ]]
 
 > oracleLexerTests :: TestItem
-> oracleLexerTests = Group "oracleLexerTests" $
->     [ LexerTest oracle s t | (s,t) <-
+> oracleLexerTests = Group "oracleLexTests" $
+>     [ LexTest oracle s t | (s,t) <-
 >     [--("#variable", [(Identifier (Just ("#", "")) "variable")])
 >     ]
 >     ]
 
 > odbcLexerTests :: TestItem
-> odbcLexerTests = Group "odbcLexerTests" $
->     [ LexerTest sqlserver {- {odbc = True} -} s t | (s,t) <-
+> odbcLexerTests = Group "odbcLexTests" $
+>     [ LexTest sqlserver {- {odbc = True} -} s t | (s,t) <-
 >     [--("{}", [Symbol "{", Symbol "}"])
 >     ]
 >     ]
