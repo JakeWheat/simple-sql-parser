@@ -1384,11 +1384,11 @@ TODO: add the missing bits
 > parameterSpecification :: TestItem
 > parameterSpecification = Group "parameter specification"
 >     $ map (uncurry (TestValueExpr ansi2011))
->     [(":hostparam", HostParameter "hostparam" Nothing)
+>     [(":hostparam", HostParameter ":hostparam" Nothing)
 >     ,(":hostparam indicator :another_host_param"
->      ,HostParameter "hostparam" $ Just "another_host_param")
+>      ,HostParameter ":hostparam" $ Just ":another_host_param")
 >     ,("?", Parameter)
->     ,(":h[3]", Array (HostParameter "h" Nothing) [NumLit "3"])
+>     ,(":h[3]", Array (HostParameter ":h" Nothing) [NumLit "3"])
 >     ]
 
 <current collation specification> ::=

@@ -1980,7 +1980,7 @@ It is only allowed when all the strings are quoted with ' atm.
 > hostParamTok :: Parser String
 > hostParamTok = mytoken (\tok ->
 >     case tok of
->       L.HostParam p -> Just p
+>       L.PrefixedVariable c p -> Just (c:p)
 >       _ -> Nothing)
 
 > sqlNumberTok :: Bool -> Parser String

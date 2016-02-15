@@ -62,12 +62,8 @@ directly without the separately testing lexing stage.
 >     -- can be " or u& or something dialect specific like []
 >     | Identifier (Maybe (String,String)) String
 >
->     -- | This is a host param symbol, e.g. :param
->     | HostParam String
->
->     -- | This is a prefixed variable symbol, such as @var or #var
->     -- (not used in ansi dialect) TODO: maybe combine hostparam with
->     -- this
+>     -- | This is a prefixed variable symbol, such as :var, @var or #var
+>     -- (only :var is used in ansi dialect)
 >     | PrefixedVariable Char String
 >
 >     -- | This is a positional arg identifier e.g. $1
@@ -105,7 +101,6 @@ directly without the separately testing lexing stage.
 > prettyToken _ (Symbol s) = s
 > prettyToken _ (Identifier Nothing t) = t
 > prettyToken _ (Identifier (Just (q1,q2)) t) = q1 ++ t ++ q2
-> prettyToken _ (HostParam p) = ':':p
 > prettyToken _ (PrefixedVariable c p) = c:p
 > prettyToken _ (PositionalArg p) = '$':show p
 > prettyToken _ (SqlString s e t) = s ++ t ++ e
@@ -156,7 +151,6 @@ this is also tried before symbol (a .1 will be parsed as a number, but
 
 >     (p,) <$> choice [sqlString d
 >                     ,identifier d
->                     ,hostParam d
 >                     ,lineComment d
 >                     ,blockComment d
 >                     ,sqlNumber d
@@ -268,28 +262,22 @@ x'hexidecimal string'
 >                   ++ [string "u&'"
 >                      ,string "U&'"]
 
-> hostParam :: Dialect -> Parser Token
-
-use try for postgres because we also support : and :: as symbols
-There might be a problem with parsing e.g. a[1:b]
-
-> hostParam d | diSyntaxFlavour d == Postgres =
->     HostParam <$> try (char ':' *> identifierString)
-
-> hostParam _ = HostParam <$> (char ':' *> identifierString)
+use try because : and @ can be part of other things also
 
 > prefixedVariable :: Dialect -> Parser Token
-> prefixedVariable  d | diSyntaxFlavour d == SQLServer =
->     PrefixedVariable <$> char '@' <*> identifierString
-> prefixedVariable  d | diSyntaxFlavour d == Oracle =
->     PrefixedVariable <$> char '#' <*> identifierString
-> prefixedVariable _ = guard False *> fail "unpossible"
+> prefixedVariable  d = try $ choice
+>     [PrefixedVariable <$> char ':' <*> identifierString
+>     ,guard (diSyntaxFlavour d == SQLServer) >>
+>      PrefixedVariable <$> char '@' <*> identifierString
+>     ,guard (diSyntaxFlavour d == Oracle) >>
+>      PrefixedVariable <$> char '#' <*> identifierString
+>     ]
 
 > positionalArg :: Dialect -> Parser Token
-> positionalArg d | diSyntaxFlavour d == Postgres =
+> positionalArg d =
+>   guard (diSyntaxFlavour d == Postgres) >>
 >   -- use try to avoid ambiguities with other syntax which starts with dollar
 >   PositionalArg <$> try (char '$' *> (read <$> many1 digit))
-> positionalArg _ = guard False *> fail "unpossible"
 
 
 digits
@@ -625,12 +613,7 @@ a quoted identifier using ", followed by a " will fail
 >    | Identifier (Just (_,"\"")) _ <- a
 >    , checkFirstBChar (=='"') = False
 
-host param followed by an identifier char will be absorbed
-
->    | HostParam {} <- a
->    , checkFirstBChar isIdentifierChar = False
-
-prefixed variable same:
+prefixed variable followed by an identifier char will be absorbed
 
 >    | PrefixedVariable {} <- a
 >    , checkFirstBChar isIdentifierChar = False

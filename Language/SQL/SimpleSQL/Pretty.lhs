@@ -53,8 +53,8 @@ which have been changed to try to improve the layout of the output.
 > valueExpr _ Star = text "*"
 > valueExpr _ Parameter = text "?"
 > valueExpr _ (HostParameter p i) =
->     text (':':p)
->     <+> me (\i' -> text "indicator" <+> text (':':i')) i
+>     text p
+>     <+> me (\i' -> text "indicator" <+> text i') i
 
 > valueExpr d (App f es) = names f <> parens (commaSep (map (valueExpr d) es))
 

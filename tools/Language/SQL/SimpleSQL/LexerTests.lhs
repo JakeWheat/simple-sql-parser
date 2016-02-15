@@ -33,7 +33,7 @@ Test for the lexer
 >            -- preserve the case of the u
 >            ++ map (\i -> ("u&\"" ++ i ++ "\"", [Identifier (Just ("u&\"","\"")) i])) idens
 >            -- host param
->            ++ map (\i -> (':':i, [HostParam i])) idens
+>            ++ map (\i -> (':':i, [PrefixedVariable ':' i])) idens
 >        )
 >     -- quoted identifiers with embedded double quotes
 >     -- the lexer doesn't unescape the quotes
@@ -154,7 +154,7 @@ also: do the testing for the ansi compatibility special cases
 >            -- preserve the case of the u
 >            ++ map (\i -> ("u&\"" ++ i ++ "\"", [Identifier (Just ("u&\"","\"")) i])) idens
 >            -- host param
->            ++ map (\i -> (':':i, [HostParam i])) idens
+>            ++ map (\i -> (':':i, [PrefixedVariable ':' i])) idens
 >        )
 >     -- positional var
 >     ++ [("$1", [PositionalArg 1])]
@@ -246,9 +246,9 @@ the + or -.
 >       -- need more tests for */ to make sure it is caught if it is in the middle of a
 >       -- sequence of symbol letters
 >         [LexFails postgres "*/"
->         ,LexFails ansi2011 ":::"
->         ,LexFails ansi2011 "::::"
->         ,LexFails ansi2011 ":::::"
+>         ,LexFails postgres ":::"
+>         ,LexFails postgres "::::"
+>         ,LexFails postgres ":::::"
 >         ,LexFails postgres "@*/"
 >         ,LexFails postgres "-*/"
 >         ,LexFails postgres "12e3e4"
