@@ -226,9 +226,12 @@ This parses a valid identifier without quotes.
 
 > identifierString :: Parser String
 > identifierString =
->     startsWith (\c -> c == '_' || isAlpha c)
->                (\c -> c == '_' || isAlphaNum c)
+>     startsWith (\c -> c == '_' || isAlpha c) isIdentifierChar
 
+this can be moved to the dialect at some point
+
+> isIdentifierChar :: Char -> Bool
+> isIdentifierChar c = c == '_' || isAlphaNum c
 
 Parse a SQL string. Examples:
 
@@ -574,47 +577,39 @@ successes.
 
 > tokensWillPrintAndLex :: Dialect -> Token -> Token -> Bool
 
-> tokensWillPrintAndLex d (Symbol ":") x =
->     case prettyToken d x of
->         -- eliminate cases:
->         -- first letter of pretty x can be start of identifier
->         -- this will look like a hostparam
->         -- first letter of x is :, this will look like ::
->         -- first letter of x is =, this will look like :=
->         (a:_) | a `elem` ":_=" || isAlpha a -> False
->         _ -> True
+TODO: add more memoization, e.g. create a wrapper which pretty prints
+both tokens so the pretty printed token can be reused in multiple
+cases.
+
+a : followed by an identifier character will look like a host param
+followed by = or : makes a different symbol
+
+> tokensWillPrintAndLex d (Symbol ":") b
+>     | (b':_) <- prettyToken d b
+>     , isIdentifierChar b' || b' `elem` ":=" = False
 
 two symbols next to eachother will fail if the symbols can combine and
 (possibly just the prefix) look like a different symbol, or if they
 combine to look like comment markers
 
-check if the end of one symbol and the start of the next can form a
-comment token
+> tokensWillPrintAndLex (Dialect {diSyntaxFlavour = Postgres}) (Symbol a) (Symbol x)
+>     | x `notElem` ["+", "-"] = False
+>     | or (map (`elem` a) "~!@#%^&|`?") = False
 
-> tokensWillPrintAndLex d a@(Symbol {}) b@(Symbol {})
->     | a'@(_:_) <- prettyToken d a
->     , ('-':_) <- prettyToken d b
->     , last a' == '-' = False
+> tokensWillPrintAndLex _ (Symbol s1) (Symbol s2)
+>    | (s1,s2) `elem`
+>      [("<",">")
+>      ,("<","=")
+>      ,(">","=")
+>      ,("!","=")
+>      ,("|","|")
+>      ,("||","|")
+>      ,("|","||")
+>      ,("||","||")
+>      ,("<",">=")
+>      ] = False
 
-> tokensWillPrintAndLex (Dialect {diSyntaxFlavour = Postgres}) (Symbol a) (Symbol x) =
->     (x `elem` ["+", "-"])
->     && and (map (`notElem` a) "~!@#%^&|`?")
-
-> tokensWillPrintAndLex _ (Symbol s1) (Symbol s2) =
->    (s1,s2) `notElem`
->    [("<",">")
->    ,("<","=")
->    ,(">","=")
->    ,("!","=")
->    ,("|","|")
->    ,("||","|")
->    ,("|","||")
->    ,("||","||")
->    ,("<",">=")
->    ,("-","-")
->    ,("/","*")
->    ,("*","/")
->    ]
+List explicitly all the cases which should fail
 
 two whitespaces will be combined
 
@@ -629,145 +624,86 @@ and isn't exactly wrong
 
 > tokensWillPrintAndLex _ (LineComment []) _ = False
 
-apart from two above cases, leading and trailing whitespace will always be ok
+a token which ends with - followed by another token which starts with
+- will turn into a line comment
 
-> tokensWillPrintAndLex _ Whitespace {} _ = True
-> tokensWillPrintAndLex _ _ Whitespace {} = True
+> tokensWillPrintAndLex d a b
+>     | (a'@(_:_),('-':_)) <- (prettyToken d a, prettyToken d b)
+>     , last a' == '-' = False
 
-a symbol ending with a '-' followed by a line comment will lex back
-differently, since the --- will combine and move the comment eating
-some of the symbol
+a token which ends with * followed by a / at the start of the next
+token will cause a problem
 
-> tokensWillPrintAndLex _ (Symbol s) (LineComment {}) =
->    case s of
->        (_:_) -> last s /= '-'
->        _ -> True
+> tokensWillPrintAndLex d a b
+>     | (a'@(_:_),('/':_)) <- (prettyToken d a, prettyToken d b)
+>     , last a' == '*' = False
 
-in other situations a trailing line comment will work
+The reverse is a problem also: ending with / then the next one
+starting with * will create the start of a block comment
 
-> tokensWillPrintAndLex _ _ LineComment {} = True
+todo: write a helper function for a predicate on the last char of the first token and the first char of the second token since this appears quite a few times
 
-block comments: make sure there isn't a * symbol immediately before the comment opening
+> tokensWillPrintAndLex d a b
+>     | (a'@(_:_),('*':_)) <- (prettyToken d a, prettyToken d b)
+>     , last a' == '/' = False
 
-> tokensWillPrintAndLex d a BlockComment {} =
->     case prettyToken d a of
->         a'@(_:_) | last a' == '*' -> False
->         _ -> True
+a symbol will absorb a following .
+TODO: not 100% on this
 
-> tokensWillPrintAndLex _ BlockComment {} _ = True
+> tokensWillPrintAndLex d Symbol {} b
+>     | ('.':_) <- prettyToken d b = False
 
+unquoted identifier followed by an identifier letter
 
+> tokensWillPrintAndLex d (Identifier Nothing _) b
+>     | (b':_) <- prettyToken d b
+>     , isIdentifierChar b' = False
 
-> tokensWillPrintAndLex _ Symbol {} Identifier {} = True
+two quoted identifiers with the same quote next to each other will
+parse back as one identifier with the quote symbol in the middle
 
-> tokensWillPrintAndLex _ Symbol {} HostParam {} = True
-> tokensWillPrintAndLex _ Symbol {} PositionalArg {} = True
-> tokensWillPrintAndLex _ Symbol {} SqlString {} = True
-> tokensWillPrintAndLex (Dialect {diSyntaxFlavour = Postgres}) Symbol {} (SqlNumber ('.':_)) = False
-> tokensWillPrintAndLex _ Symbol {} SqlNumber {} = True
+> tokensWillPrintAndLex _ (Identifier (Just (_,[a])) _) (Identifier (Just ([b],_)) _)
+>     | a == b = False
 
+host param followed by an identifier char will be absorbed
 
-identifier:
-  symbol ok
-  identifier:
-    alphas then alphas: bad
-    quote then quote (with same start and end quote): bad
-    quote [ ] then quote [ ]: ok? this technically works, not sure if
-    it is a good ui, or requiring whitepace/comment is better. See
-    what sql server does
-    second is quote with prefix: makes it ok
-  host param: ok, but maybe should require whitespace for ui reasons
-  positional arg: ok, but maybe should require whitespace for ui reasons
-  string: ok, but maybe should require whitespace for ui reasons
-  number: ok, but maybe should require whitespace for ui reasons
+> tokensWillPrintAndLex d HostParam {} b
+>     | (b':_) <- prettyToken d b
+>     , isIdentifierChar b' = False
 
-> tokensWillPrintAndLex _ Identifier {} Symbol {} = True
-> tokensWillPrintAndLex _ (Identifier Nothing _) (Identifier Nothing _) = False
-> tokensWillPrintAndLex _ (Identifier Nothing _) (Identifier (Just (a,_)) _) =
->     case a of
->         (a':_) | isAlpha a' -> False
->         _ -> True
-> tokensWillPrintAndLex _ (Identifier Just {} _) (Identifier Nothing _) = True
-> tokensWillPrintAndLex _ (Identifier (Just(_,b)) _) (Identifier (Just(c,_)) _) =
->      not (b == c)
-> tokensWillPrintAndLex _ Identifier {} HostParam {} = True
-> tokensWillPrintAndLex _ Identifier {} PositionalArg {} = True
-> tokensWillPrintAndLex _ (Identifier Nothing _) (SqlString a _ _) =
->     case a of
->         (a':_) | isAlpha a' -> False
->         _ -> True
+prefixed variable same:
 
-> tokensWillPrintAndLex _ Identifier {} SqlString {} = True
-> tokensWillPrintAndLex _ (Identifier Nothing _) (SqlNumber s) =
->     case s of
->         (s':_) -> not (isDigit s')
->         _ -> True
-> tokensWillPrintAndLex _ Identifier {} SqlNumber {} = True
+> tokensWillPrintAndLex d PrefixedVariable {} b
+>     | (b':_) <- prettyToken d b
+>     , isIdentifierChar b' = False
 
+a positional arg will absorb a following digit
 
+> tokensWillPrintAndLex d PositionalArg {} b
+>     | (b':_) <- prettyToken d b
+>     , isDigit b' = False
 
-> tokensWillPrintAndLex _ HostParam {} Symbol {} = True
-> tokensWillPrintAndLex _ HostParam {} (Identifier Nothing _) = False
-> tokensWillPrintAndLex _ HostParam {} (Identifier (Just (a,_)) _) =
->     case a of
->         c:_ -> not (isAlpha c)
->         [] -> False
+a string ending with ' followed by a token starting with ' will be absorbed
 
-> tokensWillPrintAndLex _ HostParam {} HostParam {} = True
-> tokensWillPrintAndLex _ HostParam {} PositionalArg {} = True
-> tokensWillPrintAndLex _ HostParam {} (SqlString a _ _) =
->     case a of
->         (a':_) | isAlpha a' -> False
->         _ -> True
-> tokensWillPrintAndLex _ HostParam {} (SqlNumber s) =
->     case s of
->         (s':_) -> not (isDigit s')
->         _ -> True
+> tokensWillPrintAndLex d (SqlString _q00 "'" _s0) b
+>     | ('\'':_) <- prettyToken d b = False
 
-> tokensWillPrintAndLex d PrefixedVariable {} b =
->     case prettyToken d b of
->         (h:_) | h == '_' || isAlphaNum h -> False
->         _ -> True
+a number followed by a . will fail or be absorbed
 
-> tokensWillPrintAndLex (Dialect {diSyntaxFlavour = Postgres})
->                       Symbol {} (PrefixedVariable {}) = False
+> tokensWillPrintAndLex d SqlNumber {} b
+>     | ('.':_) <- prettyToken d b = False
 
-> tokensWillPrintAndLex _ _ PrefixedVariable {} = True
+a number followed by an e or E will fail or be absorbed
 
+> tokensWillPrintAndLex d SqlNumber {} b
+>     | ('e':_) <- prettyToken d b = False
+>     | ('E':_) <- prettyToken d b = False
 
-> tokensWillPrintAndLex _ PositionalArg {} Symbol {} = True
-> tokensWillPrintAndLex _ PositionalArg {} Identifier {} = True
-> tokensWillPrintAndLex _ PositionalArg {} HostParam {} = True
-> tokensWillPrintAndLex _ PositionalArg {} PositionalArg {} = True
-> tokensWillPrintAndLex _ PositionalArg {} SqlString {} = True -- todo: think carefully about dollar quoting?
-> tokensWillPrintAndLex _ PositionalArg {} (SqlNumber n) =
->     case n of
->         (n':_) -> not (isDigit n')
->         _ -> True
+two numbers next to eachother will fail or be absorbed
 
-> tokensWillPrintAndLex _ SqlString {} Symbol {} = True
-> tokensWillPrintAndLex _ SqlString {} Identifier {} = True
-> tokensWillPrintAndLex _ SqlString {} HostParam {} = True
-> tokensWillPrintAndLex _ SqlString {} PositionalArg {} = True
+> tokensWillPrintAndLex _ SqlNumber {} SqlNumber {} = False
 
-> tokensWillPrintAndLex _ (SqlString _q00 q01 _s0) (SqlString q10 _q11 _s1) =
->     not (q01 == "'" && q10 == "'")
-
-> tokensWillPrintAndLex _ SqlString {} SqlNumber {} = True
-
-> tokensWillPrintAndLex _ SqlNumber {} (Symbol ('.':_)) = False
-> tokensWillPrintAndLex _ SqlNumber {} Symbol {} = True
-> tokensWillPrintAndLex _ SqlNumber {} Identifier {} = True
-> tokensWillPrintAndLex _ SqlNumber {} HostParam {} = True
-> tokensWillPrintAndLex _ SqlNumber {} PositionalArg {} = True
-
-todo: check for failures when e following number is fixed
-
-> tokensWillPrintAndLex _ SqlNumber {} (SqlString ('e':_) _ _)  = False
-> tokensWillPrintAndLex _ SqlNumber {} (SqlString ('E':_) _ _)  = False
-> tokensWillPrintAndLex _ SqlNumber {} SqlString {}  = True
-
-> tokensWillPrintAndLex _ (SqlNumber _) (SqlNumber _) = False
+> tokensWillPrintAndLex _ _ _ = True
 
 todo: special case lexer so a second ., and . and e are not
 allowed after exponent when there is no whitespace, even if there
@@ -795,3 +731,6 @@ add odbc as a dialect flag and include {} as symbols when enabled
 do some user documentation on lexing, and lexing/dialects
 
 start thinking about a more separated design for the dialect handling
+
+make sure other symbols repeated are protected like | || where neccessary
+     such as :
