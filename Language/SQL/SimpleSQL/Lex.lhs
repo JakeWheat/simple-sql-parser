@@ -375,7 +375,11 @@ A multiple-character operator name cannot end in + or -, unless the name also co
 >    -- symbol because this is the least complex way to do it
 >    otherSymbol = many1 (char '.') :
 >                  (map (try . string) ["::", ":="]
->                   ++ map (string . (:[])) "[],;():")
+>                   ++ map (string . (:[])) "[],;():"
+>                   ++ if allowOdbc d
+>                      then [string "{", string "}"]
+>                      else []
+>                  )
 
 exception char is one of:
 ~ ! @ # % ^ & | ` ?
@@ -433,7 +437,10 @@ which allows the last character of a multi character symbol to be + or
 >    Symbol <$> choice (otherSymbol ++ regularOp)
 >  where
 >    otherSymbol = many1 (char '.') :
->                  map (string . (:[])) ",;():?"
+>                  (map (string . (:[])) ",;():?"
+>                   ++ if allowOdbc d
+>                      then [string "{", string "}"]
+>                      else [])
 
 try is used because most of the first characters of the two character
 symbols can also be part of a single character symbol
@@ -444,11 +451,14 @@ symbols can also be part of a single character symbol
 >                    choice ["||" <$ char '|' <* notFollowedBy (char '|')
 >                           ,return "|"]]
 
-> symbol _ =
+> symbol d =
 >    Symbol <$> choice (otherSymbol ++ regularOp)
 >  where
 >    otherSymbol = many1 (char '.') :
->                  map (string . (:[])) "[],;():?"
+>                  (map (string . (:[])) "[],;():?"
+>                   ++ if allowOdbc d
+>                      then [string "{", string "}"]
+>                      else [])
 
 try is used because most of the first characters of the two character
 symbols can also be part of a single character symbol

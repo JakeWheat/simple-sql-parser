@@ -56,7 +56,7 @@
 >     ,AdminOptionFor(..)
 >     ,GrantOptionFor(..)
 >      -- * Dialects
->     ,Dialect
+>     ,Dialect(allowOdbc)
 >     ,ansi2011
 >     ,mysql
 >     ,postgres

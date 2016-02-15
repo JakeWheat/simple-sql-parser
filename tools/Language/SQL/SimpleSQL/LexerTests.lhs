@@ -303,10 +303,11 @@ the + or -.
 
 > odbcLexerTests :: TestItem
 > odbcLexerTests = Group "odbcLexTests" $
->     [ LexTest sqlserver {- {odbc = True} -} s t | (s,t) <-
->     [--("{}", [Symbol "{", Symbol "}"])
->     ]
->     ]
+>     [ LexTest sqlserver {allowOdbc = True} s t | (s,t) <-
+>     [("{}", [Symbol "{", Symbol "}"])
+>     ]]
+>     ++ [LexFails sqlserver "{"
+>        ,LexFails sqlserver "}"]
 
 > combos :: [a] -> Int -> [[a]]
 > combos _ 0 = [[]]
