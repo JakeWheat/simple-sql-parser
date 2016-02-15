@@ -686,11 +686,20 @@ do some user documentation on lexing, and lexing/dialects
 
 start thinking about a more separated design for the dialect handling
 
-make sure other symbols repeated are protected like | || where neccessary
-     such as :
-
 lexing tests are starting to take a really long time, so split the
 tests so it is much easier to run all the tests except the lexing
 tests which only need to be run when working on the lexer (which
 should be relatively uncommon), or doing a commit or finishing off a
 series of commits,
+
+start writing the error message tests:
+  generate/write a large number of syntax errors
+  create a table with the source and the error message
+  try to compare some different versions of code to compare the
+    quality of the error messages by hand
+
+  get this checked in so improvements and regressions in the error
+    message quality can be tracked a little more easily (although it will
+    still be manual)
+
+try again to add annotation to the ast
