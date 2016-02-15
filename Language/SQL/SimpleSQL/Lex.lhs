@@ -10,31 +10,11 @@ parsec)
 backtracking. (We could get this by making the parsing code a lot more
 complex also.)
 
-= Lexing and dialects
-
-The main dialect differences:
-
-symbols follow different rules in different dialects
-
-e.g. postgresql has a flexible extensible-ready syntax for operators
-which are parsed here as symbols
-
-sql server using [] for quoting identifiers, and so they don't parse
-as symbols here (in other dialects including ansi, these are used for
-array operations)
-
-quoting of identifiers is different in different dialects
-
-there are various other identifier differences:
-ansi has :host_param
-there are variants on these like in @sql_server adn in #oracle
-
-string quoting follows different rules in different dialects,
-e.g. postgresql has $$ quoting
-
-todo: public documentation on dialect definition - and dialect flags
-
-
+3. we can test the lexer relatively exhaustively, then even when we
+don't do nearly as comprehensive testing on the syntax level, we still
+have a relatively high assurance of the low level of bugs. This is
+much more difficult to get parity with when testing the syntax parser
+directly without the separately testing lexing stage.
 
 > -- | This is the module contains a Lexer for SQL.
 > {-# LANGUAGE TupleSections #-}
@@ -45,7 +25,6 @@ todo: public documentation on dialect definition - and dialect flags
 >     ,prettyTokens
 >     ,ParseError(..)
 >     ,Dialect(..)
->     ,tokensWillPrintAndLex
 >     ,tokenListWillPrintAndLex
 >     ) where
 
@@ -86,7 +65,9 @@ todo: public documentation on dialect definition - and dialect flags
 >     -- | This is a host param symbol, e.g. :param
 >     | HostParam String
 >
->     -- | This is a prefixed variable symbol, such as @var or #var (not used in ansi dialect)
+>     -- | This is a prefixed variable symbol, such as @var or #var
+>     -- (not used in ansi dialect) TODO: maybe combine hostparam with
+>     -- this
 >     | PrefixedVariable Char String
 >
 >     -- | This is a positional arg identifier e.g. $1
@@ -249,14 +230,9 @@ x'hexidecimal string'
 >         guard $ diSyntaxFlavour d == Postgres
 >         -- use try because of ambiguity with symbols and with
 >         -- positional arg
->         s <- choice
->              [do
->               i <- try (char '$' *> identifierString <* char '$')
->               return $ "$" ++ i ++ "$"
->              ,try (string "$$")
->              ]
->         str <- manyTill anyChar (try $ string s)
->         return $ SqlString s s str
+>         delim <- (\x -> concat ["$",x,"$"])
+>                  <$> try (char '$' *> option "" identifierString <* char '$')
+>         SqlString delim delim  <$> manyTill anyChar (try $ string delim)
 >     normalString = SqlString "'" "'" <$> (char '\'' *> normalStringSuffix False "")
 >     normalStringSuffix allowBackslash t = do
 >         s <- takeTill $ if allowBackslash
@@ -371,39 +347,42 @@ A multiple-character operator name cannot end in + or -, unless the name also co
 
 ~ ! @ # % ^ & | ` ?
 
->  where
->    -- other symbols are all the tokens which parse as symbols in
->    -- this lexer which aren't considered operators in postgresql
->    -- a single ? is parsed as a operator here instead of an other
->    -- symbol because this is the least complex way to do it
->    otherSymbol = many1 (char '.') :
->                  (map (try . string) ["::", ":="]
->                   ++ map (string . (:[])) "[],;():"
->                   ++ if allowOdbc d
->                      then [string "{", string "}"]
->                      else []
->                  )
+>   where
+>     -- other symbols are all the tokens which parse as symbols in
+>     -- this lexer which aren't considered operators in postgresql
+>     -- a single ? is parsed as a operator here instead of an other
+>     -- symbol because this is the least complex way to do it
+>     otherSymbol = many1 (char '.') :
+>                   try (string ":=") :
+>                   -- parse :: and : and avoid allowing ::: or more
+>                   try (string "::" <* notFollowedBy (char ':')) :
+>                   try (string ":" <* notFollowedBy (char ':')) :
+>                   (map (string . (:[])) "[],;()"
+>                    ++ if allowOdbc d
+>                       then [string "{", string "}"]
+>                       else []
+>                   )
 
 exception char is one of:
 ~ ! @ # % ^ & | ` ?
 which allows the last character of a multi character symbol to be + or
 -
 
->    allOpSymbols = "+-*/<>=~!@#%^&|`?"
->    -- these are the symbols when if part of a multi character
->    -- operator permit the operator to end with a + or - symbol
->    exceptionOpSymbols = "~!@#%^&|`?"
+>     allOpSymbols = "+-*/<>=~!@#%^&|`?"
+>     -- these are the symbols when if part of a multi character
+>     -- operator permit the operator to end with a + or - symbol
+>     exceptionOpSymbols = "~!@#%^&|`?"
 
->    -- special case for parsing a single + or - symbol
->    singlePlusMinus = try $ do
->      c <- oneOf "+-"
->      notFollowedBy $ oneOf allOpSymbols
->      return [c]
+>     -- special case for parsing a single + or - symbol
+>     singlePlusMinus = try $ do
+>       c <- oneOf "+-"
+>       notFollowedBy $ oneOf allOpSymbols
+>       return [c]
 
->    -- this is used when we are parsing a potentially multi symbol
->    -- operator and we have alread seen one of the 'exception chars'
->    -- and so we can end with a + or -
->    moreOpCharsException = do
+>     -- this is used when we are parsing a potentially multi symbol
+>     -- operator and we have alread seen one of the 'exception chars'
+>     -- and so we can end with a + or -
+>     moreOpCharsException = do
 >        c <- oneOf (filter (`notElem` "-/*") allOpSymbols)
 >             -- make sure we don't parse a comment starting token
 >             -- as part of an operator
@@ -414,7 +393,7 @@ which allows the last character of a multi character symbol to be + or
 >             <|> try (char '*' <* notFollowedBy (char '/'))
 >        (c:) <$> option [] moreOpCharsException
 
->    opMoreChars = choice
+>     opMoreChars = choice
 >        [-- parse an exception char, now we can finish with a + -
 >         (:)
 >         <$> oneOf exceptionOpSymbols
@@ -552,22 +531,18 @@ Some helper combinators
 This utility function will accurately report if the two tokens are
 pretty printed, if they should lex back to the same two tokens. This
 function is used in testing (and can be used in other places), and
-must not be implemented by actually trying to print and then lex
-(because then we would have the risk of thinking two tokens cannot be
-together when there is bug in the lexer and it should be possible to
-put them together.
-
-question: maybe pretty printing the tokens separately and then
-analysing the concrete syntax without concatting the two printed
-tokens together is a better way of doing this?
+must not be implemented by actually trying to print both tokens and
+then lex them back from a single string (because then we would have
+the risk of thinking two tokens cannot be together when there is bug
+in the lexer, which the testing is supposed to find).
 
 maybe do some quick checking to make sure this function only gives
 true negatives: check pairs which return false actually fail to lex or
-give different symbols in return
+give different symbols in return: could use quickcheck for this
 
 a good sanity test for this function is to change it to always return
 true, then check that the automated tests return the same number of
-successes.
+successes. I don't think it succeeds this test at the moment
 
 > tokenListWillPrintAndLex :: Dialect -> [Token] -> Bool
 > tokenListWillPrintAndLex _ [] = True
@@ -631,8 +606,14 @@ the second token forming a comment start or end symbol
 a symbol will absorb a following .
 TODO: not 100% on this always being bad
 
->    |  Symbol {} <- a
+>    | Symbol {} <- a
 >    , checkFirstBChar (=='.') = False
+
+cannot follow a symbol ending in : with another token starting with :
+
+>    | let f ':' ':' = True
+>          f _ _ = False
+>      in checkBorderChars f = False
 
 unquoted identifier followed by an identifier letter
 
@@ -678,9 +659,9 @@ two numbers next to eachother will fail or be absorbed
 
 >    | SqlNumber {} <- a
 >    , SqlNumber {} <- b = False
->
->    | otherwise = True
 
+
+>    | otherwise = True
 
 >   where
 >     prettya = prettyToken d a
@@ -724,3 +705,9 @@ start thinking about a more separated design for the dialect handling
 
 make sure other symbols repeated are protected like | || where neccessary
      such as :
+
+lexing tests are starting to take a really long time, so split the
+tests so it is much easier to run all the tests except the lexing
+tests which only need to be run when working on the lexer (which
+should be relatively uncommon), or doing a commit or finishing off a
+series of commits,

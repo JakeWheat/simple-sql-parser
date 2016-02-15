@@ -246,6 +246,9 @@ the + or -.
 >       -- need more tests for */ to make sure it is caught if it is in the middle of a
 >       -- sequence of symbol letters
 >         [LexFails postgres "*/"
+>         ,LexFails ansi2011 ":::"
+>         ,LexFails ansi2011 "::::"
+>         ,LexFails ansi2011 ":::::"
 >         ,LexFails postgres "@*/"
 >         ,LexFails postgres "-*/"
 >         ,LexFails postgres "12e3e4"
