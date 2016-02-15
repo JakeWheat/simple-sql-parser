@@ -82,11 +82,13 @@ todo: public documentation on dialect definition - and dialect flags
 >     -- the quotes used, or nothing if no quotes were used. The quotes
 >     -- can be " or u& or something dialect specific like []
 >     | Identifier (Maybe (String,String)) String
-
+>
 >     -- | This is a host param symbol, e.g. :param
 >     | HostParam String
-
-
+>
+>     -- | This is a prefixed variable symbol, such as @var or #var (not used in ansi dialect)
+>     | PrefixedVariable Char String
+>
 >     -- | This is a positional arg identifier e.g. $1
 >     | PositionalArg Int
 >
@@ -95,6 +97,7 @@ todo: public documentation on dialect definition - and dialect flags
 >     -- the character set (one of nNbBxX, or u&, U&), or a dialect
 >     -- specific string quoting (such as $$ in postgres)
 >     | SqlString String String String
+>
 >     -- | A number literal (integral or otherwise), stored in original format
 >     -- unchanged
 >     | SqlNumber String
@@ -122,6 +125,7 @@ todo: public documentation on dialect definition - and dialect flags
 > prettyToken _ (Identifier Nothing t) = t
 > prettyToken _ (Identifier (Just (q1,q2)) t) = q1 ++ t ++ q2
 > prettyToken _ (HostParam p) = ':':p
+> prettyToken _ (PrefixedVariable c p) = c:p
 > prettyToken _ (PositionalArg p) = '$':show p
 > prettyToken _ (SqlString s e t) = s ++ t ++ e
 > prettyToken _ (SqlNumber r) = r
@@ -177,6 +181,7 @@ this is also tried before symbol (a .1 will be parsed as a number, but
 >                     ,sqlNumber d
 >                     ,positionalArg d
 >                     ,dontParseEndBlockComment d
+>                     ,prefixedVariable d
 >                     ,symbol d
 >                     ,sqlWhitespace d]
 
@@ -292,11 +297,18 @@ There might be a problem with parsing e.g. a[1:b]
 
 > hostParam _ = HostParam <$> (char ':' *> identifierString)
 
+> prefixedVariable :: Dialect -> Parser Token
+> prefixedVariable  d | diSyntaxFlavour d == SQLServer =
+>     PrefixedVariable <$> char '@' <*> identifierString
+> prefixedVariable  d | diSyntaxFlavour d == Oracle =
+>     PrefixedVariable <$> char '#' <*> identifierString
+> prefixedVariable _ = guard False *> fail "unpossible"
+
 > positionalArg :: Dialect -> Parser Token
 > positionalArg d | diSyntaxFlavour d == Postgres =
 >   -- use try to avoid ambiguities with other syntax which starts with dollar
 >   PositionalArg <$> try (char '$' *> (read <$> many1 digit))
-> positionalArg _ = guard False *> error "unpossible"
+> positionalArg _ = guard False *> fail "unpossible"
 
 
 digits
@@ -700,6 +712,17 @@ identifier:
 >         (s':_) -> not (isDigit s')
 >         _ -> True
 
+> tokensWillPrintAndLex d PrefixedVariable {} b =
+>     case prettyToken d b of
+>         (h:_) | h == '_' || isAlphaNum h -> False
+>         _ -> True
+
+> tokensWillPrintAndLex (Dialect {diSyntaxFlavour = Postgres})
+>                       Symbol {} (PrefixedVariable {}) = False
+
+> tokensWillPrintAndLex _ _ PrefixedVariable {} = True
+
+
 > tokensWillPrintAndLex _ PositionalArg {} Symbol {} = True
 > tokensWillPrintAndLex _ PositionalArg {} Identifier {} = True
 > tokensWillPrintAndLex _ PositionalArg {} HostParam {} = True
@@ -741,7 +764,7 @@ is an unambiguous parse
 TODO:
 
 refactor the tokenswillprintlex to be based on pretty printing the
-individual tokens
+ individual tokens
 
 start adding negative / different parse dialect tests
 
@@ -753,7 +776,9 @@ make a new ctor for @var, #var
 
 add token tables and tests for oracle, sql server
 review existing tables
-look for refactoring opportunities
+
+look for refactoring opportunities, especially the token
+generation tables in the tests
 
 add odbc as a dialect flag and include {} as symbols when enabled
 

@@ -282,14 +282,14 @@ the + or -.
 > sqlServerLexerTests :: TestItem
 > sqlServerLexerTests = Group "sqlServerLexTests" $
 >     [ LexTest sqlserver s t | (s,t) <-
->     [--("@variable", [(Identifier (Just ("@", "")) "variable")])
+>     [("@variable", [(PrefixedVariable '@' "variable")])
 >     --,("[quoted identifier]", [(Identifier (Just ("[", "]")) "variable")])
 >     ]]
 
 > oracleLexerTests :: TestItem
 > oracleLexerTests = Group "oracleLexTests" $
 >     [ LexTest oracle s t | (s,t) <-
->     [--("#variable", [(Identifier (Just ("#", "")) "variable")])
+>     [("#variable", [(PrefixedVariable '#' "variable")])
 >     ]
 >     ]
 

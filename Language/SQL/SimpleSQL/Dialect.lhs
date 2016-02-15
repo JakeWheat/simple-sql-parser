@@ -44,8 +44,8 @@ hack for now, later will expand to flags on a feature by feature basis
 
 > -- | oracle dialect
 > oracle :: Dialect
-> oracle = Dialect Postgres
+> oracle = Dialect Oracle
 
 > -- | microsoft sql server dialect
 > sqlserver :: Dialect
-> sqlserver = Dialect Postgres
+> sqlserver = Dialect SQLServer
