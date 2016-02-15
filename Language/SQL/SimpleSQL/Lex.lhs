@@ -44,7 +44,10 @@ todo: public documentation on dialect definition - and dialect flags
 >     ,prettyToken
 >     ,prettyTokens
 >     ,ParseError(..)
->     ,Dialect(..)) where
+>     ,Dialect(..)
+>     ,tokensWillPrintAndLex
+>     ,tokenListWillPrintAndLex
+>     ) where
 
 > import Language.SQL.SimpleSQL.Dialect
 
@@ -68,7 +71,7 @@ todo: public documentation on dialect definition - and dialect flags
 
 > -- | Represents a lexed token
 > data Token
->     -- | A symbol is one of the following
+>     -- | A symbol (in ansi dialect) is one of the following
 >     --
 >     -- * multi char symbols <> <= >= != ||
 >     -- * single char symbols: * + -  < >  ^ / %  ~ & | ? ( ) [ ] , ; ( )
@@ -404,6 +407,18 @@ which allows the last character of a multi character symbol to be + or
 >         <*> option [] opMoreChars
 >        ]
 
+> symbol d | diSyntaxFlavour d == SQLServer =
+>    Symbol <$> choice (otherSymbol ++ regularOp)
+>  where
+>    otherSymbol = many1 (char '.') :
+>                  map (string . (:[])) ",;():?"
+
+try is used because most of the first characters of the two character
+symbols can also be part of a single character symbol
+
+>    regularOp = map (try . string) [">=","<=","!=","<>","||"]
+>                ++ map (string . (:[])) "+-^*/%~&|<>="
+
 
 > symbol _ =
 >    Symbol <$> choice (otherSymbol ++ regularOp)
@@ -477,190 +492,246 @@ Some helper combinators
 > takeWhile p = many (satisfy p)
 
 > takeTill :: (Char -> Bool) -> Parser String
-> takeTill p =
->     manyTill anyChar (peekSatisfy p)
+> takeTill p = manyTill anyChar (peekSatisfy p)
 
 > peekSatisfy :: (Char -> Bool) -> Parser ()
-> peekSatisfy p = do
->     void $ lookAhead (satisfy p)
+> peekSatisfy p = void $ lookAhead (satisfy p)
+
+This utility function will accurately report if the two tokens are
+pretty printed, if they should lex back to the same two tokens. This
+function is used in testing (and can be used in other places), and
+must not be implemented by actually trying to print and then lex
+(because then we would have the risk of thinking two tokens cannot be
+together when there is bug in the lexer and it should be possible to
+put them together.
+
+question: maybe pretty printing the tokens separately and then
+analysing the concrete syntax without concatting the two printed
+tokens together is a better way of doing this?
+
+maybe do some quick checking to make sure this function only gives
+true negatives: check pairs which return false actually fail to lex or
+give different symbols in return
+
+> tokenListWillPrintAndLex :: Dialect -> [Token] -> Bool
+> tokenListWillPrintAndLex _ [] = True
+> tokenListWillPrintAndLex _ [_] = True
+> tokenListWillPrintAndLex d (a:b:xs) =
+>     tokensWillPrintAndLex d a b && tokenListWillPrintAndLex d (b:xs)
+
+> tokensWillPrintAndLex :: Dialect -> Token -> Token -> Bool
+
+> tokensWillPrintAndLex d (Symbol ":") x =
+>     case prettyToken d x of
+>         -- eliminate cases:
+>         -- first letter of pretty x can be start of identifier
+>         -- this will look like a hostparam
+>         -- first letter of x is :, this will look like ::
+>         -- first letter of x is =, this will look like :=
+>         (a:_) | a `elem` ":_=" || isAlpha a -> False
+>         _ -> True
+
+two symbols next to eachother will fail if the symbols can combine and
+(possibly just the prefix) look like a different symbol, or if they
+combine to look like comment markers
 
 
-postgresql notes:
-u&
-SELECT 'foo'
-'bar';
-is equivalent to:
-SELECT 'foobar';
 
-SELECT 'foo'      'bar';
-is invalid
+> tokensWillPrintAndLex d a@(Symbol {}) b@(Symbol {})
+>     | a'@(_:_) <- prettyToken d a
+>     , ('-':_) <- prettyToken d b
+>     , last a' == '-' = False
 
-(this should be in ansi also)
+> tokensWillPrintAndLex (Dialect {diSyntaxFlavour = Postgres}) (Symbol a) (Symbol x) =
+>     (x `elem` ["+", "-"])
+>     && and (map (`notElem` a) "~!@#%^&|`?")
 
-definitely do major review and docs:
-when can escapes and prefixes be using with syntactic string literals
-when can they be combined
-when can e.g. dollar quoting be used
-what escaping should there be, including unicode escapes
+> tokensWillPrintAndLex _ (Symbol s1) (Symbol s2) =
+>    (s1,s2) `notElem`
+>    [("<",">")
+>    ,("<","=")
+>    ,(">","=")
+>    ,("!","=")
+>    ,("|","|")
+>    -- todo: make the lexer special case reject ||| and so on
+>    -- because it is ambiguous
+>    --,("||","|")
+>    ,("|","||")
+>    --,("||","||")
+>    ,("<",">=")
+>    ,("-","-")
+>    ,("/","*")
+>    -- todo: special case make the lexer reject */ next to eachother
+>    -- because trying to interpret it as *,/ will lead to much worse error messages
+>    --,("*","/")
+>    ]
 
+two whitespaces will be combined
 
-E'string'
+> tokensWillPrintAndLex _ Whitespace {} Whitespace {} = False
 
-with a range of escapes which should appear in the dialect data type
+line comment without a newline at the end will eat the next token
 
-dollar quoted strings
-never with prefixes/escapes
+> tokensWillPrintAndLex _ (LineComment s@(_:_)) _ = last s == '\n'
 
-B''
-X''
+this should never happen, but the case satisfies the haskell compiler
+and isn't exactly wrong
 
-numbers
+> tokensWillPrintAndLex _ (LineComment []) _ = False
 
-:: cast
+apart from two above cases, leading and trailing whitespace will always be ok
 
+> tokensWillPrintAndLex _ Whitespace {} _ = True
+> tokensWillPrintAndLex _ _ Whitespace {} = True
 
-type 'string' -  literals only, not array types
-  ansi allows for some specific types
-'string'::type
-cast('string' as type)
+a symbol ending with a '-' followed by a line comment will lex back
+differently, since the --- will combine and move the comment eating
+some of the symbol
 
-can use dollar quoting here
-typename('string') (not all types)
-check these in the parser for keyword issues
+> tokensWillPrintAndLex _ (Symbol s) (LineComment {}) =
+>    case s of
+>        (_:_) -> last s /= '-'
+>        _ -> True
 
-extended operator rules
+in other situations a trailing line comment or a leading or trailing
+block comment will work
 
-$1 positional parameter
-()
-[]
-,
-;
-: array slices and variable names/hostparam
-*
-.
-
-some operator precedence notes
-
-SELECT 3 OPERATOR(pg_catalog.+) 4;
-
-diff from ansi:
-
-all the same symbols + more + different rules about parsing multi char
-symbols (ansi is trivial here, postgresql is not trivial and
-extensible)
-
-identifiers: same, doublecheck the u&
-hostparam: same, but with implementation issues because : is also a
-  symbol in postgresql. this might be a little tricky to deal with
-
-string literals:
-u&?, does pg support n?
-
-numbers: same
-whitespace, comments: same
-
-make sure there is a list of lexical syntax which is valid in postgres
-and not in ansi, and vice versa, and have explicit tests for
-these. There might also be situations here where a string is valid in
-both, but lexes differently. There is definitely cases like this in
-the main syntax.
+> tokensWillPrintAndLex _ _ LineComment {} = True
+> tokensWillPrintAndLex _ _ BlockComment {} = True
+> tokensWillPrintAndLex _ BlockComment {} _ = True
 
 
-action plan:
-no abstract syntax changes are needed
-write down a spec for ansi and for postgresql lexical syntax
-create a list of tests for postgresql
-  include eveything from ansi which is the same: maybe refactor the
-  tests to make this maintainable
 
-design for escaping issues
-  (affects ansi also)
-design for string literal-like syntax and for continuation strings
-  (affects ansi also)
+> tokensWillPrintAndLex _ Symbol {} Identifier {} = True
 
-the test approach in general is first to parse basic examples of each
-kind of token, then to manually come up with some edge cases to test,
-and then to generate a good representative set of tokens (probably the
-same set as the previous two categories), and create the cross product
-of pairs of these tokens, eliminate ones when the tokens are next to
-each other and it doesn't parse as the two separate tokens, using
-manually written rules (want to be super accurate here - no false
-positives or negatives), then test these all parse good as
-well. Separating out the lexing in this way and doing this approach I
-think gives a very good chance of minimising bugs in the basic
-parsing, especially in the hairy bits.
+> tokensWillPrintAndLex _ Symbol {} HostParam {} = True
+> tokensWillPrintAndLex _ Symbol {} PositionalArg {} = True
+> tokensWillPrintAndLex _ Symbol {} SqlString {} = True
+> tokensWillPrintAndLex (Dialect {diSyntaxFlavour = Postgres}) Symbol {} (SqlNumber ('.':_)) = False
+> tokensWillPrintAndLex _ Symbol {} SqlNumber {} = True
 
 
-= lexical syntax
+identifier:
+  symbol ok
+  identifier:
+    alphas then alphas: bad
+    quote then quote (with same start and end quote): bad
+    quote [ ] then quote [ ]: ok? this technically works, not sure if
+    it is a good ui, or requiring whitepace/comment is better. See
+    what sql server does
+    second is quote with prefix: makes it ok
+  host param: ok, but maybe should require whitespace for ui reasons
+  positional arg: ok, but maybe should require whitespace for ui reasons
+  string: ok, but maybe should require whitespace for ui reasons
+  number: ok, but maybe should require whitespace for ui reasons
 
-One possible gotcha: there isn't a one-one correpsondence between e.g
-identifiers and string literals in the lexical syntax, and identifiers
-and string literals in the main syntax.
+> tokensWillPrintAndLex _ Identifier {} Symbol {} = True
+> tokensWillPrintAndLex _ (Identifier Nothing _) (Identifier Nothing _) = False
+> tokensWillPrintAndLex _ (Identifier Nothing _) (Identifier (Just (a,_)) _) =
+>     case a of
+>         (a':_) | isAlpha a' -> False
+>         _ -> True
+> tokensWillPrintAndLex _ (Identifier Just {} _) (Identifier Nothing _) = True
+> tokensWillPrintAndLex _ (Identifier (Just(_,b)) _) (Identifier (Just(c,_)) _) =
+>      not (b == c)
+> tokensWillPrintAndLex _ Identifier {} HostParam {} = True
+> tokensWillPrintAndLex _ Identifier {} PositionalArg {} = True
+> tokensWillPrintAndLex _ (Identifier Nothing _) (SqlString a _ _) =
+>     case a of
+>         (a':_) | isAlpha a' -> False
+>         _ -> True
 
-== ansi
-
-=== symbol
-=== identifier
-+ escaping
-=== quoted identifier
-+ escaping, prefixes
-=== host param
-
-=== string literal-like
-+ escaping, prefixes
-
-=== number literals
-
-=== whitespace
-
-=== comments
-
-== postgresql
-
-=== symbol
-
-=== identifier
-
-== postgresql
-
-=== symbol
-extended set of symbols + extensibility + special cases
-: is a symbol and also part of host param
-
-=== identifier
-
-same as ansi? is the character set the same?
-
-=== quoted identifier
-
-same as ansi?
-
-=== host param
-
-same as ansi (check char set)
-
-=== string literal-like
-
-dollar quoting
-E quoting
-missing n'?
+> tokensWillPrintAndLex _ Identifier {} SqlString {} = True
+> tokensWillPrintAndLex _ (Identifier Nothing _) (SqlNumber s) =
+>     case s of
+>         (s':_) -> not (isDigit s')
+>         _ -> True
+> tokensWillPrintAndLex _ Identifier {} SqlNumber {} = True
 
 
-=== number literals
 
-same as ansi, i think
+> tokensWillPrintAndLex _ HostParam {} Symbol {} = True
+> tokensWillPrintAndLex _ HostParam {} (Identifier Nothing _) = False
+> tokensWillPrintAndLex _ HostParam {} (Identifier (Just (a,_)) _) =
+>     case a of
+>         c:_ -> not (isAlpha c)
+>         [] -> False
 
-=== whitespace
+> tokensWillPrintAndLex _ HostParam {} HostParam {} = True
+> tokensWillPrintAndLex _ HostParam {} PositionalArg {} = True
+> tokensWillPrintAndLex _ HostParam {} (SqlString a _ _) =
+>     case a of
+>         (a':_) | isAlpha a' -> False
+>         _ -> True
+> tokensWillPrintAndLex _ HostParam {} (SqlNumber s) =
+>     case s of
+>         (s':_) -> not (isDigit s')
+>         _ -> True
 
-same as ansi
+> tokensWillPrintAndLex _ PositionalArg {} Symbol {} = True
+> tokensWillPrintAndLex _ PositionalArg {} Identifier {} = True
+> tokensWillPrintAndLex _ PositionalArg {} HostParam {} = True
+> tokensWillPrintAndLex _ PositionalArg {} PositionalArg {} = True
+> tokensWillPrintAndLex _ PositionalArg {} SqlString {} = True -- todo: think carefully about dollar quoting?
+> tokensWillPrintAndLex _ PositionalArg {} (SqlNumber n) =
+>     case n of
+>         (n':_) -> not (isDigit n')
+>         _ -> True
 
-=== comments
+> tokensWillPrintAndLex _ SqlString {} Symbol {} = True
+> tokensWillPrintAndLex _ SqlString {} Identifier {} = True
+> tokensWillPrintAndLex _ SqlString {} HostParam {} = True
+> tokensWillPrintAndLex _ SqlString {} PositionalArg {} = True
 
-same as ansi
+> tokensWillPrintAndLex _ (SqlString _q00 q01 _s0) (SqlString q10 _q11 _s1) =
+>     not (q01 == "'" && q10 == "'")
 
-=== additions
-$1 positional parameter
+> tokensWillPrintAndLex _ SqlString {} SqlNumber {} = True
 
----- find what else is in hssqlppp to support mysql, oracle, sql
-     server
+> tokensWillPrintAndLex _ SqlNumber {} (Symbol ('.':_)) = False
+> tokensWillPrintAndLex _ SqlNumber {} Symbol {} = True
+> tokensWillPrintAndLex _ SqlNumber {} Identifier {} = True
+> tokensWillPrintAndLex _ SqlNumber {} HostParam {} = True
+> tokensWillPrintAndLex _ SqlNumber {} PositionalArg {} = True
 
+todo: check for failures when e following number is fixed
+
+> tokensWillPrintAndLex _ SqlNumber {} (SqlString ('e':_) _ _)  = False
+> tokensWillPrintAndLex _ SqlNumber {} (SqlString ('E':_) _ _)  = False
+> tokensWillPrintAndLex _ SqlNumber {} SqlString {}  = True
+
+> tokensWillPrintAndLex _ (SqlNumber _) (SqlNumber _) = False
+
+todo: special case lexer so a second ., and . and e are not
+allowed after exponent when there is no whitespace, even if there
+is an unambiguous parse
+
+TODO:
+
+lex @variable in sql server
+lex [quoted identifier] in sql server
+lex #variable in oracle
+
+make a new ctor for @var, #var
+
+add token tables and tests for oracle, sql server
+
+add odbc as a dialect flag and include {} as symbols when enabled
+
+add negative / different parse dialect tests
+
+refactor the tokenswillprintlex to be based on pretty printing the
+individual tokens
+
+add special cases to lexer:
+||| three or more pipes is a syntax error (except for postgres)
+    (and not ||,| or |,|| e.g.)
+extra ., e after number without whitespace is a syntax error
+
+reject a */ pair of chars instead of parsing it as a symbol or several
+symbols. Can this appear inside an operator in postgres? Let's make it
+not possible anywhere since this could be really confusing.
+
+do some user documentation on lexing, and lexing/dialects
+
+start thinking about a more separated design for the dialect handling

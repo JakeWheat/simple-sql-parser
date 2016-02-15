@@ -5,15 +5,18 @@ Test for the lexer
 > module Language.SQL.SimpleSQL.LexerTests (lexerTests) where
 
 > import Language.SQL.SimpleSQL.TestTypes
-> import Language.SQL.SimpleSQL.Lex (Token(..))
+> import Language.SQL.SimpleSQL.Lex (Token(..),tokenListWillPrintAndLex)
 > --import Debug.Trace
-> import Data.Char (isAlpha)
+> --import Data.Char (isAlpha)
 > import Data.List
 
 > lexerTests :: TestItem
 > lexerTests = Group "lexerTests" $
 >     [Group "lexer token tests" [ansiLexerTests
->                                ,postgresLexerTests]]
+>                                ,postgresLexerTests
+>                                ,sqlServerLexerTests
+>                                ,oracleLexerTests
+>                                ,odbcLexerTests]]
 
 > ansiLexerTable :: [(String,[Token])]
 > ansiLexerTable =
@@ -70,22 +73,7 @@ Test for the lexer
 >     [ LexerTest ansi2011 (s ++ s1) (t ++ t1)
 >     | (s,t) <- ansiLexerTable
 >     , (s1,t1) <- ansiLexerTable
-
-which combinations won't work:
-<> <= >= || two single symbols which make a double char symbol
-identifier + identifier if both are quoted or unquoted
-string string
-csstring string
-line comment anything (can add newline?)
-number number (todo: double check more carefully)
-
-new idea:
-
-create a function which will say if a series of lexical tokens should
-survive the pretty -> lex cycle unchanged. Maybe this will lead to
-clearer/more maintainable code.
-
->     , isGood $ t ++ t1
+>     , tokenListWillPrintAndLex ansi2011 $ t ++ t1
 
 >     ]
 >     ,Group "adhoc lexer tests" $
@@ -94,73 +82,6 @@ clearer/more maintainable code.
 >        ,("-- line com\nstuff", [LineComment "-- line com\n",Identifier Nothing "stuff"])
 >        ]
 >      ]
-
->  where
->    isGood :: [Token] -> Bool
->    isGood l = {-let b =-} and $ map not [p l | p <- map listPred badCombos]
->               -- in trace ("isGood " ++ show (l,b)) b
->    badCombos :: [((Token -> Bool),(Token -> Bool))]
->    badCombos = [symbolPair "<" ">"
->                ,symbolPair "<" "="
->                ,symbolPair ">" "="
->                ,symbolPair "!" "="
->                ,symbolPair "|" "|"
->                ,symbolPair "||" "|"
->                ,symbolPair "|" "||"
->                ,symbolPair "||" "||"
->                ,symbolPair "<" ">="
-
->                ,symbolPair "-" "-"
->                ,symbolPair "/" "*"
->                ,symbolPair "*" "/"
-
->                ,(isIdentifier, isIdentifier)
->                ,(isDQIdentifier, isDQIdentifier)
->                ,(isCQIdentifier, isDQIdentifier)
->                ,(isString, isNonCsString)
->                ,(isEofLineComment, const True)
->                ,(isNumber, isNumber)
->                ,(isHostParam,isIdentifier)
->                ,(isHostParam,isCsString)
->                ,(isHostParam,isCQIdentifier)
->                ,(isIdentifier,isCsString)
->                ,(isIdentifier,isCQIdentifier)
->                ,(isWhitespace, isWhitespace)
->                ,(isIdentifier, isNumber)
->                ,(isHostParam, isNumber)
->                ,(isMinus, isLineComment)
->                ]
->    isIdentifier (Identifier Nothing _) = True
->    isIdentifier _ = False
->    isDQIdentifier (Identifier (Just ("\"",_)) _) = True
->    isDQIdentifier _ = False
->    isCQIdentifier (Identifier (Just ((x:_),_)) _) | isAlpha x = True
->    isCQIdentifier _ = False
->    isCsString (SqlString (x:_) _ _) | isAlpha x = True
->    isCsString _ = False
->    isString (SqlString _ _ _) = True
->    isString _ = False
->    isNonCsString (SqlString [] _ _) = True
->    isNonCsString (SqlString (x:_) _ _) | not (isAlpha x) = True
->    isNonCsString _ = False
->    isEofLineComment (LineComment s) = last s /= '\n'
->    isEofLineComment _ = False
->    isLineComment (LineComment {}) = True
->    isLineComment _ = False
->    isNumber (SqlNumber{}) = True
->    isNumber _ = False
->    isHostParam (HostParam{}) = True
->    isHostParam _ = False
->    isWhitespace (Whitespace{}) = True
->    isWhitespace _ = False
->    isMinus (Symbol "-") = True
->    isMinus _ = False
->    symbolPair a b = ((==Symbol a), (==Symbol b))
->    listPred :: ((Token -> Bool),(Token -> Bool)) -> [Token] -> Bool
->    listPred _ [] = False
->    listPred _ [_] = False
->    listPred (p,p1) (t:t1:ts) | p t && p1 t1 = True
->                              | otherwise = listPred (p,p1) (t1:ts)
 
 todo: lexing tests
 do quickcheck testing:
@@ -202,7 +123,9 @@ operators without one of the exception chars
 
 also: do the testing for the ansi compatibility special cases
 
->     ++ [ (x, [Symbol x]) | x <- someValidPostgresOperators 4]
+>     ++ [ (x, [Symbol x]) | x <- someValidPostgresOperators 2]
+
+
 >     ++ (let idens = ["a", "_a", "test", "table", "Stuff", "STUFF"]
 >         -- simple identifiers
 >         in map (\i -> (i, [Identifier Nothing i])) idens
@@ -254,6 +177,11 @@ also: do the testing for the ansi compatibility special cases
 >        ,"/* this *is/ a comment */"
 >        ]
 
+> postgresExtraOperatorTable :: [(String,[Token])]
+> postgresExtraOperatorTable =
+>     [ (x, [Symbol x]) | x <- someValidPostgresOperators 4]
+
+
 > someValidPostgresOperators :: Int -> [String]
 > someValidPostgresOperators l =
 >        [ x
@@ -281,8 +209,15 @@ the + or -.
 > postgresLexerTests :: TestItem
 > postgresLexerTests = Group "postgresLexerTests" $
 >     [Group "postgres lexer token tests" $
->      [LexerTest postgres s t | (s,t) <- postgresLexerTable]
->     ,Group "adhoc lexer tests" $
+>      [LexerTest postgres s t | (s,t) <- postgresLexerTable ++ postgresExtraOperatorTable]
+>     ,Group "postgres generated combination lexer tests" $
+>     [ LexerTest postgres (s ++ s1) (t ++ t1)
+>     | (s,t) <- postgresLexerTable
+>     , (s1,t1) <- postgresLexerTable
+>     , tokenListWillPrintAndLex postgres $ t ++ t1
+
+>     ]
+>     ,Group "adhoc postgres lexer tests" $
 >      [LexerTest postgres s t
 >      | (s,t) <- edgeCaseCommentOps
 >                 ++ edgeCasePlusMinusOps
@@ -308,6 +243,36 @@ the + or -.
 >      ]
 
 
+> sqlServerLexerTests :: TestItem
+> sqlServerLexerTests = Group "sqlServerLexerTests" $
+>     [ LexerTest sqlserver s t | (s,t) <-
+>     [--("@variable", [(Identifier (Just ("@", "")) "variable")])
+>     --,("[quoted identifier]", [(Identifier (Just ("[", "]")) "variable")])
+>     ]]
+
+> oracleLexerTests :: TestItem
+> oracleLexerTests = Group "oracleLexerTests" $
+>     [ LexerTest oracle s t | (s,t) <-
+>     [--("#variable", [(Identifier (Just ("#", "")) "variable")])
+>     ]
+>     ]
+
+> odbcLexerTests :: TestItem
+> odbcLexerTests = Group "odbcLexerTests" $
+>     [ LexerTest sqlserver {- {odbc = True} -} s t | (s,t) <-
+>     [--("{}", [Symbol "{", Symbol "}"])
+>     ]
+>     ]
+
 > combos :: [a] -> Int -> [[a]]
 > combos _ 0 = [[]]
 > combos l n = [ x:tl | x <- l, tl <- combos l (n - 1) ]
+
+figure out a way to do quickcheck testing:
+1. generate valid tokens and check they parse
+
+2. combine two generated tokens together for the combo testing
+
+this especially will work much better for the postgresql extensible
+operator tests which doing exhaustively takes ages and doesn't bring
+much benefit over testing a few using quickcheck.
