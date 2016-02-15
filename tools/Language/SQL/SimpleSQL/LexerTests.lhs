@@ -16,6 +16,7 @@ Test for the lexer
 >                                ,postgresLexerTests
 >                                ,sqlServerLexerTests
 >                                ,oracleLexerTests
+>                                ,mySqlLexerTests
 >                                ,odbcLexerTests]]
 
 > ansiLexerTable :: [(String,[Token])]
@@ -283,13 +284,20 @@ the + or -.
 > sqlServerLexerTests = Group "sqlServerLexTests" $
 >     [ LexTest sqlserver s t | (s,t) <-
 >     [("@variable", [(PrefixedVariable '@' "variable")])
->     --,("[quoted identifier]", [(Identifier (Just ("[", "]")) "variable")])
+>     ,("[quoted identifier]", [(Identifier (Just ("[", "]")) "quoted identifier")])
 >     ]]
 
 > oracleLexerTests :: TestItem
 > oracleLexerTests = Group "oracleLexTests" $
 >     [ LexTest oracle s t | (s,t) <-
 >     [("#variable", [(PrefixedVariable '#' "variable")])
+>     ]
+>     ]
+
+> mySqlLexerTests :: TestItem
+> mySqlLexerTests = Group "mySqlLexerTests" $
+>     [ LexTest mysql s t | (s,t) <-
+>     [("`quoted identifier`", [(Identifier (Just ("`", "`")) "quoted identifier")])
 >     ]
 >     ]
 

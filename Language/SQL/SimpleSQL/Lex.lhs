@@ -203,7 +203,12 @@ u&"unicode quoted identifier"
 >     ,Identifier (Just ("U&\"","\"")) <$> (try (string "U&") *> qiden)
 >     ,Identifier Nothing <$> identifierString
 >      -- todo: dialect protection
->     ,Identifier (Just ("`","`")) <$> mySqlQIden
+>     ,guard (diSyntaxFlavour d == MySQL) >>
+>      Identifier (Just ("`","`"))
+>      <$> (char '`' *> takeWhile1 (/='`') <* char '`')
+>     ,guard (diSyntaxFlavour d == SQLServer) >>
+>      Identifier (Just ("[","]"))
+>      <$> (char '[' *> takeWhile1 (`notElem` "[]") <* char ']')
 >     ]
 >   where
 >     qiden = char '"' *> qidenSuffix ""
@@ -215,10 +220,7 @@ u&"unicode quoted identifier"
 >                 void $ char '"'
 >                 qidenSuffix $ concat [t,s,"\"\""]
 >                ,return $ concat [t,s]]
->     -- mysql can quote identifiers with `
->     mySqlQIden = do
->         guard (diSyntaxFlavour d == MySQL)
->         char '`' *> takeWhile1 (/='`') <* char '`'
+
 
 This parses a valid identifier without quotes.
 
@@ -764,15 +766,12 @@ is an unambiguous parse
 TODO:
 
 refactor the tokenswillprintlex to be based on pretty printing the
- individual tokens
+  individual tokens
+make the tokenswill print more dialect accurate. Maybe add symbol
+  chars and identifier chars to the dialect definition and use them from
+  here
 
 start adding negative / different parse dialect tests
-
-lex @variable in sql server
-lex [quoted identifier] in sql server
-lex #variable in oracle
-
-make a new ctor for @var, #var
 
 add token tables and tests for oracle, sql server
 review existing tables
