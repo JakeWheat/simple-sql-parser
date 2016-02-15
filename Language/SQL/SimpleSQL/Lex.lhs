@@ -576,143 +576,136 @@ successes.
 >     tokensWillPrintAndLex d a b && tokenListWillPrintAndLex d (b:xs)
 
 > tokensWillPrintAndLex :: Dialect -> Token -> Token -> Bool
-
-TODO: add more memoization, e.g. create a wrapper which pretty prints
-both tokens so the pretty printed token can be reused in multiple
-cases.
+> tokensWillPrintAndLex d a b
 
 a : followed by an identifier character will look like a host param
 followed by = or : makes a different symbol
 
-> tokensWillPrintAndLex d (Symbol ":") b
->     | (b':_) <- prettyToken d b
->     , isIdentifierChar b' || b' `elem` ":=" = False
+>     | Symbol ":" <- a
+>     , checkFirstBChar (\x -> isIdentifierChar x || x `elem` ":=") = False
 
 two symbols next to eachother will fail if the symbols can combine and
-(possibly just the prefix) look like a different symbol, or if they
-combine to look like comment markers
+(possibly just the prefix) look like a different symbol
 
-> tokensWillPrintAndLex (Dialect {diSyntaxFlavour = Postgres}) (Symbol a) (Symbol x)
->     | x `notElem` ["+", "-"] = False
->     | or (map (`elem` a) "~!@#%^&|`?") = False
+>     | Dialect {diSyntaxFlavour = Postgres} <- d
+>     , Symbol a' <- a
+>     , Symbol b' <- b
+>     , b' `notElem` ["+", "-"] || or (map (`elem` a') "~!@#%^&|`?") = False
 
-> tokensWillPrintAndLex _ (Symbol s1) (Symbol s2)
->    | (s1,s2) `elem`
->      [("<",">")
->      ,("<","=")
->      ,(">","=")
->      ,("!","=")
->      ,("|","|")
->      ,("||","|")
->      ,("|","||")
->      ,("||","||")
->      ,("<",">=")
->      ] = False
+check two adjacent symbols in non postgres where the combination
+possibilities are much more limited. This is ansi behaviour, it might
+be different when the other dialects are done properly
 
-List explicitly all the cases which should fail
+>    | Symbol a' <- a
+>    , Symbol b' <- b
+>    , (a',b') `elem` [("<",">")
+>                     ,("<","=")
+>                     ,(">","=")
+>                     ,("!","=")
+>                     ,("|","|")
+>                     ,("||","|")
+>                     ,("|","||")
+>                     ,("||","||")
+>                     ,("<",">=")
+>                     ] = False
 
 two whitespaces will be combined
 
-> tokensWillPrintAndLex _ Whitespace {} Whitespace {} = False
+>    | Whitespace {} <- a
+>    , Whitespace {} <- b = False
 
 line comment without a newline at the end will eat the next token
 
-> tokensWillPrintAndLex _ (LineComment s@(_:_)) _ = last s == '\n'
+>    | LineComment {} <- a
+>    , checkLastAChar (/='\n') = False
 
-this should never happen, but the case satisfies the haskell compiler
-and isn't exactly wrong
+check the last character of the first token and the first character of
+the second token forming a comment start or end symbol
 
-> tokensWillPrintAndLex _ (LineComment []) _ = False
-
-a token which ends with - followed by another token which starts with
-- will turn into a line comment
-
-> tokensWillPrintAndLex d a b
->     | (a'@(_:_),('-':_)) <- (prettyToken d a, prettyToken d b)
->     , last a' == '-' = False
-
-a token which ends with * followed by a / at the start of the next
-token will cause a problem
-
-> tokensWillPrintAndLex d a b
->     | (a'@(_:_),('/':_)) <- (prettyToken d a, prettyToken d b)
->     , last a' == '*' = False
-
-The reverse is a problem also: ending with / then the next one
-starting with * will create the start of a block comment
-
-todo: write a helper function for a predicate on the last char of the first token and the first char of the second token since this appears quite a few times
-
-> tokensWillPrintAndLex d a b
->     | (a'@(_:_),('*':_)) <- (prettyToken d a, prettyToken d b)
->     , last a' == '/' = False
+>    | let f '-' '-' = True
+>          f '/' '*' = True
+>          f '*' '/' = True
+>          f _ _ = False
+>      in checkBorderChars f = False
 
 a symbol will absorb a following .
-TODO: not 100% on this
+TODO: not 100% on this always being bad
 
-> tokensWillPrintAndLex d Symbol {} b
->     | ('.':_) <- prettyToken d b = False
+>    |  Symbol {} <- a
+>    , checkFirstBChar (=='.') = False
 
 unquoted identifier followed by an identifier letter
 
-> tokensWillPrintAndLex d (Identifier Nothing _) b
->     | (b':_) <- prettyToken d b
->     , isIdentifierChar b' = False
+>    | Identifier Nothing _ <- a
+>    , checkFirstBChar isIdentifierChar = False
 
-two quoted identifiers with the same quote next to each other will
-parse back as one identifier with the quote symbol in the middle
+a quoted identifier using ", followed by a " will fail
 
-> tokensWillPrintAndLex _ (Identifier (Just (_,[a])) _) (Identifier (Just ([b],_)) _)
->     | a == b = False
+>    | Identifier (Just (_,"\"")) _ <- a
+>    , checkFirstBChar (=='"') = False
 
 host param followed by an identifier char will be absorbed
 
-> tokensWillPrintAndLex d HostParam {} b
->     | (b':_) <- prettyToken d b
->     , isIdentifierChar b' = False
+>    | HostParam {} <- a
+>    , checkFirstBChar isIdentifierChar = False
 
 prefixed variable same:
 
-> tokensWillPrintAndLex d PrefixedVariable {} b
->     | (b':_) <- prettyToken d b
->     , isIdentifierChar b' = False
+>    | PrefixedVariable {} <- a
+>    , checkFirstBChar isIdentifierChar = False
 
 a positional arg will absorb a following digit
 
-> tokensWillPrintAndLex d PositionalArg {} b
->     | (b':_) <- prettyToken d b
->     , isDigit b' = False
+>    | PositionalArg {} <- a
+>    , checkFirstBChar isDigit = False
 
 a string ending with ' followed by a token starting with ' will be absorbed
 
-> tokensWillPrintAndLex d (SqlString _q00 "'" _s0) b
->     | ('\'':_) <- prettyToken d b = False
+>    | SqlString _ "'" _ <- a
+>    , checkFirstBChar (=='\'') = False
 
 a number followed by a . will fail or be absorbed
 
-> tokensWillPrintAndLex d SqlNumber {} b
->     | ('.':_) <- prettyToken d b = False
+>    | SqlNumber {} <- a
+>    , checkFirstBChar (=='.') = False
 
 a number followed by an e or E will fail or be absorbed
 
-> tokensWillPrintAndLex d SqlNumber {} b
->     | ('e':_) <- prettyToken d b = False
->     | ('E':_) <- prettyToken d b = False
+>    | SqlNumber {} <- a
+>    , checkFirstBChar (\x -> x =='e' || x == 'E') = False
 
 two numbers next to eachother will fail or be absorbed
 
-> tokensWillPrintAndLex _ SqlNumber {} SqlNumber {} = False
+>    | SqlNumber {} <- a
+>    , SqlNumber {} <- b = False
+>
+>    | otherwise = True
 
-> tokensWillPrintAndLex _ _ _ = True
 
-todo: special case lexer so a second ., and . and e are not
-allowed after exponent when there is no whitespace, even if there
-is an unambiguous parse
+>   where
+>     prettya = prettyToken d a
+>     prettyb = prettyToken d b
+>     -- helper function to run a predicate on the
+>     -- last character of the first token and the first
+>     -- character of the second token
+>     checkBorderChars f
+>         | (_:_) <- prettya
+>         , (fb:_) <- prettyb
+>         , la <- last prettya
+>         = f la fb
+>     checkBorderChars _ = False
+>     checkFirstBChar f = case prettyb of
+>                           (b':_) -> f b'
+>                           _ -> False
+>     checkLastAChar f = case prettya of
+>                           (_:_) -> f $ last prettya
+>                           _ -> False
+
+
+
 
 TODO:
 
-refactor the tokenswillprintlex to be based on pretty printing the
-  individual tokens
 make the tokenswill print more dialect accurate. Maybe add symbol
   chars and identifier chars to the dialect definition and use them from
   here
@@ -724,9 +717,6 @@ review existing tables
 
 look for refactoring opportunities, especially the token
 generation tables in the tests
-
-add odbc as a dialect flag and include {} as symbols when enabled
-
 
 do some user documentation on lexing, and lexing/dialects
 
