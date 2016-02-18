@@ -208,6 +208,24 @@ this can be moved to the dialect at some point
 > isIdentifierChar :: Char -> Bool
 > isIdentifierChar c = c == '_' || isAlphaNum c
 
+use try because : and @ can be part of other things also
+
+> prefixedVariable :: Dialect -> Parser Token
+> prefixedVariable  d = try $ choice
+>     [PrefixedVariable <$> char ':' <*> identifierString
+>     ,guard (diSyntaxFlavour d == SQLServer) >>
+>      PrefixedVariable <$> char '@' <*> identifierString
+>     ,guard (diSyntaxFlavour d == Oracle) >>
+>      PrefixedVariable <$> char '#' <*> identifierString
+>     ]
+
+> positionalArg :: Dialect -> Parser Token
+> positionalArg d =
+>   guard (diSyntaxFlavour d == Postgres) >>
+>   -- use try to avoid ambiguities with other syntax which starts with dollar
+>   PositionalArg <$> try (char '$' *> (read <$> many1 digit))
+
+
 Parse a SQL string. Examples:
 
 'basic string'
@@ -262,23 +280,7 @@ x'hexidecimal string'
 >                   ++ [string "u&'"
 >                      ,string "U&'"]
 
-use try because : and @ can be part of other things also
-
-> prefixedVariable :: Dialect -> Parser Token
-> prefixedVariable  d = try $ choice
->     [PrefixedVariable <$> char ':' <*> identifierString
->     ,guard (diSyntaxFlavour d == SQLServer) >>
->      PrefixedVariable <$> char '@' <*> identifierString
->     ,guard (diSyntaxFlavour d == Oracle) >>
->      PrefixedVariable <$> char '#' <*> identifierString
->     ]
-
-> positionalArg :: Dialect -> Parser Token
-> positionalArg d =
->   guard (diSyntaxFlavour d == Postgres) >>
->   -- use try to avoid ambiguities with other syntax which starts with dollar
->   PositionalArg <$> try (char '$' *> (read <$> many1 digit))
-
+numbers
 
 digits
 digits.[digits][e[+-]digits]
