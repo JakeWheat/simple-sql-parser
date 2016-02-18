@@ -20,6 +20,7 @@ Tests for parsing value expressions
 >     ,subqueries
 >     ,aggregates
 >     ,windowFunctions
+>     ,functionsWithReservedNames
 >     ]
 
 > literals :: TestItem
@@ -404,3 +405,11 @@ target_string
 >     [("(a)", Parens (Iden [Name Nothing "a"]))
 >     ,("(a + b)", Parens (BinOp (Iden [Name Nothing "a"]) [Name Nothing "+"] (Iden [Name Nothing "b"])))
 >     ]
+
+> functionsWithReservedNames :: TestItem
+> functionsWithReservedNames = Group "functionsWithReservedNames" $ map t
+>     ["abs"
+>     ,"char_length"
+>     ]
+>   where
+>     t fn = TestValueExpr ansi2011 (fn ++ "(a)") $ App [Name Nothing fn] [Iden [Name Nothing "a"]]

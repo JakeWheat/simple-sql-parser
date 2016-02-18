@@ -711,6 +711,7 @@ all the value expressions which start with an identifier
 >     -- todo: work out how to left factor this
 >     try (TypedLit <$> typeName <*> singleQuotesOnlyStringTok)
 >     <|> multisetSetFunction
+>     <|> (try keywordFunction <**> app)
 >     <|> (names <**> option Iden app)
 >   where
 >     -- this is a special case because set is a reserved keyword
@@ -719,6 +720,70 @@ all the value expressions which start with an identifier
 >         App [Name Nothing "set"] . (:[]) <$>
 >         (try (keyword_ "set" *> openParen)
 >          *> valueExpr <* closeParen)
+>     keywordFunction =
+>         let makeKeywordFunction x = if map toLower x `elem` keywordFunctionNames
+>                                     then return [Name Nothing x]
+>                                     else fail ""
+>         in unquotedIdentifierTok [] Nothing >>= makeKeywordFunction
+>     -- todo: this list should be in the dialects
+>     -- we should have tests to check these work
+>     -- we should have tests to check if they are used elsewhere, you
+>     -- get a keyword failure
+>     -- these are the names of functions which are also keywords
+>     -- so this identifier can only be used unquoted for a function application
+>     -- and nowhere else
+>     -- not sure if this list is 100% correct
+>     -- todo: make a corresponding list of reserved keywords which can be
+>     -- parsed as an identifier
+>     keywordFunctionNames = ["abs"
+>                            ,"all"
+>                            ,"any"
+>                            ,"array_agg"
+>                            ,"avg"
+>                            ,"ceil"
+>                            ,"ceiling"
+>                            ,"char_length"
+>                            ,"character_length"
+>                            ,"coalesce"
+>                            ,"collect"
+>                            ,"contains"
+>                            ,"convert"
+>                            ,"corr"
+>                            ,"covar_pop"
+>                            ,"covar_samp"
+>                            ,"count"
+>                            ,"cume_dist"
+>                            ,"grouping"
+>                            ,"intersection"
+>                            ,"ln"
+>                            ,"max"
+>                            ,"mod"
+>                            ,"percent_rank"
+>                            ,"percentile_cont"
+>                            ,"percentile_disc"
+>                            ,"power"
+>                            ,"rank"
+>                            ,"regr_avgx"
+>                            ,"regr_avgy"
+>                            ,"regr_count"
+>                            ,"regr_intercept"
+>                            ,"regr_r2"
+>                            ,"regr_slope"
+>                            ,"regr_sxx"
+>                            ,"regr_sxy"
+>                            ,"regr_syy"
+>                            ,"row"
+>                            ,"row_number"
+>                            ,"some"
+>                            ,"stddev_pop"
+>                            ,"stddev_samp"
+>                            ,"sum"
+>                            ,"upper"
+>                            ,"var_pop"
+>                            ,"var_samp"
+>                            ,"width_bucket"
+>                            ]
+
 
 === special
 
@@ -2096,17 +2161,20 @@ The standard has a weird mix of reserved keywords and unreserved
 keywords (I'm not sure what exactly being an unreserved keyword
 means).
 
+can't work out if aggregate functions are supposed to be reserved or
+not, leave them unreserved for now
+
 > reservedWord :: Dialect -> [String]
 > reservedWord d | diSyntaxFlavour d == ANSI2011 =
 >     ["abs"
->     --,"all"
+>     ,"all"
 >     ,"allocate"
 >     ,"alter"
 >     ,"and"
->     --,"any"
+>     ,"any"
 >     ,"are"
 >     ,"array"
->     --,"array_agg"
+>     ,"array_agg"
 >     ,"array_max_cardinality"
 >     ,"as"
 >     ,"asensitive"
@@ -2114,7 +2182,7 @@ means).
 >     ,"at"
 >     ,"atomic"
 >     ,"authorization"
->     --,"avg"
+>     ,"avg"
 >     ,"begin"
 >     ,"begin_frame"
 >     ,"begin_partition"
@@ -2142,7 +2210,7 @@ means).
 >     ,"close"
 >     ,"coalesce"
 >     ,"collate"
->     --,"collect"
+>     ,"collect"
 >     ,"column"
 >     ,"commit"
 >     ,"condition"
@@ -2150,15 +2218,15 @@ means).
 >     ,"constraint"
 >     ,"contains"
 >     ,"convert"
->     --,"corr"
+>     ,"corr"
 >     ,"corresponding"
->     --,"count"
->     --,"covar_pop"
->     --,"covar_samp"
+>     ,"count"
+>     ,"covar_pop"
+>     ,"covar_samp"
 >     ,"create"
 >     ,"cross"
 >     ,"cube"
->     --,"cume_dist"
+>     ,"cume_dist"
 >     ,"current"
 >     ,"current_catalog"
 >     --,"current_date"
@@ -2225,7 +2293,7 @@ means).
 >     ,"global"
 >     ,"grant"
 >     ,"group"
->     --,"grouping"
+>     ,"grouping"
 >     ,"groups"
 >     ,"having"
 >     ,"hold"
@@ -2240,7 +2308,7 @@ means).
 >     ,"int"
 >     ,"integer"
 >     ,"intersect"
->     --,"intersection"
+>     ,"intersection"
 >     ,"interval"
 >     ,"into"
 >     ,"is"
@@ -2261,7 +2329,7 @@ means).
 >     ,"localtimestamp"
 >     ,"lower"
 >     ,"match"
->     --,"max"
+>     ,"max"
 >     ,"member"
 >     ,"merge"
 >     ,"method"
@@ -2304,9 +2372,9 @@ means).
 >     ,"parameter"
 >     ,"partition"
 >     ,"percent"
->     --,"percent_rank"
->     --,"percentile_cont"
->     --,"percentile_disc"
+>     ,"percent_rank"
+>     ,"percentile_cont"
+>     ,"percentile_disc"
 >     ,"period"
 >     ,"portion"
 >     ,"position"
@@ -2318,22 +2386,22 @@ means).
 >     ,"primary"
 >     ,"procedure"
 >     ,"range"
->     --,"rank"
+>     ,"rank"
 >     ,"reads"
 >     ,"real"
 >     ,"recursive"
 >     ,"ref"
 >     ,"references"
 >     ,"referencing"
->     --,"regr_avgx"
->     --,"regr_avgy"
->     --,"regr_count"
->     --,"regr_intercept"
->     --,"regr_r2"
->     --,"regr_slope"
->     --,"regr_sxx"
->     --,"regr_sxy"
->     --,"regr_syy"
+>     ,"regr_avgx"
+>     ,"regr_avgy"
+>     ,"regr_count"
+>     ,"regr_intercept"
+>     ,"regr_r2"
+>     ,"regr_slope"
+>     ,"regr_sxx"
+>     ,"regr_sxy"
+>     ,"regr_syy"
 >     ,"release"
 >     ,"result"
 >     ,"return"
@@ -2342,7 +2410,7 @@ means).
 >     ,"right"
 >     ,"rollback"
 >     ,"rollup"
->     --,"row"
+>     ,"row"
 >     ,"row_number"
 >     ,"rows"
 >     ,"savepoint"
@@ -2356,7 +2424,7 @@ means).
 >     ,"set"
 >     ,"similar"
 >     ,"smallint"
->     --,"some"
+>     ,"some"
 >     ,"specific"
 >     ,"specifictype"
 >     ,"sql"
@@ -2366,13 +2434,13 @@ means).
 >     ,"sqrt"
 >     --,"start"
 >     ,"static"
->     --,"stddev_pop"
->     --,"stddev_samp"
+>     ,"stddev_pop"
+>     ,"stddev_samp"
 >     ,"submultiset"
 >     ,"substring"
 >     ,"substring_regex"
 >     ,"succeeds"
->     --,"sum"
+>     ,"sum"
 >     ,"symmetric"
 >     ,"system"
 >     ,"system_time"
@@ -2407,8 +2475,8 @@ means).
 >     --,"value"
 >     ,"values"
 >     ,"value_of"
->     --,"var_pop"
->     --,"var_samp"
+>     ,"var_pop"
+>     ,"var_samp"
 >     ,"varbinary"
 >     ,"varchar"
 >     ,"varying"
