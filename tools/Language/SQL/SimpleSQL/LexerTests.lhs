@@ -42,7 +42,8 @@ Test for the lexer
 >     -- the lexer doesn't apply escapes at all
 >     ++ [("'string'", [SqlString "'" "'" "string"])
 >        ,("'normal '' quote'", [SqlString "'" "'" "normal '' quote"])
->        ,("'normalendquote '''", [SqlString "'" "'" "normalendquote ''"])]
+>        ,("'normalendquote '''", [SqlString "'" "'" "normalendquote ''"])
+>        ,("'\n'", [SqlString "'" "'" "\n"])]
 >     -- csstrings
 >     ++ map (\c -> (c ++ "'test'", [SqlString (c ++ "'") "'" "test"]))
 >        ["n", "N","b", "B","x", "X", "u&"]
@@ -164,6 +165,8 @@ also: do the testing for the ansi compatibility special cases
 >     ++ [("'string'", [SqlString "'" "'" "string"])
 >        ,("'normal '' quote'", [SqlString "'" "'" "normal '' quote"])
 >        ,("'normalendquote '''", [SqlString "'" "'" "normalendquote ''"])
+>        ,("'\n'", [SqlString "'" "'" "\n"])
+>        ,("E'\n'", [SqlString "E'" "'" "\n"])
 >        ,("e'this '' quote'", [SqlString "e'" "'" "this '' quote"])
 >        ,("e'this \\' quote'", [SqlString "e'" "'" "this \\' quote"])
 >        ,("'not this \\' quote", [SqlString "'" "'" "not this \\"
@@ -257,7 +260,10 @@ the + or -.
 >         ,LexFails postgres "12e3.4"
 >         ,LexFails postgres "12.4.5"
 >         ,LexFails postgres "12.4e5.6"
->         ,LexFails postgres "12.4e5e7"]
+>         ,LexFails postgres "12.4e5e7"
+>          -- special case allow this to lex to 1 .. 2
+>          -- this is for 'for loops' in plpgsql
+>         ,LexTest postgres "1..2" [SqlNumber "1", Symbol "..", SqlNumber "2"]]
 >     ]
 >  where
 >    edgeCaseCommentOps =

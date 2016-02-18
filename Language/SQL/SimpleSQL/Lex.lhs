@@ -294,10 +294,15 @@ considered part of the constant; it is an operator applied to the
 constant.
 
 > sqlNumber :: Dialect -> Parser Token
-> sqlNumber _ =
+> sqlNumber d =
 >     SqlNumber <$> completeNumber
 >     -- this is for definitely avoiding possibly ambiguous source
->     <* notFollowedBy (oneOf "eE.")
+>     <* choice [-- special case to allow e.g. 1..2
+>                guard (diSyntaxFlavour d == Postgres)
+>                *> (void $ lookAhead $ try $ string "..")
+>                   <|> void (notFollowedBy (oneOf "eE."))
+>               ,notFollowedBy (oneOf "eE.")
+>               ]
 >   where
 >     completeNumber =
 >       (int <??> (pp dot <??.> pp int)
@@ -309,7 +314,13 @@ constant.
 >       <??> pp expon
 
 >     int = many1 digit
->     dot = string "."
+>     -- make sure we don't parse two adjacent dots in a number
+>     -- special case for postgresql, we backtrack if we see two adjacent dots
+>     -- to parse 1..2, but in other dialects we commit to the failure
+>     dot = let p = string "." <* notFollowedBy (char '.')
+>           in if (diSyntaxFlavour d == Postgres)
+>              then try p
+>              else p
 >     expon = (:) <$> oneOf "eE" <*> sInt
 >     sInt = (++) <$> option "" (string "+" <|> string "-") <*> int
 >     pp = (<$$> (++))
