@@ -215,7 +215,7 @@ use try because : and @ can be part of other things also
 >     [PrefixedVariable <$> char ':' <*> identifierString
 >     ,guard (diSyntaxFlavour d == SQLServer) >>
 >      PrefixedVariable <$> char '@' <*> identifierString
->     ,guard (diSyntaxFlavour d == Oracle) >>
+>     ,guard (diSyntaxFlavour d == SQLServer) >>
 >      PrefixedVariable <$> char '#' <*> identifierString
 >     ]
 
