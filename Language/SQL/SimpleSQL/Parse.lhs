@@ -1356,7 +1356,11 @@ aliases.
 >          n <- names
 >          choice [TRFunction n
 >                  <$> parens (commaSep valueExpr)
->                 ,pure $ TRSimple n]] <??> aliasSuffix
+>                 ,pure $ TRSimple n]
+>          -- todo: I think you can only have outer joins inside the oj,
+>          -- not sure.
+>         ,TROdbc <$> (symbol "{" *> keyword_ "oj" *> tref <* symbol "}")
+>         ] <??> aliasSuffix
 >     aliasSuffix = fromAlias <$$> TRAlias
 >     joinTrefSuffix t =
 >         (TRJoin t <$> option False (True <$ keyword_ "natural")

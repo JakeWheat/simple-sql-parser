@@ -430,6 +430,8 @@ I'm not sure if this is valid syntax or not.
 >               | TRFunction [Name] [ValueExpr]
 >                 -- | from lateral t
 >               | TRLateral TableRef
+>                 -- | ODBC {oj t1 left outer join t2 on expr} syntax
+>               | TROdbc TableRef
 >                 deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | Represents an alias for a table valued expression, used in with

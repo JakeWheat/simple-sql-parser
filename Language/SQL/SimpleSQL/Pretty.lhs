@@ -390,6 +390,7 @@ which have been changed to try to improve the layout of the output.
 >            ,if b then text "natural" else empty
 >            ,joinText jt <+> tr t1
 >            ,joinCond jc]
+>     tr (TROdbc t) = text "{oj" <+> tr t <+> text "}"
 >     joinText jt =
 >       sep [case jt of
 >               JInner -> text "inner"

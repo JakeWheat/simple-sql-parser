@@ -28,21 +28,21 @@
 >               [OdbcFunc (ap "CURDATE" [])
 >               ,iden "SQL_DATE"])
 >             ]
->        {-,Group "outer join" [
->              ParseQueryExpr defaultParseFlags
->              "select * from {oj t1 left outer join t2 on true}"
+>        ,Group "outer join" [
+>              TestQueryExpr ansi2011 {allowOdbc=True}
+>              "select * from {oj t1 left outer join t2 on expr}"
 >              $ makeSelect
->             {selSelectList = sl [si $ Star ea]
->             ,selTref = [OdbcTableRef ea (JoinTref ea (tref "t1") Unnatural LeftOuter Nothing
->                                          (tref "t2") (Just $ JoinOn ea (BooleanLit ea True)))]}]
+>                    {qeSelectList = [(Star,Nothing)]
+>                    ,qeFrom = [TROdbc $ TRJoin (TRSimple [Name Nothing "t1"]) False JLeft (TRSimple [Name Nothing "t2"])
+>                                          (Just $ JoinOn $ Iden [Name Nothing "expr"])]}]
 >        ,Group "check parsing bugs" [
->              ParseQueryExpr defaultParseFlags
+>              TestQueryExpr ansi2011 {allowOdbc=True}
 >              "select {fn CONVERT(cint,SQL_BIGINT)} from t;"
 >              $ makeSelect
->             {selSelectList = sl [si $ OdbcFunc ea (App ea (name "CONVERT")
->                                                            [ei "cint"
->                                                            ,ei "SQL_BIGINT"])]
->             ,selTref = [tref "t"]}]-}
+>                    {qeSelectList = [(OdbcFunc (ap "CONVERT"
+>                                                       [iden "cint"
+>                                                       ,iden "SQL_BIGINT"]), Nothing)]
+>                    ,qeFrom = [TRSimple [Name Nothing "t"]]}]
 >        ]
 >   where
 >     e = TestValueExpr ansi2011 {allowOdbc = True}
