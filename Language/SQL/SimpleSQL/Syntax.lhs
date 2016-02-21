@@ -109,6 +109,7 @@
 >     | Star
 
 >     | Parameter -- ^ Represents a ? in a parameterized query
+>     | PositionalArg Int -- ^ Represents an e.g. $1 in a parameterized query
 >     | HostParameter String (Maybe String) -- ^ represents a host
 >                                           -- parameter, e.g. :a. The
 >                                           -- Maybe String is for the

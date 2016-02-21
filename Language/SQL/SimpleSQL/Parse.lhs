@@ -586,6 +586,11 @@ select x from t where x > :param
 >      <$> hostParamTok
 >      <*> optionMaybe (keyword "indicator" *> hostParamTok)]
 
+== positional arg
+
+> positionalArg :: Parser ValueExpr
+> positionalArg = PositionalArg <$> positionalArgTok
+
 == parens
 
 value expression parens, row ctor and scalar subquery
@@ -1238,6 +1243,7 @@ documenting/fixing.
 > term :: Parser ValueExpr
 > term = choice [simpleLiteral
 >               ,parameter
+>               ,positionalArg
 >               ,star
 >               ,parensExpr
 >               ,caseExpr
@@ -2047,6 +2053,13 @@ It is only allowed when all the strings are quoted with ' atm.
 >     case tok of
 >       L.PrefixedVariable c p -> Just (c:p)
 >       _ -> Nothing)
+
+> positionalArgTok :: Parser Int
+> positionalArgTok = mytoken (\tok ->
+>     case tok of
+>       L.PositionalArg p -> Just p
+>       _ -> Nothing)
+
 
 > sqlNumberTok :: Bool -> Parser String
 > sqlNumberTok intOnly = mytoken (\tok ->

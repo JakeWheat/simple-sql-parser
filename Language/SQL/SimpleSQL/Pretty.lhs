@@ -52,6 +52,7 @@ which have been changed to try to improve the layout of the output.
 > valueExpr _ (Iden i) = names i
 > valueExpr _ Star = text "*"
 > valueExpr _ Parameter = text "?"
+> valueExpr _ (PositionalArg n) = text $ "$" ++ show n
 > valueExpr _ (HostParameter p i) =
 >     text p
 >     <+> me (\i' -> text "indicator" <+> text i') i

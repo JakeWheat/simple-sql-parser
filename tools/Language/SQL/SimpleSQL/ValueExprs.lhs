@@ -60,9 +60,9 @@ Tests for parsing value expressions
 >     ]
 
 > parameter :: TestItem
-> parameter = Group "parameter" $ map (uncurry (TestValueExpr ansi2011))
->     [("?", Parameter)
->     ]
+> parameter = Group "parameter"
+>     [TestValueExpr ansi2011 "?" Parameter
+>     ,TestValueExpr postgres "$13" $ PositionalArg 13]
 
 
 > dots :: TestItem
