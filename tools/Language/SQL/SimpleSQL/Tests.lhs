@@ -26,6 +26,7 @@ test data to the Test.Framework tests.
 > import Language.SQL.SimpleSQL.QueryExprs
 > import Language.SQL.SimpleSQL.TableRefs
 > import Language.SQL.SimpleSQL.ValueExprs
+> import Language.SQL.SimpleSQL.Odbc
 > import Language.SQL.SimpleSQL.Tpch
 > import Language.SQL.SimpleSQL.LexerTests
 
@@ -45,6 +46,7 @@ order on the generated documentation.
 >     Group "parserTest"
 >     [lexerTests
 >     ,valueExprTests
+>     ,odbcTests
 >     ,queryExprComponentTests
 >     ,queryExprsTests
 >     ,tableRefTests

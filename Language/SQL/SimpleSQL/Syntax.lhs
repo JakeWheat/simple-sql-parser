@@ -19,6 +19,7 @@
 >     ,Frame(..)
 >     ,FrameRows(..)
 >     ,FramePos(..)
+>     ,OdbcLiteralType(..)
 >      -- * Query expressions
 >     ,QueryExpr(..)
 >     ,makeSelect
@@ -215,6 +216,10 @@ in other places
 >     | MultisetQueryCtor QueryExpr
 >     | NextValueFor [Name]
 >     | VEComment [Comment] ValueExpr
+>     | OdbcLiteral OdbcLiteralType String
+>       -- ^ an odbc literal e.g. {d '2000-01-01'}
+>     | OdbcFunc ValueExpr
+>       -- ^ an odbc function call e.g. {fn CHARACTER_LENGTH('test')}
 >       deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | Represents an identifier name, which can be quoted or unquoted.
@@ -303,6 +308,15 @@ not sure if scalar subquery, exists and unique should be represented like this
 >               | Following ValueExpr
 >               | UnboundedFollowing
 >                 deriving (Eq,Show,Read,Data,Typeable)
+
+
+> -- | the type of an odbc literal (e.g. {d '2000-01-01'}),
+> -- correpsonding to the letter after the opening {
+> data OdbcLiteralType = OLDate
+>                      | OLTime
+>                      | OLTimestamp
+>                        deriving (Eq,Show,Read,Data,Typeable)
+
 
 > -- | Represents a query expression, which can be:
 > --

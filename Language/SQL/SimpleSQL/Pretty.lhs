@@ -227,6 +227,16 @@ which have been changed to try to improve the layout of the output.
 > valueExpr d (VEComment cmt v) =
 >     vcat $ map comment cmt ++ [valueExpr d v]
 
+> valueExpr _ (OdbcLiteral t s) =
+>     text "{" <> lt t <+> quotes (text s) <> text "}"
+>   where
+>     lt OLDate = text "d"
+>     lt OLTime = text "t"
+>     lt OLTimestamp = text "ts"
+
+> valueExpr d (OdbcFunc e) =
+>     text "{fn" <+> valueExpr d e <> text "}"
+
 > unname :: Name -> String
 > unname (Name Nothing n) = n
 > unname (Name (Just (s,e)) n) =

@@ -1104,6 +1104,25 @@ separate suffix.
 >     i <- names
 >     pure $ \v -> Collate v i
 
+== odbc syntax
+
+the parser supports three kinds of odbc syntax, two of which are
+scalar expressions (the other is a variation on joins)
+
+
+> odbcExpr :: Parser ValueExpr
+> odbcExpr = between (symbol "{") (symbol "}")
+>            (odbcTimeLit <|> odbcFunc)
+>   where
+>     odbcTimeLit =
+>         OdbcLiteral <$> choice [OLDate <$ keyword "d"
+>                                ,OLTime <$ keyword "t"
+>                                ,OLTimestamp <$ keyword "ts"]
+>                     <*> singleQuotesOnlyStringTok
+>     -- todo: this parser is too general, the expr part
+>     -- should be only a function call (from a whitelist of functions)
+>     -- or the extract operator
+>     odbcFunc = OdbcFunc <$> (keyword "fn" *> valueExpr)
 
 ==  operators
 
@@ -1254,7 +1273,8 @@ documenting/fixing.
 >               ,subquery
 >               ,intervalLit
 >               ,specialOpKs
->               ,idenExpr]
+>               ,idenExpr
+>               ,odbcExpr]
 >        <?> "value expression"
 
 expose the b expression for window frame clause range between
