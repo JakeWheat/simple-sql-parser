@@ -23,7 +23,7 @@
 >      -- * Query expressions
 >     ,QueryExpr(..)
 >     ,makeSelect
->     ,CombineOp(..)
+>     ,SetOperatorName(..)
 >     ,Corresponding(..)
 >     ,Alias(..)
 >     ,GroupingExpr(..)
@@ -211,7 +211,7 @@ in other places
 >     --  | Escape ScalarExpr Char
 >     --  | UEscape ScalarExpr Char
 >     | Collate ScalarExpr [Name]
->     | MultisetBinOp ScalarExpr CombineOp SetQuantifier ScalarExpr
+>     | MultisetBinOp ScalarExpr SetOperatorName SetQuantifier ScalarExpr
 >     | MultisetCtor [ScalarExpr]
 >     | MultisetQueryCtor QueryExpr
 >     | NextValueFor [Name]
@@ -349,9 +349,9 @@ This would make some things a bit cleaner?
 >       ,qeOffset :: Maybe ScalarExpr
 >       ,qeFetchFirst :: Maybe ScalarExpr
 >       }
->     | CombineQueryExpr
+>     | QueryExprSetOp
 >       {qe0 :: QueryExpr
->       ,qeCombOp :: CombineOp
+>       ,qeCombOp :: SetOperatorName
 >       ,qeSetQuantifier :: SetQuantifier
 >       ,qeCorresponding :: Corresponding
 >       ,qe1 :: QueryExpr
@@ -402,7 +402,7 @@ I'm not sure if this is valid syntax or not.
 > -- | The direction for a column in order by.
 > data Direction = DirDefault | Asc | Desc deriving (Eq,Show,Read,Data,Typeable)
 > -- | Query expression set operators.
-> data CombineOp = Union | Except | Intersect deriving (Eq,Show,Read,Data,Typeable)
+> data SetOperatorName = Union | Except | Intersect deriving (Eq,Show,Read,Data,Typeable)
 > -- | Corresponding, an option for the set operators.
 > data Corresponding = Corresponding | Respectively deriving (Eq,Show,Read,Data,Typeable)
 

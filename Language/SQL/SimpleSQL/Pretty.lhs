@@ -333,7 +333,7 @@ which have been changed to try to improve the layout of the output.
 >                 else text "fetch first" <+> scalarExpr dia e
 >                      <+> text "rows only") fe
 
-> queryExpr dia (CombineQueryExpr q1 ct d c q2) =
+> queryExpr dia (QueryExprSetOp q1 ct d c q2) =
 >   sep [queryExpr dia q1
 >       ,text (case ct of
 >                 Union -> "union"

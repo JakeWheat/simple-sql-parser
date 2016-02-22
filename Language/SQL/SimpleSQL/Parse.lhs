@@ -1523,7 +1523,7 @@ be in the public syntax?
 >         <*> option SQDefault duplicates
 >         <*> corr
 >   where
->     cq o d c q0 q1 = CombineQueryExpr q0 o d c q1
+>     cq o d c q0 q1 = QueryExprSetOp q0 o d c q1
 >     setOpK = choice [Union <$ keyword_ "union"
 >                     ,Intersect <$ keyword_ "intersect"
 >                     ,Except <$ keyword_ "except"]
