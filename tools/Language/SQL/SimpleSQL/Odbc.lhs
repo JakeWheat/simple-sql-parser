@@ -45,7 +45,7 @@
 >                    ,qeFrom = [TRSimple [Name Nothing "t"]]}]
 >        ]
 >   where
->     e = TestValueExpr ansi2011 {allowOdbc = True}
+>     e = TestScalarExpr ansi2011 {allowOdbc = True}
 >     --tsql = ParseProcSql defaultParseFlags {pfDialect=sqlServerDialect}
 >     ap n = App [Name Nothing n]
 >     iden n = Iden [Name Nothing n]

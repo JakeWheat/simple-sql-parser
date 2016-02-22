@@ -25,7 +25,7 @@ test data to the Test.Framework tests.
 > import Language.SQL.SimpleSQL.QueryExprComponents
 > import Language.SQL.SimpleSQL.QueryExprs
 > import Language.SQL.SimpleSQL.TableRefs
-> import Language.SQL.SimpleSQL.ValueExprs
+> import Language.SQL.SimpleSQL.ScalarExprs
 > import Language.SQL.SimpleSQL.Odbc
 > import Language.SQL.SimpleSQL.Tpch
 > import Language.SQL.SimpleSQL.LexerTests
@@ -45,7 +45,7 @@ order on the generated documentation.
 > testData =
 >     Group "parserTest"
 >     [lexerTests
->     ,valueExprTests
+>     ,scalarExprTests
 >     ,odbcTests
 >     ,queryExprComponentTests
 >     ,queryExprsTests
@@ -71,8 +71,8 @@ order on the generated documentation.
 > itemToTest :: TestItem -> T.TestTree
 > itemToTest (Group nm ts) =
 >     T.testGroup nm $ map itemToTest ts
-> itemToTest (TestValueExpr d str expected) =
->     toTest parseValueExpr prettyValueExpr d str expected
+> itemToTest (TestScalarExpr d str expected) =
+>     toTest parseScalarExpr prettyScalarExpr d str expected
 > itemToTest (TestQueryExpr d str expected) =
 >     toTest parseQueryExpr prettyQueryExpr d str expected
 > itemToTest (TestStatement d str expected) =
@@ -85,8 +85,8 @@ order on the generated documentation.
 > itemToTest (ParseQueryExprFails d str) =
 >     toFTest parseQueryExpr prettyQueryExpr d str
 
-> itemToTest (ParseValueExprFails d str) =
->     toFTest parseValueExpr prettyValueExpr d str
+> itemToTest (ParseScalarExprFails d str) =
+>     toFTest parseScalarExpr prettyScalarExpr d str
 
 > itemToTest (LexTest d s ts) = makeLexerTest d s ts
 > itemToTest (LexFails d s) = makeLexingFailsTest d s

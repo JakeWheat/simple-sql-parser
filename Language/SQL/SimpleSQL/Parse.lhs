@@ -5,7 +5,7 @@ notes
 Public api
 Names - parsing identifiers
 Typenames
-Value expressions
+Scalar expressions
   simple literals
   star, param
   parens expression, row constructor and scalar subquery
@@ -14,7 +14,7 @@ Value expressions
   suffixes: in, between, quantified comparison, match predicate, array
     subscript, escape, collate
   operators
-  value expression top level
+  scalar expression top level
   helpers
 query expressions
   select lists
@@ -75,7 +75,7 @@ syntax.
 There are three big areas which are tricky to left factor:
 
  * typenames
- * value expressions which can start with an identifier
+ * scalar expressions which can start with an identifier
  * infix and suffix operators
 
 === typenames
@@ -87,9 +87,9 @@ future. Taking the approach in the standard grammar will limit the
 extensibility of the parser and might affect the ease of adapting to
 support other sql dialects.
 
-=== identifier value expressions
+=== identifier scalar expressions
 
-There are a lot of value expression nodes which start with
+There are a lot of scalar expression nodes which start with
 identifiers, and can't be distinguished the tokens after the initial
 identifier are parsed. Using try to implement these variations is very
 simple but makes the code much harder to debug and makes the parser
@@ -106,7 +106,7 @@ Here is a list of these nodes:
 
 There is further ambiguity e.g. with typed literals with precision,
 functions, aggregates, etc. - these are an identifier, followed by
-parens comma separated value expressions or something similar, and it
+parens comma separated scalar expressions or something similar, and it
 is only later that we can find a token which tells us which flavour it
 is.
 
@@ -163,10 +163,10 @@ the special case of interval type names. E.g. you can write 'int
 collate C' or 'int(15,2)' and this will parse as a character type name
 or a precision scale type name instead of being rejected.
 
-value expressions: every variation on value expressions uses the same
+scalar expressions: every variation on scalar expressions uses the same
 parser/syntax. This means we don't try to stop non boolean valued
 expressions in boolean valued contexts in the parser. Another area
-this affects is that we allow general value expressions in group by,
+this affects is that we allow general scalar expressions in group by,
 whereas the standard only allows column names with optional collation.
 
 These are all areas which are specified (roughly speaking) in the
@@ -178,7 +178,7 @@ fixing them in the syntax but leaving them till the semantic checking
 > -- | This is the module with the parser functions.
 > module Language.SQL.SimpleSQL.Parse
 >     (parseQueryExpr
->     ,parseValueExpr
+>     ,parseScalarExpr
 >     ,parseStatement
 >     ,parseStatements
 >     ,ParseError(..)) where
@@ -250,8 +250,8 @@ fixing them in the syntax but leaving them till the semantic checking
 >                 -> Either ParseError [Statement]
 > parseStatements = wrapParse statements
 
-> -- | Parses a value expression.
-> parseValueExpr :: Dialect
+> -- | Parses a scalar expression.
+> parseScalarExpr :: Dialect
 >                    -- ^ dialect of SQL to use
 >                 -> FilePath
 >                    -- ^ filename to use in error messages
@@ -260,8 +260,8 @@ fixing them in the syntax but leaving them till the semantic checking
 >                    -- in the source to use in error messages
 >                 -> String
 >                    -- ^ the SQL source to parse
->                 -> Either ParseError ValueExpr
-> parseValueExpr = wrapParse valueExpr
+>                 -> Either ParseError ScalarExpr
+> parseScalarExpr = wrapParse scalarExpr
 
 This helper function takes the parser given and:
 
@@ -302,7 +302,7 @@ identifiers and unicode quoted identifiers.
 
 Dots: dots in identifier chains are parsed here and represented in the
 Iden constructor usually. If parts of the chains are non identifier
-value expressions, then this is represented by a BinOp "."
+scalar expressions, then this is represented by a BinOp "."
 instead. Dotten chain identifiers which appear in other contexts (such
 as function names, table names, are represented as [Name] only.
 
@@ -547,19 +547,19 @@ factoring in this function, and it is a little dense.
 >         ,"varbinary"
 >         ]
 
-= Value expressions
+= Scalar expressions
 
 == simple literals
 
 See the stringToken lexer below for notes on string literal syntax.
 
-> stringLit :: Parser ValueExpr
+> stringLit :: Parser ScalarExpr
 > stringLit = (\(s,e,t) -> StringLit s e t) <$> stringTokExtend
 
-> numberLit :: Parser ValueExpr
+> numberLit :: Parser ScalarExpr
 > numberLit = NumLit <$> sqlNumberTok False
 
-> simpleLiteral :: Parser ValueExpr
+> simpleLiteral :: Parser ScalarExpr
 > simpleLiteral = numberLit <|> stringLit
 
 == star, param, host param
@@ -568,9 +568,9 @@ See the stringToken lexer below for notes on string literal syntax.
 
 used in select *, select x.*, and agg(*) variations, and some other
 places as well. The parser doesn't attempt to check that the star is
-in a valid context, it parses it OK in any value expression context.
+in a valid context, it parses it OK in any scalar expression context.
 
-> star :: Parser ValueExpr
+> star :: Parser ScalarExpr
 > star = Star <$ symbol "*"
 
 == parameter
@@ -579,7 +579,7 @@ unnamed parameter or named parameter
 use in e.g. select * from t where a = ?
 select x from t where x > :param
 
-> parameter :: Parser ValueExpr
+> parameter :: Parser ScalarExpr
 > parameter = choice
 >     [Parameter <$ questionMark
 >     ,HostParameter
@@ -588,17 +588,17 @@ select x from t where x > :param
 
 == positional arg
 
-> positionalArg :: Parser ValueExpr
+> positionalArg :: Parser ScalarExpr
 > positionalArg = PositionalArg <$> positionalArgTok
 
 == parens
 
-value expression parens, row ctor and scalar subquery
+scalar expression parens, row ctor and scalar subquery
 
-> parensExpr :: Parser ValueExpr
+> parensExpr :: Parser ScalarExpr
 > parensExpr = parens $ choice
 >     [SubQueryExpr SqSq <$> queryExpr
->     ,ctor <$> commaSep1 valueExpr]
+>     ,ctor <$> commaSep1 scalarExpr]
 >   where
 >     ctor [a] = Parens a
 >     ctor as = SpecialOp [Name Nothing "rowctor"] as
@@ -610,24 +610,24 @@ syntax can start with the same keyword.
 
 === case expression
 
-> caseExpr :: Parser ValueExpr
+> caseExpr :: Parser ScalarExpr
 > caseExpr =
->     Case <$> (keyword_ "case" *> optionMaybe valueExpr)
+>     Case <$> (keyword_ "case" *> optionMaybe scalarExpr)
 >          <*> many1 whenClause
 >          <*> optionMaybe elseClause
 >          <* keyword_ "end"
 >   where
->    whenClause = (,) <$> (keyword_ "when" *> commaSep1 valueExpr)
->                     <*> (keyword_ "then" *> valueExpr)
->    elseClause = keyword_ "else" *> valueExpr
+>    whenClause = (,) <$> (keyword_ "when" *> commaSep1 scalarExpr)
+>                     <*> (keyword_ "then" *> scalarExpr)
+>    elseClause = keyword_ "else" *> scalarExpr
 
 === cast
 
 cast: cast(expr as type)
 
-> cast :: Parser ValueExpr
+> cast :: Parser ScalarExpr
 > cast = keyword_ "cast" *>
->        parens (Cast <$> valueExpr
+>        parens (Cast <$> scalarExpr
 >                     <*> (keyword_ "as" *> typeName))
 
 === exists, unique
@@ -635,33 +635,33 @@ cast: cast(expr as type)
 subquery expression:
 [exists|unique] (queryexpr)
 
-> subquery :: Parser ValueExpr
+> subquery :: Parser ScalarExpr
 > subquery = SubQueryExpr <$> sqkw <*> parens queryExpr
 >   where
 >     sqkw = SqExists <$ keyword_ "exists" <|> SqUnique <$ keyword_ "unique"
 
 === array/multiset constructor
 
-> arrayCtor :: Parser ValueExpr
+> arrayCtor :: Parser ScalarExpr
 > arrayCtor = keyword_ "array" >>
 >     choice
 >     [ArrayCtor <$> parens queryExpr
->     ,Array (Iden [Name Nothing "array"]) <$> brackets (commaSep valueExpr)]
+>     ,Array (Iden [Name Nothing "array"]) <$> brackets (commaSep scalarExpr)]
 
 As far as I can tell, table(query expr) is just syntax sugar for
 multiset(query expr). It must be there for compatibility or something.
 
-> multisetCtor :: Parser ValueExpr
+> multisetCtor :: Parser ScalarExpr
 > multisetCtor =
 >     choice
 >     [keyword_ "multiset" >>
 >      choice
 >      [MultisetQueryCtor <$> parens queryExpr
->      ,MultisetCtor <$> brackets (commaSep valueExpr)]
+>      ,MultisetCtor <$> brackets (commaSep scalarExpr)]
 >     ,keyword_ "table" >>
 >      MultisetQueryCtor <$> parens queryExpr]
 
-> nextValueFor :: Parser ValueExpr
+> nextValueFor :: Parser ScalarExpr
 > nextValueFor = keywords_ ["next","value","for"] >>
 >     NextValueFor <$> names
 
@@ -684,7 +684,7 @@ interval-datetime-field suffix to parse as an intervallit
 It uses try because of a conflict with interval type names: todo, fix
 this. also fix the monad -> applicative
 
-> intervalLit :: Parser ValueExpr
+> intervalLit :: Parser ScalarExpr
 > intervalLit = try (keyword_ "interval" >> do
 >     s <- optionMaybe $ choice [True <$ symbol_ "+"
 >                               ,False <$ symbol_ "-"]
@@ -707,11 +707,11 @@ The windows is a suffix on the app parser
 
 === iden prefix term
 
-all the value expressions which start with an identifier
+all the scalar expressions which start with an identifier
 
 (todo: really put all of them here instead of just some of them)
 
-> idenExpr :: Parser ValueExpr
+> idenExpr :: Parser ScalarExpr
 > idenExpr =
 >     -- todo: work out how to left factor this
 >     try (TypedLit <$> typeName <*> singleQuotesOnlyStringTok)
@@ -724,7 +724,7 @@ all the value expressions which start with an identifier
 >     multisetSetFunction =
 >         App [Name Nothing "set"] . (:[]) <$>
 >         (try (keyword_ "set" *> openParen)
->          *> valueExpr <* closeParen)
+>          *> scalarExpr <* closeParen)
 >     keywordFunction =
 >         let makeKeywordFunction x = if map toLower x `elem` keywordFunctionNames
 >                                     then return [Name Nothing x]
@@ -809,12 +809,12 @@ operatorname(firstArg keyword0 arg0 keyword1 arg1 etc.)
 >            -> SpecialOpKFirstArg -- has a first arg without a keyword
 >            -> [(String,Bool)] -- the other args with their keywords
 >                               -- and whether they are optional
->            -> Parser ValueExpr
+>            -> Parser ScalarExpr
 > specialOpK opName firstArg kws =
 >     keyword_ opName >> do
 >     void openParen
 >     let pfa = do
->               e <- valueExpr
+>               e <- scalarExpr
 >               -- check we haven't parsed the first
 >               -- keyword as an identifier
 >               case (e,kws) of
@@ -832,7 +832,7 @@ operatorname(firstArg keyword0 arg0 keyword1 arg1 etc.)
 >     pure $ SpecialOpK [Name Nothing opName] fa $ catMaybes as
 >   where
 >     parseArg (nm,mand) =
->         let p = keyword_ nm >> valueExpr
+>         let p = keyword_ nm >> scalarExpr
 >         in fmap (nm,) <$> if mand
 >                           then Just <$> p
 >                           else optionMaybe (try p)
@@ -857,31 +857,31 @@ TRIM( [ [{LEADING | TRAILING | BOTH}] [removal_char] FROM ]
 target_string
 [COLLATE collation_name] )
 
-> specialOpKs :: Parser ValueExpr
+> specialOpKs :: Parser ScalarExpr
 > specialOpKs = choice $ map try
 >     [extract, position, substring, convert, translate, overlay, trim]
 
-> extract :: Parser ValueExpr
+> extract :: Parser ScalarExpr
 > extract = specialOpK "extract" SOKMandatory [("from", True)]
 
-> position :: Parser ValueExpr
+> position :: Parser ScalarExpr
 > position = specialOpK "position" SOKMandatory [("in", True)]
 
 strictly speaking, the substring must have at least one of from and
 for, but the parser doens't enforce this
 
-> substring :: Parser ValueExpr
+> substring :: Parser ScalarExpr
 > substring = specialOpK "substring" SOKMandatory
 >                 [("from", False),("for", False)]
 
-> convert :: Parser ValueExpr
+> convert :: Parser ScalarExpr
 > convert = specialOpK "convert" SOKMandatory [("using", True)]
 
 
-> translate :: Parser ValueExpr
+> translate :: Parser ScalarExpr
 > translate = specialOpK "translate" SOKMandatory [("using", True)]
 
-> overlay :: Parser ValueExpr
+> overlay :: Parser ScalarExpr
 > overlay = specialOpK "overlay" SOKMandatory
 >                 [("placing", True),("from", True),("for", False)]
 
@@ -889,13 +889,13 @@ trim is too different because of the optional char, so a custom parser
 the both ' ' is filled in as the default if either parts are missing
 in the source
 
-> trim :: Parser ValueExpr
+> trim :: Parser ScalarExpr
 > trim =
 >     keyword "trim" >>
 >     parens (mkTrim
 >             <$> option "both" sides
 >             <*> option " " singleQuotesOnlyStringTok
->             <*> (keyword_ "from" *> valueExpr))
+>             <*> (keyword_ "from" *> scalarExpr))
 >   where
 >     sides = choice ["leading" <$ keyword_ "leading"
 >                    ,"trailing" <$ keyword_ "trailing"
@@ -908,7 +908,7 @@ in the source
 === app, aggregate, window
 
 This parses all these variations:
-normal function application with just a csv of value exprs
+normal function application with just a csv of scalar exprs
 aggregate variations (distinct, order by in parens, filter and where
   suffixes)
 window apps (fn/agg followed by over)
@@ -917,16 +917,16 @@ This code is also a little dense like the typename code because of
 left factoring, later they will even have to be partially combined
 together.
 
-> app :: Parser ([Name] -> ValueExpr)
+> app :: Parser ([Name] -> ScalarExpr)
 > app =
 >     openParen *> choice
 >     [duplicates
->      <**> (commaSep1 valueExpr
+>      <**> (commaSep1 scalarExpr
 >            <**> (((option [] orderBy) <* closeParen)
 >                  <**> (optionMaybe afilter <$$$$$> AggregateApp)))
 >      -- separate cases with no all or distinct which must have at
->      -- least one value expr
->     ,commaSep1 valueExpr
+>      -- least one scalar expr
+>     ,commaSep1 scalarExpr
 >      <**> choice
 >           [closeParen *> choice
 >                          [window
@@ -935,17 +935,17 @@ together.
 >                          ,pure (flip App)]
 >           ,orderBy <* closeParen
 >            <**> (optionMaybe afilter <$$$$> aggAppWithoutDupe)]
->      -- no valueExprs: duplicates and order by not allowed
+>      -- no scalarExprs: duplicates and order by not allowed
 >     ,([] <$ closeParen) <**> option (flip App) (window <|> withinGroup)
 >     ]
 >   where
 >     aggAppWithoutDupeOrd n es f = AggregateApp n SQDefault es [] f
 >     aggAppWithoutDupe n = AggregateApp n SQDefault
 
-> afilter :: Parser ValueExpr
-> afilter = keyword_ "filter" *> parens (keyword_ "where" *> valueExpr)
+> afilter :: Parser ScalarExpr
+> afilter = keyword_ "filter" *> parens (keyword_ "where" *> scalarExpr)
 
-> withinGroup :: Parser ([ValueExpr] -> [Name] -> ValueExpr)
+> withinGroup :: Parser ([ScalarExpr] -> [Name] -> ScalarExpr)
 > withinGroup =
 >     (keywords_ ["within", "group"] *> parens orderBy) <$$$> AggregateAppGroup
 
@@ -960,13 +960,13 @@ No support for explicit frames yet.
 TODO: add window support for other aggregate variations, needs some
 changes to the syntax also
 
-> window :: Parser ([ValueExpr] -> [Name] -> ValueExpr)
+> window :: Parser ([ScalarExpr] -> [Name] -> ScalarExpr)
 > window =
 >   keyword_ "over" *> openParen *> option [] partitionBy
 >   <**> (option [] orderBy
 >         <**> (((optionMaybe frameClause) <* closeParen) <$$$$$> WindowApp))
 >   where
->     partitionBy = keywords_ ["partition","by"] *> commaSep1 valueExpr
+>     partitionBy = keywords_ ["partition","by"] *> commaSep1 scalarExpr
 >     frameClause =
 >         frameRowsRange -- TODO: this 'and' could be an issue
 >         <**> (choice [(keyword_ "between" *> frameLimit True)
@@ -984,14 +984,14 @@ changes to the syntax also
 >         ,keyword_ "unbounded" *>
 >          choice [UnboundedPreceding <$ keyword_ "preceding"
 >                 ,UnboundedFollowing <$ keyword_ "following"]
->         ,(if useB then valueExprB else valueExpr)
+>         ,(if useB then scalarExprB else scalarExpr)
 >          <**> (Preceding <$ keyword_ "preceding"
 >                <|> Following <$ keyword_ "following")
 >         ]
 
 == suffixes
 
-These are all generic suffixes on any value expr
+These are all generic suffixes on any scalar expr
 
 === in
 
@@ -999,12 +999,12 @@ in: two variations:
 a in (expr0, expr1, ...)
 a in (queryexpr)
 
-> inSuffix :: Parser (ValueExpr -> ValueExpr)
+> inSuffix :: Parser (ScalarExpr -> ScalarExpr)
 > inSuffix =
 >     mkIn <$> inty
 >          <*> parens (choice
 >                      [InQueryExpr <$> queryExpr
->                      ,InList <$> commaSep1 valueExpr])
+>                      ,InList <$> commaSep1 scalarExpr])
 >   where
 >     inty = choice [True <$ keyword_ "in"
 >                   ,False <$ keywords_ ["not","in"]]
@@ -1021,15 +1021,15 @@ binary operator or part of the between. This code follows what
 postgres does, which might be standard across SQL implementations,
 which is that you can't have a binary and operator in the middle
 expression in a between unless it is wrapped in parens. The 'bExpr
-parsing' is used to create alternative value expression parser which
+parsing' is used to create alternative scalar expression parser which
 is identical to the normal one expect it doesn't recognise the binary
-and operator. This is the call to valueExprB.
+and operator. This is the call to scalarExprB.
 
-> betweenSuffix :: Parser (ValueExpr -> ValueExpr)
+> betweenSuffix :: Parser (ScalarExpr -> ScalarExpr)
 > betweenSuffix =
 >     makeOp <$> Name Nothing <$> opName
->            <*> valueExprB
->            <*> (keyword_ "and" *> valueExprB)
+>            <*> scalarExprB
+>            <*> (keyword_ "and" *> scalarExprB)
 >   where
 >     opName = choice
 >              ["between" <$ keyword_ "between"
@@ -1040,7 +1040,7 @@ and operator. This is the call to valueExprB.
 
 a = any (select * from t)
 
-> quantifiedComparisonSuffix :: Parser (ValueExpr -> ValueExpr)
+> quantifiedComparisonSuffix :: Parser (ScalarExpr -> ScalarExpr)
 > quantifiedComparisonSuffix = do
 >     c <- comp
 >     cq <- compQuan
@@ -1058,7 +1058,7 @@ a = any (select * from t)
 
 a match (select a from t)
 
-> matchPredicateSuffix :: Parser (ValueExpr -> ValueExpr)
+> matchPredicateSuffix :: Parser (ScalarExpr -> ScalarExpr)
 > matchPredicateSuffix = do
 >     keyword_ "match"
 >     u <- option False (True <$ keyword_ "unique")
@@ -1067,9 +1067,9 @@ a match (select a from t)
 
 === array subscript
 
-> arraySuffix :: Parser (ValueExpr -> ValueExpr)
+> arraySuffix :: Parser (ScalarExpr -> ScalarExpr)
 > arraySuffix = do
->     es <- brackets (commaSep valueExpr)
+>     es <- brackets (commaSep scalarExpr)
 >     pure $ \v -> Array v es
 
 === escape
@@ -1080,7 +1080,7 @@ for the escape now there is a separate lexer ...
 TODO: this needs fixing. Escape is only part of other nodes, and not a
 separate suffix.
 
-> {-escapeSuffix :: Parser (ValueExpr -> ValueExpr)
+> {-escapeSuffix :: Parser (ScalarExpr -> ScalarExpr)
 > escapeSuffix = do
 >     ctor <- choice
 >             [Escape <$ keyword_ "escape"
@@ -1098,7 +1098,7 @@ separate suffix.
 
 === collate
 
-> collateSuffix:: Parser (ValueExpr -> ValueExpr)
+> collateSuffix:: Parser (ScalarExpr -> ScalarExpr)
 > collateSuffix = do
 >     keyword_ "collate"
 >     i <- names
@@ -1110,7 +1110,7 @@ the parser supports three kinds of odbc syntax, two of which are
 scalar expressions (the other is a variation on joins)
 
 
-> odbcExpr :: Parser ValueExpr
+> odbcExpr :: Parser ScalarExpr
 > odbcExpr = between (symbol "{") (symbol "}")
 >            (odbcTimeLit <|> odbcFunc)
 >   where
@@ -1122,7 +1122,7 @@ scalar expressions (the other is a variation on joins)
 >     -- todo: this parser is too general, the expr part
 >     -- should be only a function call (from a whitelist of functions)
 >     -- or the extract operator
->     odbcFunc = OdbcFunc <$> (keyword "fn" *> valueExpr)
+>     odbcFunc = OdbcFunc <$> (keyword "fn" *> scalarExpr)
 
 ==  operators
 
@@ -1139,7 +1139,7 @@ syntax is way too messy. It might be possible to avoid this if we
 wanted to avoid extensibility and to not be concerned with parse error
 messages, but both of these are too important.
 
-> opTable :: Bool -> [[E.Operator [Token] ParseState Identity ValueExpr]]
+> opTable :: Bool -> [[E.Operator [Token] ParseState Identity ScalarExpr]]
 > opTable bExpr =
 >         [-- parse match and quantified comparisons as postfix ops
 >           -- todo: left factor the quantified comparison with regular
@@ -1248,18 +1248,18 @@ messages, but both of these are too important.
 >     prefix'  p = E.Prefix  . chainl1 p $ pure       (.)
 >     postfix' p = E.Postfix . chainl1 p $ pure (flip (.))
 
-== value expression top level
+== scalar expression top level
 
-This parses most of the value exprs.The order of the parsers and use
+This parses most of the scalar exprs.The order of the parsers and use
 of try is carefully done to make everything work. It is a little
 fragile and could at least do with some heavy explanation. Update: the
 'try's have migrated into the individual parsers, they still need
 documenting/fixing.
 
-> valueExpr :: Parser ValueExpr
-> valueExpr = E.buildExpressionParser (opTable False) term
+> scalarExpr :: Parser ScalarExpr
+> scalarExpr = E.buildExpressionParser (opTable False) term
 
-> term :: Parser ValueExpr
+> term :: Parser ScalarExpr
 > term = choice [simpleLiteral
 >               ,parameter
 >               ,positionalArg
@@ -1275,12 +1275,12 @@ documenting/fixing.
 >               ,specialOpKs
 >               ,idenExpr
 >               ,odbcExpr]
->        <?> "value expression"
+>        <?> "scalar expression"
 
 expose the b expression for window frame clause range between
 
-> valueExprB :: Parser ValueExpr
-> valueExprB = E.buildExpressionParser (opTable True) term
+> scalarExprB :: Parser ScalarExpr
+> scalarExprB = E.buildExpressionParser (opTable True) term
 
 == helper parsers
 
@@ -1306,7 +1306,7 @@ use a data type for the datetime field?
 >                                     ,"hour","minute","second"])
 >                 <?> "datetime field"
 
-This is used in multiset operations (value expr), selects (query expr)
+This is used in multiset operations (scalar expr), selects (query expr)
 and set operations (query expr).
 
 > duplicates :: Parser SetQuantifier
@@ -1320,11 +1320,11 @@ and set operations (query expr).
 
 == select lists
 
-> selectItem :: Parser (ValueExpr,Maybe Name)
-> selectItem = (,) <$> valueExpr <*> optionMaybe als
+> selectItem :: Parser (ScalarExpr,Maybe Name)
+> selectItem = (,) <$> scalarExpr <*> optionMaybe als
 >   where als = optional (keyword_ "as") *> name
 
-> selectList :: Parser [(ValueExpr,Maybe Name)]
+> selectList :: Parser [(ScalarExpr,Maybe Name)]
 > selectList = commaSep1 selectItem
 
 == from
@@ -1355,7 +1355,7 @@ aliases.
 >         ,do
 >          n <- names
 >          choice [TRFunction n
->                  <$> parens (commaSep valueExpr)
+>                  <$> parens (commaSep scalarExpr)
 >                 ,pure $ TRSimple n]
 >          -- todo: I think you can only have outer joins inside the oj,
 >          -- not sure.
@@ -1389,7 +1389,7 @@ it more readable)
 
 > joinCondition :: Parser JoinCondition
 > joinCondition = choice
->     [keyword_ "on" >> JoinOn <$> valueExpr
+>     [keyword_ "on" >> JoinOn <$> scalarExpr
 >     ,keyword_ "using" >> JoinUsing <$> parens (commaSep1 name)]
 
 > fromAlias :: Parser Alias
@@ -1403,8 +1403,8 @@ it more readable)
 Parsers for where, group by, having, order by and limit, which are
 pretty trivial.
 
-> whereClause :: Parser ValueExpr
-> whereClause = keyword_ "where" *> valueExpr
+> whereClause :: Parser ScalarExpr
+> whereClause = keyword_ "where" *> scalarExpr
 
 > groupByClause :: Parser [GroupingExpr]
 > groupByClause = keywords_ ["group","by"] *> commaSep1 groupingExpression
@@ -1417,17 +1417,17 @@ pretty trivial.
 >       ,GroupingParens <$> parens (commaSep groupingExpression)
 >       ,keywords_ ["grouping", "sets"] >>
 >        GroupingSets <$> parens (commaSep groupingExpression)
->       ,SimpleGroup <$> valueExpr
+>       ,SimpleGroup <$> scalarExpr
 >       ]
 
-> having :: Parser ValueExpr
-> having = keyword_ "having" *> valueExpr
+> having :: Parser ScalarExpr
+> having = keyword_ "having" *> scalarExpr
 
 > orderBy :: Parser [SortSpec]
 > orderBy = keywords_ ["order","by"] *> commaSep1 ob
 >   where
 >     ob = SortSpec
->          <$> valueExpr
+>          <$> scalarExpr
 >          <*> option DirDefault (choice [Asc <$ keyword_ "asc"
 >                                        ,Desc <$ keyword_ "desc"])
 >          <*> option NullsOrderDefault
@@ -1439,25 +1439,25 @@ pretty trivial.
 allows offset and fetch in either order
 + postgresql offset without row(s) and limit instead of fetch also
 
-> offsetFetch :: Parser (Maybe ValueExpr, Maybe ValueExpr)
+> offsetFetch :: Parser (Maybe ScalarExpr, Maybe ScalarExpr)
 > offsetFetch = permute ((,) <$?> (Nothing, Just <$> offset)
 >                            <|?> (Nothing, Just <$> fetch))
 
-> offset :: Parser ValueExpr
-> offset = keyword_ "offset" *> valueExpr
+> offset :: Parser ScalarExpr
+> offset = keyword_ "offset" *> scalarExpr
 >          <* option () (choice [keyword_ "rows"
 >                               ,keyword_ "row"])
 
-> fetch :: Parser ValueExpr
+> fetch :: Parser ScalarExpr
 > fetch = fetchFirst <|> limit
 >   where
 >     fetchFirst = guardDialect [ANSI2011]
->                  *> fs *> valueExpr <* ro
+>                  *> fs *> scalarExpr <* ro
 >     fs = makeKeywordTree ["fetch first", "fetch next"]
 >     ro = makeKeywordTree ["rows only", "row only"]
 >     -- todo: not in ansi sql dialect
 >     limit = guardDialect [MySQL] *>
->             keyword_ "limit" *> valueExpr
+>             keyword_ "limit" *> scalarExpr
 
 == common table expressions
 
@@ -1489,7 +1489,7 @@ and union, etc..
 >     mkSelect d sl (Just (TableExpression f w g h od ofs fe)) =
 >         Select d sl f w g h od ofs fe
 >     values = keyword_ "values"
->              >> Values <$> commaSep (parens (commaSep valueExpr))
+>              >> Values <$> commaSep (parens (commaSep scalarExpr))
 >     table = keyword_ "table" >> Table <$> names
 
 local data type to help with parsing the bit after the select list,
@@ -1499,12 +1499,12 @@ be in the public syntax?
 > data TableExpression
 >     = TableExpression
 >       {_teFrom :: [TableRef]
->       ,_teWhere :: Maybe ValueExpr
+>       ,_teWhere :: Maybe ScalarExpr
 >       ,_teGroupBy :: [GroupingExpr]
->       ,_teHaving :: Maybe ValueExpr
+>       ,_teHaving :: Maybe ScalarExpr
 >       ,_teOrderBy :: [SortSpec]
->       ,_teOffset :: Maybe ValueExpr
->       ,_teFetchFirst :: Maybe ValueExpr}
+>       ,_teOffset :: Maybe ScalarExpr
+>       ,_teFetchFirst :: Maybe ScalarExpr}
 
 > tableExpression :: Parser TableExpression
 > tableExpression = mkTe <$> from
@@ -1597,10 +1597,10 @@ TODO: change style
 >   where
 >     defaultClause = choice [
 >         keyword_ "default" >>
->         DefaultClause <$> valueExpr
+>         DefaultClause <$> scalarExpr
 >         -- todo: left factor
 >        ,try (keywords_ ["generated","always","as"] >>
->              GenerationClause <$> parens valueExpr)
+>              GenerationClause <$> parens scalarExpr)
 >        ,keyword_ "generated" >>
 >         IdentityColumnSpec
 >         <$> (GeneratedAlways <$ keyword_ "always"
@@ -1619,7 +1619,7 @@ TODO: change style
 >         TableUniqueConstraint <$> parens (commaSep1 name)
 >     primaryKey = keywords_ ["primary", "key"] >>
 >         TablePrimaryKeyConstraint <$> parens (commaSep1 name)
->     check = keyword_ "check" >> TableCheckConstraint <$> parens valueExpr
+>     check = keyword_ "check" >> TableCheckConstraint <$> parens scalarExpr
 >     references = keywords_ ["foreign", "key"] >>
 >         (\cs ft ftcs m (u,d) -> TableReferencesConstraint cs ft ftcs m u d)
 >         <$> parens (commaSep1 name)
@@ -1658,7 +1658,7 @@ TODO: change style
 >     notNull = ColNotNullConstraint <$ keywords_ ["not", "null"]
 >     unique = ColUniqueConstraint <$ keyword_ "unique"
 >     primaryKey = ColPrimaryKeyConstraint <$ keywords_ ["primary", "key"]
->     check = keyword_ "check" >> ColCheckConstraint <$> parens valueExpr
+>     check = keyword_ "check" >> ColCheckConstraint <$> parens scalarExpr
 >     references = keyword_ "references" >>
 >         (\t c m (ou,od) -> ColReferencesConstraint t c m ou od)
 >         <$> names
@@ -1733,7 +1733,7 @@ slightly hacky parser for signed integers
 >     setDefault :: Parser (Name -> AlterTableAction)
 >     -- todo: left factor
 >     setDefault = try (keywords_ ["set","default"]) >>
->                  valueExpr <$$> AlterColumnSetDefault
+>                  scalarExpr <$$> AlterColumnSetDefault
 >     dropDefault = AlterColumnDropDefault <$ try (keywords_ ["drop","default"])
 >     setNotNull = AlterColumnSetNotNull <$ try (keywords_ ["set","not","null"])
 >     dropNotNull = AlterColumnDropNotNull <$ try (keywords_ ["drop","not","null"])
@@ -1779,11 +1779,11 @@ slightly hacky parser for signed integers
 >     CreateDomain
 >     <$> names
 >     <*> (optional (keyword_ "as") *> typeName)
->     <*> optionMaybe (keyword_ "default" *> valueExpr)
+>     <*> optionMaybe (keyword_ "default" *> scalarExpr)
 >     <*> many con
 >   where
 >     con = (,) <$> optionMaybe (keyword_ "constraint" *> names)
->           <*> (keyword_ "check" *> parens valueExpr)
+>           <*> (keyword_ "check" *> parens scalarExpr)
 
 > alterDomain :: Parser Statement
 > alterDomain = keyword_ "domain" >>
@@ -1792,11 +1792,11 @@ slightly hacky parser for signed integers
 >     <*> (setDefault <|> constraint
 >          <|> (keyword_ "drop" *> (dropDefault <|> dropConstraint)))
 >   where
->     setDefault = keywords_ ["set", "default"] >> ADSetDefault <$> valueExpr
+>     setDefault = keywords_ ["set", "default"] >> ADSetDefault <$> scalarExpr
 >     constraint = keyword_ "add" >>
 >        ADAddConstraint
 >        <$> optionMaybe (keyword_ "constraint" *> names)
->        <*> (keyword_ "check" *> parens valueExpr)
+>        <*> (keyword_ "check" *> parens scalarExpr)
 >     dropDefault = ADDropDefault <$ keyword_ "default"
 >     dropConstraint = keyword_ "constraint" >> ADDropConstraint <$> names
 
@@ -1824,7 +1824,7 @@ slightly hacky parser for signed integers
 > createAssertion = keyword_ "assertion" >>
 >     CreateAssertion
 >     <$> names
->     <*> (keyword_ "check" *> parens valueExpr)
+>     <*> (keyword_ "check" *> parens scalarExpr)
 
 
 > dropAssertion :: Parser Statement
@@ -1840,7 +1840,7 @@ slightly hacky parser for signed integers
 >     Delete
 >     <$> names
 >     <*> optionMaybe (optional (keyword_ "as") *> name)
->     <*> optionMaybe (keyword_ "where" *> valueExpr)
+>     <*> optionMaybe (keyword_ "where" *> scalarExpr)
 
 > truncateSt :: Parser Statement
 > truncateSt = keywords_ ["truncate", "table"] >>
@@ -1864,15 +1864,15 @@ slightly hacky parser for signed integers
 >     <$> names
 >     <*> optionMaybe (optional (keyword_ "as") *> name)
 >     <*> (keyword_ "set" *> commaSep1 setClause)
->     <*> optionMaybe (keyword_ "where" *> valueExpr)
+>     <*> optionMaybe (keyword_ "where" *> scalarExpr)
 >   where
 >     setClause = multipleSet <|> singleSet
 >     multipleSet = SetMultiple
 >                   <$> parens (commaSep1 names)
->                   <*> (symbol "=" *> parens (commaSep1 valueExpr))
+>                   <*> (symbol "=" *> parens (commaSep1 scalarExpr))
 >     singleSet = Set
 >                 <$> names
->                 <*> (symbol "=" *> valueExpr)
+>                 <*> (symbol "=" *> scalarExpr)
 
 > dropBehaviour :: Parser DropBehaviour
 > dropBehaviour =

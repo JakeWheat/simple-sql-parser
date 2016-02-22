@@ -56,7 +56,7 @@ link:https://github.com/JakeWheat/intro_to_parsing/blob/master/SimpleSQLQueryPar
 ** offset and fetch
 ** set operators
 ** common table expressions
-** wide range of value expressions
+** wide range of scalar expressions
 * DDL
 ** TODO
 * non-query DML

@@ -83,7 +83,7 @@ Test-Suite Tests
                        Language.SQL.SimpleSQL.TestTypes,
                        Language.SQL.SimpleSQL.Tests,
                        Language.SQL.SimpleSQL.Tpch,
-                       Language.SQL.SimpleSQL.ValueExprs,
+                       Language.SQL.SimpleSQL.ScalarExprs,
                        Language.SQL.SimpleSQL.LexerTests
 
   other-extensions:    TupleSections,DeriveDataTypeable

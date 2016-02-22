@@ -2,8 +2,8 @@
 > -- | The AST for SQL.
 > {-# LANGUAGE DeriveDataTypeable #-}
 > module Language.SQL.SimpleSQL.Syntax
->     (-- * Value expressions
->      ValueExpr(..)
+>     (-- * Scalar expressions
+>      ScalarExpr(..)
 >     ,Name(..)
 >     ,TypeName(..)
 >     ,IntervalTypeField(..)
@@ -73,7 +73,7 @@
 > -- | Represents a value expression. This is used for the expressions
 > -- in select lists. It is also used for expressions in where, group
 > -- by, having, order by and so on.
-> data ValueExpr
+> data ScalarExpr
 >     = -- | a numeric literal optional decimal point, e+-
 >       -- integral exponent, e.g
 >       --
@@ -121,21 +121,21 @@
 >       -- | Infix binary operators. This is used for symbol operators
 >       -- (a + b), keyword operators (a and b) and multiple keyword
 >       -- operators (a is similar to b)
->     | BinOp ValueExpr [Name] ValueExpr
+>     | BinOp ScalarExpr [Name] ScalarExpr
 >       -- | Prefix unary operators. This is used for symbol
 >       -- operators, keyword operators and multiple keyword operators.
->     | PrefixOp [Name] ValueExpr
+>     | PrefixOp [Name] ScalarExpr
 >       -- | Postfix unary operators. This is used for symbol
 >       -- operators, keyword operators and multiple keyword operators.
->     | PostfixOp [Name] ValueExpr
+>     | PostfixOp [Name] ScalarExpr
 >       -- | Used for ternary, mixfix and other non orthodox
 >       -- operators. Currently used for row constructors, and for
 >       -- between.
->     | SpecialOp [Name] [ValueExpr]
+>     | SpecialOp [Name] [ScalarExpr]
 
 >       -- | function application (anything that looks like c style
 >       -- function application syntactically)
->     | App [Name] [ValueExpr]
+>     | App [Name] [ScalarExpr]
 
 
 >       -- | aggregate application, which adds distinct or all, and
@@ -143,14 +143,14 @@
 >     | AggregateApp
 >       {aggName :: [Name] -- ^ aggregate function name
 >       ,aggDistinct :: SetQuantifier -- ^ distinct
->       ,aggArgs :: [ValueExpr]-- ^ args
+>       ,aggArgs :: [ScalarExpr]-- ^ args
 >       ,aggOrderBy :: [SortSpec] -- ^ order by
->       ,aggFilter :: Maybe ValueExpr -- ^ filter
+>       ,aggFilter :: Maybe ScalarExpr -- ^ filter
 >       }
 >       -- | aggregates with within group
 >     | AggregateAppGroup
 >       {aggName :: [Name] -- ^ aggregate function name
->       ,aggArgs :: [ValueExpr] -- ^ args
+>       ,aggArgs :: [ScalarExpr] -- ^ args
 >       ,aggGroup :: [SortSpec] -- ^ within group
 >       }
 >       -- | window application, which adds over (partition by a order
@@ -158,8 +158,8 @@
 >       -- not currently supported
 >     | WindowApp
 >       {wnName :: [Name] -- ^ window function name
->       ,wnArgs :: [ValueExpr] -- ^ args
->       ,wnPartition :: [ValueExpr] -- ^ partition by
+>       ,wnArgs :: [ScalarExpr] -- ^ args
+>       ,wnPartition :: [ScalarExpr] -- ^ partition by
 >       ,wnOrderBy :: [SortSpec] -- ^ order by
 >       ,wnFrame :: Maybe Frame -- ^ frame clause
 >       }
@@ -169,56 +169,56 @@
 >       -- of commas. The maybe is for the first unnamed argument
 >       -- if it is present, and the list is for the keyword argument
 >       -- pairs.
->     | SpecialOpK [Name] (Maybe ValueExpr) [(String,ValueExpr)]
+>     | SpecialOpK [Name] (Maybe ScalarExpr) [(String,ScalarExpr)]
 
 >       -- | cast(a as typename)
->     | Cast ValueExpr TypeName
+>     | Cast ScalarExpr TypeName
 
 >       -- | case expression. both flavours supported
 >     | Case
->       {caseTest :: Maybe ValueExpr -- ^ test value
->       ,caseWhens :: [([ValueExpr],ValueExpr)] -- ^ when branches
->       ,caseElse :: Maybe ValueExpr -- ^ else value
+>       {caseTest :: Maybe ScalarExpr -- ^ test value
+>       ,caseWhens :: [([ScalarExpr],ScalarExpr)] -- ^ when branches
+>       ,caseElse :: Maybe ScalarExpr -- ^ else value
 >       }
 
->     | Parens ValueExpr
+>     | Parens ScalarExpr
 
 >       -- | in list literal and in subquery, if the bool is false it
 >       -- means not in was used ('a not in (1,2)')
->     | In Bool ValueExpr InPredValue
+>     | In Bool ScalarExpr InPredValue
 
 >       -- | exists, all, any, some subqueries
 >     | SubQueryExpr SubQueryExprType QueryExpr
 
 >     | QuantifiedComparison
->             ValueExpr
+>             ScalarExpr
 >             [Name] -- operator
 >             CompPredQuantifier
 >             QueryExpr
 
->     | Match ValueExpr Bool -- true if unique
+>     | Match ScalarExpr Bool -- true if unique
 >           QueryExpr
->     | Array ValueExpr [ValueExpr] -- ^ represents an array
+>     | Array ScalarExpr [ScalarExpr] -- ^ represents an array
 >                                   -- access expression, or an array ctor
 >                                   -- e.g. a[3]. The first
->                                   -- valueExpr is the array, the
+>                                   -- scalarExpr is the array, the
 >                                   -- second is the subscripts/ctor args
 >     | ArrayCtor QueryExpr -- ^ this is used for the query expression version of array constructors, e.g. array(select * from t)
 
 todo: special syntax for like, similar with escape - escape cannot go
 in other places
 
->     --  | Escape ValueExpr Char
->     --  | UEscape ValueExpr Char
->     | Collate ValueExpr [Name]
->     | MultisetBinOp ValueExpr CombineOp SetQuantifier ValueExpr
->     | MultisetCtor [ValueExpr]
+>     --  | Escape ScalarExpr Char
+>     --  | UEscape ScalarExpr Char
+>     | Collate ScalarExpr [Name]
+>     | MultisetBinOp ScalarExpr CombineOp SetQuantifier ScalarExpr
+>     | MultisetCtor [ScalarExpr]
 >     | MultisetQueryCtor QueryExpr
 >     | NextValueFor [Name]
->     | VEComment [Comment] ValueExpr
+>     | VEComment [Comment] ScalarExpr
 >     | OdbcLiteral OdbcLiteralType String
 >       -- ^ an odbc literal e.g. {d '2000-01-01'}
->     | OdbcFunc ValueExpr
+>     | OdbcFunc ScalarExpr
 >       -- ^ an odbc function call e.g. {fn CHARACTER_LENGTH('test')}
 >       deriving (Eq,Show,Read,Data,Typeable)
 
@@ -256,15 +256,15 @@ in other places
 >                | PrecOctets
 >                 deriving (Eq,Show,Read,Data,Typeable)
 
-> -- | Used for 'expr in (value expression list)', and 'expr in
+> -- | Used for 'expr in (scalar expression list)', and 'expr in
 > -- (subquery)' syntax.
-> data InPredValue = InList [ValueExpr]
+> data InPredValue = InList [ScalarExpr]
 >                  | InQueryExpr QueryExpr
 >                    deriving (Eq,Show,Read,Data,Typeable)
 
 not sure if scalar subquery, exists and unique should be represented like this
 
-> -- | A subquery in a value expression.
+> -- | A subquery in a scalar expression.
 > data SubQueryExprType
 >     = -- | exists (query expr)
 >       SqExists
@@ -281,7 +281,7 @@ not sure if scalar subquery, exists and unique should be represented like this
 >       deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | Represents one field in an order by list.
-> data SortSpec = SortSpec ValueExpr Direction NullsOrder
+> data SortSpec = SortSpec ScalarExpr Direction NullsOrder
 >                 deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | Represents 'nulls first' or 'nulls last' in an order by clause.
@@ -303,9 +303,9 @@ not sure if scalar subquery, exists and unique should be represented like this
 
 > -- | represents the start or end of a frame
 > data FramePos = UnboundedPreceding
->               | Preceding ValueExpr
+>               | Preceding ScalarExpr
 >               | Current
->               | Following ValueExpr
+>               | Following ScalarExpr
 >               | UnboundedFollowing
 >                 deriving (Eq,Show,Read,Data,Typeable)
 
@@ -332,7 +332,7 @@ not sure if scalar subquery, exists and unique should be represented like this
 > data QueryExpr
 >     = Select
 >       {qeSetQuantifier :: SetQuantifier
->       ,qeSelectList :: [(ValueExpr,Maybe Name)]
+>       ,qeSelectList :: [(ScalarExpr,Maybe Name)]
 >        -- ^ the expressions and the column aliases
 
 TODO: consider breaking this up. The SQL grammar has
@@ -342,12 +342,12 @@ table expression = <from> [where] [groupby] [having] ...
 This would make some things a bit cleaner?
 
 >       ,qeFrom :: [TableRef]
->       ,qeWhere :: Maybe ValueExpr
+>       ,qeWhere :: Maybe ScalarExpr
 >       ,qeGroupBy :: [GroupingExpr]
->       ,qeHaving :: Maybe ValueExpr
+>       ,qeHaving :: Maybe ScalarExpr
 >       ,qeOrderBy :: [SortSpec]
->       ,qeOffset :: Maybe ValueExpr
->       ,qeFetchFirst :: Maybe ValueExpr
+>       ,qeOffset :: Maybe ScalarExpr
+>       ,qeFetchFirst :: Maybe ScalarExpr
 >       }
 >     | CombineQueryExpr
 >       {qe0 :: QueryExpr
@@ -360,7 +360,7 @@ This would make some things a bit cleaner?
 >       {qeWithRecursive :: Bool
 >       ,qeViews :: [(Alias,QueryExpr)]
 >       ,qeQueryExpression :: QueryExpr}
->     | Values [[ValueExpr]]
+>     | Values [[ScalarExpr]]
 >     | Table [Name]
 >     | QEComment [Comment] QueryExpr
 >       deriving (Eq,Show,Read,Data,Typeable)
@@ -412,7 +412,7 @@ I'm not sure if this is valid syntax or not.
 >     | Cube [GroupingExpr]
 >     | Rollup [GroupingExpr]
 >     | GroupingSets [GroupingExpr]
->     | SimpleGroup ValueExpr
+>     | SimpleGroup ScalarExpr
 >       deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | Represents a entry in the csv of tables in the from clause.
@@ -427,7 +427,7 @@ I'm not sure if this is valid syntax or not.
 >                 -- | from (query expr)
 >               | TRQueryExpr QueryExpr
 >                 -- | from function(args)
->               | TRFunction [Name] [ValueExpr]
+>               | TRFunction [Name] [ScalarExpr]
 >                 -- | from lateral t
 >               | TRLateral TableRef
 >                 -- | ODBC {oj t1 left outer join t2 on expr} syntax
@@ -445,7 +445,7 @@ I'm not sure if this is valid syntax or not.
 >                 deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | The join condition.
-> data JoinCondition = JoinOn ValueExpr -- ^ on expr
+> data JoinCondition = JoinOn ScalarExpr -- ^ on expr
 >                    | JoinUsing [Name] -- ^ using (column list)
 >                      deriving (Eq,Show,Read,Data,Typeable)
 
@@ -461,8 +461,8 @@ I'm not sure if this is valid syntax or not.
 >   | CreateView Bool [Name] (Maybe [Name])
 >         QueryExpr (Maybe CheckOption)
 >   | DropView [Name]  DropBehaviour
->   | CreateDomain [Name] TypeName (Maybe ValueExpr)
->        [(Maybe [Name], ValueExpr)]
+>   | CreateDomain [Name] TypeName (Maybe ScalarExpr)
+>        [(Maybe [Name], ScalarExpr)]
 >   | AlterDomain [Name] AlterDomainAction
 >   | DropDomain [Name] DropBehaviour
 
@@ -475,7 +475,7 @@ I'm not sure if this is valid syntax or not.
 >   | DropCollation
 >   | CreateTranslation
 >   | DropTranslation -}
->   | CreateAssertion [Name] ValueExpr
+>   | CreateAssertion [Name] ScalarExpr
 >   | DropAssertion [Name] DropBehaviour
 >   {-   | CreateTrigger
 >   | DropTrigger
@@ -499,11 +499,11 @@ I'm not sure if this is valid syntax or not.
 >   | CloseCursor
 >   | SelectInto -}
 >   --   | DeletePositioned
->   | Delete [Name] (Maybe Name) (Maybe ValueExpr)
+>   | Delete [Name] (Maybe Name) (Maybe ScalarExpr)
 >   | Truncate [Name] IdentityRestart
 >   | Insert [Name] (Maybe [Name]) InsertSource
 >   --  | Merge
->   | Update [Name] (Maybe Name) [SetClause] (Maybe ValueExpr)
+>   | Update [Name] (Maybe Name) [SetClause] (Maybe ScalarExpr)
 >   {-  | TemporaryTable
 >   | FreeLocator
 >   | HoldLocator  -}
@@ -553,8 +553,8 @@ I'm not sure if this is valid syntax or not.
 >     deriving (Eq,Show,Read,Data,Typeable)
 
 > data SetClause =
->     Set [Name] ValueExpr
->   | SetMultiple [[Name]] [ValueExpr]
+>     Set [Name] ScalarExpr
+>   | SetMultiple [[Name]] [ScalarExpr]
 >     deriving (Eq,Show,Read,Data,Typeable)
 
 > data TableElement =
@@ -581,7 +581,7 @@ I'm not sure if this is valid syntax or not.
 >        ReferenceMatch
 >        ReferentialAction
 >        ReferentialAction
->   | ColCheckConstraint ValueExpr
+>   | ColCheckConstraint ScalarExpr
 >     deriving (Eq,Show,Read,Data,Typeable)
 
 > data TableConstraint =
@@ -591,7 +591,7 @@ I'm not sure if this is valid syntax or not.
 >        ReferenceMatch
 >        ReferentialAction
 >        ReferentialAction
->   | TableCheckConstraint ValueExpr
+>   | TableCheckConstraint ScalarExpr
 >     deriving (Eq,Show,Read,Data,Typeable)
 
 
@@ -613,7 +613,7 @@ I'm not sure if this is valid syntax or not.
 
 > data AlterTableAction =
 >     AddColumnDef ColumnDef
->   | AlterColumnSetDefault Name ValueExpr
+>   | AlterColumnSetDefault Name ScalarExpr
 >   | AlterColumnDropDefault Name
 >   | AlterColumnSetNotNull Name
 >   | AlterColumnDropNotNull Name
@@ -656,9 +656,9 @@ I'm not sure if this is valid syntax or not.
 >     deriving (Eq,Show,Read,Data,Typeable) -}
 
 > data DefaultClause =
->      DefaultClause ValueExpr
+>      DefaultClause ScalarExpr
 >    | IdentityColumnSpec IdentityWhen [SequenceGeneratorOption]
->    | GenerationClause ValueExpr
+>    | GenerationClause ScalarExpr
 >     deriving (Eq,Show,Read,Data,Typeable)
 
 > data IdentityWhen =
@@ -686,9 +686,9 @@ I'm not sure if this is valid syntax or not.
 >     deriving (Eq,Show,Read,Data,Typeable)
 
 > data AlterDomainAction =
->     ADSetDefault ValueExpr
+>     ADSetDefault ScalarExpr
 >   | ADDropDefault
->   | ADAddConstraint (Maybe [Name]) ValueExpr
+>   | ADAddConstraint (Maybe [Name]) ScalarExpr
 >   | ADDropConstraint [Name]
 >     deriving (Eq,Show,Read,Data,Typeable)
 

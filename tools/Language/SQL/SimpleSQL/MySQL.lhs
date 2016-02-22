@@ -18,10 +18,10 @@ limit syntax
 [LIMIT {[offset,] row_count | row_count OFFSET offset}]
 
 > backtickQuotes :: TestItem
-> backtickQuotes = Group "backtickQuotes" (map (uncurry (TestValueExpr mysql))
+> backtickQuotes = Group "backtickQuotes" (map (uncurry (TestScalarExpr mysql))
 >     [("`test`", Iden [Name (Just ("`","`")) "test"])
 >     ]
->     ++ [ParseValueExprFails ansi2011 "`test`"]
+>     ++ [ParseScalarExprFails ansi2011 "`test`"]
 >     )
 
 > limit :: TestItem

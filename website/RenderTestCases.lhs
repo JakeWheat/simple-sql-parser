@@ -17,7 +17,7 @@ Converts the test data to asciidoc
 > doc n (Group nm is) =
 >     Heading n nm
 >     : concatMap (doc (n + 1)) is
-> doc _ (TestValueExpr _ str e) =
+> doc _ (TestScalarExpr _ str e) =
 >     [Row str (ppShow e)]
 > doc _ (TestQueryExpr _ str e) =
 >     [Row str (ppShow e)]
@@ -29,8 +29,8 @@ Converts the test data to asciidoc
 >     [Row str (ppShow $ parseQueryExpr d "" Nothing str)]
 > doc _ (ParseQueryExprFails d str) =
 >     [Row str (ppShow $ parseQueryExpr d "" Nothing str)]
-> doc _ (ParseValueExprFails d str) =
->     [Row str (ppShow $ parseValueExpr d "" Nothing str)]
+> doc _ (ParseScalarExprFails d str) =
+>     [Row str (ppShow $ parseScalarExpr d "" Nothing str)]
 
 > doc _ (LexTest d str t) =
 >     [Row str (ppShow $ lexSQL d "" Nothing str)]

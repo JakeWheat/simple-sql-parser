@@ -28,7 +28,7 @@ get the best parser error messages possible.
 
 === Select lists
 
-Supports value expressions, aliases with optional 'as'.
+Supports scalar expressions, aliases with optional 'as'.
 
 Doesn't support 'select * as (a,b,c) from t' yet.
 
@@ -52,12 +52,12 @@ Supports 'select distinct' and explicit 'select all'.
 
 === Group by clause
 
-Supports value expressions, group by (), cube, rollup, grouping
+Supports scalar expressions, group by (), cube, rollup, grouping
 parentheses and grouping sets with nested grouping expressions.
 
 === Order by clause
 
-Supports value expressions, asc/desc and nulls first/last.
+Supports scalar expressions, asc/desc and nulls first/last.
 
 === Offset and fetch
 
@@ -75,9 +75,9 @@ For example: values (1,2),(3,4).
 
 For example: 'table t', which is shorthand for 'select * from t'.
 
-=== Value expressions
+=== Scalar expressions
 
-The value expressions type and parser is used in many contexts,
+The scalar expressions type and parser is used in many contexts,
 including:
 
 * select lists;
@@ -91,7 +91,7 @@ including:
 This doesn't exactly follow the ANSI Standards, which have separate
 grammars for most of these.
 
-The supported value expressions include:
+The supported scalar expressions include:
 
 * basic string literals in single quotes
 * number literals: digits.digitse+-exp

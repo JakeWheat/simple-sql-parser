@@ -1,13 +1,13 @@
 
-Tests for parsing value expressions
+Tests for parsing scalar expressions
 
-> module Language.SQL.SimpleSQL.ValueExprs (valueExprTests) where
+> module Language.SQL.SimpleSQL.ScalarExprs (scalarExprTests) where
 
 > import Language.SQL.SimpleSQL.TestTypes
 > import Language.SQL.SimpleSQL.Syntax
 
-> valueExprTests :: TestItem
-> valueExprTests = Group "valueExprTests"
+> scalarExprTests :: TestItem
+> scalarExprTests = Group "scalarExprTests"
 >     [literals
 >     ,identifiers
 >     ,star
@@ -24,7 +24,7 @@ Tests for parsing value expressions
 >     ]
 
 > literals :: TestItem
-> literals = Group "literals" $ map (uncurry (TestValueExpr ansi2011))
+> literals = Group "literals" $ map (uncurry (TestScalarExpr ansi2011))
 >     [("3", NumLit "3")
 >      ,("3.", NumLit "3.")
 >      ,("3.3", NumLit "3.3")
@@ -46,14 +46,14 @@ Tests for parsing value expressions
 >     ]
 
 > identifiers :: TestItem
-> identifiers = Group "identifiers" $ map (uncurry (TestValueExpr ansi2011))
+> identifiers = Group "identifiers" $ map (uncurry (TestScalarExpr ansi2011))
 >     [("iden1", Iden [Name Nothing "iden1"])
 >     --,("t.a", Iden2 "t" "a")
 >     ,("\"quoted identifier\"", Iden [Name (Just ("\"","\"")) "quoted identifier"])
 >     ]
 
 > star :: TestItem
-> star = Group "star" $ map (uncurry (TestValueExpr ansi2011))
+> star = Group "star" $ map (uncurry (TestScalarExpr ansi2011))
 >     [("*", Star)
 >     --,("t.*", Star2 "t")
 >     --,("ROW(t.*,42)", App "ROW" [Star2 "t", NumLit "42"])
@@ -61,12 +61,12 @@ Tests for parsing value expressions
 
 > parameter :: TestItem
 > parameter = Group "parameter"
->     [TestValueExpr ansi2011 "?" Parameter
->     ,TestValueExpr postgres "$13" $ PositionalArg 13]
+>     [TestScalarExpr ansi2011 "?" Parameter
+>     ,TestScalarExpr postgres "$13" $ PositionalArg 13]
 
 
 > dots :: TestItem
-> dots = Group "dot" $ map (uncurry (TestValueExpr ansi2011))
+> dots = Group "dot" $ map (uncurry (TestScalarExpr ansi2011))
 >     [("t.a", Iden [Name Nothing "t",Name Nothing "a"])
 >     ,("t.*", BinOp (Iden [Name Nothing "t"]) [Name Nothing "."] Star)
 >     ,("a.b.c", Iden [Name Nothing "a",Name Nothing "b",Name Nothing "c"])
@@ -74,14 +74,14 @@ Tests for parsing value expressions
 >     ]
 
 > app :: TestItem
-> app = Group "app" $ map (uncurry (TestValueExpr ansi2011))
+> app = Group "app" $ map (uncurry (TestScalarExpr ansi2011))
 >     [("f()", App [Name Nothing "f"] [])
 >     ,("f(a)", App [Name Nothing "f"] [Iden [Name Nothing "a"]])
 >     ,("f(a,b)", App [Name Nothing "f"] [Iden [Name Nothing "a"], Iden [Name Nothing "b"]])
 >     ]
 
 > caseexp :: TestItem
-> caseexp = Group "caseexp" $ map (uncurry (TestValueExpr ansi2011))
+> caseexp = Group "caseexp" $ map (uncurry (TestScalarExpr ansi2011))
 >     [("case a when 1 then 2 end"
 >      ,Case (Just $ Iden [Name Nothing "a"]) [([NumLit "1"]
 >                               ,NumLit "2")] Nothing)
@@ -117,7 +117,7 @@ Tests for parsing value expressions
 >     ,miscOps]
 
 > binaryOperators :: TestItem
-> binaryOperators = Group "binaryOperators" $ map (uncurry (TestValueExpr ansi2011))
+> binaryOperators = Group "binaryOperators" $ map (uncurry (TestScalarExpr ansi2011))
 >     [("a + b", BinOp (Iden [Name Nothing "a"]) [Name Nothing "+"] (Iden [Name Nothing "b"]))
 >      -- sanity check fixities
 >      -- todo: add more fixity checking
@@ -132,7 +132,7 @@ Tests for parsing value expressions
 >     ]
 
 > unaryOperators :: TestItem
-> unaryOperators = Group "unaryOperators" $ map (uncurry (TestValueExpr ansi2011))
+> unaryOperators = Group "unaryOperators" $ map (uncurry (TestScalarExpr ansi2011))
 >     [("not a", PrefixOp [Name Nothing "not"] $ Iden [Name Nothing "a"])
 >     ,("not not a", PrefixOp [Name Nothing "not"] $ PrefixOp [Name Nothing "not"] $ Iden [Name Nothing "a"])
 >     ,("+a", PrefixOp [Name Nothing "+"] $ Iden [Name Nothing "a"])
@@ -141,7 +141,7 @@ Tests for parsing value expressions
 
 
 > casts :: TestItem
-> casts = Group "operators" $ map (uncurry (TestValueExpr ansi2011))
+> casts = Group "operators" $ map (uncurry (TestScalarExpr ansi2011))
 >     [("cast('1' as int)"
 >      ,Cast (StringLit "'" "'" "1") $ TypeName [Name Nothing "int"])
 
@@ -163,7 +163,7 @@ Tests for parsing value expressions
 >     ]
 
 > subqueries :: TestItem
-> subqueries = Group "unaryOperators" $ map (uncurry (TestValueExpr ansi2011))
+> subqueries = Group "unaryOperators" $ map (uncurry (TestScalarExpr ansi2011))
 >     [("exists (select a from t)", SubQueryExpr SqExists ms)
 >     ,("(select a from t)", SubQueryExpr SqSq ms)
 
@@ -189,7 +189,7 @@ Tests for parsing value expressions
 >          }
 
 > miscOps :: TestItem
-> miscOps = Group "unaryOperators" $ map (uncurry (TestValueExpr ansi2011))
+> miscOps = Group "unaryOperators" $ map (uncurry (TestScalarExpr ansi2011))
 >     [("a in (1,2,3)"
 >      ,In True (Iden [Name Nothing "a"]) $ InList $ map NumLit ["1","2","3"])
 
@@ -327,7 +327,7 @@ target_string
 >     ]
 
 > aggregates :: TestItem
-> aggregates = Group "aggregates" $ map (uncurry (TestValueExpr ansi2011))
+> aggregates = Group "aggregates" $ map (uncurry (TestScalarExpr ansi2011))
 >     [("count(*)",App [Name Nothing "count"] [Star])
 
 >     ,("sum(a order by a)"
@@ -342,7 +342,7 @@ target_string
 >     ]
 
 > windowFunctions :: TestItem
-> windowFunctions = Group "windowFunctions" $ map (uncurry (TestValueExpr ansi2011))
+> windowFunctions = Group "windowFunctions" $ map (uncurry (TestScalarExpr ansi2011))
 >     [("max(a) over ()", WindowApp [Name Nothing "max"] [Iden [Name Nothing "a"]] [] [] Nothing)
 >     ,("count(*) over ()", WindowApp [Name Nothing "count"] [Star] [] [] Nothing)
 
@@ -401,7 +401,7 @@ target_string
 >     ]
 
 > parens :: TestItem
-> parens = Group "parens" $ map (uncurry (TestValueExpr ansi2011))
+> parens = Group "parens" $ map (uncurry (TestScalarExpr ansi2011))
 >     [("(a)", Parens (Iden [Name Nothing "a"]))
 >     ,("(a + b)", Parens (BinOp (Iden [Name Nothing "a"]) [Name Nothing "+"] (Iden [Name Nothing "b"])))
 >     ]
@@ -412,4 +412,4 @@ target_string
 >     ,"char_length"
 >     ]
 >   where
->     t fn = TestValueExpr ansi2011 (fn ++ "(a)") $ App [Name Nothing fn] [Iden [Name Nothing "a"]]
+>     t fn = TestScalarExpr ansi2011 (fn ++ "(a)") $ App [Name Nothing fn] [Iden [Name Nothing "a"]]

@@ -16,7 +16,7 @@ mentioned give a parse error. Not sure if this will be too awkward due
 to lots of tricky exceptions/variationsx.
 
 > data TestItem = Group String [TestItem]
->               | TestValueExpr Dialect String ValueExpr
+>               | TestScalarExpr Dialect String ScalarExpr
 >               | TestQueryExpr Dialect String QueryExpr
 >               | TestStatement Dialect String Statement
 >               | TestStatements Dialect String [Statement]
@@ -30,7 +30,7 @@ should all be TODO to convert to a testqueryexpr test.
 check that the string given fails to parse
 
 >               | ParseQueryExprFails Dialect String
->               | ParseValueExprFails Dialect String
+>               | ParseScalarExprFails Dialect String
 >               | LexTest Dialect String [Token]
 >               | LexFails Dialect String
 >                 deriving (Eq,Show)
