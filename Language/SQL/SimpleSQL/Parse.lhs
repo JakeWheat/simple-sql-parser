@@ -686,8 +686,8 @@ this. also fix the monad -> applicative
 
 > intervalLit :: Parser ScalarExpr
 > intervalLit = try (keyword_ "interval" >> do
->     s <- optionMaybe $ choice [True <$ symbol_ "+"
->                               ,False <$ symbol_ "-"]
+>     s <- optionMaybe $ choice [Plus <$ symbol_ "+"
+>                               ,Minus <$ symbol_ "-"]
 >     lit <- singleQuotesOnlyStringTok
 >     q <- optionMaybe intervalQualifier
 >     mkIt s lit q)

@@ -711,9 +711,9 @@ TODO: unicode escape
 >     ,("interval '1' day(3)"
 >      ,IntervalLit Nothing "1" (Itf "day" $ Just (3,Nothing)) Nothing)
 >     ,("interval + '1' day(3)"
->      ,IntervalLit (Just True) "1" (Itf "day" $ Just (3,Nothing)) Nothing)
+>      ,IntervalLit (Just Plus) "1" (Itf "day" $ Just (3,Nothing)) Nothing)
 >     ,("interval - '1' second(2,2)"
->      ,IntervalLit (Just False) "1" (Itf "second" $ Just (2,Just 2)) Nothing)
+>      ,IntervalLit (Just Minus) "1" (Itf "second" $ Just (2,Just 2)) Nothing)
 >     ,("interval '1' year to month"
 >      ,IntervalLit Nothing "1" (Itf "year" Nothing)
 >                                   (Just $ Itf "month" Nothing))

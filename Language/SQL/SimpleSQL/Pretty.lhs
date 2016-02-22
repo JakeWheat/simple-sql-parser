@@ -45,7 +45,9 @@ which have been changed to try to improve the layout of the output.
 > scalarExpr _ (NumLit s) = text s
 > scalarExpr _ (IntervalLit s v f t) =
 >     text "interval"
->     <+> me (\x -> if x then text "+" else text "-") s
+>     <+> me (\x -> text $ case x of
+>                              Plus -> "+"
+>                              Minus -> "-") s
 >     <+> quotes (text v)
 >     <+> intervalTypeField f
 >     <+> me (\x -> text "to" <+> intervalTypeField x) t

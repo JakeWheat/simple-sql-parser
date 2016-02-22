@@ -7,6 +7,7 @@
 >     ,Name(..)
 >     ,TypeName(..)
 >     ,IntervalTypeField(..)
+>     ,Sign(..)
 >     ,PrecMultiplier(..)
 >     ,PrecUnits(..)
 >     ,SetQuantifier(..)
@@ -95,7 +96,7 @@
 >       -- | text of interval literal, units of interval precision,
 >       -- e.g. interval 3 days (3)
 >     | IntervalLit
->       {ilSign :: Maybe Bool -- ^ true if + used, false if - used
+>       {ilSign :: Maybe Sign -- ^ if + or - used
 >       ,ilLiteral :: String -- ^ literal text
 >       ,ilFrom :: IntervalTypeField
 >       ,ilTo :: Maybe IntervalTypeField
@@ -249,6 +250,9 @@ in other places
 
 > data IntervalTypeField = Itf String (Maybe (Integer, Maybe Integer))
 >                          deriving (Eq,Show,Read,Data,Typeable)
+
+> data Sign = Plus | Minus
+>             deriving (Eq,Show,Read,Data,Typeable)
 
 > data PrecMultiplier = PrecK | PrecM | PrecG | PrecT | PrecP
 >                       deriving (Eq,Show,Read,Data,Typeable)
