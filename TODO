@@ -8,9 +8,13 @@ syntax from hssqlppp:
 rename combinequeryexpr
 add comment to statements?
 review simple enums to make sure they have default
+  use enum in sign in interval literal
 
 work on better dialect design: more basic customizability and rule /
    callback driven
+
+review/fix documentation and website
+fix the groups for generated tests
 
 
 medium tasks next release + 1

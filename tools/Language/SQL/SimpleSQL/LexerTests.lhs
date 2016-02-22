@@ -125,28 +125,6 @@ assurance.
 >     ++ map (\s -> (s,[Symbol s])) [">=","<=","!=","<>","||", "::","..",":="]
 >     -- generic symbols
 
-An operator name is a sequence of up to NAMEDATALEN-1 (63 by default) characters from the following list:
-
-+ - * / < > = ~ ! @ # % ^ & | ` ?
-
-There are a few restrictions on operator names, however:
--- and /* cannot appear anywhere in an operator name, since they will be taken as the start of a comment.
-
-A multiple-character operator name cannot end in + or -, unless the name also contains at least one of these characters:
-
-~ ! @ # % ^ & | ` ?
-
-todo: 'negative' tests
-symbol then --
-symbol then /*
-operators without one of the exception chars
-  followed by + or - without whitespace
-
-also: do the testing for the ansi compatibility special cases
-
->     ++ [ (x, [Symbol x]) | x <- someValidPostgresOperators 2]
-
-
 >     ++ (let idens = ["a", "_a", "test", "table", "Stuff", "STUFF"]
 >         -- simple identifiers
 >         in map (\i -> (i, [Identifier Nothing i])) idens
@@ -200,6 +178,30 @@ also: do the testing for the ansi compatibility special cases
 >        ,"/* this *is/ a comment */"
 >        ]
 
+An operator name is a sequence of up to NAMEDATALEN-1 (63 by default) characters from the following list:
+
++ - * / < > = ~ ! @ # % ^ & | ` ?
+
+There are a few restrictions on operator names, however:
+-- and /* cannot appear anywhere in an operator name, since they will be taken as the start of a comment.
+
+A multiple-character operator name cannot end in + or -, unless the name also contains at least one of these characters:
+
+~ ! @ # % ^ & | ` ?
+
+todo: 'negative' tests
+symbol then --
+symbol then /*
+operators without one of the exception chars
+  followed by + or - without whitespace
+
+also: do the testing for the ansi compatibility special cases
+
+> postgresShortOperatorTable :: [(String,[Token])]
+> postgresShortOperatorTable =
+>     [ (x, [Symbol x]) | x <- someValidPostgresOperators 2]
+
+
 > postgresExtraOperatorTable :: [(String,[Token])]
 > postgresExtraOperatorTable =
 >     [ (x, [Symbol x]) | x <- someValidPostgresOperators 4]
@@ -232,20 +234,23 @@ the + or -.
 > postgresLexerTests :: TestItem
 > postgresLexerTests = Group "postgresLexerTests" $
 >     [Group "postgres lexer token tests" $
->      [LexTest postgres s t | (s,t) <- postgresLexerTable ++ postgresExtraOperatorTable]
+>      [LexTest postgres s t | (s,t) <- postgresLexerTable]
+>     ,Group "postgres generated lexer token tests" $
+>      [LexTest postgres s t | (s,t) <- postgresShortOperatorTable ++ postgresExtraOperatorTable]
 >     ,Group "postgres generated combination lexer tests" $
 >     [ LexTest postgres (s ++ s1) (t ++ t1)
->     | (s,t) <- postgresLexerTable
->     , (s1,t1) <- postgresLexerTable
+>     | (s,t) <- postgresLexerTable ++ postgresShortOperatorTable
+>     , (s1,t1) <- postgresLexerTable ++ postgresShortOperatorTable
 >     , tokenListWillPrintAndLex postgres $ t ++ t1
 
 >     ]
->     ,Group "adhoc postgres lexertests" $
+>     ,Group "generated postgres edgecase lexertests" $
 >      [LexTest postgres s t
 >      | (s,t) <- edgeCaseCommentOps
 >                 ++ edgeCasePlusMinusOps
 >                 ++ edgeCasePlusMinusComments]
->      ++
+
+>     ,Group "adhoc postgres lexertests" $
 >       -- need more tests for */ to make sure it is caught if it is in the middle of a
 >       -- sequence of symbol letters
 >         [LexFails postgres "*/"

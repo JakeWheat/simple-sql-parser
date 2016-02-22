@@ -32,7 +32,7 @@ which have been changed to try to improve the layout of the output.
 > prettyStatement :: Dialect -> Statement -> String
 > prettyStatement d = render . statement d
 
-> -- | Convert a list of statements to concrete syntax. A semi colon
+> -- | Convert a list of statements to concrete syntax. A semicolon
 > -- is inserted after each statement.
 > prettyStatements :: Dialect -> [Statement] -> String
 > prettyStatements d = render . vcat . map ((<> text ";\n") . statement d)

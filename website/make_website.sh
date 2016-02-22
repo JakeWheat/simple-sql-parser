@@ -22,7 +22,7 @@ asciidoctor website/supported_sql.asciidoc -o - | runhaskell website/AddLinks.lh
 # tpch sql file
 # pandoc src/tpch.sql -s --highlight-style kate -o tpch.sql.html
 # rendered test cases
-runhaskell -package-db=.cabal-sandbox/x86_64-linux-ghc-7.10.2-packages.conf.d -i:tools website/RenderTestCases.lhs > build/test_cases.asciidoc
+runhaskell -package-db=.cabal-sandbox/x86_64-linux-ghc-7.10.3-packages.conf.d -i:tools website/RenderTestCases.lhs > build/test_cases.asciidoc
 
 #pandoc --from=markdown --to=html build/test_cases.asciidoc -o build/test_cases.html -c main.css '--title=simple-sql-parser examples/test cases' --toc
 asciidoctor build/test_cases.asciidoc -o - | \
@@ -31,7 +31,7 @@ asciidoctor build/test_cases.asciidoc -o - | \
 # TODO: reduce the text size on the test cases page
 # TODO: use scrollbars inside the tables
 # TODO: make the tables autowidth
-#        -e "s/(code.*)font-size:1em/\1font-size:0.8em/g" 
+#        -e "s/(code.*)font-size:1em/\1font-size:0.8em/g"
 
 rm build/test_cases.asciidoc
 # haddock

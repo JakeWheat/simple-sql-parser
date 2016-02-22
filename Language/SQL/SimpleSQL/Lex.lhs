@@ -545,6 +545,9 @@ a good sanity test for this function is to change it to always return
 true, then check that the automated tests return the same number of
 successes. I don't think it succeeds this test at the moment
 
+> -- | Utility function to tell you if a list of tokens
+> -- will pretty print then lex back to the same set of tokens.
+> -- Used internally, might be useful for generating SQL via lexical tokens.
 > tokenListWillPrintAndLex :: Dialect -> [Token] -> Bool
 > tokenListWillPrintAndLex _ [] = True
 > tokenListWillPrintAndLex _ [_] = True

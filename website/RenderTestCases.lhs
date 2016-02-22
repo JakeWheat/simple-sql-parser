@@ -4,8 +4,8 @@ Converts the test data to asciidoc
 > import Language.SQL.SimpleSQL.Tests
 > import Text.Show.Pretty
 > import Control.Monad.State
-> import Language.SQL.SimpleSQL.Parser
-> import Language.SQL.SimpleSQL.Lexer
+> import Language.SQL.SimpleSQL.Parse
+> import Language.SQL.SimpleSQL.Lex
 > import Data.List
 
 > data TableItem = Heading Int String
@@ -32,7 +32,10 @@ Converts the test data to asciidoc
 > doc _ (ParseValueExprFails d str) =
 >     [Row str (ppShow $ parseValueExpr d "" Nothing str)]
 
-> doc _ (LexerTest d str t) =
+> doc _ (LexTest d str t) =
+>     [Row str (ppShow $ lexSQL d "" Nothing str)]
+
+> doc _ (LexFails d str) =
 >     [Row str (ppShow $ lexSQL d "" Nothing str)]
 
 TODO: should put the dialect in the html output
