@@ -416,42 +416,29 @@ which allows the last character of a multi character symbol to be + or
 >         <*> option [] opMoreChars
 >        ]
 
-> symbol d | diSyntaxFlavour d == SQLServer =
->    Symbol <$> choice (otherSymbol ++ regularOp)
+> symbol d  = Symbol <$> choice (otherSymbol ++ regularOp)
 >  where
 >    otherSymbol = many1 (char '.') :
->                  (map (string . (:[])) ",;():?"
+>                  (map (string . (:[])) otherSymbolChars
 >                   ++ if allowOdbc d
 >                      then [string "{", string "}"]
 >                      else [])
+>    otherSymbolChars =
+>        case diSyntaxFlavour d of
+>            SQLServer -> ",;():?"
+>            _ -> "[],;():?"
 
 try is used because most of the first characters of the two character
 symbols can also be part of a single character symbol
 
 >    regularOp = map (try . string) [">=","<=","!=","<>"]
 >                ++ map (string . (:[])) "+-^*/%~&<>="
+>                   -- what about using many1 (char '|'), then it will
+>                   -- fail in the parser? Not sure exactly how
+>                   -- standalone the lexer should be
 >                ++ [char '|' *>
 >                    choice ["||" <$ char '|' <* notFollowedBy (char '|')
 >                           ,return "|"]]
-
-> symbol d =
->    Symbol <$> choice (otherSymbol ++ regularOp)
->  where
->    otherSymbol = many1 (char '.') :
->                  (map (string . (:[])) "[],;():?"
->                   ++ if allowOdbc d
->                      then [string "{", string "}"]
->                      else [])
-
-try is used because most of the first characters of the two character
-symbols can also be part of a single character symbol
-
->    regularOp = map (try . string) [">=","<=","!=","<>"]
->                ++ map (string . (:[])) "+-^*/%~&<>=[]"
->                ++ [char '|' *>
->                    choice ["||" <$ char '|' <* notFollowedBy (char '|')
->                           ,return "|"]]
-
 
 
 > sqlWhitespace :: Dialect -> Parser Token
