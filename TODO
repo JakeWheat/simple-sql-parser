@@ -1,3 +1,55 @@
+medium tasks next release
+unescaping identifiers and strings
+continuation strings testing
+refactor the symbol lexers - lots of duplicated code
+rename valueexpr to scalarexpr
+syntax from hssqlppp:
+  query hints, join hints
+rename combinequeryexpr
+add comment to statements?
+review simple enums to make sure they have default
+
+work on better dialect design: more basic customizability and rule /
+   callback driven
+
+
+medium tasks next release + 1
+add annotation
+lots more negative tests especially for lexing, and for dialects
+escape, uescape
+post hoc fixity
+switch pretty printing to use ansi-wl-pprint
+  http://conscientiousprogrammer.com/blog/2015/12/17/24-days-of-hackage-2015-day-17-ansi-wl-pprint-avoiding-string-hacking/
+
+
+error message analysis:
+start with a set of bad sql, generate & write
+get error messages:
+  simplified ssp parser
+  tutorial parser
+  hssqlppp
+  and also:
+    postgres
+    mysql
+    sqlserver
+    oracle
+    db2
+    vertica?
+evaluate other parsing libs for error messages and general
+   feasibility, shortlist is:
+   megaparsec
+   trifecta
+   uuparsinglib
+   other desirables from parsing lib:
+     incremental parsing
+     context dependent lexer switch
+     continue after error
+
+create some benchmarks (to measure performance when modifying for
+   error messages, and to compare different parser libs for instance)
+
+use quickcheck in lexing
+
 What will make this library nice and complete:
 List of all the SQL that it doesn't support
 annotation, with positions coming from the parser
