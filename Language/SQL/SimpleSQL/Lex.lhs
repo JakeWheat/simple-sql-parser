@@ -327,13 +327,69 @@ constant.
 >     sInt = (++) <$> option "" (string "+" <|> string "-") <*> int
 >     pp = (<$$> (++))
 
+Symbols
 
-A symbol is one of the two character symbols, or one of the single
-character symbols in the two lists below.
+A symbol is an operator, or one of the misc symbols which include:
+.
+..
+:=
+:
+::
+(
+)
+?
+;
+,
+{ (for odbc)
+}
+
+The postgresql operator syntax allows a huge range of operators
+compared with ansi and other dialects
 
 > symbol :: Dialect -> Parser Token
-> symbol d | diSyntaxFlavour d == Postgres =
->     Symbol <$> choice (otherSymbol ++ [singlePlusMinus,opMoreChars])
+> symbol d  = Symbol <$> choice (concat
+>    [dots
+>    ,if (diSyntaxFlavour d == Postgres)
+>     then postgresExtraSymbols
+>     else []
+>    ,miscSymbol
+>    ,if allowOdbc d then odbcSymbol else []
+>    ,if (diSyntaxFlavour d == Postgres)
+>     then generalizedPostgresqlOperator
+>     else basicAnsiOps
+>    ])
+>  where
+>    dots = [many1 (char '.')]
+>    odbcSymbol = [string "{", string "}"]
+>    postgresExtraSymbols =
+>        [try (string ":=")
+>         -- parse :: and : and avoid allowing ::: or more
+>        ,try (string "::" <* notFollowedBy (char ':'))
+>        ,try (string ":" <* notFollowedBy (char ':'))]
+>    miscSymbol = map (string . (:[])) $
+>        case diSyntaxFlavour d of
+>            SQLServer -> ",;():?"
+>            Postgres -> "[],;()"
+>            _ -> "[],;():?"
+
+try is used because most of the first characters of the two character
+symbols can also be part of a single character symbol
+
+>    basicAnsiOps = map (try . string) [">=","<=","!=","<>"]
+>                   ++ map (string . (:[])) "+-^*/%~&<>="
+>                   ++ pipes
+>    pipes = -- what about using many1 (char '|'), then it will
+>            -- fail in the parser? Not sure exactly how
+>            -- standalone the lexer should be
+>            [char '|' *>
+>             choice ["||" <$ char '|' <* notFollowedBy (char '|')
+>                    ,return "|"]]
+
+postgresql generalized operators
+
+this includes the custom operators that postgres supports,
+plus all the standard operators which could be custom operators
+according to their grammar
 
 rules
 
@@ -348,27 +404,12 @@ A multiple-character operator name cannot end in + or -, unless the name also co
 
 ~ ! @ # % ^ & | ` ?
 
->   where
->     -- other symbols are all the tokens which parse as symbols in
->     -- this lexer which aren't considered operators in postgresql
->     -- a single ? is parsed as a operator here instead of an other
->     -- symbol because this is the least complex way to do it
->     otherSymbol = many1 (char '.') :
->                   try (string ":=") :
->                   -- parse :: and : and avoid allowing ::: or more
->                   try (string "::" <* notFollowedBy (char ':')) :
->                   try (string ":" <* notFollowedBy (char ':')) :
->                   (map (string . (:[])) "[],;()"
->                    ++ if allowOdbc d
->                       then [string "{", string "}"]
->                       else []
->                   )
-
-exception char is one of:
-~ ! @ # % ^ & | ` ?
 which allows the last character of a multi character symbol to be + or
 -
 
+> generalizedPostgresqlOperator :: [Parser String]
+> generalizedPostgresqlOperator = [singlePlusMinus,opMoreChars]
+>   where
 >     allOpSymbols = "+-*/<>=~!@#%^&|`?"
 >     -- these are the symbols when if part of a multi character
 >     -- operator permit the operator to end with a + or - symbol
@@ -415,31 +456,6 @@ which allows the last character of a multi character symbol to be + or
 >              oneOf "<>=")
 >         <*> option [] opMoreChars
 >        ]
-
-> symbol d  = Symbol <$> choice (otherSymbol ++ regularOp)
->  where
->    otherSymbol = many1 (char '.') :
->                  (map (string . (:[])) otherSymbolChars
->                   ++ if allowOdbc d
->                      then [string "{", string "}"]
->                      else [])
->    otherSymbolChars =
->        case diSyntaxFlavour d of
->            SQLServer -> ",;():?"
->            _ -> "[],;():?"
-
-try is used because most of the first characters of the two character
-symbols can also be part of a single character symbol
-
->    regularOp = map (try . string) [">=","<=","!=","<>"]
->                ++ map (string . (:[])) "+-^*/%~&<>="
->                   -- what about using many1 (char '|'), then it will
->                   -- fail in the parser? Not sure exactly how
->                   -- standalone the lexer should be
->                ++ [char '|' *>
->                    choice ["||" <$ char '|' <* notFollowedBy (char '|')
->                           ,return "|"]]
-
 
 > sqlWhitespace :: Dialect -> Parser Token
 > sqlWhitespace _ = Whitespace <$> many1 (satisfy isSpace)
