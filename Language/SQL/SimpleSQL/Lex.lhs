@@ -171,22 +171,26 @@ u&"unicode quoted identifier"
 > identifier :: Dialect -> Parser Token
 > identifier d =
 >     choice
->     [Identifier (Just ("\"","\"")) <$> qiden
->      -- try is used here to avoid a conflict with identifiers
->      -- and quoted strings which also start with a 'u'
->     ,Identifier (Just ("u&\"","\"")) <$> (try (string "u&") *> qiden)
->     ,Identifier (Just ("U&\"","\"")) <$> (try (string "U&") *> qiden)
->     ,Identifier Nothing <$> identifierString
->      -- todo: dialect protection
->     ,guard (diSyntaxFlavour d == MySQL) >>
->      Identifier (Just ("`","`"))
->      <$> (char '`' *> takeWhile1 (/='`') <* char '`')
->     ,guard (diSyntaxFlavour d == SQLServer) >>
->      Identifier (Just ("[","]"))
->      <$> (char '[' *> takeWhile1 (`notElem` "[]") <* char ']')
+>     [quotedIden
+>     ,unicodeQuotedIden
+>     ,regularIden
+>     ,guard (diSyntaxFlavour d == MySQL) >> mySqlQuotedIden
+>     ,guard (diSyntaxFlavour d == SQLServer) >> sqlServerQuotedIden
 >     ]
 >   where
->     qiden = char '"' *> qidenSuffix ""
+>     regularIden = Identifier Nothing <$> identifierString
+>     quotedIden = Identifier (Just ("\"","\"")) <$> qidenPart
+>     mySqlQuotedIden = Identifier (Just ("`","`"))
+>                       <$> (char '`' *> takeWhile1 (/='`') <* char '`')
+>     sqlServerQuotedIden = Identifier (Just ("[","]"))
+>                           <$> (char '[' *> takeWhile1 (`notElem` "[]") <* char ']')
+>     -- try is used here to avoid a conflict with identifiers
+>     -- and quoted strings which also start with a 'u'
+>     unicodeQuotedIden = Identifier
+>                         <$> (f <$> try (oneOf "uU" <* string "&"))
+>                         <*> qidenPart
+>       where f x = Just (x: "&\"", "\"")
+>     qidenPart = char '"' *> qidenSuffix ""
 >     qidenSuffix t = do
 >         s <- takeTill (=='"')
 >         void $ char '"'
@@ -330,18 +334,7 @@ constant.
 Symbols
 
 A symbol is an operator, or one of the misc symbols which include:
-.
-..
-:=
-:
-::
-(
-)
-?
-;
-,
-{ (for odbc)
-}
+. .. := : :: ( ) ? ; , { } (for odbc)
 
 The postgresql operator syntax allows a huge range of operators
 compared with ansi and other dialects
@@ -502,9 +495,9 @@ isn't there.
 
 This is to improve user experience: provide an error if we see */
 outside a comment. This could potentially break postgres ops with */
-in (which is a stupid thing to do). In other cases, the user should
-write * / instead (I can't think of any cases when this would be valid
-syntax though).
+in them (which is a stupid thing to do). In other cases, the user
+should write * / instead (I can't think of any cases when this would
+be valid syntax though).
 
 > dontParseEndBlockComment :: Dialect -> Parser Token
 > dontParseEndBlockComment _ =
