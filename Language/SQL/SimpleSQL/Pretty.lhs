@@ -628,6 +628,9 @@ which have been changed to try to improve the layout of the output.
 >     adminOptFor NoAdminOptionFor = empty
 
 
+> statement _ (StatementComment cs) = vcat $ map comment cs
+
+
 == sessions
 
 

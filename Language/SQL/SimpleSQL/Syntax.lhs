@@ -537,6 +537,7 @@ I'm not sure if this is valid syntax or not.
 >   | SetNames
 >   | SetTransform
 >   | SetCollation -}
+>   | StatementComment [Comment]
 >     deriving (Eq,Show,Read,Data,Typeable)
 
 > data DropBehaviour =

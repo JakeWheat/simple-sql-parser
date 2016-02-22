@@ -1,15 +1,13 @@
 medium tasks next release
 
-rename combinequeryexpr
-add comment to statements?
-review simple enums to make sure they have default
-  use enum in sign in interval literal
-
 syntax from hssqlppp:
   query hints, join hints
 
 unescaping identifiers and strings
 continuation strings testing
+
+add tests for comment pretty printing:
+  use pretty then lex
 
 work on better dialect design: more basic customizability and rule /
    callback driven
