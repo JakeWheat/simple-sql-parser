@@ -1,4 +1,5 @@
-0.5.0 (not released yet, updated to commit 322b6f200d694bff78f6a4a011d7e89d85293731)
+0.5.0 (not released yet, updated to commit 92c537fce2b348ea3f6af322b5b1a4fa46917e17)
+	rename some of the modules Lexer -> Lex, Parser -> Parse
 	add a separate lexer to simplify code and speed up parsing
 	replace SqlIndent with new tool, SimpleSqlParserTool (amazing
 	  name) which can indent, and parse and lex.
@@ -8,10 +9,27 @@
 	ddl: add limited support for create schema, plus drop schema
 	  create, alter and drop table with defaults and constraints
 	  create, alter and drop for domain, view, sequence
-        limited support for transaction management: start transation,
-          rollback, commit, savepoint
-        fix the precendence of operators which was following the weird
+	  create and drop for assertion
+	access control: simple create and drop for role
+	simple grant and revoke
+	limited support for transaction management: start transation,
+	rollback, commit, savepoint
+	fix the precendence of operators which was following the weird
 	  postgresql 9.4 and earlier precendences instead of the standard
+	refactor the syntax for names, identifiers and strings slightly
+	refactor the dialect support, add some support for postgresql
+	  syntax
+	change parsing of identifiers and strings to not unescape the
+	  identifier or string text during parsing
+	add some explicit parse failures for probably ambiguous text
+	  */ without /* (outside quoted identifier, string) will fail
+	  .,e,E following a number without whitespace always fails
+	  three symbols together fails explicitly, instead of trying to
+	    lex and giving a less good error at parse time (applies to |
+	    and : in postgres dialect)
+	fix parsing of functions whose name is a keyword (e.g. abs)
+	add basic support for parsing odbc syntax ({d 'literals'} {fn
+	  app(something)} and {oj t1 left outer join ... }
 0.4.1 (commit c156c5c34e91e1f7ef449d2c1ea14e282104fd90)
 	tested with ghc 7.4.2, 7.6.3, 7.8.4,7.10.0.20150123
 	simple demonstration of how dialects could be handled internally
