@@ -490,7 +490,11 @@ factoring in this function, and it is a little dense.
 >                     <|> PrecT <$ keyword_ "t"
 >                     <|> PrecP <$ keyword_ "p"
 >     lobUnits = PrecCharacters <$ keyword_ "characters"
+>                -- char and byte are the oracle spelling
+>                -- todo: move these to oracle dialect
+>                <|> PrecCharacters <$ keyword_ "char"
 >                <|> PrecOctets <$ keyword_ "octets"
+>                <|> PrecOctets <$ keyword_ "byte"
 >     tz = True <$ keywords_ ["with", "time","zone"]
 >          <|> False <$ keywords_ ["without", "time","zone"]
 >     charSet = keywords_ ["character", "set"] *> names
