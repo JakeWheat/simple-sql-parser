@@ -22,6 +22,8 @@ indent: parse then pretty print sql
 > import Language.SQL.SimpleSQL.Lex
 
 
+> dialect = ansi2011
+
 > main :: IO ()
 > main = do
 >     args <- getArgs
@@ -68,7 +70,7 @@ indent: parse then pretty print sql
 >       (f,src) <- getInput args
 >       either (error . peFormattedError)
 >           (putStrLn . ppShow)
->           $ parseStatements ansi2011 f Nothing src
+>           $ parseStatements dialect f Nothing src
 >   )
 
 > lexCommand :: (String,[String] -> IO ())
@@ -78,7 +80,7 @@ indent: parse then pretty print sql
 >       (f,src) <- getInput args
 >       either (error . peFormattedError)
 >              (putStrLn . intercalate ",\n" . map show)
->              $ lexSQL ansi2011 f Nothing src
+>              $ lexSQL dialect f Nothing src
 >   )
 
 
@@ -88,7 +90,7 @@ indent: parse then pretty print sql
 >   ,\args -> do
 >       (f,src) <- getInput args
 >       either (error . peFormattedError)
->           (putStrLn . prettyStatements ansi2011)
->           $ parseStatements ansi2011 f Nothing src
+>           (putStrLn . prettyStatements dialect)
+>           $ parseStatements dialect f Nothing src
 
 >   )
