@@ -72,6 +72,7 @@ Test-Suite Tests
                        Language.SQL.SimpleSQL.GroupBy,
                        Language.SQL.SimpleSQL.MySQL,
                        Language.SQL.SimpleSQL.Postgres,
+                       Language.SQL.SimpleSQL.Odbc,
                        Language.SQL.SimpleSQL.Oracle,
                        Language.SQL.SimpleSQL.QueryExprComponents,
                        Language.SQL.SimpleSQL.QueryExprs,
