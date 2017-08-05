@@ -55,7 +55,7 @@ expression parts.
 
 > module Language.SQL.SimpleSQL.ErrorMessages where
 
-> import Language.SQL.SimpleSQL.Parser
+> {-import Language.SQL.SimpleSQL.Parser
 > import Data.List
 > import Text.Groom
 
@@ -147,3 +147,4 @@ window functions
 > pExprs x y =
 >     let l = valExprs x ++ queryExprs y
 >     in intercalate "\n\n\n\n" $ map (\(a,b) -> a ++ "\n" ++ b) l
+> -}
