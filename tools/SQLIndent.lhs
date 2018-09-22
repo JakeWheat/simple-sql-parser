@@ -3,6 +3,7 @@
 
 > import Language.SQL.SimpleSQL.Pretty
 > import Language.SQL.SimpleSQL.Parser
+> import Language.SQL.SimpleSQL.Syntax
 
 > main :: IO ()
 > main = do
@@ -11,6 +12,6 @@
 >       [f] -> do
 >              src <- readFile f
 >              either (error . peFormattedError)
->                     (putStrLn . prettyQueryExprs)
->                     $ parseQueryExprs f Nothing src
+>                     (putStrLn . prettyQueryExprs SQL2011)
+>                     $ parseQueryExprs SQL2011 f Nothing src
 >       _ -> error "please pass filename to indent"
