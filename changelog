@@ -32,6 +32,8 @@
 	  app(something)} and {oj t1 left outer join ... }
 	rename ValueExpr -> ScalarExpr (I think scalar expression is
 	  slightly less incorrect)
+0.4.4
+	tested with ghc 8.2.1 and 8.4.3
 0.4.3
 	tested with ghc 8.0.2 and 8.2.1
 0.4.1 (commit c156c5c34e91e1f7ef449d2c1ea14e282104fd90)
