@@ -61,7 +61,7 @@ Test-Suite Tests
                        Language.SQL.SimpleSQL.Errors,
                        Language.SQL.SimpleSQL.Combinators
 
-                       Language.SQL.SimpleSQL.ErrorMessages,
+                       --Language.SQL.SimpleSQL.ErrorMessages,
                        Language.SQL.SimpleSQL.FullQueries,
                        Language.SQL.SimpleSQL.GroupBy,
                        Language.SQL.SimpleSQL.MySQL,

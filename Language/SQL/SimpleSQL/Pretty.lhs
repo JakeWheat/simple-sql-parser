@@ -1,4 +1,6 @@
 
+> {-# LANGUAGE CPP #-}
+> 
 > -- | These is the pretty printing functions, which produce SQL
 > -- source from ASTs. The code attempts to format the output in a
 > -- readable way.
@@ -17,6 +19,10 @@ which have been changed to try to improve the layout of the output.
 >                          doubleQuotes, brackets,hcat)
 > import Data.Maybe (maybeToList, catMaybes)
 > import Data.List (intercalate)
+
+#if MIN_VERSION_base(4,11,0)
+> import Prelude hiding ((<>))
+#endif
 
 > -- | Convert a query expr ast to concrete syntax.
 > prettyQueryExpr :: Dialect -> QueryExpr -> String
