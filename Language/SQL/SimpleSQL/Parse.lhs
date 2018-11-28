@@ -2354,7 +2354,7 @@ not, leave them unreserved for now
 >     ,"into"
 >     ,"is"
 >     ,"join"
->     ,"lag"
+>     -- ,"lag"
 >     ,"language"
 >     ,"large"
 >     ,"last_value"
