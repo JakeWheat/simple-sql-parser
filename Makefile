@@ -6,14 +6,14 @@
 
 .PHONY : init
 init :
-	cabal sandbox init
-	cabal install happy
-	cabal install --only-dependencies --enable-tests
-	cabal configure --enable-tests
+	cabal v1-sandbox init
+	cabal v1-install happy
+	cabal v1-install --only-dependencies --enable-tests
+	cabal v1-configure --enable-tests
 
 .PHONY : build
 build :
-	cabal build
+	cabal v1-build
 
 .PHONY : test
 test : build
@@ -25,7 +25,7 @@ website :
 
 .PHONY : clean
 clean :
-	cabal clean
-	cabal sandbox delete
+	cabal v1-clean
+	cabal v1-sandbox delete
 	rm -Rf build/
 

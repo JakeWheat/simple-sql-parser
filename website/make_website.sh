@@ -22,7 +22,7 @@ asciidoctor website/supported_sql.asciidoc -o - | runhaskell website/AddLinks.lh
 # tpch sql file
 # pandoc src/tpch.sql -s --highlight-style kate -o tpch.sql.html
 # rendered test cases
-runhaskell -package-db=.cabal-sandbox/x86_64-linux-ghc-7.10.3-packages.conf.d -i:tools website/RenderTestCases.lhs > build/test_cases.asciidoc
+runhaskell -package-db=.cabal-sandbox/x86_64-linux-ghc-8.6.5-packages.conf.d -i:tools website/RenderTestCases.lhs > build/test_cases.asciidoc
 
 #pandoc --from=markdown --to=html build/test_cases.asciidoc -o build/test_cases.html -c main.css '--title=simple-sql-parser examples/test cases' --toc
 asciidoctor build/test_cases.asciidoc -o - | \
