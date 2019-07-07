@@ -4,20 +4,13 @@
 # there is no real reason to actually use the makefile except for a
 # very small amount of convenience
 
-.PHONY : init
-init :
-	cabal v1-sandbox init
-	cabal v1-install happy
-	cabal v1-install --only-dependencies --enable-tests
-	cabal v1-configure --enable-tests
-
 .PHONY : build
 build :
-	cabal v1-build
+	cabal v2-build --enable-tests
 
 .PHONY : test
-test : build
-	dist/build/Tests/Tests --hide-successes
+test :
+	cabal v2-test
 
 .PHONY : website
 website :
@@ -25,7 +18,9 @@ website :
 
 .PHONY : clean
 clean :
-	cabal v1-clean
-	cabal v1-sandbox delete
+	cabal v2-clean
 	rm -Rf build/
 
+.PHONY: parserexe
+parserexe :
+	cabal v2-build -fparserexe SimpleSqlParserTool

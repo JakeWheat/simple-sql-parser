@@ -1,3 +1,24 @@
+task right now: get a 0.5.0 release
+check generated documentation
+  fix docs on index of website for cabal v2
+  add notes on non query supported sql
+add note about the release being not a milestone but just checkpoint
+test with different ghcs
+maybe add something to the docs about bug reports and feature requests
+fix these two bugs
+  https://github.com/JakeWheat/simple-sql-parser/issues/7
+  https://github.com/JakeWheat/simple-sql-parser/issues/8
+work on this one?
+  https://github.com/JakeWheat/simple-sql-parser/pull/19
+is this one fixed now?
+  https://github.com/JakeWheat/simple-sql-parser/issues/15
+review alters, and think about adding rename versions
+  https://github.com/JakeWheat/simple-sql-parser/issues/20
+update changelog
+
+
+
+
 medium tasks next release
 
 syntax from hssqlppp:

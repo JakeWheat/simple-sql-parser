@@ -4,3 +4,5 @@
 /.cabal-sandbox/
 /build/
 /.stack-work/
+/.ghc.environment.*
+/dist-newstyle/

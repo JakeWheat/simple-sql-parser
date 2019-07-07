@@ -103,6 +103,14 @@ executable SimpleSqlParserTool
   other-extensions:    TupleSections,DeriveDataTypeable
   default-language:    Haskell2010
   ghc-options:         -Wall
+  Other-Modules:       Language.SQL.SimpleSQL.Combinators
+                       Language.SQL.SimpleSQL.Dialect
+                       Language.SQL.SimpleSQL.Errors
+                       Language.SQL.SimpleSQL.Lex
+                       Language.SQL.SimpleSQL.Parse
+                       Language.SQL.SimpleSQL.Pretty
+                       Language.SQL.SimpleSQL.Syntax
+
   if flag(parserexe)
     buildable:         True
   else
@@ -126,3 +134,4 @@ executable Fixity
     buildable:         True
   else
     buildable:         False
+
