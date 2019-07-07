@@ -141,16 +141,45 @@ The supported scalar expressions include:
 
 == DDL
 
-todo
+* schemas
+** create, drop + drop restrict
+
+* tables
+** create table
+*** constraints: named, null, unique, primary key, foreign key (matches, on update/delete)
+*** identity (the weird ansi version), defaults
+*** defaults
+** alter table
+*** defaults, null, set data type, drop column, constraints
+** drop table + restrict
+** create, drop view
+
+** create, alter, drop domain
+*** defaults, constraints
+** create, drop assertion
+** create, alter, drop sequence
 
 == Non-query DML
 
-todo
+** delete
+*** delete from
+*** as alias
+*** where
+** truncate
+*** with identity options
+** insert
+*** values, general queries, defaults
+** update
+*** including row updates
 
 == Access Control
 
-todo
+** grant privileges
+*** all, grant option, table, domain, type, sequence, role, etc.
+** revoke
+** create role, drop role
 
 == Transaction management
 
-todo
+* begin, commit, rollback
+* savepoints

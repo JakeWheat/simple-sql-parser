@@ -22,7 +22,10 @@ probably not very stable, since adding support for all the
 not-yet-supported ANSI SQL syntax, then other dialects of SQL is
 likely to change the abstract syntax types considerably.
 
-Tested with GHC 7.10.2, 7.8.4 and 7.6.3.
+Release 0.5.0 is a checkpoint release since there hasn't been a
+release for a while.
+
+Tested with GHC 8.6.5.
 
 == Links
 
@@ -57,14 +60,23 @@ link:https://github.com/JakeWheat/intro_to_parsing/blob/master/SimpleSQLQueryPar
 ** set operators
 ** common table expressions
 ** wide range of scalar expressions
-* DDL
-** TODO
+* DDL (ansi dialect)
+** create,drop schema
+** create, alter, drop table
+** create, drop view
+** create, alter, drop domain
+** create, drop assertion
+** create, alter, drop sequence
 * non-query DML
-** TODO
+** delete
+** truncate
+** insert
+** update
 * Access control
-** TODO
+** grant, revoke - permissions and roles
+** create, drop role
 * Transaction management
-** TODO
+** begin, commit, rollback, savepoints
 
 See the link:supported_sql.html[] page for details on
 the supported SQL.
@@ -277,12 +289,61 @@ order by numwait desc, s_name
 fetch first 100 rows only;
 ----
 
+Parsing some SQL and printing the AST:
+
+[source,haskell]
+----
+
+import System.Environment
+import Text.Show.Pretty
+import System.IO
+
+import Language.SQL.SimpleSQL.Parse (parseStatements,peFormattedError)
+
+import Language.SQL.SimpleSQL.Syntax (ansi2011)
+
+
+main :: IO ()
+main = do
+    args <- getArgs
+    case args of
+        [] -> do
+              -- read from stdin
+              c <- getContents
+              doIt c
+        ["-s", sql] -> do
+              -- parse arg given
+              doIt sql
+        [f] ->
+              -- read file
+              withFile f ReadMode (\h -> do
+                  x <- hGetContents h
+                  doIt x)
+        _ -> do
+            putStrLn "use no arguments to stream sql from stdin, e.g.:\n\
+                     \  cat some.sql | SimpleSQLParserExample\n\
+                     \n\
+                     \use -s to parse sql on command line, e.g.:\n\
+                     \  SimpleSQLParserExample -s \"select * from t\"\n\
+                     \use a single arg to parse a file, e.g.\n\
+                     \  SimpleSQLParserExample some.sql"
+
+doIt :: String -> IO ()
+doIt src = do
+    let parsed = parseStatements ansi2011 "" Nothing src
+    either (error . peFormattedError)
+           (putStrLn . ppShow)
+           parsed
+----
+
+
+
 == Installation
 
 Installing the latest release from Hackage.
 
 ----
-cabal update && cabal install simple-sql-parser
+cabal v2-update && cabal v2-install simple-sql-parser
 ----
 
 Working with the latest development version:
@@ -290,9 +351,7 @@ Working with the latest development version:
 ----
 git clone https://github.com/JakeWheat/simple-sql-parser.git
 cd simple-sql-parser
-cabal sandbox init
-cabal install --only-dependencies
-cabal build
+cabal v2-build
 ----
 
 === Running the tests
@@ -303,25 +362,38 @@ source directory.
 You can run the tests using cabal:
 
 ----
-cabal sandbox init
-cabal install --only-dependencies --enable-tests
-cabal configure --enable-tests
-cabal test
+cabal v2-test
 ----
 
 Or you can run them directly which gives more options. The tests use
 tasty, which provides the command line options.
 
 ----
-cabal sandbox init
-cabal install --only-dependencies --enable-tests
-cabal configure --enable-tests
-cabal build
-dist/build/Tests/Tests
+cabal v2-build --enable-tests
+dist-newstyle/build/x86_64-linux/ghc-8.6.5/simple-sql-parser-0.5.0/t/Tests/build/Tests/Tests
 ----
 
 --hide-successes is a good option to use:
 
 ----
-dist/build/Tests/Tests --hide-successes
+dist-newstyle/build/x86_64-linux/ghc-8.6.5/simple-sql-parser-0.5.0/t/Tests/build/Tests/Tests --hide-successes
 ----
+
+Right now this option doesn't seem to be working for me - it still
+outputs a huge amount of text when all the tests pass.
+
+== Reporting bugs
+
+Please report bugs here:
+
+https://github.com/JakeWheat/simple-sql-parser/issues
+
+A good bug report (or feature request) should have an example of the
+SQL which is failing.
+
+Feature requests are welcome, but please note that there is no-one
+generally available to work on these, so you should either make a pull
+request, or find someone willing to write the fixes and make a pull
+request.
+
+
