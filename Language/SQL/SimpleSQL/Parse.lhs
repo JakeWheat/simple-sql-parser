@@ -791,6 +791,18 @@ all the scalar expressions which start with an identifier
 >                            ,"var_pop"
 >                            ,"var_samp"
 >                            ,"width_bucket"
+>                            -- window functions added here too
+>                            ,"row_number"
+>                            ,"rank"
+>                            ,"dense_rank"
+>                            ,"percent_rank"
+>                            ,"cume_dist"
+>                            ,"ntile"
+>                            ,"lead"
+>                            ,"lag"
+>                            ,"first_value"
+>                            ,"last_value"
+>                            ,"nth_value"
 >                            ]
 
 

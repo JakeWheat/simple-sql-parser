@@ -1,5 +1,4 @@
 task right now: get a 0.5.0 release
-test with different ghcs
 fix these two bugs
   https://github.com/JakeWheat/simple-sql-parser/issues/7
   https://github.com/JakeWheat/simple-sql-parser/issues/8
@@ -10,6 +9,7 @@ is this one fixed now?
 review alters, and think about adding rename versions
   https://github.com/JakeWheat/simple-sql-parser/issues/20
 update changelog
+test with different ghcs
 do release
 
 
