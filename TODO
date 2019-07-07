@@ -1,13 +1,11 @@
 task right now: get a 0.5.0 release
-fix these two bugs
+fixed these
   https://github.com/JakeWheat/simple-sql-parser/issues/7
   https://github.com/JakeWheat/simple-sql-parser/issues/8
-work on this one?
   https://github.com/JakeWheat/simple-sql-parser/pull/19
-is this one fixed now?
+  https://github.com/JakeWheat/simple-sql-parser/issues/18
+this one is fixed now, need postgres dialect atm
   https://github.com/JakeWheat/simple-sql-parser/issues/15
-review alters, and think about adding rename versions
-  https://github.com/JakeWheat/simple-sql-parser/issues/20
 update changelog
 test with different ghcs
 do release
@@ -15,6 +13,10 @@ do release
 
 
 medium tasks next release
+
+review alters, and think about adding rename versions
+  which are really common and useful, but not in ansi
+  https://github.com/JakeWheat/simple-sql-parser/issues/20
 
 syntax from hssqlppp:
   query hints, join hints
