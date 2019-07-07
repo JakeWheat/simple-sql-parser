@@ -22,7 +22,7 @@ additional pass over the ast can be made if you want to carefully
 prohibit everything that the standard doesn't allow.
 
 Apart from this permissiveness, some work has been put into trying to
-get the best parser error messages possible.
+get good parser error messages.
 
 == Queries
 

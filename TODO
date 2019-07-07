@@ -6,8 +6,8 @@ fixed these
   https://github.com/JakeWheat/simple-sql-parser/issues/18
 this one is fixed now, need postgres dialect atm
   https://github.com/JakeWheat/simple-sql-parser/issues/15
-update changelog
 test with different ghcs
+update changelog
 do release
 
 

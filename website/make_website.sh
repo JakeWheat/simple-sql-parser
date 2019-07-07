@@ -33,4 +33,4 @@ rm build/test_cases.asciidoc
 cabal v2-haddock
 rm -Rf build/haddock
 mkdir build/haddock/
-cp -R dist/doc/html/simple-sql-parser/* build/haddock/
+cp -R dist-newstyle/build/x86_64-linux/ghc-8.6.5/simple-sql-parser-0.5.0/doc/html/simple-sql-parser/* build/haddock/

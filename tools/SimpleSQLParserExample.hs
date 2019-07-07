@@ -5,9 +5,12 @@ import System.Environment
 import Text.Show.Pretty
 import System.IO
 
-import Language.SQL.SimpleSQL.Parse (parseStatements,peFormattedError)
+import Language.SQL.SimpleSQL.Parse
+       (parseStatements
+       ,ParseError
+       ,peFormattedError)
 
-import Language.SQL.SimpleSQL.Syntax (ansi2011)
+import Language.SQL.SimpleSQL.Syntax (ansi2011, Statement)
 
 
 main :: IO ()
@@ -37,7 +40,8 @@ main = do
 
 doIt :: String -> IO ()
 doIt src = do
-    let parsed = parseStatements ansi2011 "" Nothing src
+    let parsed :: Either ParseError [Statement]
+        parsed = parseStatements ansi2011 "" Nothing src
     either (error . peFormattedError)
            (putStrLn . ppShow)
            parsed

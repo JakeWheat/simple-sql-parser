@@ -16,7 +16,7 @@ have a relatively high assurance of the low level of bugs. This is
 much more difficult to get parity with when testing the syntax parser
 directly without the separately testing lexing stage.
 
-> -- | This is the module contains a Lexer for SQL.
+> -- | Lexer for SQL.
 > {-# LANGUAGE TupleSections #-}
 > module Language.SQL.SimpleSQL.Lex
 >     (Token(..)
@@ -52,7 +52,7 @@ directly without the separately testing lexing stage.
 > data Token
 >     -- | A symbol (in ansi dialect) is one of the following
 >     --
->     -- * multi char symbols <> <= >= != ||
+>     -- * multi char symbols <> \<= \>= != ||
 >     -- * single char symbols: * + -  < >  ^ / %  ~ & | ? ( ) [ ] , ; ( )
 >     --
 >     = Symbol String
