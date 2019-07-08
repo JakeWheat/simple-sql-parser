@@ -25,7 +25,7 @@ likely to change the abstract syntax types considerably.
 Release 0.5.0 is a checkpoint release since there hasn't been a
 release for a while.
 
-Tested with GHC 8.6.5.
+Tested with GHC 8.6.5, 8.4.4 and 8.2.1.
 
 == Links
 

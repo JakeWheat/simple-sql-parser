@@ -1,17 +1,3 @@
-task right now: get a 0.5.0 release
-fixed these
-  https://github.com/JakeWheat/simple-sql-parser/issues/7
-  https://github.com/JakeWheat/simple-sql-parser/issues/8
-  https://github.com/JakeWheat/simple-sql-parser/pull/19
-  https://github.com/JakeWheat/simple-sql-parser/issues/18
-this one is fixed now, need postgres dialect atm
-  https://github.com/JakeWheat/simple-sql-parser/issues/15
-test with different ghcs
-update changelog
-do release
-
-
-
 medium tasks next release
 
 review alters, and think about adding rename versions

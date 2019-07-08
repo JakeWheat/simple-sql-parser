@@ -1,5 +1,5 @@
-0.5.0 (not released yet, updated to commit 8e9b9edd0c293b67197e5679e728653477ecafc6)
-        update to work with ghc 8.6.5
+0.5.0
+        update to work with ghc 8.6.5, also tested with 8.4.4 and 8.2.1
 	rename some of the modules Lexer -> Lex, Parser -> Parse
 	add a separate lexer to simplify code and speed up parsing
 	replace SqlIndent with new tool, SimpleSqlParserTool (amazing
