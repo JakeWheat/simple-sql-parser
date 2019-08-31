@@ -92,6 +92,18 @@ Data types to represent different dialect options
 > addLimit d = d {diKeywords = "limit": diKeywords d
 >                ,diLimit = True}
 
+todo: review this list
+add tests
+
+think about how to say if something can safely be made a non keyword
+(assuming can only be total keyword or not keyword at all)
+-> if something can't appear in a scalar expression or next to one,
+then I think it's pretty safe
+
+mostly, things are keywords to avoid them mistakenly being parsed as
+aliases or as identifiers/functions/function-like things (aggs,
+windows, etc.)
+
 > ansi2011ReservedKeywords :: [String]
 > ansi2011ReservedKeywords =
 >     [--"abs" -- function
@@ -108,78 +120,78 @@ Data types to represent different dialect options
 >     ,"asensitive" -- keyword
 >     ,"asymmetric" -- keyword
 >     ,"at" -- keyword
->     ,"atomic"
->     ,"authorization"
->     --,"avg"
->     ,"begin"
->     ,"begin_frame"
->     ,"begin_partition"
->     ,"between"
->     ,"bigint"
->     ,"binary"
->     ,"blob"
->     ,"boolean"
->     ,"both"
->     ,"by"
->     ,"call"
->     ,"called"
->     ,"cardinality"
->     ,"cascaded"
->     ,"case"
->     ,"cast"
->     ,"ceil"
->     ,"ceiling"
->     ,"char"
->     --,"char_length"
->     ,"character"
->     --,"character_length"
->     ,"check"
->     ,"clob"
->     ,"close"
->     ,"coalesce"
->     ,"collate"
->     --,"collect"
->     ,"column"
->     ,"commit"
->     ,"condition"
->     ,"connect"
->     ,"constraint"
->     ,"contains"
->     --,"convert"
->     --,"corr"
->     ,"corresponding"
->     --,"count"
->     --,"covar_pop"
->     --,"covar_samp"
->     ,"create"
->     ,"cross"
->     ,"cube"
->     --,"cume_dist"
->     ,"current"
->     ,"current_catalog"
->     --,"current_date"
->     --,"current_default_transform_group"
->     --,"current_path"
->     --,"current_role"
->     ,"current_row"
->     ,"current_schema"
->     ,"current_time"
->     --,"current_timestamp"
->     ,"current_transform_group_for_type"
->     --,"current_user"
->     ,"cursor"
->     ,"cycle"
->     ,"date"
->     --,"day"
->     ,"deallocate"
->     ,"dec"
->     ,"decimal"
->     ,"declare"
->     --,"default"
->     ,"delete"
->     --,"dense_rank"
->     ,"deref"
->     ,"describe"
+>     ,"atomic" -- keyword
+>     ,"authorization" -- keyword
+>     --,"avg" -- function
+>     ,"begin" -- keyword
+>     --,"begin_frame" -- identifier
+>     --,"begin_partition" -- identifier
+>     ,"between" -- keyword
+>     ,"bigint" -- type
+>     ,"binary" -- type
+>     ,"blob" -- type
+>     ,"boolean" -- type
+>     ,"both" -- keyword
+>     ,"by" -- keyword
+>     ,"call" -- keyword
+>     ,"called" -- keyword
+>     -- ,"cardinality" -- function + identifier?
+>     ,"cascaded" -- keyword
+>     ,"case" -- keyword
+>     ,"cast" -- special function
+>     -- ,"ceil" -- function
+>     -- ,"ceiling" -- function
+>     ,"char"  -- type (+ keyword?)
+>     --,"char_length" -- function
+>     ,"character" -- type
+>     --,"character_length" -- function
+>     ,"check" -- keyword
+>     ,"clob" -- type
+>     ,"close" -- keyword
+>     -- ,"coalesce" -- function
+>     ,"collate" -- keyword
+>     --,"collect" -- function
+>     ,"column" -- keyword
+>     ,"commit" -- keyword
+>     ,"condition" -- keyword
+>     ,"connect" -- keyword
+>     ,"constraint" --keyword
+>     --,"contains" -- keyword?
+>     --,"convert" -- function?
+>     --,"corr" -- function
+>     ,"corresponding" --keyword
+>     --,"count" --function
+>     --,"covar_pop" -- function
+>     --,"covar_samp" --function
+>     ,"create" -- keyword
+>     ,"cross" -- keyword
+>     ,"cube" -- keyword
+>     --,"cume_dist" -- function
+>     ,"current" -- keyword
+>     -- ,"current_catalog" --identifier?
+>     --,"current_date" -- identifier
+>     --,"current_default_transform_group"  -- identifier
+>     --,"current_path"  -- identifier
+>     --,"current_role"  -- identifier
+>     -- ,"current_row"  -- identifier
+>     -- ,"current_schema"  -- identifier
+>     -- ,"current_time"  -- identifier
+>     --,"current_timestamp"  -- identifier
+>     --,"current_transform_group_for_type"  -- identifier, or keyword?
+>     --,"current_user" -- identifier
+>     ,"cursor" -- keyword
+>     ,"cycle" --keyword
+>     ,"date" -- type
+>     ,"day" -- keyword?
+>     ,"deallocate" -- keyword
+>     ,"dec" -- type
+>     ,"decimal" -- type
+>     ,"declare" -- keyword
+>     --,"default" -- identifier + keyword
+>     ,"delete" -- keyword
+>     --,"dense_rank" -- functino
+>     ,"deref" -- keyword
+>     ,"describe"  -- keyword
 >     ,"deterministic"
 >     ,"disconnect"
 >     ,"distinct"
@@ -190,9 +202,9 @@ Data types to represent different dialect options
 >     --,"element"
 >     ,"else"
 >     ,"end"
->     ,"end_frame"
->     ,"end_partition"
->     ,"end-exec"
+>     -- ,"end_frame"  -- identifier
+>     -- ,"end_partition"  -- identifier
+>     ,"end-exec" -- no idea what this is
 >     ,"equals"
 >     ,"escape"
 >     --,"every"
@@ -206,12 +218,12 @@ Data types to represent different dialect options
 >     --,"false"
 >     ,"fetch"
 >     ,"filter"
->     ,"first_value"
+>     -- ,"first_value"
 >     ,"float"
->     ,"floor"
+>     --,"floor"
 >     ,"for"
 >     ,"foreign"
->     ,"frame_row"
+>     -- ,"frame_row"  -- identifier
 >     ,"free"
 >     ,"from"
 >     ,"full"
@@ -225,7 +237,7 @@ Data types to represent different dialect options
 >     ,"groups"
 >     ,"having"
 >     ,"hold"
->     --,"hour"
+>     ,"hour"
 >     ,"identity"
 >     ,"in"
 >     ,"indicator"
@@ -241,21 +253,21 @@ Data types to represent different dialect options
 >     ,"into"
 >     ,"is"
 >     ,"join"
->     ,"lag"
+>     --,"lag"
 >     ,"language"
 >     ,"large"
->     ,"last_value"
+>     --,"last_value"
 >     ,"lateral"
->     ,"lead"
+>     --,"lead"
 >     ,"leading"
 >     ,"left"
 >     ,"like"
 >     ,"like_regex"
->     ,"ln"
+>     --,"ln"
 >     ,"local"
 >     ,"localtime"
 >     ,"localtimestamp"
->     ,"lower"
+>     --,"lower"
 >     ,"match"
 >     --,"max"
 >     ,"member"
@@ -263,7 +275,7 @@ Data types to represent different dialect options
 >     ,"method"
 >     --,"min"
 >     --,"minute"
->     ,"mod"
+>     --,"mod"
 >     ,"modifies"
 >     --,"module"
 >     --,"month"
@@ -277,10 +289,10 @@ Data types to represent different dialect options
 >     ,"none"
 >     ,"normalize"
 >     ,"not"
->     ,"nth_value"
+>     --,"nth_value"
 >     ,"ntile"
 >     --,"null"
->     ,"nullif"
+>     --,"nullif"
 >     ,"numeric"
 >     ,"octet_length"
 >     ,"occurrences_regex"
@@ -307,7 +319,7 @@ Data types to represent different dialect options
 >     ,"portion"
 >     ,"position"
 >     ,"position_regex"
->     ,"power"
+>     --,"power"
 >     ,"precedes"
 >     ,"precision"
 >     ,"prepare"
@@ -339,7 +351,7 @@ Data types to represent different dialect options
 >     ,"rollback"
 >     ,"rollup"
 >     --,"row"
->     ,"row_number"
+>     --,"row_number"
 >     ,"rows"
 >     ,"savepoint"
 >     ,"scope"
@@ -359,19 +371,19 @@ Data types to represent different dialect options
 >     ,"sqlexception"
 >     ,"sqlstate"
 >     ,"sqlwarning"
->     ,"sqrt"
+>     --,"sqrt"
 >     --,"start"
 >     ,"static"
 >     --,"stddev_pop"
 >     --,"stddev_samp"
 >     ,"submultiset"
->     ,"substring"
+>     --,"substring"
 >     ,"substring_regex"
 >     ,"succeeds"
 >     --,"sum"
 >     ,"symmetric"
 >     ,"system"
->     ,"system_time"
+>     --,"system_time"
 >     --,"system_user"
 >     ,"table"
 >     ,"tablesample"
@@ -388,8 +400,8 @@ Data types to represent different dialect options
 >     ,"treat"
 >     ,"trigger"
 >     ,"truncate"
->     ,"trim"
->     ,"trim_array"
+>     --,"trim"
+>     --,"trim_array"
 >     --,"true"
 >     ,"uescape"
 >     ,"union"
@@ -412,7 +424,7 @@ Data types to represent different dialect options
 >     ,"when"
 >     ,"whenever"
 >     ,"where"
->     ,"width_bucket"
+>     --,"width_bucket"
 >     ,"window"
 >     ,"with"
 >     ,"within"

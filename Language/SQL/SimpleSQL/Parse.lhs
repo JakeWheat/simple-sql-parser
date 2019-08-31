@@ -733,66 +733,7 @@ all the scalar expressions which start with an identifier
 >                                     then return [Name Nothing x]
 >                                     else fail ""
 >         in unquotedIdentifierTok [] Nothing >>= makeKeywordFunction
->     keywordFunctionNames = [{-"abs"
->                            ,"all"
->                            ,"any"
->                            ,"array_agg"
->                            ,"avg"
->                            ,"ceil"
->                            ,"ceiling"
->                            ,"char_length"
->                            ,"character_length"
->                            ,"coalesce"
->                            ,"collect"
->                            ,"contains"
->                            ,"convert"
->                            ,"corr"
->                            ,"covar_pop"
->                            ,"covar_samp"
->                            ,"count"
->                            ,"cume_dist"
->                            ,"grouping"
->                            ,"intersection"
->                            ,"ln"
->                            ,"max"
->                            ,"mod"
->                            ,"percent_rank"
->                            ,"percentile_cont"
->                            ,"percentile_disc"
->                            ,"power"
->                            ,"rank"
->                            ,"regr_avgx"
->                            ,"regr_avgy"
->                            ,"regr_count"
->                            ,"regr_intercept"
->                            ,"regr_r2"
->                            ,"regr_slope"
->                            ,"regr_sxx"
->                            ,"regr_sxy"
->                            ,"regr_syy"
->                            ,"row"
->                            ,"row_number"
->                            ,-}"set"{-
->                            ,"some"
->                            ,"stddev_pop"
->                            ,"stddev_samp"
->                            ,"sum"
->                            ,"upper"
->                            ,"var_pop"
->                            ,"var_samp"
->                            ,"width_bucket"
->                            -- window functions added here too
->                            ,"row_number"
->                            ,"rank"
->                            ,"dense_rank"
->                            ,"percent_rank"
->                            ,"cume_dist"
->                            ,"ntile"
->                            ,"lead"
->                            ,"lag"
->                            ,"first_value"
->                            ,"last_value"
->                            ,"nth_value"-}
+>     keywordFunctionNames = ["set"
 >                            ]
 
 
@@ -2218,6 +2159,10 @@ special case parsing code to handle this (in the case of set), or it
 is not treated as a keyword (not perfect, but if it more or less
 works, ok for now).
 
+An exception to this is the standard type names are considered as
+keywords at the moment, with a special case in the type parser to
+make this work. Maybe this isn't necessary or is a bad idea.
+
 It is possible to have a problem if you remove something which is a
 keyword from this list, and still want to parse statements using it
 as a keyword - for instance, removing things like 'from' or 'as',
@@ -2227,8 +2172,9 @@ will likely mean many things don't parse anymore.
 
 -----------
 
-bit hacky, used to make the dialect available during parsing so
-different parsers can be used for different dialects
+Used to make the dialect available during parsing so different parsers
+can be used for different dialects. Not sure if this is the best way
+to do it, but it's convenient
 
 > type ParseState = Dialect
 
@@ -2241,14 +2187,5 @@ different parsers can be used for different dialects
 >     d <- getState
 >     guard (f d)
 
-TODO: the ParseState and the Dialect argument should be turned into a
-flags struct. Part (or all?) of this struct is the dialect
-information, but each dialect has different versions + a big set of
-flags to control syntax variations within a version of a product
-dialect (for instance, string and identifier parsing rules vary from
-dialect to dialect and version to version, and most or all SQL DBMSs
-appear to have a set of flags to further enable or disable variations
-for quoting and escaping strings and identifiers).
-
-The dialect stuff can also be used for custom options: e.g. to only
+The dialect stuff could also be used for custom options: e.g. to only
 parse dml for instance.
