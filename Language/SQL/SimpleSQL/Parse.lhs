@@ -1482,8 +1482,11 @@ allows offset and fetch in either order
 >     With <$> option False (True <$ keyword_ "recursive")
 >          <*> commaSep1 withQuery <*> queryExpr
 >   where
->     withQuery = (,) <$> (fromAlias <* keyword_ "as")
+>     withQuery = (,) <$> (withAlias <* keyword_ "as")
 >                     <*> parens queryExpr
+>     withAlias = Alias <$> name <*> columnAliases
+>     columnAliases = optionMaybe $ parens $ commaSep1 name
+
 
 == query expression
 

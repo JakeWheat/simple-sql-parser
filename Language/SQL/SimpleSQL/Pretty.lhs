@@ -360,8 +360,13 @@ which have been changed to try to improve the layout of the output.
 >   text "with" <+> (if rc then text "recursive" else empty)
 >   <+> vcat [nest 5
 >             (vcat $ punctuate comma $ flip map withs $ \(n,q) ->
->              alias n <+> text "as" <+> parens (queryExpr d q))
+>              withAlias n <+> text "as" <+> parens (queryExpr d q))
 >            ,queryExpr d qe]
+>   where
+>     withAlias (Alias nm cols) = name nm
+>                                 <+> me (parens . commaSep . map name) cols
+
+
 > queryExpr d (Values vs) =
 >     text "values"
 >     <+> nest 7 (commaSep (map (parens . commaSep . map (scalarExpr d)) vs))
