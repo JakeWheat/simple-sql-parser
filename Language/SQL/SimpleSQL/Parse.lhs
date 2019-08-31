@@ -719,16 +719,10 @@ all the scalar expressions which start with an identifier
 > idenExpr =
 >     -- todo: work out how to left factor this
 >     try (TypedLit <$> typeName <*> singleQuotesOnlyStringTok)
->     <|> multisetSetFunction
+>     --  <|> multisetSetFunction
 >     <|> (try keywordFunction <**> app)
 >     <|> (names <**> option Iden app)
 >   where
->     -- this is a special case because set is a reserved keyword
->     -- and the names parser won't parse it
->     multisetSetFunction =
->         App [Name Nothing "set"] . (:[]) <$>
->         (try (keyword_ "set" *> openParen)
->          *> scalarExpr <* closeParen)
 >     keywordFunction =
 >         let makeKeywordFunction x = if map toLower x `elem` keywordFunctionNames
 >                                     then return [Name Nothing x]
@@ -783,6 +777,7 @@ all the scalar expressions which start with an identifier
 >                            ,"regr_syy"
 >                            ,"row"
 >                            ,"row_number"
+>                            ,"set"
 >                            ,"some"
 >                            ,"stddev_pop"
 >                            ,"stddev_samp"
@@ -2293,7 +2288,7 @@ not, leave them unreserved for now
 >     ,"current_row"
 >     ,"current_schema"
 >     ,"current_time"
->     ,"current_timestamp"
+>     --,"current_timestamp"
 >     ,"current_transform_group_for_type"
 >     --,"current_user"
 >     ,"cursor"

@@ -33,7 +33,12 @@ themselves
 review main missing sql bits - focus on more mainstream things
   could also review main dialects
 
-review the dialect support implementation
+** review the dialect support implementation
+-> how to create your own dialects
+   especially how to override the reserved keyword list easily
+   make a list of the current dialect specific things
+   review the reserved word handling and make some more tests
+   add negative parsing tests for things that should fail
 
 
 syntax from hssqlppp:

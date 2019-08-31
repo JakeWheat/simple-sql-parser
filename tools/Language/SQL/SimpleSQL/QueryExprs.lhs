@@ -13,6 +13,12 @@ query expressions from one string.
 >     ,("select 1;",[ms])
 >     ,("select 1;select 1",[ms,ms])
 >     ,(" select 1;select 1; ",[ms,ms])
+>     ,("SELECT CURRENT_TIMESTAMP;"
+>      ,[SelectStatement $ makeSelect
+>       {qeSelectList = [(Iden [Name Nothing "CURRENT_TIMESTAMP"],Nothing)]}])
+>     ,("SELECT \"CURRENT_TIMESTAMP\";"
+>      ,[SelectStatement $ makeSelect
+>       {qeSelectList = [(Iden [Name (Just ("\"","\"")) "CURRENT_TIMESTAMP"],Nothing)]}])
 >     ]
 >   where
 >     ms = SelectStatement $ makeSelect {qeSelectList = [(NumLit "1",Nothing)]}
