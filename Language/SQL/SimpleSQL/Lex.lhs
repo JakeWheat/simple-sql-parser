@@ -174,8 +174,8 @@ u&"unicode quoted identifier"
 >     [quotedIden
 >     ,unicodeQuotedIden
 >     ,regularIden
->     ,guard (diSyntaxFlavour d == MySQL) >> mySqlQuotedIden
->     ,guard (diSyntaxFlavour d == SQLServer) >> sqlServerQuotedIden
+>     ,guard (diBackquotedIden d) >> mySqlQuotedIden
+>     ,guard (diSquareBracketQuotedIden d) >> sqlServerQuotedIden
 >     ]
 >   where
 >     regularIden = Identifier Nothing <$> identifierString
@@ -217,15 +217,15 @@ use try because : and @ can be part of other things also
 > prefixedVariable :: Dialect -> Parser Token
 > prefixedVariable  d = try $ choice
 >     [PrefixedVariable <$> char ':' <*> identifierString
->     ,guard (diSyntaxFlavour d == SQLServer) >>
+>     ,guard (diAtIdentifier d) >>
 >      PrefixedVariable <$> char '@' <*> identifierString
->     ,guard (diSyntaxFlavour d == SQLServer) >>
+>     ,guard (diHashIdentifier d) >>
 >      PrefixedVariable <$> char '#' <*> identifierString
 >     ]
 
 > positionalArg :: Dialect -> Parser Token
 > positionalArg d =
->   guard (diSyntaxFlavour d == Postgres) >>
+>   guard (diPositionalArg d) >>
 >   -- use try to avoid ambiguities with other syntax which starts with dollar
 >   PositionalArg <$> try (char '$' *> (read <$> many1 digit))
 
@@ -243,7 +243,7 @@ x'hexidecimal string'
 > sqlString d = dollarString <|> csString <|> normalString
 >   where
 >     dollarString = do
->         guard $ diSyntaxFlavour d == Postgres
+>         guard $ diDollarString d
 >         -- use try because of ambiguity with symbols and with
 >         -- positional arg
 >         delim <- (\x -> concat ["$",x,"$"])
@@ -270,7 +270,7 @@ x'hexidecimal string'
 >     -- error messages and user predictability make it a good
 >     -- pragmatic choice
 >     csString
->       | diSyntaxFlavour d == Postgres =
+>       | diEString d =
 >         choice [SqlString <$> try (string "e'" <|> string "E'")
 >                           <*> return "'" <*> normalStringSuffix True ""
 >                ,csString']
@@ -304,7 +304,7 @@ constant.
 >     SqlNumber <$> completeNumber
 >     -- this is for definitely avoiding possibly ambiguous source
 >     <* choice [-- special case to allow e.g. 1..2
->                guard (diSyntaxFlavour d == Postgres)
+>                guard (diPostgresSymbols d)
 >                *> (void $ lookAhead $ try $ string "..")
 >                   <|> void (notFollowedBy (oneOf "eE."))
 >               ,notFollowedBy (oneOf "eE.")
@@ -324,7 +324,7 @@ constant.
 >     -- special case for postgresql, we backtrack if we see two adjacent dots
 >     -- to parse 1..2, but in other dialects we commit to the failure
 >     dot = let p = string "." <* notFollowedBy (char '.')
->           in if (diSyntaxFlavour d == Postgres)
+>           in if diPostgresSymbols d
 >              then try p
 >              else p
 >     expon = (:) <$> oneOf "eE" <*> sInt
@@ -342,12 +342,12 @@ compared with ansi and other dialects
 > symbol :: Dialect -> Parser Token
 > symbol d  = Symbol <$> choice (concat
 >    [dots
->    ,if (diSyntaxFlavour d == Postgres)
+>    ,if diPostgresSymbols d
 >     then postgresExtraSymbols
 >     else []
 >    ,miscSymbol
 >    ,if diOdbc d then odbcSymbol else []
->    ,if (diSyntaxFlavour d == Postgres)
+>    ,if diPostgresSymbols d
 >     then generalizedPostgresqlOperator
 >     else basicAnsiOps
 >    ])
@@ -360,10 +360,10 @@ compared with ansi and other dialects
 >        ,try (string "::" <* notFollowedBy (char ':'))
 >        ,try (string ":" <* notFollowedBy (char ':'))]
 >    miscSymbol = map (string . (:[])) $
->        case diSyntaxFlavour d of
->            SQLServer -> ",;():?"
->            Postgres -> "[],;()"
->            _ -> "[],;():?"
+>                 case () of
+>                     _ | diSqlServerSymbols d -> ",;():?"
+>                       | diPostgresSymbols d -> "[],;()"
+>                       | otherwise -> "[],;():?"
 
 try is used because most of the first characters of the two character
 symbols can also be part of a single character symbol
@@ -562,7 +562,7 @@ followed by = or : makes a different symbol
 two symbols next to eachother will fail if the symbols can combine and
 (possibly just the prefix) look like a different symbol
 
->     | Dialect {diSyntaxFlavour = Postgres} <- d
+>     | diPostgresSymbols d
 >     , Symbol a' <- a
 >     , Symbol b' <- b
 >     , b' `notElem` ["+", "-"] || or (map (`elem` a') "~!@#%^&|`?") = False

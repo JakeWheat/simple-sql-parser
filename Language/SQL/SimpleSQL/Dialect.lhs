@@ -5,7 +5,6 @@ Data types to represent different dialect options
 > {-# LANGUAGE DeriveDataTypeable #-}
 > module Language.SQL.SimpleSQL.Dialect
 >     (Dialect(..)
->     ,SyntaxFlavour(..)
 >     ,ansi2011
 >     ,mysql
 >     ,postgres
@@ -16,49 +15,78 @@ Data types to represent different dialect options
 
 > import Data.Data
 
-
-hack for now, later will expand to flags on a feature by feature basis
-
-> data SyntaxFlavour = ANSI2011
->                    | MySQL
->                    | Postgres
->                    | Oracle
->                    | SQLServer
->                      deriving (Eq,Show,Read,Data,Typeable)
-
 > -- | Used to set the dialect used for parsing and pretty printing,
 > -- very unfinished at the moment.
-> data Dialect = Dialect {diKeywords :: [String]
->                        ,diSyntaxFlavour :: SyntaxFlavour
->                        ,diFetchFirst :: Bool
->                        ,diLimit :: Bool
->                        ,diOdbc :: Bool}
+> data Dialect = Dialect
+>     { -- | The list of reserved keywords
+>      diKeywords :: [String]
+>      -- | does the dialect support ansi fetch first syntax
+>     ,diFetchFirst :: Bool
+>      -- | does the dialect support limit keyword (mysql, postgres, ...)
+>     ,diLimit :: Bool
+>      -- | allow parsing ODBC syntax
+>     ,diOdbc :: Bool
+>      -- | allow quoting identifiers with `backquotes`
+>     ,diBackquotedIden :: Bool
+>      -- | allow quoting identifiers with [square brackets]
+>     ,diSquareBracketQuotedIden :: Bool
+>      -- | allow identifiers with a leading at @example
+>     ,diAtIdentifier :: Bool
+>      -- | allow identifiers with a leading # #example
+>     ,diHashIdentifier :: Bool
+>      -- | allow positional identifiers like this: $1 
+>     ,diPositionalArg :: Bool
+>      -- | allow postgres style dollar strings
+>     ,diDollarString :: Bool
+>      -- | allow strings with an e - e"example"
+>     ,diEString :: Bool
+>      -- | allow postgres style symbols
+>     ,diPostgresSymbols :: Bool
+>      -- | allow sql server style symbols
+>     ,diSqlServerSymbols :: Bool
+>     }
 >                deriving (Eq,Show,Read,Data,Typeable)
 
 > -- | ansi sql 2011 dialect
 > ansi2011 :: Dialect
 > ansi2011 = Dialect {diKeywords = ansi2011ReservedKeywords
->                    ,diSyntaxFlavour = ANSI2011
 >                    ,diFetchFirst = True
 >                    ,diLimit = False
->                    ,diOdbc = False}
+>                    ,diOdbc = False
+>                    ,diBackquotedIden = False
+>                    ,diSquareBracketQuotedIden = False
+>                    ,diAtIdentifier = False
+>                    ,diHashIdentifier = False
+>                    ,diPositionalArg = False
+>                    ,diDollarString = False
+>                    ,diEString = False
+>                    ,diPostgresSymbols = False
+>                    ,diSqlServerSymbols = False
+>                    }
 
 > -- | mysql dialect
 > mysql :: Dialect
-> mysql = addLimit ansi2011 {diSyntaxFlavour = MySQL
->                           ,diFetchFirst = False }
+> mysql = addLimit ansi2011 {diFetchFirst = False
+>                           ,diBackquotedIden = True
+>                           }
 
 > -- | postgresql dialect
 > postgres :: Dialect
-> postgres = addLimit ansi2011 {diSyntaxFlavour = Postgres}
+> postgres = addLimit ansi2011 {diPositionalArg = True
+>                              ,diDollarString = True
+>                              ,diEString = True
+>                              ,diPostgresSymbols = True}
 
 > -- | oracle dialect
 > oracle :: Dialect
-> oracle = ansi2011 {diSyntaxFlavour = Oracle}
+> oracle = ansi2011 -- {}
 
 > -- | microsoft sql server dialect
 > sqlserver :: Dialect
-> sqlserver = ansi2011 {diSyntaxFlavour = SQLServer}
+> sqlserver = ansi2011 {diSquareBracketQuotedIden = True
+>                      ,diAtIdentifier = True
+>                      ,diHashIdentifier = True
+>                      ,diSqlServerSymbols = True }
 
 > addLimit :: Dialect -> Dialect
 > addLimit d = d {diKeywords = "limit": diKeywords d
