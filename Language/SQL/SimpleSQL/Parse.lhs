@@ -1457,12 +1457,12 @@ allows offset and fetch in either order
 > fetch :: Parser ScalarExpr
 > fetch = fetchFirst <|> limit
 >   where
->     fetchFirst = guardDialect [ANSI2011]
+>     fetchFirst = guardDialect diFetchFirst
 >                  *> fs *> scalarExpr <* ro
 >     fs = makeKeywordTree ["fetch first", "fetch next"]
 >     ro = makeKeywordTree ["rows only", "row only"]
 >     -- todo: not in ansi sql dialect
->     limit = guardDialect [MySQL] *>
+>     limit = guardDialect diLimit *>
 >             keyword_ "limit" *> scalarExpr
 
 == common table expressions
@@ -2216,7 +2216,14 @@ that looks identical to this), then it isn't treated as a keyword at
 all. When there is some overlap (e.g. 'set'), then there is either
 special case parsing code to handle this (in the case of set), or it
 is not treated as a keyword (not perfect, but if it more or less
-works, ok for now)
+works, ok for now).
+
+It is possible to have a problem if you remove something which is a
+keyword from this list, and still want to parse statements using it
+as a keyword - for instance, removing things like 'from' or 'as',
+will likely mean many things don't parse anymore.
+
+
 
 -----------
 
@@ -2229,10 +2236,10 @@ different parsers can be used for different dialects
 
 > type Parser = GenParser Token ParseState
 
-> guardDialect :: [SyntaxFlavour] -> Parser ()
-> guardDialect ds = do
+> guardDialect :: (Dialect -> Bool) -> Parser ()
+> guardDialect f = do
 >     d <- getState
->     guard (diSyntaxFlavour d `elem` ds)
+>     guard (f d)
 
 TODO: the ParseState and the Dialect argument should be turned into a
 flags struct. Part (or all?) of this struct is the dialect

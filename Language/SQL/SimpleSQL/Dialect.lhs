@@ -45,7 +45,8 @@ hack for now, later will expand to flags on a feature by feature basis
 
 > -- | mysql dialect
 > mysql :: Dialect
-> mysql = addLimit ansi2011 {diSyntaxFlavour = MySQL}
+> mysql = addLimit ansi2011 {diSyntaxFlavour = MySQL
+>                           ,diFetchFirst = False }
 
 > -- | postgresql dialect
 > postgres :: Dialect

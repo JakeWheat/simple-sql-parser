@@ -337,7 +337,7 @@ which have been changed to try to improve the layout of the output.
 >       ]
 >   where
 >     fetchFirst =
->       me (\e -> if diSyntaxFlavour dia == MySQL
+>       me (\e -> if diLimit dia
 >                 then text "limit" <+> scalarExpr dia e
 >                 else text "fetch first" <+> scalarExpr dia e
 >                      <+> text "rows only") fe
