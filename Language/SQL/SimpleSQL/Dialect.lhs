@@ -182,7 +182,7 @@ windows, etc.)
 >     ,"cursor" -- keyword
 >     ,"cycle" --keyword
 >     ,"date" -- type
->     ,"day" -- keyword?
+>     --,"day" -- keyword? - the parser needs it to not be a keyword to parse extract at the moment
 >     ,"deallocate" -- keyword
 >     ,"dec" -- type
 >     ,"decimal" -- type
@@ -237,7 +237,7 @@ windows, etc.)
 >     ,"groups"
 >     ,"having"
 >     ,"hold"
->     ,"hour"
+>     --,"hour"
 >     ,"identity"
 >     ,"in"
 >     ,"indicator"

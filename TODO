@@ -4,6 +4,7 @@ review alters, and think about adding rename versions
   which are really common and useful, but not in ansi
   https://github.com/JakeWheat/simple-sql-parser/issues/20
 
+finish off going through the keyword list
 
 do more examples
 what are the use cases?
@@ -32,8 +33,6 @@ themselves
 
 review main missing sql bits - focus on more mainstream things
   could also review main dialects
-
-review the dialect support implementation
 
 
 syntax from hssqlppp:
