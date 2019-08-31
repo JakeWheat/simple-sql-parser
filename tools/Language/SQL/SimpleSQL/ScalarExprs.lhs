@@ -50,6 +50,7 @@ Tests for parsing scalar expressions
 >     [("iden1", Iden [Name Nothing "iden1"])
 >     --,("t.a", Iden2 "t" "a")
 >     ,("\"quoted identifier\"", Iden [Name (Just ("\"","\"")) "quoted identifier"])
+>     ,("\"period\"", Iden [Name (Just ("\"","\"")) "period"])
 >     ]
 
 > star :: TestItem
@@ -413,3 +414,4 @@ target_string
 >     ]
 >   where
 >     t fn = TestScalarExpr ansi2011 (fn ++ "(a)") $ App [Name Nothing fn] [Iden [Name Nothing "a"]]
+

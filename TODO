@@ -4,6 +4,38 @@ review alters, and think about adding rename versions
   which are really common and useful, but not in ansi
   https://github.com/JakeWheat/simple-sql-parser/issues/20
 
+
+do more examples
+what are the use cases?
+  sql generator - queries
+  sql generator - ddl
+  parsing some sql - for what purpose
+    generating documentation of ddl
+    write some sort of trivial sql engine or wrapper around something?
+    write something that takes sql, modifies it, and outputs the result
+    lint checker?
+
+do an example of adding some new syntax
+-> seems quite a few people are using this
+  and there are some feature requests
+  try to give people a path to implement features themselves
+
+goals:
+
+1. if someone might want to use this, give them some toy examples to
+help bootstrap them
+
+2. see if can encourage people who want some missing sql to add it
+themselves
+
+
+
+review main missing sql bits - focus on more mainstream things
+  could also review main dialects
+
+review the dialect support implementation
+
+
 syntax from hssqlppp:
   query hints, join hints
 
