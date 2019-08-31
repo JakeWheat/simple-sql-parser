@@ -1,3 +1,14 @@
+0.6.0
+        checked - works with ghc 8.8.1 - but because of pretty-show,
+          the executable doesn't work with this ghc yet
+        change the dialect handling - now a dialect is a bunch of flags
+          plus a keyword list, and custom dialects are now feasible
+          (still incomplete)
+        fix parsing for a lot of things which are keywords in the standard
+        fix bug with cte pretty printing an extra 'as', which the parser
+          also incorrectly accepted
+        bug fix: allow keywords that are quoted to be parsed as identifiers
+
 0.5.0
         update to work with ghc 8.6.5, also tested with 8.4.4 and 8.2.1
 	rename some of the modules Lexer -> Lex, Parser -> Parse

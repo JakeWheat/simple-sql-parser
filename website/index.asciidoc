@@ -25,7 +25,7 @@ likely to change the abstract syntax types considerably.
 Release 0.5.0 is a checkpoint release since there hasn't been a
 release for a while.
 
-Tested with GHC 8.6.5, 8.4.4 and 8.2.1.
+Tested with GHC 8.8.1, 8.6.5, 8.4.4 and 8.2.1.
 
 == Links
 
@@ -338,7 +338,6 @@ doIt src = do
     either (error . peFormattedError)
            (putStrLn . ppShow)
            parsed
-
 ----
 
 
@@ -371,21 +370,13 @@ cabal v2-test
 ----
 
 Or you can run them directly which gives more options. The tests use
-tasty, which provides the command line options.
+tasty, which provides the command line options. --hide-successes
+with --ansi-tricks=false so it works is a good option to use:
+
 
 ----
-cabal v2-build --enable-tests
-dist-newstyle/build/x86_64-linux/ghc-8.6.5/simple-sql-parser-0.5.0/t/Tests/build/Tests/Tests
+cabal new-run test:Tests -- --hide-successes --ansi-tricks=false
 ----
-
---hide-successes is a good option to use:
-
-----
-dist-newstyle/build/x86_64-linux/ghc-8.6.5/simple-sql-parser-0.5.0/t/Tests/build/Tests/Tests --hide-successes
-----
-
-Right now this option doesn't seem to be working for me - it still
-outputs a huge amount of text when all the tests pass.
 
 == Reporting bugs
 
