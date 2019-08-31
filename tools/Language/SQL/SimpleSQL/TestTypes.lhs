@@ -4,11 +4,12 @@ Tests.lhs module for the 'interpreter'.
 
 > module Language.SQL.SimpleSQL.TestTypes
 >     (TestItem(..)
->     ,ansi2011,mysql,postgres,oracle,sqlserver
->     ,diOdbc) where
+>     ,module Language.SQL.SimpleSQL.Dialect
+>     ) where
 
 > import Language.SQL.SimpleSQL.Syntax
 > import Language.SQL.SimpleSQL.Lex (Token)
+> import Language.SQL.SimpleSQL.Dialect
 
 TODO: maybe make the dialect args into [dialect], then each test
 checks all the dialects mentioned work, and all the dialects not

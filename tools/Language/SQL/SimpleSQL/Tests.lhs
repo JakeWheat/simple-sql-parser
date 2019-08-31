@@ -38,6 +38,7 @@ test data to the Test.Framework tests.
 
 > import Language.SQL.SimpleSQL.MySQL
 > import Language.SQL.SimpleSQL.Oracle
+> import Language.SQL.SimpleSQL.CustomDialect
 
 Order the tests to start from the simplest first. This is also the
 order on the generated documentation.
@@ -62,6 +63,7 @@ order on the generated documentation.
 >     ,sql2011BitsTests
 >     ,mySQLTests
 >     ,oracleTests
+>     ,customDialectTests
 >     ]
 
 > tests :: T.TestTree

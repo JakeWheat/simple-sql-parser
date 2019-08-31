@@ -90,7 +90,8 @@ Test-Suite Tests
                        Language.SQL.SimpleSQL.Tests,
                        Language.SQL.SimpleSQL.Tpch,
                        Language.SQL.SimpleSQL.ScalarExprs,
-                       Language.SQL.SimpleSQL.LexerTests
+                       Language.SQL.SimpleSQL.LexerTests,
+                       Language.SQL.SimpleSQL.CustomDialect
 
   other-extensions:    TupleSections,DeriveDataTypeable
   default-language:    Haskell2010
