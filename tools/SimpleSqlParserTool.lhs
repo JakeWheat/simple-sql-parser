@@ -59,8 +59,8 @@ indent: parse then pretty print sql
 > getInput :: [String] -> IO (FilePath,String)
 > getInput as =
 >     case as of
->       ["-"] -> ("-",) <$> getContents
->       ("-c":as') -> return ("-", unwords as')
+>       ["-"] -> ("",) <$> getContents
+>       ("-c":as') -> return ("", unwords as')
 >       [filename] -> (filename,) <$> readFile filename
 >       _ -> showHelp (Just "arguments not recognised") >> error ""
 
