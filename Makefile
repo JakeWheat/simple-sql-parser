@@ -6,7 +6,7 @@
 
 .PHONY : build
 build :
-	cabal v2-build --enable-tests
+	cabal v2-build --enable-tests -fparserexe
 
 .PHONY : test
 test :

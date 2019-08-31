@@ -14,7 +14,7 @@ indent: parse then pretty print sql
 > import System.Exit
 > import Data.List
 > import Text.Show.Pretty
-> import Control.Applicative
+> --import Control.Applicative
 
 > import Language.SQL.SimpleSQL.Pretty
 > import Language.SQL.SimpleSQL.Parse
@@ -22,6 +22,7 @@ indent: parse then pretty print sql
 > import Language.SQL.SimpleSQL.Lex
 
 
+> dialect :: Dialect
 > dialect = ansi2011
 
 > main :: IO ()

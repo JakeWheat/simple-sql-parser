@@ -15,10 +15,9 @@
 >     ,(<$$$$$>)
 >     ) where
 
-> import Control.Applicative ((<$>), (<*>), (<**>), pure, Applicative)
+> import Control.Applicative ((<**>))
 > import Text.Parsec (option,many)
 > import Text.Parsec.String (GenParser)
-
 
 a possible issue with the option suffix is that it enforces left
 associativity when chaining it recursively. Have to review
