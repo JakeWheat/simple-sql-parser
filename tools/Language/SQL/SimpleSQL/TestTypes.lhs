@@ -5,7 +5,7 @@ Tests.lhs module for the 'interpreter'.
 > module Language.SQL.SimpleSQL.TestTypes
 >     (TestItem(..)
 >     ,ansi2011,mysql,postgres,oracle,sqlserver
->     ,allowOdbc) where
+>     ,diOdbc) where
 
 > import Language.SQL.SimpleSQL.Syntax
 > import Language.SQL.SimpleSQL.Lex (Token)

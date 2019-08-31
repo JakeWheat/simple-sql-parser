@@ -346,7 +346,7 @@ compared with ansi and other dialects
 >     then postgresExtraSymbols
 >     else []
 >    ,miscSymbol
->    ,if allowOdbc d then odbcSymbol else []
+>    ,if diOdbc d then odbcSymbol else []
 >    ,if (diSyntaxFlavour d == Postgres)
 >     then generalizedPostgresqlOperator
 >     else basicAnsiOps

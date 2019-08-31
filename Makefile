@@ -10,7 +10,7 @@ build :
 
 .PHONY : test
 test :
-	cabal v2-test
+	cabal new-run test:Tests -- --hide-successes --ansi-tricks=false
 
 .PHONY : website
 website :

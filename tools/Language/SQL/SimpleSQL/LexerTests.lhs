@@ -315,7 +315,7 @@ the + or -.
 
 > odbcLexerTests :: TestItem
 > odbcLexerTests = Group "odbcLexTests" $
->     [ LexTest sqlserver {allowOdbc = True} s t | (s,t) <-
+>     [ LexTest sqlserver {diOdbc = True} s t | (s,t) <-
 >     [("{}", [Symbol "{", Symbol "}"])
 >     ]]
 >     ++ [LexFails sqlserver "{"

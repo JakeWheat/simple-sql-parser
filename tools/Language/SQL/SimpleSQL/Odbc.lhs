@@ -29,14 +29,14 @@
 >               ,iden "SQL_DATE"])
 >             ]
 >        ,Group "outer join" [
->              TestQueryExpr ansi2011 {allowOdbc=True}
+>              TestQueryExpr ansi2011 {diOdbc=True}
 >              "select * from {oj t1 left outer join t2 on expr}"
 >              $ makeSelect
 >                    {qeSelectList = [(Star,Nothing)]
 >                    ,qeFrom = [TROdbc $ TRJoin (TRSimple [Name Nothing "t1"]) False JLeft (TRSimple [Name Nothing "t2"])
 >                                          (Just $ JoinOn $ Iden [Name Nothing "expr"])]}]
 >        ,Group "check parsing bugs" [
->              TestQueryExpr ansi2011 {allowOdbc=True}
+>              TestQueryExpr ansi2011 {diOdbc=True}
 >              "select {fn CONVERT(cint,SQL_BIGINT)} from t;"
 >              $ makeSelect
 >                    {qeSelectList = [(OdbcFunc (ap "CONVERT"
@@ -45,7 +45,7 @@
 >                    ,qeFrom = [TRSimple [Name Nothing "t"]]}]
 >        ]
 >   where
->     e = TestScalarExpr ansi2011 {allowOdbc = True}
+>     e = TestScalarExpr ansi2011 {diOdbc = True}
 >     --tsql = ParseProcSql defaultParseFlags {pfDialect=sqlServerDialect}
 >     ap n = App [Name Nothing n]
 >     iden n = Iden [Name Nothing n]

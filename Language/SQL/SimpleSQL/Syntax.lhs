@@ -58,12 +58,7 @@
 >     ,AdminOptionFor(..)
 >     ,GrantOptionFor(..)
 >      -- * Dialects
->     ,Dialect(allowOdbc)
->     ,ansi2011
->     ,mysql
->     ,postgres
->     ,oracle
->     ,sqlserver
+>     ,module Language.SQL.SimpleSQL.Dialect
 >      -- * Comment
 >     ,Comment(..)
 >     ) where
