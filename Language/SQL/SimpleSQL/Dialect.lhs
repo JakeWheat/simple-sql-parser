@@ -18,15 +18,18 @@ Data types to represent different dialect options
 > -- | Used to set the dialect used for parsing and pretty printing,
 > -- very unfinished at the moment.
 > data Dialect = Dialect
->     { -- | The list of reserved keywords
+>     { -- | the list of reserved keywords
 >      diKeywords :: [String]
->       -- | The list of reserved keywords, which can also be used as
->       -- |  an identifier
+>       -- | the list of reserved keywords, which can also be used as
+>       -- | an identifier
 >     ,diIdentifierKeywords :: [String]
->       -- | The list of reserved keywords, which can also be used as
->       -- |  a function name (including aggregates and window
->       -- |  functions)
+>       -- | the list of reserved keywords, which can also be used as
+>       -- | a function name (including aggregates and window
+>       -- | functions)
 >     ,diAppKeywords :: [String]
+>      -- | all the type names which are also reserved keywords, and
+>      -- | all the type names which are multiple words
+>     ,diSpecialTypeNames :: [String]
 >      -- | does the dialect support ansi fetch first syntax
 >     ,diFetchFirst :: Bool
 >      -- | does the dialect support limit keyword (mysql, postgres,
@@ -60,6 +63,7 @@ Data types to represent different dialect options
 > ansi2011 = Dialect {diKeywords = ansi2011ReservedKeywords
 >                    ,diIdentifierKeywords = []
 >                    ,diAppKeywords = ["set"]
+>                    ,diSpecialTypeNames = ansi2011TypeNames
 >                    ,diFetchFirst = True
 >                    ,diLimit = False
 >                    ,diOdbc = False
@@ -462,4 +466,49 @@ some rationale for having quite string reserved keywords:
 >     ,"within"
 >     ,"without"
 >     --,"year"
+>     ]
+
+
+> ansi2011TypeNames :: [String]
+> ansi2011TypeNames =
+>     ["double precision"
+>     ,"character varying"
+>     ,"char varying"
+>     ,"character large object"
+>     ,"char large object"
+>     ,"national character"
+>     ,"national char"
+>     ,"national character varying"
+>     ,"national char varying"
+>     ,"national character large object"
+>     ,"nchar large object"
+>     ,"nchar varying"
+>     ,"bit varying"
+>     ,"binary large object"
+>     ,"binary varying"
+>         -- reserved keyword typenames:
+>     ,"array"
+>     ,"bigint"
+>     ,"binary"
+>     ,"blob"
+>     ,"boolean"
+>     ,"char"
+>     ,"character"
+>     ,"clob"
+>     ,"date"
+>     ,"dec"
+>     ,"decimal"
+>     ,"double"
+>     ,"float"
+>     ,"int"
+>     ,"integer"
+>     ,"nchar"
+>     ,"nclob"
+>     ,"numeric"
+>     ,"real"
+>     ,"smallint"
+>     ,"time"
+>     ,"timestamp"
+>     ,"varchar"
+>     ,"varbinary"
 >     ]

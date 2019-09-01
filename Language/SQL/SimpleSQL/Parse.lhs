@@ -508,48 +508,10 @@ factoring in this function, and it is a little dense.
 >     -- this parser handles the fixed set of multi word
 >     -- type names, plus all the type names which are
 >     -- reserved words
->     reservedTypeNames = (:[]) . Name Nothing . unwords <$> makeKeywordTree
->         ["double precision"
->         ,"character varying"
->         ,"char varying"
->         ,"character large object"
->         ,"char large object"
->         ,"national character"
->         ,"national char"
->         ,"national character varying"
->         ,"national char varying"
->         ,"national character large object"
->         ,"nchar large object"
->         ,"nchar varying"
->         ,"bit varying"
->         ,"binary large object"
->         ,"binary varying"
->         -- reserved keyword typenames:
->         ,"array"
->         ,"bigint"
->         ,"binary"
->         ,"blob"
->         ,"boolean"
->         ,"char"
->         ,"character"
->         ,"clob"
->         ,"date"
->         ,"dec"
->         ,"decimal"
->         ,"double"
->         ,"float"
->         ,"int"
->         ,"integer"
->         ,"nchar"
->         ,"nclob"
->         ,"numeric"
->         ,"real"
->         ,"smallint"
->         ,"time"
->         ,"timestamp"
->         ,"varchar"
->         ,"varbinary"
->         ]
+>     reservedTypeNames = do
+>         d <- getState
+>         (:[]) . Name Nothing . unwords <$> makeKeywordTree (diSpecialTypeNames d)
+>         
 
 = Scalar expressions
 
