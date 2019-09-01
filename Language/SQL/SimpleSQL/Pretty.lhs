@@ -1,5 +1,4 @@
 
-> {-# LANGUAGE CPP #-}
 > -- | These is the pretty printing functions, which produce SQL
 > -- source from ASTs. The code attempts to format the output in a
 > -- readable way.
@@ -10,11 +9,7 @@
 >     ,prettyStatements
 >     ) where
 
-#if MIN_VERSION_base(4,11,0)
-
 > import Prelude hiding ((<>))
-
-#endif
 
 TODO: there should be more comments in this file, especially the bits
 which have been changed to try to improve the layout of the output.

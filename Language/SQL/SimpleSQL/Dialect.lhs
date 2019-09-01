@@ -21,29 +21,29 @@ Data types to represent different dialect options
 >     { -- | the list of reserved keywords
 >      diKeywords :: [String]
 >       -- | the list of reserved keywords, which can also be used as
->       -- | an identifier
+>       -- an identifier
 >     ,diIdentifierKeywords :: [String]
 >       -- | the list of reserved keywords, which can also be used as
->       -- | a function name (including aggregates and window
->       -- | functions)
+>       -- a function name (including aggregates and window
+>       -- functions)
 >     ,diAppKeywords :: [String]
 >      -- | all the type names which are also reserved keywords, and
->      -- | all the type names which are multiple words
+>      -- all the type names which are multiple words
 >     ,diSpecialTypeNames :: [String]
->      -- | does the dialect support ansi fetch first syntax
+>      -- | allow ansi fetch first syntax
 >     ,diFetchFirst :: Bool
->      -- | does the dialect support limit keyword (mysql, postgres,
->      -- |  ...)
+>      -- | allow limit keyword (mysql, postgres,
+>      -- ...)
 >     ,diLimit :: Bool
 >      -- | allow parsing ODBC syntax
 >     ,diOdbc :: Bool
->      -- | allow quoting identifiers with `backquotes`
+>      -- | allow quoting identifiers with \`backquotes\`
 >     ,diBackquotedIden :: Bool
 >      -- | allow quoting identifiers with [square brackets]
 >     ,diSquareBracketQuotedIden :: Bool
 >      -- | allow identifiers with a leading at @example
 >     ,diAtIdentifier :: Bool
->      -- | allow identifiers with a leading # #example
+>      -- | allow identifiers with a leading \# \#example
 >     ,diHashIdentifier :: Bool
 >      -- | allow positional identifiers like this: $1 
 >     ,diPositionalArg :: Bool

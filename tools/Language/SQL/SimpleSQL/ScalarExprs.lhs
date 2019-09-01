@@ -50,7 +50,7 @@ Tests for parsing scalar expressions
 >     [("iden1", Iden [Name Nothing "iden1"])
 >     --,("t.a", Iden2 "t" "a")
 >     ,("\"quoted identifier\"", Iden [Name (Just ("\"","\"")) "quoted identifier"])
->     ,("\"period\"", Iden [Name (Just ("\"","\"")) "period"])
+>     ,("\"from\"", Iden [Name (Just ("\"","\"")) "from"])
 >     ]
 
 > star :: TestItem
