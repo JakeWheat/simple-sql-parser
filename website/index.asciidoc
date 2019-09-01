@@ -389,7 +389,7 @@ generally available to work on these, so you should either make a pull
 request, or find someone willing to write the fixes and make a pull
 request.
 
-I wrote a tutorial on parsing SQL here:
+There is a related tutorial on implementing a SQL parser here:
 http://jakewheat.github.io/intro_to_parsing/
 
 
