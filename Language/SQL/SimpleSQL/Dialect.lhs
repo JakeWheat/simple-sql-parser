@@ -10,25 +10,55 @@ Data types to represent different dialect options
 >     ,postgres
 >     ,oracle
 >     ,sqlserver
->     ,ansi2011ReservedKeywords
 >     ) where
 
 > import Data.Data
 
 > -- | Used to set the dialect used for parsing and pretty printing,
 > -- very unfinished at the moment.
+> --
+> -- The keyword handling works as follows:
+> --
+> -- There is a list of reserved keywords. These will never parse as
+> -- anything other than as a keyword, unless they are in one of the
+> -- other lists.
+> --
+> -- There is a list of \'identifier\' keywords. These are reserved
+> -- keywords, with an exception that they will parse as an
+> -- identifier in a scalar expression. They won't parse as
+> -- identifiers in other places, e.g. column names or aliases.
+> --
+> -- There is a list of \'app\' keywords. These are reserved keywords,
+> -- with an exception that they will also parse in an \'app-like\'
+> -- construct - a regular function call, or any of the aggregate and
+> -- window variations.
+> --
+> -- There is a list of special type names. This list serves two
+> -- purposes - it is a list of the reserved keywords which are also
+> -- type names, and it is a list of all the multi word type names.
+> --
+> -- Every keyword should appear in the keywords lists, and then you can
+> -- add them to the other lists if you want exceptions. Most things
+> -- that refer to functions, types or variables that are keywords in
+> -- the ansi standard, can be removed from the keywords lists
+> -- completely with little effect. With most of the actual SQL
+> -- keywords, removing them from the keyword list will result in
+> -- lots of valid syntax no longer parsing (and probably bad parse
+> -- error messages too).
+> --
+> -- In the code, all special syntax which looks identical to regular
+> -- identifiers or function calls (apart from the name), is treated
+> -- like a regular identifier or function call.
+> 
 > data Dialect = Dialect
->     { -- | the list of reserved keywords
+>     { -- | reserved keywords
 >      diKeywords :: [String]
->       -- | the list of reserved keywords, which can also be used as
->       -- an identifier
+>       -- | keywords with identifier exception
 >     ,diIdentifierKeywords :: [String]
->       -- | the list of reserved keywords, which can also be used as
->       -- a function name (including aggregates and window
->       -- functions)
+>       -- | keywords with app exception
 >     ,diAppKeywords :: [String]
->      -- | all the type names which are also reserved keywords, and
->      -- all the type names which are multiple words
+>      -- | keywords with type exception plus all the type names which
+>      -- are multiple words
 >     ,diSpecialTypeNames :: [String]
 >      -- | allow ansi fetch first syntax
 >     ,diFetchFirst :: Bool
@@ -106,39 +136,32 @@ Data types to represent different dialect options
 > addLimit d = d {diKeywords = "limit": diKeywords d
 >                ,diLimit = True}
 
-todo: review this list
-add tests
 
-think about how to say if something can safely be made a non keyword
-(assuming can only be total keyword or not keyword at all)
--> if something can't appear in a scalar expression or next to one,
-then I think it's pretty safe
+The keyword handling is quite strong - an alternative way to do it
+would be to have as few keywords as possible, and only require them
+to be quoted when this is needed to resolve a parsing ambiguity.
 
-mostly, things are keywords to avoid them mistakenly being parsed as
-aliases or as identifiers/functions/function-like things (aggs,
-windows, etc.)
+I don't think this is a good idea for genuine keywords (it probably is
+for all the 'fake' keywords in the standard - things which are
+essentially function names, or predefined variable names, or type
+names, eetc.).
 
-some rationale for having quite string reserved keywords:
+1. working out exactly when each keyword would need to be quoted is
+quite error prone, and might change as the parser implementation is
+maintained - which would be terrible for users
 
-1. sql has the unusual (these days) feature of quoting identifiers
-    which allows you to use any keyword in any context
+2. it's not user friendly for the user to deal with a whole load of
+special cases - either something is a keyword, then you know you must
+always quote it, or it isn't, then you know you never need to quote
+it
 
-2. the user already has to deal with a very long list of keywords in
-   sql. this is not very user friendly
+3. I think not having exceptions makes for better error messages for
+the user, and a better sql code maintenance experience.
 
-3. if the user has to remember which situations which keyword needs
-   quoting, and which it doesn't need quoting, this is also not very
-   user friendly, even if it means less quoting sometimes. E.g. if
-   you only need to quote 'from' in places where it is ambiguous, and
-   you want to take advantage of this, this list of good/not-good
-   places is based on the weirdness of SQL grammar and the
-   implementation details of the parser - and it's especially bad if
-   you are using from as an iden without quotes, and you edit the sql
-   statement, and now from is in a position where it does need
-   quotes, and you get a obscure error message
-
-4. there is a lot more potential for nice clear error messages
-   keywords are never allowed without quoting
+This might not match actual existing SQL products that well, some of
+which I think have idiosyncratic rules about when a keyword must be
+quoted. If you want to match one of these dialects exactly with this
+parser, I think it will be a lot of work.
 
 > ansi2011ReservedKeywords :: [String]
 > ansi2011ReservedKeywords =
