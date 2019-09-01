@@ -24,8 +24,8 @@ directly without the separately testing lexing stage.
 >     ,prettyToken
 >     ,prettyTokens
 >     ,ParseError(..)
->     ,Dialect(..)
 >     ,tokenListWillPrintAndLex
+>     ,ansi2011
 >     ) where
 
 > import Language.SQL.SimpleSQL.Dialect

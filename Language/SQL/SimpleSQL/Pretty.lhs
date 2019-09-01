@@ -13,14 +13,19 @@
 
 TODO: there should be more comments in this file, especially the bits
 which have been changed to try to improve the layout of the output.
+Try to do this when this code is ported to a modern pretty printing lib.
 
-> import Language.SQL.SimpleSQL.Syntax
 > --import Language.SQL.SimpleSQL.Dialect
 > import Text.PrettyPrint (render, vcat, text, (<>), (<+>), empty, parens,
 >                          nest, Doc, punctuate, comma, sep, quotes,
 >                          brackets,hcat)
 > import Data.Maybe (maybeToList, catMaybes)
 > import Data.List (intercalate)
+
+
+> import Language.SQL.SimpleSQL.Syntax
+> import Language.SQL.SimpleSQL.Dialect
+
 
 > -- | Convert a query expr ast to concrete syntax.
 > prettyQueryExpr :: Dialect -> QueryExpr -> String

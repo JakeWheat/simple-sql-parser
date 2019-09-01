@@ -57,14 +57,11 @@
 >     ,PrivilegeAction(..)
 >     ,AdminOptionFor(..)
 >     ,GrantOptionFor(..)
->      -- * Dialects
->     ,module Language.SQL.SimpleSQL.Dialect
 >      -- * Comment
 >     ,Comment(..)
 >     ) where
 
 > import Data.Data
-> import Language.SQL.SimpleSQL.Dialect
 
 > -- | Represents a value expression. This is used for the expressions
 > -- in select lists. It is also used for expressions in where, group

@@ -192,20 +192,21 @@ fixing them in the syntax but leaving them till the semantic checking
 >                    ,try,many,many1,(<|>),choice,eof
 >                    ,optionMaybe,optional,runParser
 >                    ,chainl1, chainr1,(<?>))
-> -- import Text.Parsec.String (Parser)
 > import Text.Parsec.Perm (permute,(<$?>), (<|?>))
 > import Text.Parsec.Prim (getState, token)
 > import Text.Parsec.Pos (newPos)
 > import qualified Text.Parsec.Expr as E
 > import Data.List (intercalate,sort,groupBy)
 > import Data.Function (on)
+> import Data.Maybe
+> import Text.Parsec.String (GenParser)
+
 > import Language.SQL.SimpleSQL.Syntax
 > import Language.SQL.SimpleSQL.Combinators
 > import Language.SQL.SimpleSQL.Errors
-> --import Language.SQL.SimpleSQL.Dialect
+> import Language.SQL.SimpleSQL.Dialect
 > import qualified Language.SQL.SimpleSQL.Lex as L
-> import Data.Maybe
-> import Text.Parsec.String (GenParser)
+
 
 = Public API
 
