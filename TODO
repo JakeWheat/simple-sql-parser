@@ -4,6 +4,15 @@ review alters, and think about adding rename versions
   which are really common and useful, but not in ansi
   https://github.com/JakeWheat/simple-sql-parser/issues/20
 
+try to get some control over the pretty printing and the error
+messages by creating some dumps of pretty printing and error messages,
+then can rerun these every so often to see how they've changed
+
+-> expose in the dialect:
+keywords which can (also?) appear as identifiers in scalar expressions
+keywords which can (also?) appear as app-likes - this is already implemented
+
+
 finish off going through the keyword list
 
 do more examples

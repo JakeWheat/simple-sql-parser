@@ -20,9 +20,17 @@ Data types to represent different dialect options
 > data Dialect = Dialect
 >     { -- | The list of reserved keywords
 >      diKeywords :: [String]
+>       -- | The list of reserved keywords, which can also be used as
+>       -- |  an identifier
+>     ,diIdentifierKeywords :: [String]
+>       -- | The list of reserved keywords, which can also be used as
+>       -- |  a function name (including aggregates and window
+>       -- |  functions)
+>     ,diAppKeywords :: [String]
 >      -- | does the dialect support ansi fetch first syntax
 >     ,diFetchFirst :: Bool
->      -- | does the dialect support limit keyword (mysql, postgres, ...)
+>      -- | does the dialect support limit keyword (mysql, postgres,
+>      -- |  ...)
 >     ,diLimit :: Bool
 >      -- | allow parsing ODBC syntax
 >     ,diOdbc :: Bool
@@ -50,6 +58,8 @@ Data types to represent different dialect options
 > -- | ansi sql 2011 dialect
 > ansi2011 :: Dialect
 > ansi2011 = Dialect {diKeywords = ansi2011ReservedKeywords
+>                    ,diIdentifierKeywords = []
+>                    ,diAppKeywords = ["set"]
 >                    ,diFetchFirst = True
 >                    ,diLimit = False
 >                    ,diOdbc = False
@@ -103,6 +113,28 @@ then I think it's pretty safe
 mostly, things are keywords to avoid them mistakenly being parsed as
 aliases or as identifiers/functions/function-like things (aggs,
 windows, etc.)
+
+some rationale for having quite string reserved keywords:
+
+1. sql has the unusual (these days) feature of quoting identifiers
+    which allows you to use any keyword in any context
+
+2. the user already has to deal with a very long list of keywords in
+   sql. this is not very user friendly
+
+3. if the user has to remember which situations which keyword needs
+   quoting, and which it doesn't need quoting, this is also not very
+   user friendly, even if it means less quoting sometimes. E.g. if
+   you only need to quote 'from' in places where it is ambiguous, and
+   you want to take advantage of this, this list of good/not-good
+   places is based on the weirdness of SQL grammar and the
+   implementation details of the parser - and it's especially bad if
+   you are using from as an iden without quotes, and you edit the sql
+   statement, and now from is in a position where it does need
+   quotes, and you get a obscure error message
+
+4. there is a lot more potential for nice clear error messages
+   keywords are never allowed without quoting
 
 > ansi2011ReservedKeywords :: [String]
 > ansi2011ReservedKeywords =

@@ -14,15 +14,15 @@ cp website/main.css build
 cp website/ocean.css build
 
 # index
-asciidoctor website/index.asciidoc -o - | cabal exec runhaskell website/AddLinks.lhs > build/index.html
+asciidoctor website/index.asciidoc -o - | cabal -v0 exec runhaskell website/AddLinks.lhs > build/index.html
 
-asciidoctor website/supported_sql.asciidoc -o - | cabal exec runhaskell website/AddLinks.lhs > build/supported_sql.html
+asciidoctor website/supported_sql.asciidoc -o - | cabal -v0 exec runhaskell website/AddLinks.lhs > build/supported_sql.html
 
 # tpch sql file
 # pandoc src/tpch.sql -s --highlight-style kate -o tpch.sql.html
 # rendered test cases
 # build the parserexe target first to fix the package database
-cabal exec runhaskell -- --ghc-arg=-package=pretty-show -itools website/RenderTestCases.lhs > build/test_cases.asciidoc
+cabal -v0 exec runhaskell -- --ghc-arg=-package=pretty-show -itools website/RenderTestCases.lhs > build/test_cases.asciidoc
 
 asciidoctor build/test_cases.asciidoc -o - | \
     sed -e "s/max-width:62\.5em//g" \

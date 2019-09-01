@@ -719,22 +719,20 @@ all the scalar expressions which start with an identifier
 > idenExpr =
 >     -- todo: work out how to left factor this
 >     try (TypedLit <$> typeName <*> singleQuotesOnlyStringTok)
->     <|> (try keywordFunction <**> app)
 >     <|> (names <**> option Iden app)
+>     <|> keywordFunctionOrIden
 >   where
->     -- this is a special case because 'set' is a reserved keyword
->     -- and the names parser won't parse it
->     -- can't remove it from the reserved keyword list, because
->     -- it is used in a lot of places which are ambiguous as a keyword
->     -- this approach might be needed with other keywords which look
->     --  like identifiers or functions
->     keywordFunction =
->         let makeKeywordFunction x = if map toLower x `elem` keywordFunctionNames
->                                     then return [Name Nothing x]
->                                     else fail ""
->         in unquotedIdentifierTok [] Nothing >>= makeKeywordFunction
->     keywordFunctionNames = ["set"
->                            ]
+>     -- special cases for keywords that can be parsed as an iden or app
+>     keywordFunctionOrIden = try $ do
+>         x <- unquotedIdentifierTok [] Nothing
+>         d <- getState
+>         let i = map toLower x `elem` diIdentifierKeywords d
+>             a = map toLower x `elem` diAppKeywords d
+>         case () of
+>             _  | i && a -> pure [Name Nothing x] <**> option Iden app
+>                | i -> pure (Iden [Name Nothing x])
+>                | a -> pure [Name Nothing x] <**> app
+>                | otherwise -> fail ""
 
 
 === special
