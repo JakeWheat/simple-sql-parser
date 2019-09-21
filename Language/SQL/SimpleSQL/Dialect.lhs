@@ -49,7 +49,10 @@ Data types to represent different dialect options
 > -- In the code, all special syntax which looks identical to regular
 > -- identifiers or function calls (apart from the name), is treated
 > -- like a regular identifier or function call.
-> 
+> --
+> -- It's easy to break the parser by removing the wrong words from
+> -- the keywords list or adding the wrong words to the other lists.
+>
 > data Dialect = Dialect
 >     { -- | reserved keywords
 >      diKeywords :: [String]

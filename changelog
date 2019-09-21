@@ -1,6 +1,5 @@
 0.6.0
-        checked with ghc 8.8.1 - but because of pretty-show, the
-          executable doesn't work with this ghc yet
+        tested with ghc 8.8.1 also
         change the dialect handling - now a dialect is a bunch of flags
           plus a keyword list, and custom dialects are now feasible
           (still incomplete)

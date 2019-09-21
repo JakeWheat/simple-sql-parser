@@ -391,5 +391,3 @@ request.
 
 There is a related tutorial on implementing a SQL parser here:
 http://jakewheat.github.io/intro_to_parsing/
-
-
