@@ -1,4 +1,4 @@
-A parser for SQL queries in Haskell.
+A parser for SQL in Haskell.
 
 Homepage: http://jakewheat.github.io/simple-sql-parser/latest
 
