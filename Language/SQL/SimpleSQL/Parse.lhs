@@ -1564,8 +1564,9 @@ TODO: change style
 > colConstraintDef =
 >     ColConstraintDef
 >     <$> (optionMaybe (keyword_ "constraint" *> names))
->     <*> (notNull <|> unique <|> primaryKey <|> check <|> references)
+>     <*> (nullable <|> notNull <|> unique <|> primaryKey <|> check <|> references)
 >   where
+>     nullable = ColNullableConstraint <$ keyword "null"
 >     notNull = ColNotNullConstraint <$ keywords_ ["not", "null"]
 >     unique = ColUniqueConstraint <$ keyword_ "unique"
 >     primaryKey = ColPrimaryKeyConstraint <$ keywords_ ["primary", "key"]

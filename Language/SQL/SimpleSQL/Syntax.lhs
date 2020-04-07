@@ -571,7 +571,8 @@ I'm not sure if this is valid syntax or not.
 >     deriving (Eq,Show,Read,Data,Typeable)
 
 > data ColConstraint =
->     ColNotNullConstraint
+>     ColNullableConstraint
+>   | ColNotNullConstraint
 >   | ColUniqueConstraint
 >   | ColPrimaryKeyConstraint
 >   | ColReferencesConstraint [Name] (Maybe Name)
