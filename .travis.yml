@@ -1,0 +1,49 @@
+
+language: haskell
+dist: bionic
+
+addons:
+  apt:
+    sources:
+    - deadsnakes
+    - sourceline: 'ppa:hvr/ghc'
+
+git:
+  depth: 5
+
+cache:
+ directories:
+ - $HOME/.cabal/packages
+ - $HOME/.cabal/store
+ - $HOME/.cabal/bin
+
+branches:
+  only:
+  - master
+  - travis_stuff
+
+cabal-install:
+  - 3.2
+cabal:
+  - 3.2
+
+ghc:
+  - 8.10.1
+  - 8.8.3
+  - 8.6.5
+  - 8.4.4
+
+install:
+  - ghc --version
+  - cabal --version
+  - cabal update
+  - cabal check
+  - cabal outdated
+  - cabal build --enable-tests --enable-benchmarks -fparserexe
+
+script:
+  - cabal run test:Tests -- --ansi-tricks=false
+
+
+# todo: add making the website, this is good to check the entire set
+# of deps to be able to do this
