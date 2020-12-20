@@ -35,14 +35,22 @@ Try to do this when this code is ported to a modern pretty printing lib.
 > prettyScalarExpr :: Dialect -> ScalarExpr -> String
 > prettyScalarExpr d = render . scalarExpr d
 
+> -- | A terminating semicolon.
+> terminator :: Doc
+> terminator = text ";\n"
+
 > -- | Convert a statement ast to concrete syntax.
 > prettyStatement :: Dialect -> Statement -> String
-> prettyStatement d = render . statement d
+> prettyStatement _ EmptyStatement = render terminator
+> prettyStatement d s = render (statement d s)
 
 > -- | Convert a list of statements to concrete syntax. A semicolon
 > -- is inserted after each statement.
 > prettyStatements :: Dialect -> [Statement] -> String
-> prettyStatements d = render . vcat . map ((<> text ";\n") . statement d)
+> prettyStatements d = render . vcat . map prettyStatementWithSemicolon
+>   where
+>     prettyStatementWithSemicolon :: Statement -> Doc
+>     prettyStatementWithSemicolon s = statement d s <> terminator
 
 = scalar expressions
 
@@ -641,6 +649,7 @@ Try to do this when this code is ported to a modern pretty printing lib.
 
 
 > statement _ (StatementComment cs) = vcat $ map comment cs
+> statement _ EmptyStatement = empty
 
 
 == sessions

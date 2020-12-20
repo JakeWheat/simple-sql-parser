@@ -1450,14 +1450,14 @@ TODO: change style
 > topLevelQueryExpr = queryExpr <??> (id <$ semi)
 
 > topLevelStatement :: Parser Statement
-> topLevelStatement = statement <??> (id <$ semi)
+> topLevelStatement = statement
 
 -------------------------
 
 = Statements
 
-> statement :: Parser Statement
-> statement = choice
+> statementWithoutSemicolon :: Parser Statement
+> statementWithoutSemicolon = choice
 >     [keyword_ "create" *> choice [createSchema
 >                                  ,createTable
 >                                  ,createView
@@ -1488,6 +1488,9 @@ TODO: change style
 >     ,revoke
 >     ,SelectStatement <$> queryExpr
 >     ]
+>
+> statement :: Parser Statement
+> statement = statementWithoutSemicolon <* optional semi <|> semi *> pure EmptyStatement
 
 > createSchema :: Parser Statement
 > createSchema = keyword_ "schema" >>
@@ -1895,12 +1898,8 @@ wrapper to parse a series of statements. They must be separated by
 semicolon, but for the last statement, the trailing semicolon is
 optional.
 
-TODO: change style
-
 > statements :: Parser [Statement]
-> statements = (:[]) <$> statement
->              >>= optionSuffix ((semi *>) . pure)
->              >>= optionSuffix (\p -> (p++) <$> statements)
+> statements = many statement
 
 ----------------------------------------------
 
