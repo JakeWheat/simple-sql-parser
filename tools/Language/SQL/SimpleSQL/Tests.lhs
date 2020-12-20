@@ -29,6 +29,7 @@ test data to the Test.Framework tests.
 > import Language.SQL.SimpleSQL.Odbc
 > import Language.SQL.SimpleSQL.Tpch
 > import Language.SQL.SimpleSQL.LexerTests
+> import Language.SQL.SimpleSQL.EmptyStatement
 
 > import Language.SQL.SimpleSQL.SQL2011Queries
 > import Language.SQL.SimpleSQL.SQL2011AccessControl
@@ -64,6 +65,7 @@ order on the generated documentation.
 >     ,mySQLTests
 >     ,oracleTests
 >     ,customDialectTests
+>     ,emptyStatementTests
 >     ]
 
 > tests :: T.TestTree
