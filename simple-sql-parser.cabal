@@ -85,7 +85,8 @@ Test-Suite Tests
                        Language.SQL.SimpleSQL.Tpch,
                        Language.SQL.SimpleSQL.ScalarExprs,
                        Language.SQL.SimpleSQL.LexerTests,
-                       Language.SQL.SimpleSQL.CustomDialect
+                       Language.SQL.SimpleSQL.CustomDialect,
+                       Language.SQL.SimpleSQL.EmptyStatement
   ghc-options:         -threaded
 
 executable SimpleSqlParserTool
