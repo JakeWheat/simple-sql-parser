@@ -1460,6 +1460,7 @@ TODO: change style
 > statementWithoutSemicolon = choice
 >     [keyword_ "create" *> choice [createSchema
 >                                  ,createTable
+>                                  ,createIndex
 >                                  ,createView
 >                                  ,createDomain
 >                                  ,createSequence
@@ -1503,6 +1504,15 @@ TODO: change style
 >     -- todo: is this order mandatory or is it a perm?
 >     <*> parens (commaSep1 (uncurry TableConstraintDef <$> tableConstraintDef
 >                            <|> TableColumnDef <$> columnDef))
+
+> createIndex :: Parser Statement
+> createIndex =
+>     CreateIndex
+>     <$> ((keyword_ "index" >> pure False) <|>
+>          (keywords_ ["unique", "index"] >> pure True))
+>     <*> names
+>     <*> (keyword_ "on" >> name)
+>     <*> parens (commaSep1 name)
 
 > columnDef :: Parser ColumnDef
 > columnDef = ColumnDef <$> name <*> typeName
@@ -1567,8 +1577,9 @@ TODO: change style
 > colConstraintDef =
 >     ColConstraintDef
 >     <$> (optionMaybe (keyword_ "constraint" *> names))
->     <*> (notNull <|> unique <|> primaryKey <|> check <|> references)
+>     <*> (nullable <|> notNull <|> unique <|> primaryKey <|> check <|> references)
 >   where
+>     nullable = ColNullableConstraint <$ keyword "null"
 >     notNull = ColNotNullConstraint <$ keywords_ ["not", "null"]
 >     unique = ColUniqueConstraint <$ keyword_ "unique"
 >     primaryKey = ColPrimaryKeyConstraint <$ keywords_ ["primary", "key"]
