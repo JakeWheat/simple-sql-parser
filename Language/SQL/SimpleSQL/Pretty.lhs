@@ -531,6 +531,15 @@ Try to do this when this code is ported to a modern pretty printing lib.
 > statement _ (DropAssertion nm db) =
 >     text "drop" <+> text "assertion" <+> names nm <+> dropBehav db
 
+> statement _ (CreateIndex un nm tbl cols) =
+>   texts (if un
+>          then ["create","unique","index"]
+>          else  ["create","index"])
+>   <+> names nm
+>   <+> text "on"
+>   <+> names tbl
+>   <+> parens (commaSep $ map name cols)
+
 == dml
 
 > statement d (SelectStatement q) = queryExpr d q

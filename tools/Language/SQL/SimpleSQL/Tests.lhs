@@ -30,6 +30,7 @@ test data to the Test.Framework tests.
 > import Language.SQL.SimpleSQL.Tpch
 > import Language.SQL.SimpleSQL.LexerTests
 > import Language.SQL.SimpleSQL.EmptyStatement
+> import Language.SQL.SimpleSQL.CreateIndex
 
 > import Language.SQL.SimpleSQL.SQL2011Queries
 > import Language.SQL.SimpleSQL.SQL2011AccessControl
@@ -40,6 +41,7 @@ test data to the Test.Framework tests.
 > import Language.SQL.SimpleSQL.MySQL
 > import Language.SQL.SimpleSQL.Oracle
 > import Language.SQL.SimpleSQL.CustomDialect
+
 
 Order the tests to start from the simplest first. This is also the
 order on the generated documentation.
@@ -66,6 +68,7 @@ order on the generated documentation.
 >     ,oracleTests
 >     ,customDialectTests
 >     ,emptyStatementTests
+>     ,createIndexTests
 >     ]
 
 > tests :: T.TestTree

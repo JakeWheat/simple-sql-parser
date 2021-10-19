@@ -1511,7 +1511,7 @@ TODO: change style
 >     <$> ((keyword_ "index" >> pure False) <|>
 >          (keywords_ ["unique", "index"] >> pure True))
 >     <*> names
->     <*> (keyword_ "on" >> name)
+>     <*> (keyword_ "on" >> names)
 >     <*> parens (commaSep1 name)
 
 > columnDef :: Parser ColumnDef

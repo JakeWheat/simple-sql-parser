@@ -454,7 +454,7 @@ I'm not sure if this is valid syntax or not.
 >   | CreateTable [Name] [TableElement]
 >   | AlterTable [Name] AlterTableAction
 >   | DropTable [Name] DropBehaviour
->   | CreateIndex Bool [Name] Name [Name]
+>   | CreateIndex Bool [Name] [Name] [Name]
 >   | CreateView Bool [Name] (Maybe [Name])
 >         QueryExpr (Maybe CheckOption)
 >   | DropView [Name]  DropBehaviour
