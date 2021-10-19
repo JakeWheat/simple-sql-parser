@@ -10,6 +10,8 @@
 >   , TestStatements ansi2011 ";;" [EmptyStatement, EmptyStatement]
 >   , TestStatements ansi2011 ";;;" [EmptyStatement, EmptyStatement, EmptyStatement]
 >   , TestStatement ansi2011 "/* comment */ ;" EmptyStatement
+>   , TestStatements ansi2011 "" []
+>   , TestStatements ansi2011 "/* comment */" []
 >   , TestStatements ansi2011 "/* comment */ ;" [EmptyStatement]
 >   , TestStatements ansi2011 "/* comment */ ; /* comment */ ;"
 >       [EmptyStatement, EmptyStatement]
