@@ -167,6 +167,9 @@
 >       -- | cast(a as typename)
 >     | Cast ScalarExpr TypeName
 
+>       -- | convert expression to given datatype @CONVERT(data_type(length), expression, style)@
+>     | Convert TypeName ScalarExpr (Maybe Integer)
+
 >       -- | case expression. both flavours supported
 >     | Case
 >       {caseTest :: Maybe ScalarExpr -- ^ test value
