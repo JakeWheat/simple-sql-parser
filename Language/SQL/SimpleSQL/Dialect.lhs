@@ -88,7 +88,7 @@ Data types to represent different dialect options
 >     ,diPostgresSymbols :: Bool
 >      -- | allow sql server style symbols
 >     ,diSqlServerSymbols :: Bool
->      -- | allow sql server style forCONVERT function in format @CONVERT(data_type(length), expression, style)@
+>      -- | allow sql server style for CONVERT function in format CONVERT(data_type(length), expression, style)
 >     ,diConvertFunction :: Bool
 >     }
 >                deriving (Eq,Show,Read,Data,Typeable)

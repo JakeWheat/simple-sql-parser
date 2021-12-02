@@ -2038,7 +2038,7 @@ It is only allowed when all the strings are quoted with ' atm.
 >       L.Identifier q p | map toLower p `notElem` blackList -> Just (q,p)
 >       _ -> Nothing)
 
-> unquotedIdentifierTok :: [String] -> Maybe String -> Parser String 
+> unquotedIdentifierTok :: [String] -> Maybe String -> Parser String
 > unquotedIdentifierTok blackList kw = mytoken (\tok ->
 >     case (kw,tok) of
 >       (Nothing, L.Identifier Nothing p) | map toLower p `notElem` blackList -> Just p

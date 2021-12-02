@@ -5,7 +5,7 @@ Tests for parsing scalar expressions
 
 > import Language.SQL.SimpleSQL.TestTypes
 > import Language.SQL.SimpleSQL.Syntax
-  
+
 > scalarExprTests :: TestItem
 > scalarExprTests = Group "scalarExprTests"
 >     [literals
