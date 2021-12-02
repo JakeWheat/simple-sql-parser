@@ -5,7 +5,7 @@ Tests for parsing scalar expressions
 
 > import Language.SQL.SimpleSQL.TestTypes
 > import Language.SQL.SimpleSQL.Syntax
-
+  
 > scalarExprTests :: TestItem
 > scalarExprTests = Group "scalarExprTests"
 >     [literals
@@ -15,6 +15,7 @@ Tests for parsing scalar expressions
 >     ,dots
 >     ,app
 >     ,caseexp
+>     ,convertfun     
 >     ,operators
 >     ,parens
 >     ,subqueries
@@ -108,6 +109,16 @@ Tests for parsing scalar expressions
 >                                ,NumLit "20")]
 >                              Nothing)
 
+>     ]
+
+> convertfun :: TestItem 
+> convertfun = Group "convert" $ map (uncurry (TestScalarExpr sqlserver))
+>     [("CONVERT(varchar, 25.65)"
+>      ,Convert (TypeName [Name Nothing "varchar"]) (NumLit "25.65") Nothing)
+>     ,("CONVERT(datetime, '2017-08-25')"
+>      ,Convert (TypeName [Name Nothing "datetime"]) (StringLit "'" "'" "2017-08-25") Nothing)
+>     ,("CONVERT(varchar, '2017-08-25', 101)"
+>      ,Convert (TypeName [Name Nothing "varchar"]) (StringLit "'" "'" "2017-08-25") (Just 101))
 >     ]
 
 > operators :: TestItem

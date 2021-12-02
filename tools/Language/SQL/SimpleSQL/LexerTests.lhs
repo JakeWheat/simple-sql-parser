@@ -318,8 +318,8 @@ the + or -.
 >     [ LexTest sqlserver {diOdbc = True} s t | (s,t) <-
 >     [("{}", [Symbol "{", Symbol "}"])
 >     ]]
->     ++ [LexFails sqlserver "{"
->        ,LexFails sqlserver "}"]
+>     ++ [LexFails sqlserver {diOdbc = False} "{"
+>        ,LexFails sqlserver {diOdbc = False} "}"]
 
 > combos :: [a] -> Int -> [[a]]
 > combos _ 0 = [[]]
