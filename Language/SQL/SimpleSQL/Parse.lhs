@@ -597,6 +597,16 @@ cast: cast(expr as type)
 >        parens (Cast <$> scalarExpr
 >                     <*> (keyword_ "as" *> typeName))
 
+=== convert
+
+convertSqlServer: SqlServer dialect CONVERT(data_type(length), expression, style)
+
+> convertSqlServer :: Parser ScalarExpr
+> convertSqlServer = guardDialect diConvertFunction
+>                    *> keyword_ "convert" *>
+>                    parens (Convert <$> typeName <*> (comma *> scalarExpr)
+>                       <*> optionMaybe (comma *> unsignedInteger))
+
 === exists, unique
 
 subquery expression:
@@ -1175,6 +1185,7 @@ documenting/fixing.
 >               ,parensExpr
 >               ,caseExpr
 >               ,cast
+>               ,convertSqlServer
 >               ,arrayCtor
 >               ,multisetCtor
 >               ,nextValueFor

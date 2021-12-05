@@ -88,6 +88,8 @@ Data types to represent different dialect options
 >     ,diPostgresSymbols :: Bool
 >      -- | allow sql server style symbols
 >     ,diSqlServerSymbols :: Bool
+>      -- | allow sql server style for CONVERT function in format CONVERT(data_type(length), expression, style)
+>     ,diConvertFunction :: Bool
 >     }
 >                deriving (Eq,Show,Read,Data,Typeable)
 
@@ -109,6 +111,7 @@ Data types to represent different dialect options
 >                    ,diEString = False
 >                    ,diPostgresSymbols = False
 >                    ,diSqlServerSymbols = False
+>                    ,diConvertFunction = False                     
 >                    }
 
 > -- | mysql dialect
@@ -133,7 +136,9 @@ Data types to represent different dialect options
 > sqlserver = ansi2011 {diSquareBracketQuotedIden = True
 >                      ,diAtIdentifier = True
 >                      ,diHashIdentifier = True
->                      ,diSqlServerSymbols = True }
+>                      ,diOdbc = True
+>                      ,diSqlServerSymbols = True
+>                      ,diConvertFunction = True}
 
 > addLimit :: Dialect -> Dialect
 > addLimit d = d {diKeywords = "limit": diKeywords d

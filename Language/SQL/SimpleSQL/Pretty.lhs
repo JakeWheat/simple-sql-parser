@@ -254,6 +254,11 @@ Try to do this when this code is ported to a modern pretty printing lib.
 > scalarExpr d (OdbcFunc e) =
 >     text "{fn" <+> scalarExpr d e <> text "}"
 
+> scalarExpr d (Convert t e Nothing) =
+>     text "convert(" <> typeName t <> text "," <+> scalarExpr d e <> text ")"
+> scalarExpr d (Convert t e (Just i)) =
+>     text "convert(" <> typeName t <> text "," <+> scalarExpr d e <> text "," <+> text (show i) <> text ")"
+
 > unname :: Name -> String
 > unname (Name Nothing n) = n
 > unname (Name (Just (s,e)) n) =

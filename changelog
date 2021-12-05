@@ -1,3 +1,5 @@
+0.6.1   added odbc handling to sqlsqerver dialect	
+		added sqlserver dialect case for convert function
 0.6.0
         tested with ghc 8.8.1 also
         change the dialect handling - now a dialect is a bunch of flags
