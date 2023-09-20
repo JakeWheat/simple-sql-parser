@@ -651,6 +651,28 @@ defintely skip
 >                 DefaultReferentialAction DefaultReferentialAction
 >        ])
 
+>     ,(TestStatement ansi2011
+>       "create table t (a int, b int,\n\
+>       \                foreign key (a) references u(c)\n\
+>       \                foreign key (b) references v(d));"
+>      $ CreateTable [Name Nothing "t"]
+>        [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing []
+>        ,TableColumnDef $ ColumnDef (Name Nothing "b") (TypeName [Name Nothing "int"]) Nothing []
+>        ,TableConstraintDef Nothing $
+>             TableReferencesConstraint
+>                 [Name Nothing "a"]
+>                 [Name Nothing "u"]
+>                 (Just [Name Nothing "c"])
+>                 DefaultReferenceMatch
+>                 DefaultReferentialAction DefaultReferentialAction
+>        ,TableConstraintDef Nothing $
+>             TableReferencesConstraint
+>                 [Name Nothing "b"]
+>                 [Name Nothing "v"]
+>                 (Just [Name Nothing "d"])
+>                 DefaultReferenceMatch
+>                 DefaultReferentialAction DefaultReferentialAction
+>        ])
 
 
 <references specification> ::=
