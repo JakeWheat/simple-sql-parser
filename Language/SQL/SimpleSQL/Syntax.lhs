@@ -44,6 +44,7 @@
 >     ,IdentityWhen(..)
 >     ,SequenceGeneratorOption(..)
 >     ,ColConstraintDef(..)
+>     ,AutoincrementClause
 >     ,ColConstraint(..)
 >     ,TableConstraint(..)
 >     ,ReferenceMatch(..)
@@ -575,11 +576,13 @@ I'm not sure if this is valid syntax or not.
 >       -- (Maybe [ConstraintCharacteristics])
 >     deriving (Eq,Show,Read,Data,Typeable)
 
+> type AutoincrementClause = Bool
+>
 > data ColConstraint =
 >     ColNullableConstraint
 >   | ColNotNullConstraint
 >   | ColUniqueConstraint
->   | ColPrimaryKeyConstraint
+>   | ColPrimaryKeyConstraint AutoincrementClause
 >   | ColReferencesConstraint [Name] (Maybe Name)
 >        ReferenceMatch
 >        ReferentialAction
@@ -730,6 +733,6 @@ I'm not sure if this is valid syntax or not.
 
 > -- | Comment. Useful when generating SQL code programmatically. The
 > -- parser doesn't produce these.
-> data Comment = BlockComment String
+> newtype Comment = BlockComment String
 >                deriving (Eq,Show,Read,Data,Typeable)
 

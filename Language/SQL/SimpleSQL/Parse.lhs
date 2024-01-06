@@ -1587,13 +1587,16 @@ TODO: change style
 > colConstraintDef :: Parser ColConstraintDef
 > colConstraintDef =
 >     ColConstraintDef
->     <$> (optionMaybe (keyword_ "constraint" *> names))
+>     <$> optionMaybe (keyword_ "constraint" *> names)
 >     <*> (nullable <|> notNull <|> unique <|> primaryKey <|> check <|> references)
 >   where
 >     nullable = ColNullableConstraint <$ keyword "null"
 >     notNull = ColNotNullConstraint <$ keywords_ ["not", "null"]
 >     unique = ColUniqueConstraint <$ keyword_ "unique"
->     primaryKey = ColPrimaryKeyConstraint <$ keywords_ ["primary", "key"]
+>     primaryKey = do
+>       keywords_ ["primary", "key"] 
+>       autoincrement <- optionMaybe (keyword_ "autoincrement")
+>       pure $ ColPrimaryKeyConstraint $ isJust autoincrement
 >     check = keyword_ "check" >> ColCheckConstraint <$> parens scalarExpr
 >     references = keyword_ "references" >>
 >         (\t c m (ou,od) -> ColReferencesConstraint t c m ou od)
