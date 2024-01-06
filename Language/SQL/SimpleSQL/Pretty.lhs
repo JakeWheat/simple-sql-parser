@@ -702,7 +702,8 @@ Try to do this when this code is ported to a modern pretty printing lib.
 >         <+> pcon con
 >     pcon ColNotNullConstraint = texts ["not","null"]
 >     pcon ColUniqueConstraint = text "unique"
->     pcon ColPrimaryKeyConstraint = texts ["primary","key"]
+>     pcon (ColPrimaryKeyConstraint autoincrement) = 
+>       texts $ ["primary","key"] ++ ["autoincrement"|autoincrement]
 >     pcon (ColCheckConstraint v) = text "check" <+> parens (scalarExpr d v)
 >     pcon (ColReferencesConstraint tb c m u del) =
 >         text "references"

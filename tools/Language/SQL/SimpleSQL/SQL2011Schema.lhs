@@ -332,7 +332,13 @@ todo: constraint characteristics
 >       "create table t (a int primary key);"
 >      $ CreateTable [Name Nothing "t"]
 >        [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing
->         [ColConstraintDef Nothing ColPrimaryKeyConstraint]])
+>         [ColConstraintDef Nothing (ColPrimaryKeyConstraint False)]])
+
+>     ,(TestStatement ansi2011
+>       "create table t (a int primary key autoincrement);"
+>      $ CreateTable [Name Nothing "t"]
+>        [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing
+>         [ColConstraintDef Nothing (ColPrimaryKeyConstraint True)]])
 
 references t(a,b)
   [ Full |partial| simepl]
