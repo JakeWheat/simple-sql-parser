@@ -1509,12 +1509,21 @@ TODO: change style
 >     CreateSchema <$> names
 
 > createTable :: Parser Statement
-> createTable = keyword_ "table" >>
+> createTable = do 
+>   d <- getState
+>   let 
+>     parseColumnDef = TableColumnDef <$> columnDef 
+>     parseConstraintDef = uncurry TableConstraintDef <$> tableConstraintDef
+>     separator = if diNonCommaSeparatedConstraints d
+>       then optional comma
+>       else void comma
+>     constraints = sepBy parseConstraintDef separator
+>     entries = ((:) <$> parseColumnDef <*> ((comma >> entries) <|> pure [])) <|> constraints
+>
+>   keyword_ "table" >>
 >     CreateTable
->     <$> names
->     -- todo: is this order mandatory or is it a perm?
->     <*> parens (commaSep1 (uncurry TableConstraintDef <$> tableConstraintDef
->                            <|> TableColumnDef <$> columnDef))
+>     <$> names 
+>     <*> parens entries
 
 > createIndex :: Parser Statement
 > createIndex =

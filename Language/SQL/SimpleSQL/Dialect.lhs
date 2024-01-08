@@ -92,6 +92,8 @@ Data types to represent different dialect options
 >     ,diConvertFunction :: Bool
 >      -- | allow creating autoincrement columns
 >     ,diAutoincrement :: Bool
+>      -- | allow omitting the comma between constraint clauses
+>     ,diNonCommaSeparatedConstraints :: Bool
 >     }
 >                deriving (Eq,Show,Read,Data,Typeable)
 
@@ -115,6 +117,7 @@ Data types to represent different dialect options
 >                    ,diSqlServerSymbols = False
 >                    ,diConvertFunction = False                     
 >                    ,diAutoincrement = False
+>                    ,diNonCommaSeparatedConstraints = False
 >                    }
 
 > -- | mysql dialect
