@@ -651,7 +651,7 @@ defintely skip
 >                 DefaultReferentialAction DefaultReferentialAction
 >        ])
 
->     ,(TestStatement ansi2011
+>     ,(TestStatement ansi2011 { diNonCommaSeparatedConstraints = True }
 >       "create table t (a int, b int,\n\
 >       \                foreign key (a) references u(c)\n\
 >       \                foreign key (b) references v(d));"

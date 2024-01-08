@@ -1510,10 +1510,14 @@ TODO: change style
 
 > createTable :: Parser Statement
 > createTable = do 
+>   d <- getState
 >   let 
 >     parseColumnDef = TableColumnDef <$> columnDef 
 >     parseConstraintDef = uncurry TableConstraintDef <$> tableConstraintDef
->     constraints = sepBy parseConstraintDef (optional comma)
+>     separator = if diNonCommaSeparatedConstraints d
+>       then optional comma
+>       else void comma
+>     constraints = sepBy parseConstraintDef separator
 >     entries = ((:) <$> parseColumnDef <*> ((comma >> entries) <|> pure [])) <|> constraints
 >
 >   keyword_ "table" >>
