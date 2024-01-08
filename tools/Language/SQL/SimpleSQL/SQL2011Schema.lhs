@@ -334,7 +334,7 @@ todo: constraint characteristics
 >        [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing
 >         [ColConstraintDef Nothing (ColPrimaryKeyConstraint False)]])
 
->     ,(TestStatement ansi2011
+>     ,(TestStatement ansi2011 { diAutoincrement = True }
 >       "create table t (a int primary key autoincrement);"
 >      $ CreateTable [Name Nothing "t"]
 >        [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing

@@ -90,6 +90,8 @@ Data types to represent different dialect options
 >     ,diSqlServerSymbols :: Bool
 >      -- | allow sql server style for CONVERT function in format CONVERT(data_type(length), expression, style)
 >     ,diConvertFunction :: Bool
+>      -- | allow creating autoincrement columns
+>     ,diAutoincrement :: Bool
 >     }
 >                deriving (Eq,Show,Read,Data,Typeable)
 
@@ -112,6 +114,7 @@ Data types to represent different dialect options
 >                    ,diPostgresSymbols = False
 >                    ,diSqlServerSymbols = False
 >                    ,diConvertFunction = False                     
+>                    ,diAutoincrement = False
 >                    }
 
 > -- | mysql dialect
