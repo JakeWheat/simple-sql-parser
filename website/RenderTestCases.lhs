@@ -7,6 +7,7 @@ Converts the test data to asciidoc
 > import Language.SQL.SimpleSQL.Parse
 > import Language.SQL.SimpleSQL.Lex
 > import Data.List
+> import Control.Monad (when, unless)
 
 > data TableItem = Heading Int String
 >                | Row String String

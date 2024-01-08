@@ -75,8 +75,6 @@ build-haddock :
 	# todo: handle the deps properly
 	rm -Rf build/haddock
 	mkdir build/haddock/
-
-	#GHC_VER="$(shell ghc --numeric-version)"
-	# wtf
 	$(eval GHC_VER="$(shell ghc --numeric-version)")
-	cp -R dist-newstyle/build/x86_64-linux/ghc-${GHC_VER}/simple-sql-parser-0.6.0/doc/html/simple-sql-parser/* build/haddock/
+	$(eval SSP_VER="$(shell cat simple-sql-parser.cabal |grep -P '^version:' | awk '{print $$2}')")
+	cp -R dist-newstyle/build/x86_64-linux/ghc-${GHC_VER}/simple-sql-parser-${SSP_VER}/doc/html/simple-sql-parser/* build/haddock/
