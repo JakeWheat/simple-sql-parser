@@ -1595,7 +1595,10 @@ TODO: change style
 >     unique = ColUniqueConstraint <$ keyword_ "unique"
 >     primaryKey = do
 >       keywords_ ["primary", "key"] 
->       autoincrement <- optionMaybe (keyword_ "autoincrement")
+>       d <- getState
+>       autoincrement <- if diAutoincrement d 
+>         then optionMaybe (keyword_ "autoincrement")
+>         else pure Nothing
 >       pure $ ColPrimaryKeyConstraint $ isJust autoincrement
 >     check = keyword_ "check" >> ColCheckConstraint <$> parens scalarExpr
 >     references = keyword_ "references" >>
