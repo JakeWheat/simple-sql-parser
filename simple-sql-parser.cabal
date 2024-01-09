@@ -59,7 +59,7 @@ library
 Test-Suite Tests
   import:              shared-properties
   type:                exitcode-stdio-1.0
-  main-is:             RunTests.lhs
+  main-is:             RunTests.hs
   hs-source-dirs:      tools
   Build-Depends:       simple-sql-parser,
                        tasty >= 1.1 && < 1.6,
@@ -93,7 +93,7 @@ Test-Suite Tests
 
 executable SimpleSqlParserTool
   import:              shared-properties
-  main-is:             SimpleSqlParserTool.lhs
+  main-is:             SimpleSqlParserTool.hs
   hs-source-dirs:      tools
   Build-Depends:       simple-sql-parser,
                        pretty-show >= 1.6 && < 1.10
@@ -104,7 +104,7 @@ executable SimpleSqlParserTool
 
 executable Fixity
   import:              shared-properties
-  main-is:             Fixity.lhs
+  main-is:             Fixity.hs
   hs-source-dirs:      tools
   Build-Depends:       simple-sql-parser,
                        pretty-show >= 1.6 && < 1.10,

@@ -50,14 +50,14 @@ build/ocean.css : website/ocean.css
 	mkdir -p build
 	cp website/ocean.css build
 
-build/index.html : website/index.asciidoc website/AddLinks.lhs
-	asciidoctor website/index.asciidoc -o - | cabal -v0 exec runhaskell website/AddLinks.lhs > build/index.html
+build/index.html : website/index.asciidoc website/AddLinks.hs
+	asciidoctor website/index.asciidoc -o - | cabal -v0 exec runhaskell website/AddLinks.hs > build/index.html
 
-build/supported_sql.html : website/supported_sql.asciidoc website/AddLinks.lhs
-	asciidoctor website/supported_sql.asciidoc -o - | cabal -v0 exec runhaskell website/AddLinks.lhs > build/supported_sql.html
+build/supported_sql.html : website/supported_sql.asciidoc website/AddLinks.hs
+	asciidoctor website/supported_sql.asciidoc -o - | cabal -v0 exec runhaskell website/AddLinks.hs > build/supported_sql.html
 
-build/test_cases.html : website/RenderTestCases.lhs
-	cabal -v0 exec runhaskell -- --ghc-arg=-package=pretty-show -itools website/RenderTestCases.lhs > build/test_cases.asciidoc
+build/test_cases.html : website/RenderTestCases.hs
+	cabal -v0 exec runhaskell -- --ghc-arg=-package=pretty-show -itools website/RenderTestCases.hs > build/test_cases.asciidoc
 	asciidoctor build/test_cases.asciidoc -o - | \
 	    sed -e "s/max-width:62\.5em//g" > build/test_cases.html
 	# TODO: reduce the text size on the test cases page

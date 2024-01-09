@@ -156,7 +156,7 @@ reconsider the names and structure of the constructors in the syntax
 refactor the typename parser - it's a real mess
 fix the lexing
 
-add documentation in Parser.lhs on the left factoring/error handling
+add documentation in Parser.hs on the left factoring/error handling
    approach
 
 fixes:
