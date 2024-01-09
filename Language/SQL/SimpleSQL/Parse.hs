@@ -54,7 +54,7 @@ A lot of care has been given to generating good parser error messages
 for invalid syntax. There are a few utils below which partially help
 in this area.
 
-There is a set of crafted bad expressions in ErrorMessages. hs, these
+There is a set of crafted bad expressions in ErrorMessages.hs, these
 are used to guage the quality of the error messages and monitor
 regressions by hand. The use of <?> is limited as much as possible:
 each instance should justify itself by improving an actual error
