@@ -281,7 +281,7 @@ wrapParse :: Parser a
           -> Maybe (Int,Int)
           -> String
           -> Either ParseError a
-wrapParse parser d f p src = do
+wrapParse parser d f p src = undefined {-do
     let (l,c) = fromMaybe (1,1) p
     lx <- L.lexSQL d f (Just (l,c)) src
     either (Left . convParseError src) Right
@@ -294,7 +294,7 @@ wrapParse parser d f p src = do
     keep (_,L.Whitespace {}) = False
     keep (_,L.LineComment {}) = False
     keep (_,L.BlockComment {}) = False
-    keep _ = True
+    keep _ = True-}
 
 
 {-
@@ -2084,16 +2084,16 @@ keyword matching
 -}
 
 stringTok :: Parser (String,String,String)
-stringTok = mytoken (\tok ->
+stringTok = undefined {-mytoken (\tok ->
     case tok of
       L.SqlString s e t -> Just (s,e,t)
-      _ -> Nothing)
+      _ -> Nothing)-}
 
 singleQuotesOnlyStringTok :: Parser String
-singleQuotesOnlyStringTok = mytoken (\tok ->
+singleQuotesOnlyStringTok = undefined {-mytoken (\tok ->
     case tok of
       L.SqlString "'" "'" t -> Just t
-      _ -> Nothing)
+      _ -> Nothing)-}
 
 {-
 This is to support SQL strings where you can write
@@ -2104,7 +2104,7 @@ It is only allowed when all the strings are quoted with ' atm.
 -}
 
 stringTokExtend :: Parser (String,String,String)
-stringTokExtend = do
+stringTokExtend = undefined {-do
     (s,e,x) <- stringTok
     choice [
          do
@@ -2113,48 +2113,48 @@ stringTokExtend = do
          guard (s' == "'" && e' == "'")
          return $ (s,e,x ++ y)
         ,return (s,e,x)
-        ]
+        ]-}
 
 hostParamTok :: Parser String
-hostParamTok = mytoken (\tok ->
+hostParamTok = undefined {-mytoken (\tok ->
     case tok of
       L.PrefixedVariable c p -> Just (c:p)
-      _ -> Nothing)
+      _ -> Nothing)-}
 
 positionalArgTok :: Parser Int
-positionalArgTok = mytoken (\tok ->
+positionalArgTok = undefined {-mytoken (\tok ->
     case tok of
       L.PositionalArg p -> Just p
-      _ -> Nothing)
+      _ -> Nothing)-}
 
 
 sqlNumberTok :: Bool -> Parser String
-sqlNumberTok intOnly = mytoken (\tok ->
+sqlNumberTok intOnly = undefined {-mytoken (\tok ->
     case tok of
       L.SqlNumber p | not intOnly || all isDigit p -> Just p
-      _ -> Nothing)
+      _ -> Nothing)-}
 
 
 symbolTok :: Maybe String -> Parser String
-symbolTok sym = mytoken (\tok ->
+symbolTok sym = undefined {-mytoken (\tok ->
     case (sym,tok) of
       (Nothing, L.Symbol p) -> Just p
       (Just s, L.Symbol p) | s == p -> Just p
-      _ -> Nothing)
+      _ -> Nothing)-}
 
 identifierTok :: [String] -> Parser (Maybe (String,String), String)
-identifierTok blackList = mytoken (\tok ->
+identifierTok blackList = undefined {-mytoken (\tok ->
     case tok of
       L.Identifier q@(Just {}) p -> Just (q,p)
       L.Identifier q p | map toLower p `notElem` blackList -> Just (q,p)
-      _ -> Nothing)
+      _ -> Nothing)-}
 
 unquotedIdentifierTok :: [String] -> Maybe String -> Parser String
-unquotedIdentifierTok blackList kw = mytoken (\tok ->
+unquotedIdentifierTok blackList kw = undefined {-mytoken (\tok ->
     case (kw,tok) of
       (Nothing, L.Identifier Nothing p) | map toLower p `notElem` blackList -> Just p
       (Just k, L.Identifier Nothing p) | k == map toLower p -> Just p
-      _ -> Nothing)
+      _ -> Nothing)-}
 
 mytoken :: (L.Token -> Maybe a) -> Parser a
 mytoken test = token showToken posToken testToken

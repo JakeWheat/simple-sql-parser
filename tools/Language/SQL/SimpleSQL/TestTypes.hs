@@ -13,6 +13,8 @@ import Language.SQL.SimpleSQL.Syntax
 import Language.SQL.SimpleSQL.Lex (Token)
 import Language.SQL.SimpleSQL.Dialect
 
+import Data.Text (Text)
+
 {-
 TODO: maybe make the dialect args into [dialect], then each test
 checks all the dialects mentioned work, and all the dialects not
@@ -38,6 +40,6 @@ should all be TODO to convert to a testqueryexpr test.
 
               | ParseQueryExprFails Dialect String
               | ParseScalarExprFails Dialect String
-              | LexTest Dialect String [Token]
+              | LexTest Dialect Text [Token]
               | LexFails Dialect String
                 deriving (Eq,Show)

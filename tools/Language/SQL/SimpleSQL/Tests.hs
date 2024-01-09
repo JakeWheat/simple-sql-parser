@@ -5,6 +5,7 @@ Test.Framework tests. It also contains the code which converts the
 test data to the Test.Framework tests.
 -}
 
+{-# LANGUAGE OverloadedStrings #-}
 module Language.SQL.SimpleSQL.Tests
     (testData
     ,tests
@@ -17,7 +18,7 @@ import qualified Test.Tasty.HUnit as H
 --import Language.SQL.SimpleSQL.Syntax
 import Language.SQL.SimpleSQL.Pretty
 import Language.SQL.SimpleSQL.Parse
-import Language.SQL.SimpleSQL.Lex
+import qualified Language.SQL.SimpleSQL.Lex as Lex
 
 import Language.SQL.SimpleSQL.TestTypes
 
@@ -44,6 +45,9 @@ import Language.SQL.SimpleSQL.MySQL
 import Language.SQL.SimpleSQL.Oracle
 import Language.SQL.SimpleSQL.CustomDialect
 
+import Data.Text (Text)
+import qualified Data.Text as T
+
 
 {-
 Order the tests to start from the simplest first. This is also the
@@ -54,7 +58,7 @@ testData :: TestItem
 testData =
     Group "parserTest"
     [lexerTests
-    ,scalarExprTests
+    {-,scalarExprTests
     ,odbcTests
     ,queryExprComponentTests
     ,queryExprsTests
@@ -72,7 +76,7 @@ testData =
     ,oracleTests
     ,customDialectTests
     ,emptyStatementTests
-    ,createIndexTests
+    ,createIndexTests-}
     ]
 
 tests :: T.TestTree
@@ -104,18 +108,19 @@ itemToTest (ParseScalarExprFails d str) =
 itemToTest (LexTest d s ts) = makeLexerTest d s ts
 itemToTest (LexFails d s) = makeLexingFailsTest d s
 
-makeLexerTest :: Dialect -> String -> [Token] -> T.TestTree
-makeLexerTest d s ts = H.testCase s $ do
-    let lx = either (error . show) id $ lexSQL d "" Nothing s
-    H.assertEqual "" ts $ map snd lx
-    let s' = prettyTokens d $ map snd lx
+makeLexerTest :: Dialect -> Text -> [Lex.Token] -> T.TestTree
+makeLexerTest d s ts = H.testCase (T.unpack s) $ do
+    let lx = either (error . T.unpack . Lex.prettyError) id $ Lex.lexSQL d "" Nothing s
+        ts1 = map Lex.tokenVal lx
+    H.assertEqual "" ts ts1
+    let s' = Lex.prettyTokens d $ ts1
     H.assertEqual "pretty print" s s'
 
 makeLexingFailsTest :: Dialect -> String -> T.TestTree
 makeLexingFailsTest d s = H.testCase s $ do
-    case lexSQL d "" Nothing s of
+    undefined {-case lexSQL d "" Nothing s of
          Right x -> H.assertFailure $ "lexing should have failed: " ++ s ++ "\ngot: " ++ show x
-         Left _ -> return ()
+         Left _ -> return ()-}
 
 
 toTest :: (Eq a, Show a) =>

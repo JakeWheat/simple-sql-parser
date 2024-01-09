@@ -2,23 +2,89 @@
 
 -- Test for the lexer
 
+
+{-
+TODO:
+figure out a way to do quickcheck testing:
+1. generate valid tokens and check they parse
+
+2. combine two generated tokens together for the combo testing
+
+this especially will work much better for the postgresql extensible
+operator tests which doing exhaustively takes ages and doesn't bring
+much benefit over testing a few using quickcheck.
+-}
+
+{-# LANGUAGE OverloadedStrings #-}
 module Language.SQL.SimpleSQL.LexerTests (lexerTests) where
 
 import Language.SQL.SimpleSQL.TestTypes
-import Language.SQL.SimpleSQL.Lex (Token(..),tokenListWillPrintAndLex)
+import Language.SQL.SimpleSQL.Lex
+    (Token(..)
+    ,tokenListWillPrintAndLex
+    )
+
+import Language.SQL.SimpleSQL.Dialect
+    (ansi2011)
+
+import qualified Data.Text as T
+    
 --import Debug.Trace
 --import Data.Char (isAlpha)
-import Data.List
+-- import Data.List
 
 lexerTests :: TestItem
 lexerTests = Group "lexerTests" $
-    [Group "lexer token tests" [ansiLexerTests
+    [bootstrapTests{-Group "lexer token tests" [ansiLexerTests
                                ,postgresLexerTests
                                ,sqlServerLexerTests
                                ,oracleLexerTests
                                ,mySqlLexerTests
-                               ,odbcLexerTests]]
+                               ,odbcLexerTests]-}]
 
+-- quick sanity tests to see something working
+bootstrapTests :: TestItem
+bootstrapTests = Group "bootstrap tests" $
+    map (uncurry (LexTest ansi2011)) (
+    [("iden", [Identifier Nothing "iden"])
+    ,("'string'", [SqlString "'" "'" "string"])
+
+    ,("  ", [Whitespace "  "])
+    ,("\t  ", [Whitespace "\t  "])
+    ,("  \n  ", [Whitespace "  \n  "])
+
+    ,("--", [LineComment "--"])
+    ,("--\n", [LineComment "--\n"])
+    ,("--stuff", [LineComment "--stuff"])
+    ,("-- stuff", [LineComment "-- stuff"])
+    ,("-- stuff\n", [LineComment "-- stuff\n"])
+    ,("--\nstuff", [LineComment "--\n", Identifier Nothing "stuff"])
+    ,("-- com \nstuff", [LineComment "-- com \n", Identifier Nothing "stuff"])
+
+    ,("/*test1*/", [BlockComment "/*test1*/"])
+    ,("/**/", [BlockComment "/**/"])
+    ,("/***/", [BlockComment "/***/"])
+    ,("/* * */", [BlockComment "/* * */"])
+    ,("/*test*/", [BlockComment "/*test*/"])
+    ,("/*te/*st*/", [BlockComment "/*te/*st*/"])
+    ,("/*te*st*/", [BlockComment "/*te*st*/"])
+    ,("/*lines\nmore lines*/", [BlockComment "/*lines\nmore lines*/"])
+    ,("/*test1*/\n", [BlockComment "/*test1*/", Whitespace "\n"])
+    ,("/*test1*/stuff", [BlockComment "/*test1*/", Identifier Nothing "stuff"])
+
+    ,("1", [SqlNumber "1"])
+    ,("42", [SqlNumber "42"])
+
+    ,("$1", [PositionalArg 1])
+    ,("$200", [PositionalArg 200])
+
+    ,(":test", [PrefixedVariable ':' "test"])
+
+    ] ++ map (\a -> (a, [Symbol a])) (
+     ["!=", "<>", ">=", "<=", "||"]
+     ++ map T.singleton ("(),-+*/<>=." :: String)))
+
+{-
 ansiLexerTable :: [(String,[Token])]
 ansiLexerTable =
     -- single char symbols
@@ -331,13 +397,4 @@ combos :: [a] -> Int -> [[a]]
 combos _ 0 = [[]]
 combos l n = [ x:tl | x <- l, tl <- combos l (n - 1) ]
 
-{-
-figure out a way to do quickcheck testing:
-1. generate valid tokens and check they parse
-
-2. combine two generated tokens together for the combo testing
-
-this especially will work much better for the postgresql extensible
-operator tests which doing exhaustively takes ages and doesn't bring
-much benefit over testing a few using quickcheck.
 -}

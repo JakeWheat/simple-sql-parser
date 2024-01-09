@@ -52,38 +52,70 @@ start writing the error message tests:
     still be manual)
 
 try again to add annotation to the ast
+
 -}
 
 -- | Lexer for SQL.
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Language.SQL.SimpleSQL.Lex
     (Token(..)
+    ,WithPos(..)
     ,lexSQL
     ,prettyToken
     ,prettyTokens
     ,ParseError(..)
+    ,prettyError
     ,tokenListWillPrintAndLex
     ,ansi2011
     ) where
 
 import Language.SQL.SimpleSQL.Dialect
+    (Dialect(..)
+    ,ansi2011
+    )
 
-import Text.Parsec (option,string,manyTill,anyChar
-                   ,try,string,many1,oneOf,digit,(<|>),choice,char,eof
-                   ,many,runParser,lookAhead,satisfy
-                   ,setPosition,getPosition
-                   ,setSourceColumn,setSourceLine
-                   ,sourceName, setSourceName
-                   ,sourceLine, sourceColumn
-                   ,notFollowedBy)
-import Language.SQL.SimpleSQL.Combinators
-import Language.SQL.SimpleSQL.Errors
-import Control.Applicative hiding ((<|>), many)
+import Text.Megaparsec
+    (Parsec
+    ,runParser'
+
+    ,ParseErrorBundle(..)
+    ,errorBundlePretty
+
+    ,SourcePos(..)
+    ,getSourcePos
+    ,getOffset
+    ,pstateSourcePos
+    ,statePosState
+    ,mkPos
+
+    ,choice
+    ,satisfy
+    ,takeWhileP
+    ,takeWhile1P
+    ,(<?>)
+    ,eof
+    ,many
+    ,try
+    ,option
+    )
+import Text.Megaparsec.Char
+    (string
+    ,char
+    )
+import Text.Megaparsec.State (initialState)
+
+import Data.Void (Void)
+
 import Data.Char
-import Control.Monad
-import Prelude hiding (takeWhile)
-import Text.Parsec.String (Parser)
-import Data.Maybe
+    (isAlphaNum
+    ,isAlpha
+    ,isSpace
+    ,isDigit
+    )
+import Control.Monad (void)
+import Data.Text (Text)
+import qualified Data.Text as T
 
 ------------------------------------------------------------------------------
 
@@ -96,33 +128,33 @@ data Token
     -- * multi char symbols <> \<= \>= != ||
     -- * single char symbols: * + -  < >  ^ / %  ~ & | ? ( ) [ ] , ; ( )
     --
-    = Symbol String
+    = Symbol Text
     -- | This is an identifier or keyword. The first field is
     -- the quotes used, or nothing if no quotes were used. The quotes
     -- can be " or u& or something dialect specific like []
-    | Identifier (Maybe (String,String)) String
+    | Identifier (Maybe (Text,Text)) Text
     -- | This is a prefixed variable symbol, such as :var, @var or #var
     -- (only :var is used in ansi dialect)
-    | PrefixedVariable Char String
+    | PrefixedVariable Char Text
     -- | This is a positional arg identifier e.g. $1
     | PositionalArg Int
     -- | This is a string literal. The first two fields are the --
     -- start and end quotes, which are usually both ', but can be
     -- the character set (one of nNbBxX, or u&, U&), or a dialect
     -- specific string quoting (such as $$ in postgres)
-    | SqlString String String String
+    | SqlString Text Text Text
     -- | A number literal (integral or otherwise), stored in original format
     -- unchanged
-    | SqlNumber String
+    | SqlNumber Text
     -- | Whitespace, one or more of space, tab or newline.
-    | Whitespace String
+    | Whitespace Text
     -- | A commented line using --, contains every character starting with the
     -- \'--\' and including the terminating newline character if there is one
     -- - this will be missing if the last line in the source is a line comment
     -- with no trailing newline
-    | LineComment String
+    | LineComment Text
     -- | A block comment, \/* stuff *\/, includes the comment delimiters
-    | BlockComment String
+    | BlockComment Text
       deriving (Eq,Show)
 
 ------------------------------------------------------------------------------
@@ -131,78 +163,97 @@ data Token
 
 -- | Lex some SQL to a list of tokens.
 lexSQL :: Dialect
-                  -- ^ dialect of SQL to use
-               -> FilePath
-                  -- ^ filename to use in error messages
-               -> Maybe (Int,Int)
-                  -- ^ line number and column number of the first character
-                  -- in the source to use in error messages
-               -> String
-                  -- ^ the SQL source to lex
-               -> Either ParseError [((String,Int,Int),Token)]
-lexSQL dialect fn' p src =
-    let (l',c') = fromMaybe (1,1) p
-    in either (Left . convParseError src) Right
-       $ runParser (setPos (fn',l',c') *> many (sqlToken dialect) <* eof) () fn' src
-  where
-    setPos (fn,l,c) = do
-        fmap (flip setSourceName fn
-               . flip setSourceLine l
-               . flip setSourceColumn c) getPosition
-          >>= setPosition
+       -- ^ dialect of SQL to use
+       -> Text
+       -- ^ filename to use in error messages
+       -> Maybe (Int,Int)
+       -- ^ line number and column number of the first character
+       -- in the source to use in error messages
+       -> Text
+       -- ^ the SQL source to lex
+       -> Either ParseError [WithPos Token]
+lexSQL dialect fn p src = myParse fn p (many (sqlToken dialect) <* (eof <?> "")) src
+
+myParse :: Text -> (Maybe (Int,Int)) -> Parser a -> Text -> Either ParseError a
+myParse name sp' p s =
+        let sp = maybe (1,1) id sp'
+            ps = SourcePos (T.unpack name) (mkPos $ fst sp) (mkPos $ snd sp)
+            is = (initialState (T.unpack name) s)
+            sps = (statePosState is) {pstateSourcePos = ps}
+            is' = is {statePosState = sps}
+        in snd $ runParser' p is'
+
+prettyError :: ParseError -> Text
+prettyError = T.pack . errorBundlePretty
 
 ------------------------------------------------------------------------------
 
--- pretty printing
+-- parsing boilerplate
+
+type ParseError = ParseErrorBundle Text Void
+
+type Parser = Parsec Void Text
+
+-- | Positional information added to tokens to preserve source positions
+-- for the parser
+data WithPos a = WithPos
+  { startPos :: SourcePos
+  , endPos :: SourcePos
+  , tokenLength :: Int
+  , tokenVal :: a
+  } deriving (Eq, Ord, Show)
+
+------------------------------------------------------------------------------
+
+-- pretty print
 
 -- | Pretty printing, if you lex a bunch of tokens, then pretty
 -- print them, should should get back exactly the same string
-prettyToken :: Dialect -> Token -> String
+prettyToken :: Dialect -> Token -> Text
 prettyToken _ (Symbol s) = s
 prettyToken _ (Identifier Nothing t) = t
-prettyToken _ (Identifier (Just (q1,q2)) t) = q1 ++ t ++ q2
-prettyToken _ (PrefixedVariable c p) = c:p
-prettyToken _ (PositionalArg p) = '$':show p
-prettyToken _ (SqlString s e t) = s ++ t ++ e
+prettyToken _ (Identifier (Just (q1,q2)) t) = q1 <> t <> q2
+prettyToken _ (PrefixedVariable c p) = T.cons c p
+prettyToken _ (PositionalArg p) = T.cons '$' $ T.pack $ show p
+prettyToken _ (SqlString s e t) = s <> t <> e
 prettyToken _ (SqlNumber r) = r
 prettyToken _ (Whitespace t) = t
 prettyToken _ (LineComment l) = l
 prettyToken _ (BlockComment c) = c
 
-prettyTokens :: Dialect -> [Token] -> String
-prettyTokens d ts = concat $ map (prettyToken d) ts
+prettyTokens :: Dialect -> [Token] -> Text
+prettyTokens d ts = T.concat $ map (prettyToken d) ts
 
 ------------------------------------------------------------------------------
 
 -- token parsers
 
 -- | parser for a sql token
-sqlToken :: Dialect -> Parser ((String,Int,Int),Token)
+sqlToken :: Dialect -> Parser (WithPos Token)
 sqlToken d = do
-    p' <- getPosition
-    let p = (sourceName p',sourceLine p', sourceColumn p')
-
-{-
-The order of parsers is important: strings and quoted identifiers can
-start out looking like normal identifiers, so we try to parse these
-first and use a little bit of try. Line and block comments start like
-symbols, so we try these before symbol. Numbers can start with a . so
-this is also tried before symbol (a .1 will be parsed as a number, but
-. otherwise will be parsed as a symbol).
--}
-
-    (p,) <$> choice [sqlString d
-                    ,identifier d
-                    ,lineComment d
-                    ,blockComment d
-                    ,sqlNumber d
-                    ,positionalArg d
-                    ,dontParseEndBlockComment d
-                    ,prefixedVariable d
-                    ,symbol d
-                    ,sqlWhitespace d]
+    -- possibly there's a more efficient way of doing the source positions?
+    sp <- getSourcePos
+    off <- getOffset
+    t <- choice
+         [sqlString d
+         ,identifier d
+         ,lineComment d
+         ,blockComment d
+         ,sqlNumber d
+         ,positionalArg d
+         --,dontParseEndBlockComment d
+         ,prefixedVariable d
+         ,symbol d
+         ,sqlWhitespace d]
+    off1 <- getOffset
+    ep <- getSourcePos
+    pure $ WithPos sp ep (off1 - off) t
 
 --------------------------------------
+
+sqlString :: Dialect -> Parser Token
+sqlString d =
+    SqlString "'" "'" <$> (char_ '\'' *> takeWhileP (Just "non quote char") (/= '\'') <* char_ '\'')
 
 {-
 Parse a SQL string. Examples:
@@ -214,7 +265,7 @@ b'binary string'
 x'hexidecimal string'
 -}
 
-
+{-
 sqlString :: Dialect -> Parser Token
 sqlString d = dollarString <|> csString <|> normalString
   where
@@ -259,9 +310,26 @@ sqlString d = dollarString <|> csString <|> normalString
     cs = choice $ (map (\x -> string ([x] ++ "'")) csPrefixes)
                   ++ [string "u&'"
                      ,string "U&'"]
-
+-}
 
 --------------------------------------
+
+-- TODO: this reconstitutes the string from bits, instead of lifting
+-- it in one piece from the source. This is a performance issue, not
+-- sure if it will be significant. The same comment applies to most of
+-- the other parsers
+identifier :: Dialect -> Parser Token
+identifier d = Identifier Nothing <$> identifierString d
+
+identifierString :: Dialect -> Parser Text
+identifierString _ = (do
+    c <- satisfy isFirstLetter
+    choice
+        [T.cons c <$> (takeWhileP (Just "identifier char") isNonFirstLetter)
+        ,pure $ T.singleton c]) <?> "identifier"
+  where
+     isFirstLetter c = c == '_' || isAlpha c
+     isNonFirstLetter c = c == '_' || isAlphaNum c
 
 {-
 Parses identifiers:
@@ -273,6 +341,7 @@ u&"unicode quoted identifier"
 `mysql quoted identifier`
 -}
 
+{-
 identifier :: Dialect -> Parser Token
 identifier d =
     choice
@@ -317,9 +386,28 @@ identifierString =
 isIdentifierChar :: Char -> Bool
 isIdentifierChar c = c == '_' || isAlphaNum c
 
+-}
+
 --------------------------------------
 
+{-
+I think it's always faster to use a string locally created in the parser code,
+than to use one taken from the parsed source, unless you take it without modifying it,
+the example here is using -- and \n. this won't be needed in this case if can work out
+how to lift the entire comment as a single string from the source.
+
+this concept does apply to things like symbols
+-}
+
 lineComment :: Dialect -> Parser Token
+lineComment _ = do
+    try (string_ "--") <?> ""
+    rest <- takeWhileP (Just "non newline character") (/='\n')
+    -- can you optionally read the \n to terminate the takewhilep without reparsing it?
+    suf <- option "" ("\n" <$ char_ '\n')
+    pure $ LineComment $ T.concat ["--", rest, suf]
+
+{-lineComment :: Dialect -> Parser Token
 lineComment _ =
     (\s -> LineComment $ concat ["--",s]) <$>
     -- try is used here in case we see a - symbol
@@ -332,16 +420,28 @@ lineComment _ =
     conc a (Just b) = a ++ b
     lineCommentEnd =
         Just "\n" <$ char '\n'
-        <|> Nothing <$ eof
+        <|> Nothing <$ eof-}
 
 --------------------------------------
+
+blockComment :: Dialect -> Parser Token
+blockComment _ = (do
+    try $ string_ "/*"
+    BlockComment . T.concat . ("/*":) <$> more) <?> ""
+  where
+    more = choice
+        [["*/"] <$ try (string_ "*/")
+        ,char_ '*' *> (("*":) <$> more)
+        ,(:) <$> takeWhile1P (Just "non comment terminator text") (/= '*') <*> more]
+
+
 
 {-
 Try is used in the block comment for the two symbol bits because we
 want to backtrack if we read the first symbol but the second symbol
 isn't there.
 -}
-
+{-
 blockComment :: Dialect -> Parser Token
 blockComment _ =
     (\s -> BlockComment $ concat ["/*",s]) <$>
@@ -361,7 +461,7 @@ blockComment _ =
              ,try (string "/*") *> ((\s -> concat [x,"/*",s]) <$> commentSuffix (n + 1))
               -- not an end comment or nested comment, continue
              ,(\c s -> x ++ [c] ++ s) <$> anyChar <*> commentSuffix n]
-
+-}
 
 {-
 This is to improve user experience: provide an error if we see */
@@ -370,13 +470,21 @@ in them (which is a stupid thing to do). In other cases, the user
 should write * / instead (I can't think of any cases when this would
 be valid syntax though).
 -}
-
+{-
 dontParseEndBlockComment :: Dialect -> Parser Token
 dontParseEndBlockComment _ =
     -- don't use try, then it should commit to the error
     try (string "*/") *> fail "comment end without comment start"
-
+-}
 --------------------------------------
+
+sqlNumber :: Dialect -> Parser Token
+sqlNumber _ =
+    SqlNumber <$> digits
+
+
+digits :: Parser Text
+digits = takeWhile1P (Just "digit") isDigit
 
 
 {-
@@ -396,6 +504,7 @@ considered part of the constant; it is an operator applied to the
 constant.
 -}
 
+{-
 sqlNumber :: Dialect -> Parser Token
 sqlNumber d =
     SqlNumber <$> completeNumber
@@ -427,20 +536,34 @@ sqlNumber d =
     expon = (:) <$> oneOf "eE" <*> sInt
     sInt = (++) <$> option "" (string "+" <|> string "-") <*> int
     pp = (<$$> (++))
+-}
 
 --------------------------------------
 
+positionalArg :: Dialect -> Parser Token
+positionalArg _ = PositionalArg <$> (char_ '$' *> (read . T.unpack <$> digits))
+
+{-
 positionalArg :: Dialect -> Parser Token
 positionalArg d =
   guard (diPositionalArg d) >>
   -- use try to avoid ambiguities with other syntax which starts with dollar
   PositionalArg <$> try (char '$' *> (read <$> many1 digit))
-
+-}
 
 --------------------------------------
 
+-- todo: I think the try here should read a prefix char, then a single valid
+-- identifier char, then commit
+prefixedVariable :: Dialect -> Parser Token
+prefixedVariable d = try $ choice
+    [PrefixedVariable <$> (':' <$ char_ ':') <*> identifierString d
+    ]
+
+
 -- use try because : and @ can be part of other things also
 
+{-
 prefixedVariable :: Dialect -> Parser Token
 prefixedVariable  d = try $ choice
     [PrefixedVariable <$> char ':' <*> identifierString
@@ -449,8 +572,20 @@ prefixedVariable  d = try $ choice
     ,guard (diHashIdentifier d) >>
      PrefixedVariable <$> char '#' <*> identifierString
     ]
+-}
 
 --------------------------------------
+
+symbol :: Dialect -> Parser Token
+symbol _ =
+    Symbol <$> choice
+    [try $ choice $ map (\a -> string a) multiCharSymbols
+    ,T.singleton <$> satisfy (`elem` singleLetterSymbol)
+    ]
+  where
+    singleLetterSymbol = "(),-+*/<>=." :: String
+    multiCharSymbols = ["!=", "<>", ">=", "<=", "||"]
+
 
 {-
 Symbols
@@ -461,7 +596,7 @@ A symbol is an operator, or one of the misc symbols which include:
 The postgresql operator syntax allows a huge range of operators
 compared with ansi and other dialects
 -}
-
+{-
 symbol :: Dialect -> Parser Token
 symbol d  = Symbol <$> choice (concat
    [dots
@@ -576,16 +711,27 @@ generalizedPostgresqlOperator = [singlePlusMinus,opMoreChars]
              oneOf "<>=")
         <*> option [] opMoreChars
        ]
+-}
 
 --------------------------------------
 
 sqlWhitespace :: Dialect -> Parser Token
-sqlWhitespace _ = Whitespace <$> many1 (satisfy isSpace)
+sqlWhitespace _ = Whitespace <$> takeWhile1P (Just "whitespace") isSpace <?> ""
+
+--sqlWhitespace :: Dialect -> Parser Token
+--sqlWhitespace _ = Whitespace <$> many1 (satisfy isSpace)
 
 ----------------------------------------------------------------------------
 
 -- parser helpers
 
+char_ :: Char -> Parser ()
+char_ = void . char
+
+string_ :: Text -> Parser ()
+string_ = void . string
+
+{-
 startsWith :: (Char -> Bool) -> (Char -> Bool) -> Parser String
 startsWith p ps = do
   c <- satisfy p
@@ -603,6 +749,7 @@ takeTill p = manyTill anyChar (peekSatisfy p)
 
 peekSatisfy :: (Char -> Bool) -> Parser ()
 peekSatisfy p = void $ lookAhead (satisfy p)
+-}
 
 ----------------------------------------------------------------------------
 
@@ -629,7 +776,8 @@ successes. I don't think it succeeds this test at the moment
 -- will pretty print then lex back to the same set of tokens.
 -- Used internally, might be useful for generating SQL via lexical tokens.
 tokenListWillPrintAndLex :: Dialect -> [Token] -> Bool
-tokenListWillPrintAndLex _ [] = True
+tokenListWillPrintAndLex = undefined
+{-tokenListWillPrintAndLex _ [] = True
 tokenListWillPrintAndLex _ [_] = True
 tokenListWillPrintAndLex d (a:b:xs) =
     tokensWillPrintAndLex d a b && tokenListWillPrintAndLex d (b:xs)
@@ -770,3 +918,5 @@ TODO: not 100% on this always being bad
     checkLastAChar f = case prettya of
                           (_:_) -> f $ last prettya
                           _ -> False
+
+-}
