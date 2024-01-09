@@ -1,7 +1,7 @@
 cabal-version:       2.2
 
 name:                simple-sql-parser
-version:             0.6.1
+version:             0.7.0
 synopsis:            A parser for SQL.
 
 description:

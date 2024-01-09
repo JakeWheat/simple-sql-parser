@@ -13,7 +13,7 @@ formats output nicely. Current target is to parse most SQL:2011
 queries, plus a good subset of DDL, non-query DML, transaction
 management, access control and session management.
 
-This is the documentation for version 0.6.0. Documentation for other
+This is the documentation for version 0.7.0. Documentation for other
 versions is available here:
 http://jakewheat.github.io/simple-sql-parser/.
 
