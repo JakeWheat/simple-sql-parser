@@ -16,6 +16,42 @@ don't do nearly as comprehensive testing on the syntax level, we still
 have a relatively high assurance of the low level of bugs. This is
 much more difficult to get parity with when testing the syntax parser
 directly without the separately testing lexing stage.
+
+TODO:
+
+make the tokenswill print more dialect accurate. Maybe add symbol
+  chars and identifier chars to the dialect definition and use them from
+  here
+
+start adding negative / different parse dialect tests
+
+add token tables and tests for oracle, sql server
+review existing tables
+
+look for refactoring opportunities, especially the token
+generation tables in the tests
+
+do some user documentation on lexing, and lexing/dialects
+
+start thinking about a more separated design for the dialect handling
+
+lexing tests are starting to take a really long time, so split the
+tests so it is much easier to run all the tests except the lexing
+tests which only need to be run when working on the lexer (which
+should be relatively uncommon), or doing a commit or finishing off a
+series of commits,
+
+start writing the error message tests:
+  generate/write a large number of syntax errors
+  create a table with the source and the error message
+  try to compare some different versions of code to compare the
+    quality of the error messages by hand
+
+  get this checked in so improvements and regressions in the error
+    message quality can be tracked a little more easily (although it will
+    still be manual)
+
+try again to add annotation to the ast
 -}
 
 -- | Lexer for SQL.
@@ -49,6 +85,9 @@ import Prelude hiding (takeWhile)
 import Text.Parsec.String (Parser)
 import Data.Maybe
 
+------------------------------------------------------------------------------
+
+-- syntax
 
 -- | Represents a lexed token
 data Token
@@ -58,63 +97,37 @@ data Token
     -- * single char symbols: * + -  < >  ^ / %  ~ & | ? ( ) [ ] , ; ( )
     --
     = Symbol String
-
     -- | This is an identifier or keyword. The first field is
     -- the quotes used, or nothing if no quotes were used. The quotes
     -- can be " or u& or something dialect specific like []
     | Identifier (Maybe (String,String)) String
-
     -- | This is a prefixed variable symbol, such as :var, @var or #var
     -- (only :var is used in ansi dialect)
     | PrefixedVariable Char String
-
     -- | This is a positional arg identifier e.g. $1
     | PositionalArg Int
-
     -- | This is a string literal. The first two fields are the --
     -- start and end quotes, which are usually both ', but can be
     -- the character set (one of nNbBxX, or u&, U&), or a dialect
     -- specific string quoting (such as $$ in postgres)
     | SqlString String String String
-
     -- | A number literal (integral or otherwise), stored in original format
     -- unchanged
     | SqlNumber String
-
     -- | Whitespace, one or more of space, tab or newline.
     | Whitespace String
-
     -- | A commented line using --, contains every character starting with the
     -- \'--\' and including the terminating newline character if there is one
     -- - this will be missing if the last line in the source is a line comment
     -- with no trailing newline
     | LineComment String
-
     -- | A block comment, \/* stuff *\/, includes the comment delimiters
     | BlockComment String
-
       deriving (Eq,Show)
 
+------------------------------------------------------------------------------
 
-
--- | Pretty printing, if you lex a bunch of tokens, then pretty
--- print them, should should get back exactly the same string
-prettyToken :: Dialect -> Token -> String
-prettyToken _ (Symbol s) = s
-prettyToken _ (Identifier Nothing t) = t
-prettyToken _ (Identifier (Just (q1,q2)) t) = q1 ++ t ++ q2
-prettyToken _ (PrefixedVariable c p) = c:p
-prettyToken _ (PositionalArg p) = '$':show p
-prettyToken _ (SqlString s e t) = s ++ t ++ e
-prettyToken _ (SqlNumber r) = r
-prettyToken _ (Whitespace t) = t
-prettyToken _ (LineComment l) = l
-prettyToken _ (BlockComment c) = c
-
-prettyTokens :: Dialect -> [Token] -> String
-prettyTokens d ts = concat $ map (prettyToken d) ts
-
--- TODO: try to make all parsers applicative only
+-- main api functions
 
 -- | Lex some SQL to a list of tokens.
 lexSQL :: Dialect
@@ -137,6 +150,31 @@ lexSQL dialect fn' p src =
                . flip setSourceLine l
                . flip setSourceColumn c) getPosition
           >>= setPosition
+
+------------------------------------------------------------------------------
+
+-- pretty printing
+
+-- | Pretty printing, if you lex a bunch of tokens, then pretty
+-- print them, should should get back exactly the same string
+prettyToken :: Dialect -> Token -> String
+prettyToken _ (Symbol s) = s
+prettyToken _ (Identifier Nothing t) = t
+prettyToken _ (Identifier (Just (q1,q2)) t) = q1 ++ t ++ q2
+prettyToken _ (PrefixedVariable c p) = c:p
+prettyToken _ (PositionalArg p) = '$':show p
+prettyToken _ (SqlString s e t) = s ++ t ++ e
+prettyToken _ (SqlNumber r) = r
+prettyToken _ (Whitespace t) = t
+prettyToken _ (LineComment l) = l
+prettyToken _ (BlockComment c) = c
+
+prettyTokens :: Dialect -> [Token] -> String
+prettyTokens d ts = concat $ map (prettyToken d) ts
+
+------------------------------------------------------------------------------
+
+-- token parsers
 
 -- | parser for a sql token
 sqlToken :: Dialect -> Parser ((String,Int,Int),Token)
@@ -164,77 +202,7 @@ this is also tried before symbol (a .1 will be parsed as a number, but
                     ,symbol d
                     ,sqlWhitespace d]
 
-{-
-Parses identifiers:
-
-simple_identifier_23
-u&"unicode quoted identifier"
-"quoted identifier"
-"quoted identifier "" with double quote char"
-`mysql quoted identifier`
--}
-
-identifier :: Dialect -> Parser Token
-identifier d =
-    choice
-    [quotedIden
-    ,unicodeQuotedIden
-    ,regularIden
-    ,guard (diBackquotedIden d) >> mySqlQuotedIden
-    ,guard (diSquareBracketQuotedIden d) >> sqlServerQuotedIden
-    ]
-  where
-    regularIden = Identifier Nothing <$> identifierString
-    quotedIden = Identifier (Just ("\"","\"")) <$> qidenPart
-    mySqlQuotedIden = Identifier (Just ("`","`"))
-                      <$> (char '`' *> takeWhile1 (/='`') <* char '`')
-    sqlServerQuotedIden = Identifier (Just ("[","]"))
-                          <$> (char '[' *> takeWhile1 (`notElem` "[]") <* char ']')
-    -- try is used here to avoid a conflict with identifiers
-    -- and quoted strings which also start with a 'u'
-    unicodeQuotedIden = Identifier
-                        <$> (f <$> try (oneOf "uU" <* string "&"))
-                        <*> qidenPart
-      where f x = Just (x: "&\"", "\"")
-    qidenPart = char '"' *> qidenSuffix ""
-    qidenSuffix t = do
-        s <- takeTill (=='"')
-        void $ char '"'
-        -- deal with "" as literal double quote character
-        choice [do
-                void $ char '"'
-                qidenSuffix $ concat [t,s,"\"\""]
-               ,return $ concat [t,s]]
-
-
--- This parses a valid identifier without quotes.
-
-identifierString :: Parser String
-identifierString =
-    startsWith (\c -> c == '_' || isAlpha c) isIdentifierChar
-
--- this can be moved to the dialect at some point
-
-isIdentifierChar :: Char -> Bool
-isIdentifierChar c = c == '_' || isAlphaNum c
-
--- use try because : and @ can be part of other things also
-
-prefixedVariable :: Dialect -> Parser Token
-prefixedVariable  d = try $ choice
-    [PrefixedVariable <$> char ':' <*> identifierString
-    ,guard (diAtIdentifier d) >>
-     PrefixedVariable <$> char '@' <*> identifierString
-    ,guard (diHashIdentifier d) >>
-     PrefixedVariable <$> char '#' <*> identifierString
-    ]
-
-positionalArg :: Dialect -> Parser Token
-positionalArg d =
-  guard (diPositionalArg d) >>
-  -- use try to avoid ambiguities with other syntax which starts with dollar
-  PositionalArg <$> try (char '$' *> (read <$> many1 digit))
-
+--------------------------------------
 
 {-
 Parse a SQL string. Examples:
@@ -292,6 +260,125 @@ sqlString d = dollarString <|> csString <|> normalString
                   ++ [string "u&'"
                      ,string "U&'"]
 
+
+--------------------------------------
+
+{-
+Parses identifiers:
+
+simple_identifier_23
+u&"unicode quoted identifier"
+"quoted identifier"
+"quoted identifier "" with double quote char"
+`mysql quoted identifier`
+-}
+
+identifier :: Dialect -> Parser Token
+identifier d =
+    choice
+    [quotedIden
+    ,unicodeQuotedIden
+    ,regularIden
+    ,guard (diBackquotedIden d) >> mySqlQuotedIden
+    ,guard (diSquareBracketQuotedIden d) >> sqlServerQuotedIden
+    ]
+  where
+    regularIden = Identifier Nothing <$> identifierString
+    quotedIden = Identifier (Just ("\"","\"")) <$> qidenPart
+    mySqlQuotedIden = Identifier (Just ("`","`"))
+                      <$> (char '`' *> takeWhile1 (/='`') <* char '`')
+    sqlServerQuotedIden = Identifier (Just ("[","]"))
+                          <$> (char '[' *> takeWhile1 (`notElem` "[]") <* char ']')
+    -- try is used here to avoid a conflict with identifiers
+    -- and quoted strings which also start with a 'u'
+    unicodeQuotedIden = Identifier
+                        <$> (f <$> try (oneOf "uU" <* string "&"))
+                        <*> qidenPart
+      where f x = Just (x: "&\"", "\"")
+    qidenPart = char '"' *> qidenSuffix ""
+    qidenSuffix t = do
+        s <- takeTill (=='"')
+        void $ char '"'
+        -- deal with "" as literal double quote character
+        choice [do
+                void $ char '"'
+                qidenSuffix $ concat [t,s,"\"\""]
+               ,return $ concat [t,s]]
+
+
+-- This parses a valid identifier without quotes.
+
+identifierString :: Parser String
+identifierString =
+    startsWith (\c -> c == '_' || isAlpha c) isIdentifierChar
+
+-- this can be moved to the dialect at some point
+
+isIdentifierChar :: Char -> Bool
+isIdentifierChar c = c == '_' || isAlphaNum c
+
+--------------------------------------
+
+lineComment :: Dialect -> Parser Token
+lineComment _ =
+    (\s -> LineComment $ concat ["--",s]) <$>
+    -- try is used here in case we see a - symbol
+    -- once we read two -- then we commit to the comment token
+    (try (string "--") *> (
+        -- todo: there must be a better way to do this
+     conc <$> manyTill anyChar (lookAhead lineCommentEnd) <*> lineCommentEnd))
+  where
+    conc a Nothing = a
+    conc a (Just b) = a ++ b
+    lineCommentEnd =
+        Just "\n" <$ char '\n'
+        <|> Nothing <$ eof
+
+--------------------------------------
+
+{-
+Try is used in the block comment for the two symbol bits because we
+want to backtrack if we read the first symbol but the second symbol
+isn't there.
+-}
+
+blockComment :: Dialect -> Parser Token
+blockComment _ =
+    (\s -> BlockComment $ concat ["/*",s]) <$>
+    (try (string "/*") *> commentSuffix 0)
+  where
+    commentSuffix :: Int -> Parser String
+    commentSuffix n = do
+      -- read until a possible end comment or nested comment
+      x <- takeWhile (\e -> e /= '/' && e /= '*')
+      choice [-- close comment: if the nesting is 0, done
+              -- otherwise recurse on commentSuffix
+              try (string "*/") *> let t = concat [x,"*/"]
+                                   in if n == 0
+                                      then return t
+                                      else (\s -> concat [t,s]) <$> commentSuffix (n - 1)
+              -- nested comment, recurse
+             ,try (string "/*") *> ((\s -> concat [x,"/*",s]) <$> commentSuffix (n + 1))
+              -- not an end comment or nested comment, continue
+             ,(\c s -> x ++ [c] ++ s) <$> anyChar <*> commentSuffix n]
+
+
+{-
+This is to improve user experience: provide an error if we see */
+outside a comment. This could potentially break postgres ops with */
+in them (which is a stupid thing to do). In other cases, the user
+should write * / instead (I can't think of any cases when this would
+be valid syntax though).
+-}
+
+dontParseEndBlockComment :: Dialect -> Parser Token
+dontParseEndBlockComment _ =
+    -- don't use try, then it should commit to the error
+    try (string "*/") *> fail "comment end without comment start"
+
+--------------------------------------
+
+
 {-
 numbers
 
@@ -340,6 +427,30 @@ sqlNumber d =
     expon = (:) <$> oneOf "eE" <*> sInt
     sInt = (++) <$> option "" (string "+" <|> string "-") <*> int
     pp = (<$$> (++))
+
+--------------------------------------
+
+positionalArg :: Dialect -> Parser Token
+positionalArg d =
+  guard (diPositionalArg d) >>
+  -- use try to avoid ambiguities with other syntax which starts with dollar
+  PositionalArg <$> try (char '$' *> (read <$> many1 digit))
+
+
+--------------------------------------
+
+-- use try because : and @ can be part of other things also
+
+prefixedVariable :: Dialect -> Parser Token
+prefixedVariable  d = try $ choice
+    [PrefixedVariable <$> char ':' <*> identifierString
+    ,guard (diAtIdentifier d) >>
+     PrefixedVariable <$> char '@' <*> identifierString
+    ,guard (diHashIdentifier d) >>
+     PrefixedVariable <$> char '#' <*> identifierString
+    ]
+
+--------------------------------------
 
 {-
 Symbols
@@ -466,66 +577,14 @@ generalizedPostgresqlOperator = [singlePlusMinus,opMoreChars]
         <*> option [] opMoreChars
        ]
 
+--------------------------------------
+
 sqlWhitespace :: Dialect -> Parser Token
 sqlWhitespace _ = Whitespace <$> many1 (satisfy isSpace)
 
-lineComment :: Dialect -> Parser Token
-lineComment _ =
-    (\s -> LineComment $ concat ["--",s]) <$>
-    -- try is used here in case we see a - symbol
-    -- once we read two -- then we commit to the comment token
-    (try (string "--") *> (
-        -- todo: there must be a better way to do this
-     conc <$> manyTill anyChar (lookAhead lineCommentEnd) <*> lineCommentEnd))
-  where
-    conc a Nothing = a
-    conc a (Just b) = a ++ b
-    lineCommentEnd =
-        Just "\n" <$ char '\n'
-        <|> Nothing <$ eof
+----------------------------------------------------------------------------
 
-{-
-Try is used in the block comment for the two symbol bits because we
-want to backtrack if we read the first symbol but the second symbol
-isn't there.
--}
-
-blockComment :: Dialect -> Parser Token
-blockComment _ =
-    (\s -> BlockComment $ concat ["/*",s]) <$>
-    (try (string "/*") *> commentSuffix 0)
-  where
-    commentSuffix :: Int -> Parser String
-    commentSuffix n = do
-      -- read until a possible end comment or nested comment
-      x <- takeWhile (\e -> e /= '/' && e /= '*')
-      choice [-- close comment: if the nesting is 0, done
-              -- otherwise recurse on commentSuffix
-              try (string "*/") *> let t = concat [x,"*/"]
-                                   in if n == 0
-                                      then return t
-                                      else (\s -> concat [t,s]) <$> commentSuffix (n - 1)
-              -- nested comment, recurse
-             ,try (string "/*") *> ((\s -> concat [x,"/*",s]) <$> commentSuffix (n + 1))
-              -- not an end comment or nested comment, continue
-             ,(\c s -> x ++ [c] ++ s) <$> anyChar <*> commentSuffix n]
-
-
-{-
-This is to improve user experience: provide an error if we see */
-outside a comment. This could potentially break postgres ops with */
-in them (which is a stupid thing to do). In other cases, the user
-should write * / instead (I can't think of any cases when this would
-be valid syntax though).
--}
-
-dontParseEndBlockComment :: Dialect -> Parser Token
-dontParseEndBlockComment _ =
-    -- don't use try, then it should commit to the error
-    try (string "*/") *> fail "comment end without comment start"
-
-
--- Some helper combinators
+-- parser helpers
 
 startsWith :: (Char -> Bool) -> (Char -> Bool) -> Parser String
 startsWith p ps = do
@@ -544,6 +603,9 @@ takeTill p = manyTill anyChar (peekSatisfy p)
 
 peekSatisfy :: (Char -> Bool) -> Parser ()
 peekSatisfy p = void $ lookAhead (satisfy p)
+
+----------------------------------------------------------------------------
+
 
 {-
 This utility function will accurately report if the two tokens are
@@ -708,44 +770,3 @@ TODO: not 100% on this always being bad
     checkLastAChar f = case prettya of
                           (_:_) -> f $ last prettya
                           _ -> False
-
-
-
-
-{-
-TODO:
-
-make the tokenswill print more dialect accurate. Maybe add symbol
-  chars and identifier chars to the dialect definition and use them from
-  here
-
-start adding negative / different parse dialect tests
-
-add token tables and tests for oracle, sql server
-review existing tables
-
-look for refactoring opportunities, especially the token
-generation tables in the tests
-
-do some user documentation on lexing, and lexing/dialects
-
-start thinking about a more separated design for the dialect handling
-
-lexing tests are starting to take a really long time, so split the
-tests so it is much easier to run all the tests except the lexing
-tests which only need to be run when working on the lexer (which
-should be relatively uncommon), or doing a commit or finishing off a
-series of commits,
-
-start writing the error message tests:
-  generate/write a large number of syntax errors
-  create a table with the source and the error message
-  try to compare some different versions of code to compare the
-    quality of the error messages by hand
-
-  get this checked in so improvements and regressions in the error
-    message quality can be tracked a little more easily (although it will
-    still be manual)
-
-try again to add annotation to the ast
--}
