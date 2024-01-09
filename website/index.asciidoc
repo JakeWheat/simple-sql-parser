@@ -22,7 +22,7 @@ probably not very stable, since adding support for all the
 not-yet-supported ANSI SQL syntax, then other dialects of SQL is
 likely to change the abstract syntax types considerably.
 
-Tested with GHC 8.8.1, 8.6.5, 8.4.4 and 8.2.1.
+Tested with GHC 9.8.1, 9.6.3, and 9.4.8.
 
 == Links
 

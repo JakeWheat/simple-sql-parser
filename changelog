@@ -1,5 +1,8 @@
 0.7.0   (unreleased)
+	support autoincrement for sqlite
+	support table constraints without separating comma for sqlite
 	switch source from literate to regular haskell
+	use prettyprinter lib instead of pretty
 0.6.1   added odbc handling to sqlsqerver dialect
 		added sqlserver dialect case for convert function
 0.6.0
