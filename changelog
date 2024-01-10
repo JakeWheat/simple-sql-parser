@@ -3,11 +3,12 @@
 	support table constraints without separating comma for sqlite
 	switch source from literate to regular haskell
 	use prettyprinter lib instead of pretty
-	nested block comments regressed - post a bug if you need this
+	parsing nested block comments regressed - post a bug if you need this
 	fixed fixity parsing of union, except and intersect (matches postgres docs now)
 	removed the Errors module - the pretty printer function for errors is in the Parse module
 	parses from and pretty prints to strict Text
-	strict Text used instead of String everywhere
+	use strict Text instead of String everywhere
+	tested with latest three main ghc releases (9.8.1, 9.6.4, and 9.4.8) and stack lts 22.5
 0.6.1   added odbc handling to sqlsqerver dialect
 		added sqlserver dialect case for convert function
 0.6.0

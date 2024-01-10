@@ -430,7 +430,6 @@ Contributions are welcome, there are some notes on these pages: link:contributin
 * Bug tracker: https://github.com/JakeWheat/simple-sql-parser/issues
 * Changes: https://github.com/JakeWheat/simple-sql-parser/blob/master/changelog
 * Other versions: http://jakewheat.github.io/simple-sql-parser/
-* Parent project: http://jakewheat.github.io/
 * Contact: +++jakewheat@tutanota.com+++
 
 The simple-sql-parser is a lot less simple than it used to be. If you
