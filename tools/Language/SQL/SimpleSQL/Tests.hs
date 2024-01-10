@@ -58,7 +58,7 @@ testData :: TestItem
 testData =
     Group "parserTest"
     [lexerTests
-    {-,scalarExprTests
+    ,scalarExprTests
     ,odbcTests
     ,queryExprComponentTests
     ,queryExprsTests
@@ -76,7 +76,7 @@ testData =
     ,oracleTests
     ,customDialectTests
     ,emptyStatementTests
-    ,createIndexTests-}
+    ,createIndexTests
     ]
 
 tests :: T.TestTree

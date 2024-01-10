@@ -36,7 +36,6 @@ module Language.SQL.SimpleSQL.SQL2011Queries (sql2011QueryTests) where
 import Language.SQL.SimpleSQL.TestTypes
 import Language.SQL.SimpleSQL.Syntax
 
-import qualified Data.Text as T
 import Data.Text (Text)
 
 sql2011QueryTests :: TestItem

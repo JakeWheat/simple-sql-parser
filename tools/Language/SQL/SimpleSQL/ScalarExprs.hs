@@ -7,8 +7,6 @@ module Language.SQL.SimpleSQL.ScalarExprs (scalarExprTests) where
 import Language.SQL.SimpleSQL.TestTypes
 import Language.SQL.SimpleSQL.Syntax
 
-import qualified Data.Text as T
-
 scalarExprTests :: TestItem
 scalarExprTests = Group "scalarExprTests"
     [literals

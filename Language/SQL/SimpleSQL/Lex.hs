@@ -19,6 +19,21 @@ directly without the separately testing lexing stage.
 
 TODO:
 
+optimisations:
+
+check for left factor opportunities
+check for places where it parses a few substrings from the source,
+  then puts them back together with a concatenate of some flavour
+  -> this is better if can find a way to parse the entire string
+  from the source and lift it in one go into the lexical token
+before this is done, a smaller optimisation is when any code matches
+  a constant string in the lexer, use that constant string instead
+  of the string from the parser, it might make a small difference in
+  a few places
+maybe every token should carry the exact source as well as any fields
+  it's been broken into - so pretty printing is trivial
+
+
 make the tokenswill print more dialect accurate. Maybe add symbol
   chars and identifier chars to the dialect definition and use them from
   here
@@ -98,12 +113,19 @@ import Text.Megaparsec
     ,many
     ,try
     ,option
+    ,(<|>)
+    ,notFollowedBy
+    ,manyTill
+    ,anySingle
+    ,lookAhead
     )
+import qualified Text.Megaparsec as M
 import Text.Megaparsec.Char
     (string
     ,char
     )
 import Text.Megaparsec.State (initialState)
+import Control.Applicative ((<**>))
 
 import Data.Void (Void)
 
@@ -113,7 +135,7 @@ import Data.Char
     ,isSpace
     ,isDigit
     )
-import Control.Monad (void)
+import Control.Monad (void, guard)
 import Data.Text (Text)
 import qualified Data.Text as T
 
@@ -241,7 +263,7 @@ sqlToken d = do
          ,blockComment d
          ,sqlNumber d
          ,positionalArg d
-         --,dontParseEndBlockComment d
+         ,dontParseEndBlockComment d
          ,prefixedVariable d
          ,symbol d
          ,sqlWhitespace d]
@@ -250,10 +272,6 @@ sqlToken d = do
     pure $ WithPos sp ep (off1 - off) t
 
 --------------------------------------
-
-sqlString :: Dialect -> Parser Token
-sqlString _d =
-    SqlString "'" "'" <$> (char_ '\'' *> takeWhileP (Just "non quote char") (/= '\'') <* char_ '\'')
 
 {-
 Parse a SQL string. Examples:
@@ -265,7 +283,6 @@ b'binary string'
 x'hexidecimal string'
 -}
 
-{-
 sqlString :: Dialect -> Parser Token
 sqlString d = dollarString <|> csString <|> normalString
   where
@@ -273,21 +290,21 @@ sqlString d = dollarString <|> csString <|> normalString
         guard $ diDollarString d
         -- use try because of ambiguity with symbols and with
         -- positional arg
-        delim <- (\x -> concat ["$",x,"$"])
+        delim <- (\x -> T.concat ["$",x,"$"])
                  <$> try (char '$' *> option "" identifierString <* char '$')
-        SqlString delim delim  <$> manyTill anyChar (try $ string delim)
+        SqlString delim delim . T.pack <$> manyTill anySingle (try $ string delim)
     normalString = SqlString "'" "'" <$> (char '\'' *> normalStringSuffix False "")
     normalStringSuffix allowBackslash t = do
-        s <- takeTill $ if allowBackslash
-                        then (`elem` "'\\")
-                        else (== '\'')
+        s <- takeWhileP Nothing $ if allowBackslash
+                                  then (`notElemChar` "'\\")
+                                  else (/= '\'')
         -- deal with '' or \' as literal quote character
         choice [do
                 ctu <- choice ["''" <$ try (string "''")
                               ,"\\'" <$ string "\\'"
                               ,"\\" <$ char '\\']
-                normalStringSuffix allowBackslash $ concat [t,s,ctu]
-               ,concat [t,s] <$ char '\'']
+                normalStringSuffix allowBackslash $ T.concat [t,s,ctu]
+               ,T.concat [t,s] <$ char '\'']
     -- try is used to to avoid conflicts with
     -- identifiers which can start with n,b,x,u
     -- once we read the quote type and the starting '
@@ -299,37 +316,18 @@ sqlString d = dollarString <|> csString <|> normalString
     csString
       | diEString d =
         choice [SqlString <$> try (string "e'" <|> string "E'")
-                          <*> return "'" <*> normalStringSuffix True ""
+                          <*> pure "'" <*> normalStringSuffix True ""
                ,csString']
       | otherwise = csString'
     csString' = SqlString
                 <$> try cs
-                <*> return "'"
+                <*> pure "'"
                 <*> normalStringSuffix False ""
-    csPrefixes = "nNbBxX"
-    cs = choice $ (map (\x -> string ([x] ++ "'")) csPrefixes)
-                  ++ [string "u&'"
-                     ,string "U&'"]
--}
+    csPrefixes = (map (flip T.cons "'") "nNbBxX") ++ ["u&'", "U&'"]
+    cs :: Parser Text
+    cs = choice $ map string csPrefixes
 
 --------------------------------------
-
--- TODO: this reconstitutes the string from bits, instead of lifting
--- it in one piece from the source. This is a performance issue, not
--- sure if it will be significant. The same comment applies to most of
--- the other parsers
-identifier :: Dialect -> Parser Token
-identifier d = Identifier Nothing <$> identifierString d
-
-identifierString :: Dialect -> Parser Text
-identifierString _ = (do
-    c <- satisfy isFirstLetter
-    choice
-        [T.cons c <$> (takeWhileP (Just "identifier char") isNonFirstLetter)
-        ,pure $ T.singleton c]) <?> "identifier"
-  where
-     isFirstLetter c = c == '_' || isAlpha c
-     isNonFirstLetter c = c == '_' || isAlphaNum c
 
 {-
 Parses identifiers:
@@ -341,7 +339,6 @@ u&"unicode quoted identifier"
 `mysql quoted identifier`
 -}
 
-{-
 identifier :: Dialect -> Parser Token
 identifier d =
     choice
@@ -355,49 +352,38 @@ identifier d =
     regularIden = Identifier Nothing <$> identifierString
     quotedIden = Identifier (Just ("\"","\"")) <$> qidenPart
     mySqlQuotedIden = Identifier (Just ("`","`"))
-                      <$> (char '`' *> takeWhile1 (/='`') <* char '`')
+                      <$> (char '`' *> takeWhile1P Nothing (/='`') <* char '`')
     sqlServerQuotedIden = Identifier (Just ("[","]"))
-                          <$> (char '[' *> takeWhile1 (`notElem` "[]") <* char ']')
+                          <$> (char '[' *> takeWhile1P Nothing (`notElemChar` "[]") <* char ']')
     -- try is used here to avoid a conflict with identifiers
     -- and quoted strings which also start with a 'u'
     unicodeQuotedIden = Identifier
-                        <$> (f <$> try (oneOf "uU" <* string "&"))
+                        <$> (f <$> try ((oneOf "uU") <* string "&"))
                         <*> qidenPart
-      where f x = Just (x: "&\"", "\"")
+      where f x = Just (T.cons x "&\"", "\"")
     qidenPart = char '"' *> qidenSuffix ""
     qidenSuffix t = do
-        s <- takeTill (=='"')
+        s <- takeWhileP Nothing (/='"')
         void $ char '"'
         -- deal with "" as literal double quote character
         choice [do
                 void $ char '"'
-                qidenSuffix $ concat [t,s,"\"\""]
-               ,return $ concat [t,s]]
+                qidenSuffix $ T.concat [t,s,"\"\""]
+               ,pure $ T.concat [t,s]]
 
-
--- This parses a valid identifier without quotes.
-
-identifierString :: Parser String
-identifierString =
-    startsWith (\c -> c == '_' || isAlpha c) isIdentifierChar
-
--- this can be moved to the dialect at some point
+identifierString :: Parser Text
+identifierString = (do
+    c <- satisfy isFirstLetter
+    choice
+        [T.cons c <$> (takeWhileP (Just "identifier char") isIdentifierChar)
+        ,pure $ T.singleton c]) <?> "identifier"
+  where
+     isFirstLetter c = c == '_' || isAlpha c
 
 isIdentifierChar :: Char -> Bool
 isIdentifierChar c = c == '_' || isAlphaNum c
 
--}
-
 --------------------------------------
-
-{-
-I think it's always faster to use a string locally created in the parser code,
-than to use one taken from the parsed source, unless you take it without modifying it,
-the example here is using -- and \n. this won't be needed in this case if can work out
-how to lift the entire comment as a single string from the source.
-
-this concept does apply to things like symbols
--}
 
 lineComment :: Dialect -> Parser Token
 lineComment _ = do
@@ -407,61 +393,21 @@ lineComment _ = do
     suf <- option "" ("\n" <$ char_ '\n')
     pure $ LineComment $ T.concat ["--", rest, suf]
 
-{-lineComment :: Dialect -> Parser Token
-lineComment _ =
-    (\s -> LineComment $ concat ["--",s]) <$>
-    -- try is used here in case we see a - symbol
-    -- once we read two -- then we commit to the comment token
-    (try (string "--") *> (
-        -- todo: there must be a better way to do this
-     conc <$> manyTill anyChar (lookAhead lineCommentEnd) <*> lineCommentEnd))
-  where
-    conc a Nothing = a
-    conc a (Just b) = a ++ b
-    lineCommentEnd =
-        Just "\n" <$ char '\n'
-        <|> Nothing <$ eof-}
-
 --------------------------------------
 
+-- TODO: the parser before the switch to megaparsec parsed nested block comments
+-- I don't know any dialects that use this, but I think it's useful, if needed,
+-- add it back in under a dialect flag?
 blockComment :: Dialect -> Parser Token
 blockComment _ = (do
     try $ string_ "/*"
     BlockComment . T.concat . ("/*":) <$> more) <?> ""
   where
     more = choice
-        [["*/"] <$ try (string_ "*/")
-        ,char_ '*' *> (("*":) <$> more)
+        [["*/"] <$ try (string_ "*/")  -- comment ended
+        ,char_ '*' *> (("*":) <$> more) -- comment contains * but this isn't the comment end token
+        -- not sure if there's an easy optimisation here
         ,(:) <$> takeWhile1P (Just "non comment terminator text") (/= '*') <*> more]
-
-
-
-{-
-Try is used in the block comment for the two symbol bits because we
-want to backtrack if we read the first symbol but the second symbol
-isn't there.
--}
-{-
-blockComment :: Dialect -> Parser Token
-blockComment _ =
-    (\s -> BlockComment $ concat ["/*",s]) <$>
-    (try (string "/*") *> commentSuffix 0)
-  where
-    commentSuffix :: Int -> Parser String
-    commentSuffix n = do
-      -- read until a possible end comment or nested comment
-      x <- takeWhile (\e -> e /= '/' && e /= '*')
-      choice [-- close comment: if the nesting is 0, done
-              -- otherwise recurse on commentSuffix
-              try (string "*/") *> let t = concat [x,"*/"]
-                                   in if n == 0
-                                      then return t
-                                      else (\s -> concat [t,s]) <$> commentSuffix (n - 1)
-              -- nested comment, recurse
-             ,try (string "/*") *> ((\s -> concat [x,"/*",s]) <$> commentSuffix (n + 1))
-              -- not an end comment or nested comment, continue
-             ,(\c s -> x ++ [c] ++ s) <$> anyChar <*> commentSuffix n]
--}
 
 {-
 This is to improve user experience: provide an error if we see */
@@ -470,22 +416,13 @@ in them (which is a stupid thing to do). In other cases, the user
 should write * / instead (I can't think of any cases when this would
 be valid syntax though).
 -}
-{-
+
 dontParseEndBlockComment :: Dialect -> Parser Token
 dontParseEndBlockComment _ =
     -- don't use try, then it should commit to the error
     try (string "*/") *> fail "comment end without comment start"
--}
+
 --------------------------------------
-
-sqlNumber :: Dialect -> Parser Token
-sqlNumber _ =
-    SqlNumber <$> digits
-
-
-digits :: Parser Text
-digits = takeWhile1P (Just "digit") isDigit
-
 
 {-
 numbers
@@ -502,9 +439,18 @@ present. There cannot be any spaces or other characters embedded in
 the constant. Note that any leading plus or minus sign is not actually
 considered part of the constant; it is an operator applied to the
 constant.
+
+
+algorithm:
+either
+  parse 1 or more digits
+    then an optional dot which isn't two dots
+    then optional digits
+  or: parse a dot which isn't two dots
+    then digits
+followed by an optional exponent
 -}
 
-{-
 sqlNumber :: Dialect -> Parser Token
 sqlNumber d =
     SqlNumber <$> completeNumber
@@ -517,15 +463,14 @@ sqlNumber d =
               ]
   where
     completeNumber =
-      (int <??> (pp dot <??.> pp int)
+      (digits <??> (pp dot <??.> pp digits)
       -- try is used in case we read a dot
       -- and it isn't part of a number
       -- if there are any following digits, then we commit
       -- to it being a number and not something else
-      <|> try ((++) <$> dot <*> int))
+      <|> try ((<>) <$> dot <*> digits))
       <??> pp expon
 
-    int = many1 digit
     -- make sure we don't parse two adjacent dots in a number
     -- special case for postgresql, we backtrack if we see two adjacent dots
     -- to parse 1..2, but in other dialects we commit to the failure
@@ -533,23 +478,25 @@ sqlNumber d =
           in if diPostgresSymbols d
              then try p
              else p
-    expon = (:) <$> oneOf "eE" <*> sInt
-    sInt = (++) <$> option "" (string "+" <|> string "-") <*> int
-    pp = (<$$> (++))
--}
+    expon = T.cons <$> oneOf "eE" <*> sInt
+    sInt = (<>) <$> option "" (T.singleton <$> oneOf "+-") <*> digits
+    pp = (<$$> (<>))
+    p <??> q = p <**> option id q
+    pa <$$> c = pa <**> pure (flip c)
+    pa <??.> pb =
+       let c = (<$>) . flip
+       in (.) `c` pa <*> option id pb
+
+digits :: Parser Text
+digits = takeWhile1P (Just "digit") isDigit
 
 --------------------------------------
 
 positionalArg :: Dialect -> Parser Token
-positionalArg _ = PositionalArg <$> (char_ '$' *> (read . T.unpack <$> digits))
-
-{-
-positionalArg :: Dialect -> Parser Token
 positionalArg d =
-  guard (diPositionalArg d) >>
-  -- use try to avoid ambiguities with other syntax which starts with dollar
-  PositionalArg <$> try (char '$' *> (read <$> many1 digit))
--}
+    guard (diPositionalArg d) >>
+    -- use try to avoid ambiguities with other syntax which starts with dollar
+    PositionalArg <$> try (char_ '$' *> (read . T.unpack <$> digits))
 
 --------------------------------------
 
@@ -557,35 +504,14 @@ positionalArg d =
 -- identifier char, then commit
 prefixedVariable :: Dialect -> Parser Token
 prefixedVariable d = try $ choice
-    [PrefixedVariable <$> (':' <$ char_ ':') <*> identifierString d
-    ]
-
-
--- use try because : and @ can be part of other things also
-
-{-
-prefixedVariable :: Dialect -> Parser Token
-prefixedVariable  d = try $ choice
     [PrefixedVariable <$> char ':' <*> identifierString
     ,guard (diAtIdentifier d) >>
      PrefixedVariable <$> char '@' <*> identifierString
     ,guard (diHashIdentifier d) >>
      PrefixedVariable <$> char '#' <*> identifierString
     ]
--}
 
 --------------------------------------
-
-symbol :: Dialect -> Parser Token
-symbol _ =
-    Symbol <$> choice
-    [try $ choice $ map (\a -> string a) multiCharSymbols
-    ,T.singleton <$> satisfy (`elem` singleLetterSymbol)
-    ]
-  where
-    singleLetterSymbol = "(),-+*/<>=." :: String
-    multiCharSymbols = ["!=", "<>", ">=", "<=", "||"]
-
 
 {-
 Symbols
@@ -596,7 +522,7 @@ A symbol is an operator, or one of the misc symbols which include:
 The postgresql operator syntax allows a huge range of operators
 compared with ansi and other dialects
 -}
-{-
+
 symbol :: Dialect -> Parser Token
 symbol d  = Symbol <$> choice (concat
    [dots
@@ -610,14 +536,14 @@ symbol d  = Symbol <$> choice (concat
     else basicAnsiOps
    ])
  where
-   dots = [many1 (char '.')]
+   dots = [takeWhile1P (Just "dot") (=='.')]
    odbcSymbol = [string "{", string "}"]
    postgresExtraSymbols =
        [try (string ":=")
         -- parse :: and : and avoid allowing ::: or more
        ,try (string "::" <* notFollowedBy (char ':'))
        ,try (string ":" <* notFollowedBy (char ':'))]
-   miscSymbol = map (string . (:[])) $
+   miscSymbol = map (string . T.singleton) $
                 case () of
                     _ | diSqlServerSymbols d -> ",;():?"
                       | diPostgresSymbols d -> "[],;()"
@@ -629,14 +555,14 @@ symbols can also be part of a single character symbol
 -}
 
    basicAnsiOps = map (try . string) [">=","<=","!=","<>"]
-                  ++ map (string . (:[])) "+-^*/%~&<>="
+                  ++ map (string . T.singleton) "+-^*/%~&<>="
                   ++ pipes
    pipes = -- what about using many1 (char '|'), then it will
            -- fail in the parser? Not sure exactly how
            -- standalone the lexer should be
            [char '|' *>
             choice ["||" <$ char '|' <* notFollowedBy (char '|')
-                   ,return "|"]]
+                   ,pure "|"]]
 
 {-
 postgresql generalized operators
@@ -662,7 +588,7 @@ which allows the last character of a multi character symbol to be + or
 -
 -}
 
-generalizedPostgresqlOperator :: [Parser String]
+generalizedPostgresqlOperator :: [Parser Text]
 generalizedPostgresqlOperator = [singlePlusMinus,opMoreChars]
   where
     allOpSymbols = "+-*/<>=~!@#%^&|`?"
@@ -674,13 +600,13 @@ generalizedPostgresqlOperator = [singlePlusMinus,opMoreChars]
     singlePlusMinus = try $ do
       c <- oneOf "+-"
       notFollowedBy $ oneOf allOpSymbols
-      return [c]
+      pure $ T.singleton c
 
     -- this is used when we are parsing a potentially multi symbol
     -- operator and we have alread seen one of the 'exception chars'
     -- and so we can end with a + or -
     moreOpCharsException = do
-       c <- oneOf (filter (`notElem` "-/*") allOpSymbols)
+       c <- oneOf (filter (`notElemChar` "-/*") allOpSymbols)
             -- make sure we don't parse a comment starting token
             -- as part of an operator
             <|> try (char '/' <* notFollowedBy (char '*'))
@@ -688,14 +614,14 @@ generalizedPostgresqlOperator = [singlePlusMinus,opMoreChars]
             -- and make sure we don't parse a block comment end
             -- as part of another symbol
             <|> try (char '*' <* notFollowedBy (char '/'))
-       (c:) <$> option [] moreOpCharsException
+       T.cons c <$> option "" moreOpCharsException
 
     opMoreChars = choice
        [-- parse an exception char, now we can finish with a + -
-        (:)
+        T.cons
         <$> oneOf exceptionOpSymbols
-        <*> option [] moreOpCharsException
-       ,(:)
+        <*> option "" moreOpCharsException
+       ,T.cons
         <$> (-- parse +, make sure it isn't the last symbol
              try (char '+' <* lookAhead (oneOf allOpSymbols))
              <|> -- parse -, make sure it isn't the last symbol
@@ -709,17 +635,13 @@ generalizedPostgresqlOperator = [singlePlusMinus,opMoreChars]
              try (char '*' <* notFollowedBy (char '/'))
              <|> -- any other ansi operator symbol
              oneOf "<>=")
-        <*> option [] opMoreChars
+        <*> option "" opMoreChars
        ]
--}
 
 --------------------------------------
 
 sqlWhitespace :: Dialect -> Parser Token
 sqlWhitespace _ = Whitespace <$> takeWhile1P (Just "whitespace") isSpace <?> ""
-
---sqlWhitespace :: Dialect -> Parser Token
---sqlWhitespace _ = Whitespace <$> many1 (satisfy isSpace)
 
 ----------------------------------------------------------------------------
 
@@ -731,25 +653,11 @@ char_ = void . char
 string_ :: Text -> Parser ()
 string_ = void . string
 
-{-
-startsWith :: (Char -> Bool) -> (Char -> Bool) -> Parser String
-startsWith p ps = do
-  c <- satisfy p
-  choice [(:) c <$> (takeWhile1 ps)
-         ,return [c]]
+oneOf :: [Char] -> Parser Char
+oneOf = M.oneOf
 
-takeWhile1 :: (Char -> Bool) -> Parser String
-takeWhile1 p = many1 (satisfy p)
-
-takeWhile :: (Char -> Bool) -> Parser String
-takeWhile p = many (satisfy p)
-
-takeTill :: (Char -> Bool) -> Parser String
-takeTill p = manyTill anyChar (peekSatisfy p)
-
-peekSatisfy :: (Char -> Bool) -> Parser ()
-peekSatisfy p = void $ lookAhead (satisfy p)
--}
+notElemChar :: Char -> [Char] -> Bool
+notElemChar a b = a `notElem` (b :: [Char])
 
 ----------------------------------------------------------------------------
 
@@ -776,8 +684,7 @@ successes. I don't think it succeeds this test at the moment
 -- will pretty print then lex back to the same set of tokens.
 -- Used internally, might be useful for generating SQL via lexical tokens.
 tokenListWillPrintAndLex :: Dialect -> [Token] -> Bool
-tokenListWillPrintAndLex = undefined
-{-tokenListWillPrintAndLex _ [] = True
+tokenListWillPrintAndLex _ [] = True
 tokenListWillPrintAndLex _ [_] = True
 tokenListWillPrintAndLex d (a:b:xs) =
     tokensWillPrintAndLex d a b && tokenListWillPrintAndLex d (b:xs)
@@ -791,7 +698,7 @@ followed by = or : makes a different symbol
 -}
 
     | Symbol ":" <- a
-    , checkFirstBChar (\x -> isIdentifierChar x || x `elem` ":=") = False
+    , checkFirstBChar (\x -> isIdentifierChar x || x `T.elem` ":=") = False
 
 {-
 two symbols next to eachother will fail if the symbols can combine and
@@ -801,7 +708,7 @@ two symbols next to eachother will fail if the symbols can combine and
     | diPostgresSymbols d
     , Symbol a' <- a
     , Symbol b' <- b
-    , b' `notElem` ["+", "-"] || or (map (`elem` a') "~!@#%^&|`?") = False
+    , b' `notElem` ["+", "-"] || or (map (`T.elem` a') "~!@#%^&|`?") = False
 
 {-
 check two adjacent symbols in non postgres where the combination
@@ -906,17 +813,13 @@ TODO: not 100% on this always being bad
     -- helper function to run a predicate on the
     -- last character of the first token and the first
     -- character of the second token
-    checkBorderChars f
-        | (_:_) <- prettya
-        , (fb:_) <- prettyb
-        , la <- last prettya
-        = f la fb
-    checkBorderChars _ = False
-    checkFirstBChar f = case prettyb of
-                          (b':_) -> f b'
-                          _ -> False
-    checkLastAChar f = case prettya of
-                          (_:_) -> f $ last prettya
-                          _ -> False
-
--}
+    checkBorderChars f =
+        case (T.unsnoc prettya, T.uncons prettyb) of
+            (Just (_,la), Just (fb,_)) -> f la fb
+            _ -> False
+    checkFirstBChar f = case T.uncons prettyb of
+        Just (b',_) -> f b'
+        _ -> False
+    checkLastAChar f = case T.unsnoc prettya of
+        Just (_,la) -> f la
+        _ -> False
