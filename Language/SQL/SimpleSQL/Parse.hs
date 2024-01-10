@@ -187,7 +187,7 @@ module Language.SQL.SimpleSQL.Parse
     ,parseScalarExpr
     ,parseStatement
     ,parseStatements
-    ,ParseError(..)
+    ,ParseError
     ,prettyError
     ) where
 
@@ -199,9 +199,8 @@ import Text.Megaparsec
     ,PosState(..)
     ,TraversableStream(..)
     ,VisualStream(..)
-    ,ErrorItem(Tokens)
+    --,ErrorItem(Tokens)
 
-    ,initialPos
     ,sourceLine
 
     ,ParseErrorBundle(..)
@@ -225,7 +224,7 @@ import qualified Control.Monad.Combinators.Expr as E
 import qualified Control.Monad.Permutations as P
 
 import Control.Monad.Reader
-    (Reader(..)
+    (Reader
     ,runReader
     ,ask
     )
@@ -233,14 +232,13 @@ import Control.Monad.Reader
 import qualified Data.List          as DL
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Set           as Set
-import Control.Monad.Identity (Identity)
 import Data.Proxy (Proxy(..))
 import Data.Void (Void)
 
 import Control.Monad (guard, void)
 import Control.Applicative ((<**>))
-import Data.Char (toLower, isDigit)
-import Data.List (intercalate,sort,groupBy)
+import Data.Char (isDigit)
+import Data.List (sort,groupBy)
 import Data.Function (on)
 import Data.Maybe (catMaybes, isJust)
 import Data.Text (Text)
@@ -1239,15 +1237,15 @@ opTable bExpr =
 
        ]
   where
-    binarySymL name = E.InfixL (mkBinOp name <$ symbol_ name)
-    binarySymR name = E.InfixR (mkBinOp name <$ symbol_ name)
-    binarySymN name = E.InfixN (mkBinOp name <$ symbol_ name)
-    binaryKeywordN name = E.InfixN (mkBinOp name <$ keyword_ name)
-    binaryKeywordL name = E.InfixL (mkBinOp name <$ keyword_ name)
-    mkBinOp nm a b = BinOp a (mkName nm) b
-    prefixSym  name = E.Prefix (PrefixOp (mkName name) <$ symbol_ name)
-    prefixKeyword  name = E.Prefix (PrefixOp (mkName name) <$ keyword_ name)
-    mkName nm = [Name Nothing nm]
+    binarySymL nm = E.InfixL (mkBinOp nm <$ symbol_ nm)
+    binarySymR nm = E.InfixR (mkBinOp nm <$ symbol_ nm)
+    binarySymN nm = E.InfixN (mkBinOp nm <$ symbol_ nm)
+    binaryKeywordN nm = E.InfixN (mkBinOp nm <$ keyword_ nm)
+    binaryKeywordL nm = E.InfixL (mkBinOp nm <$ keyword_ nm)
+    mkBinOp nm a b = BinOp a (mkNm nm) b
+    prefixSym  nm = E.Prefix (PrefixOp (mkNm nm) <$ symbol_ nm)
+    prefixKeyword  nm = E.Prefix (PrefixOp (mkNm nm) <$ keyword_ nm)
+    mkNm nm = [Name Nothing nm]
     binaryKeywordsN p =
         E.InfixN (do
                  o <- try p
@@ -2161,11 +2159,6 @@ other operators so it can be used nicely
 (<??>) :: Parser a -> Parser (a -> a) -> Parser a
 p <??> q = p <**> option id q
 
-(<??.>) :: Parser (a -> a) -> Parser (a -> a) -> Parser (a -> a)
-(<??.>) pa pb = (.) `c` pa <*> option id pb
-  -- todo: fix this mess
-  where c = (<$>) . flip
-
 -- 0 to many repeated applications of suffix parser
 
 (<??*>) :: Parser a -> Parser (a -> a) -> Parser a
@@ -2482,5 +2475,3 @@ pxy = Proxy
 showMyToken :: L.Token -> String
 -- todo: how to do this properly?
 showMyToken = T.unpack . L.prettyToken ansi2011
-
-

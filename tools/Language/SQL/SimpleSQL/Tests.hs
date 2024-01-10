@@ -118,9 +118,9 @@ makeLexerTest d s ts = H.testCase (T.unpack s) $ do
 
 makeLexingFailsTest :: Dialect -> Text -> T.TestTree
 makeLexingFailsTest d s = H.testCase (T.unpack s) $ do
-    undefined {-case lexSQL d "" Nothing s of
-         Right x -> H.assertFailure $ "lexing should have failed: " ++ s ++ "\ngot: " ++ show x
-         Left _ -> return ()-}
+    case Lex.lexSQL d "" Nothing s of
+         Right x -> H.assertFailure $ "lexing should have failed: " ++ T.unpack s ++ "\ngot: " ++ show x
+         Left _ -> pure ()
 
 
 toTest :: (Eq a, Show a) =>

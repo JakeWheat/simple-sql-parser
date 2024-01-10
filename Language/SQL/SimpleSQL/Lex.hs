@@ -64,7 +64,7 @@ module Language.SQL.SimpleSQL.Lex
     ,lexSQL
     ,prettyToken
     ,prettyTokens
-    ,ParseError(..)
+    ,ParseError
     ,prettyError
     ,tokenListWillPrintAndLex
     ,ansi2011
@@ -252,7 +252,7 @@ sqlToken d = do
 --------------------------------------
 
 sqlString :: Dialect -> Parser Token
-sqlString d =
+sqlString _d =
     SqlString "'" "'" <$> (char_ '\'' *> takeWhileP (Just "non quote char") (/= '\'') <* char_ '\'')
 
 {-

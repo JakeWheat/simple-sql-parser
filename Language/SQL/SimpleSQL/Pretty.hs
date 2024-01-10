@@ -37,7 +37,6 @@ import qualified Prettyprinter as P
 import Prettyprinter.Render.Text (renderStrict)
 
 import Data.Maybe (maybeToList, catMaybes)
-import Data.List (intercalate)
 
 import qualified Data.Text as T
 import Data.Text (Text)
