@@ -5,6 +5,7 @@ all of the postgres specific syntax has been skipped, this can be
 revisited when the dialect support is added.
 -}
 
+{-# LANGUAGE OverloadedStrings #-}
 module Language.SQL.SimpleSQL.Postgres (postgresTests) where
 
 import Language.SQL.SimpleSQL.TestTypes

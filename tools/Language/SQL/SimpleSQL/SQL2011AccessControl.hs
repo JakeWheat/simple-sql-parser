@@ -6,6 +6,7 @@ grant, etc
 -}
 
 
+{-# LANGUAGE OverloadedStrings #-}
 module Language.SQL.SimpleSQL.SQL2011AccessControl (sql2011AccessControlTests) where
 
 import Language.SQL.SimpleSQL.TestTypes

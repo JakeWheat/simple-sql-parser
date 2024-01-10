@@ -7,6 +7,7 @@ table refs which are in a separate file.
 These are a few misc tests which don't fit anywhere else.
 -}
 
+{-# LANGUAGE OverloadedStrings #-}
 module Language.SQL.SimpleSQL.QueryExprComponents (queryExprComponentTests) where
 
 import Language.SQL.SimpleSQL.TestTypes

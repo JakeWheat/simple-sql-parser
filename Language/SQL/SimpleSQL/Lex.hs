@@ -155,7 +155,7 @@ data Token
     | LineComment Text
     -- | A block comment, \/* stuff *\/, includes the comment delimiters
     | BlockComment Text
-      deriving (Eq,Show)
+      deriving (Eq,Show,Ord)
 
 ------------------------------------------------------------------------------
 

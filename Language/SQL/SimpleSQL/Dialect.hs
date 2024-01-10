@@ -3,6 +3,7 @@
 -- Data types to represent different dialect options
 
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Language.SQL.SimpleSQL.Dialect
     (Dialect(..)
     ,ansi2011
@@ -12,6 +13,7 @@ module Language.SQL.SimpleSQL.Dialect
     ,sqlserver
     ) where
 
+import Data.Text (Text)
 import Data.Data
 
 -- | Used to set the dialect used for parsing and pretty printing,
@@ -55,14 +57,14 @@ import Data.Data
 
 data Dialect = Dialect
     { -- | reserved keywords
-     diKeywords :: [String]
+     diKeywords :: [Text]
       -- | keywords with identifier exception
-    ,diIdentifierKeywords :: [String]
+    ,diIdentifierKeywords :: [Text]
       -- | keywords with app exception
-    ,diAppKeywords :: [String]
+    ,diAppKeywords :: [Text]
      -- | keywords with type exception plus all the type names which
      -- are multiple words
-    ,diSpecialTypeNames :: [String]
+    ,diSpecialTypeNames :: [Text]
      -- | allow ansi fetch first syntax
     ,diFetchFirst :: Bool
      -- | allow limit keyword (mysql, postgres,
@@ -179,7 +181,7 @@ quoted. If you want to match one of these dialects exactly with this
 parser, I think it will be a lot of work.
 -}
 
-ansi2011ReservedKeywords :: [String]
+ansi2011ReservedKeywords :: [Text]
 ansi2011ReservedKeywords =
     [--"abs" -- function
      "all" -- keyword only?
@@ -508,7 +510,7 @@ ansi2011ReservedKeywords =
     ]
 
 
-ansi2011TypeNames :: [String]
+ansi2011TypeNames :: [Text]
 ansi2011TypeNames =
     ["double precision"
     ,"character varying"

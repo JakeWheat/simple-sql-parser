@@ -22,11 +22,11 @@ mentioned give a parse error. Not sure if this will be too awkward due
 to lots of tricky exceptions/variationsx.
 -}
 
-data TestItem = Group String [TestItem]
-              | TestScalarExpr Dialect String ScalarExpr
-              | TestQueryExpr Dialect String QueryExpr
-              | TestStatement Dialect String Statement
-              | TestStatements Dialect String [Statement]
+data TestItem = Group Text [TestItem]
+              | TestScalarExpr Dialect Text ScalarExpr
+              | TestQueryExpr Dialect Text QueryExpr
+              | TestStatement Dialect Text Statement
+              | TestStatements Dialect Text [Statement]
 
 {-
 this just checks the sql parses without error, mostly just a
@@ -34,12 +34,12 @@ intermediate when I'm too lazy to write out the parsed AST. These
 should all be TODO to convert to a testqueryexpr test.
 -}
 
-              | ParseQueryExpr Dialect String
+              | ParseQueryExpr Dialect Text
 
 -- check that the string given fails to parse
 
-              | ParseQueryExprFails Dialect String
-              | ParseScalarExprFails Dialect String
+              | ParseQueryExprFails Dialect Text
+              | ParseScalarExprFails Dialect Text
               | LexTest Dialect Text [Token]
-              | LexFails Dialect String
+              | LexFails Dialect Text
                 deriving (Eq,Show)

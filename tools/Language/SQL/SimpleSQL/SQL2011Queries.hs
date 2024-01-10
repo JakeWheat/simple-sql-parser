@@ -31,9 +31,13 @@ some areas getting more comprehensive coverage tests, and also to note
 which parts aren't currently supported.
 -}
 
+{-# LANGUAGE OverloadedStrings #-}
 module Language.SQL.SimpleSQL.SQL2011Queries (sql2011QueryTests) where
 import Language.SQL.SimpleSQL.TestTypes
 import Language.SQL.SimpleSQL.Syntax
+
+import qualified Data.Text as T
+import Data.Text (Text)
 
 sql2011QueryTests :: TestItem
 sql2011QueryTests = Group "sql 2011 query tests"
@@ -1050,14 +1054,15 @@ new multipliers
 create a list of type name variations:
 -}
 
-typeNames :: ([(String,TypeName)],[(String,TypeName)])
+typeNames :: ([(Text,TypeName)],[(Text,TypeName)])
 typeNames =
     (basicTypes, concatMap makeArray basicTypes
-                 ++ map makeMultiset basicTypes)
+                 <> map makeMultiset basicTypes)
   where
-    makeArray (s,t) = [(s ++ " array", ArrayTypeName t Nothing)
-                      ,(s ++ " array[5]", ArrayTypeName t (Just 5))]
-    makeMultiset (s,t) = (s ++ " multiset", MultisetTypeName t)
+    makeArray (s,t) = [(s <> " array", ArrayTypeName t Nothing)
+                      ,(s <> " array[5]", ArrayTypeName t (Just 5))]
+    makeMultiset (s,t) = (s <> " multiset", MultisetTypeName t)
+    basicTypes :: [(Text, TypeName)]
     basicTypes =
         -- example of every standard type name
         map (\t -> (t,TypeName [Name Nothing t]))
@@ -1102,7 +1107,7 @@ typeNames =
         -- array -- not allowed on own
         -- multiset -- not allowed on own
 
-         ++
+         <>
          [-- 1 single prec + 1 with multiname
           ("char(5)", PrecTypeName [Name Nothing "char"] 5)
          ,("char varying(5)", PrecTypeName [Name Nothing "char varying"] 5)
@@ -1224,12 +1229,12 @@ typeNameTests = Group "type names"
                           $ concatMap makeTests $ snd typeNames]
   where
     makeSimpleTests (ctn, stn) =
-        [(ctn ++ " 'test'", TypedLit stn "test")
+        [(ctn <> " 'test'", TypedLit stn "test")
         ]
     makeCastTests (ctn, stn) =
-        [("cast('test' as " ++ ctn ++ ")", Cast (StringLit "'" "'" "test") stn)
+        [("cast('test' as " <> ctn <> ")", Cast (StringLit "'" "'" "test") stn)
         ]
-    makeTests a = makeSimpleTests a ++ makeCastTests a
+    makeTests a = makeSimpleTests a <> makeCastTests a
 
 
 {-
@@ -3590,7 +3595,7 @@ comparisonPredicates :: TestItem
 comparisonPredicates = Group "comparison predicates"
     $ map (uncurry (TestScalarExpr ansi2011))
     $ map mkOp ["=", "<>", "<", ">", "<=", ">="]
-    ++ [("ROW(a) = ROW(b)"
+    <> [("ROW(a) = ROW(b)"
         ,BinOp (App [Name Nothing "ROW"] [a])
                [Name Nothing "="]
                (App [Name Nothing "ROW"] [b]))
@@ -3600,7 +3605,7 @@ comparisonPredicates = Group "comparison predicates"
            (SpecialOp [Name Nothing "rowctor"] [Iden [Name Nothing "c"], Iden [Name Nothing "d"]]))
     ]
   where
-    mkOp nm = ("a " ++ nm ++ " b"
+    mkOp nm = ("a " <> nm <> " b"
               ,BinOp a [Name Nothing nm] b)
     a = Iden [Name Nothing "a"]
     b = Iden [Name Nothing "b"]
@@ -3911,7 +3916,7 @@ matchPredicate = Group "match predicate"
          {qeSelectList = [(Iden [Name Nothing "a"],Nothing)]
          ,qeFrom = [TRSimple [Name Nothing "t"]]}
     qea = qe {qeSelectList = qeSelectList qe
-                             ++ [(Iden [Name Nothing "b"],Nothing)]}
+                             <> [(Iden [Name Nothing "b"],Nothing)]}
 
 {-
 TODO: simple, partial and full
@@ -4397,7 +4402,7 @@ aggregateFunction = Group "aggregate function"
      ,AggregateApp [Name Nothing "count"]
                    All
                    [Iden [Name Nothing "a"]] [] fil)
-    ] ++ concatMap mkSimpleAgg
+    ] <> concatMap mkSimpleAgg
          ["avg","max","min","sum"
          ,"every", "any", "some"
          ,"stddev_pop","stddev_samp","var_samp","var_pop"
@@ -4405,7 +4410,7 @@ aggregateFunction = Group "aggregate function"
 
 -- bsf
 
-    ++ concatMap mkBsf
+    <> concatMap mkBsf
          ["COVAR_POP","COVAR_SAMP","CORR","REGR_SLOPE"
           ,"REGR_INTERCEPT","REGR_COUNT","REGR_R2"
           ,"REGR_AVGX","REGR_AVGY"
@@ -4413,15 +4418,15 @@ aggregateFunction = Group "aggregate function"
 
 -- osf
 
-    ++
+    <>
     [("rank(a,c) within group (order by b)"
      ,AggregateAppGroup [Name Nothing "rank"]
           [Iden [Name Nothing "a"], Iden [Name Nothing "c"]]
           ob)]
-    ++ map mkGp ["dense_rank","percent_rank"
+    <> map mkGp ["dense_rank","percent_rank"
                 ,"cume_dist", "percentile_cont"
                 ,"percentile_disc"]
-    ++ [("array_agg(a)", App [Name Nothing "array_agg"] [Iden [Name Nothing "a"]])
+    <> [("array_agg(a)", App [Name Nothing "array_agg"] [Iden [Name Nothing "a"]])
        ,("array_agg(a order by z)"
         ,AggregateApp [Name Nothing "array_agg"]
                        SQDefault
@@ -4433,20 +4438,20 @@ aggregateFunction = Group "aggregate function"
   where
     fil = Just $ BinOp (Iden [Name Nothing "something"]) [Name Nothing ">"] (NumLit "5")
     ob = [SortSpec (Iden [Name Nothing "b"]) DirDefault NullsOrderDefault]
-    mkGp nm = (nm ++ "(a) within group (order by b)"
+    mkGp nm = (nm <> "(a) within group (order by b)"
               ,AggregateAppGroup [Name Nothing nm]
                [Iden [Name Nothing "a"]]
                ob)
 
     mkSimpleAgg nm =
-        [(nm ++ "(a)",App [Name Nothing nm] [Iden [Name Nothing "a"]])
-        ,(nm ++ "(distinct a)"
+        [(nm <> "(a)",App [Name Nothing nm] [Iden [Name Nothing "a"]])
+        ,(nm <> "(distinct a)"
          ,AggregateApp [Name Nothing nm]
                        Distinct
                        [Iden [Name Nothing "a"]] [] Nothing)]
     mkBsf nm =
-        [(nm ++ "(a,b)",App [Name Nothing nm] [Iden [Name Nothing "a"],Iden [Name Nothing "b"]])
-        ,(nm ++"(a,b) filter (where something > 5)"
+        [(nm <> "(a,b)",App [Name Nothing nm] [Iden [Name Nothing "a"],Iden [Name Nothing "b"]])
+        ,(nm <> "(a,b) filter (where something > 5)"
           ,AggregateApp [Name Nothing nm]
                         SQDefault
                         [Iden [Name Nothing "a"],Iden [Name Nothing "b"]] [] fil)]

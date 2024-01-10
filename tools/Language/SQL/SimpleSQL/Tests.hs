@@ -87,7 +87,7 @@ tests = itemToTest testData
 
 itemToTest :: TestItem -> T.TestTree
 itemToTest (Group nm ts) =
-    T.testGroup nm $ map itemToTest ts
+    T.testGroup (T.unpack nm) $ map itemToTest ts
 itemToTest (TestScalarExpr d str expected) =
     toTest parseScalarExpr prettyScalarExpr d str expected
 itemToTest (TestQueryExpr d str expected) =
@@ -116,65 +116,64 @@ makeLexerTest d s ts = H.testCase (T.unpack s) $ do
     let s' = Lex.prettyTokens d $ ts1
     H.assertEqual "pretty print" s s'
 
-makeLexingFailsTest :: Dialect -> String -> T.TestTree
-makeLexingFailsTest d s = H.testCase s $ do
+makeLexingFailsTest :: Dialect -> Text -> T.TestTree
+makeLexingFailsTest d s = H.testCase (T.unpack s) $ do
     undefined {-case lexSQL d "" Nothing s of
          Right x -> H.assertFailure $ "lexing should have failed: " ++ s ++ "\ngot: " ++ show x
          Left _ -> return ()-}
 
 
 toTest :: (Eq a, Show a) =>
-          (Dialect -> String -> Maybe (Int,Int) -> String -> Either ParseError a)
-       -> (Dialect -> a -> String)
+          (Dialect -> Text -> Maybe (Int,Int) -> Text -> Either ParseError a)
+       -> (Dialect -> a -> Text)
        -> Dialect
-       -> String
+       -> Text
        -> a
        -> T.TestTree
-toTest parser pp d str expected = H.testCase str $ do
+toTest parser pp d str expected = H.testCase (T.unpack str) $ do
         let egot = parser d "" Nothing str
         case egot of
-            Left e -> H.assertFailure $ peFormattedError e
+            Left e -> H.assertFailure $ T.unpack $ prettyError e
             Right got -> do
                 H.assertEqual "" expected got
                 let str' = pp d got
                 let egot' = parser d "" Nothing str'
                 case egot' of
                     Left e' -> H.assertFailure $ "pp roundtrip"
-                                                 ++ "\n" ++ str'
-                                                 ++ peFormattedError e'
+                                                 ++ "\n" ++ (T.unpack str')
+                                                 ++ (T.unpack $ prettyError e')
                     Right got' -> H.assertEqual
-                                  ("pp roundtrip" ++ "\n" ++ str')
+                                  ("pp roundtrip" ++ "\n" ++ T.unpack str')
                                    expected got'
 
 toPTest :: (Eq a, Show a) =>
-          (Dialect -> String -> Maybe (Int,Int) -> String -> Either ParseError a)
-       -> (Dialect -> a -> String)
+          (Dialect -> Text -> Maybe (Int,Int) -> Text -> Either ParseError a)
+       -> (Dialect -> a -> Text)
        -> Dialect
-       -> String
+       -> Text
        -> T.TestTree
-toPTest parser pp d str = H.testCase str $ do
+toPTest parser pp d str = H.testCase (T.unpack str) $ do
         let egot = parser d "" Nothing str
         case egot of
-            Left e -> H.assertFailure $ peFormattedError e
+            Left e -> H.assertFailure $ T.unpack $ prettyError e
             Right got -> do
                 let str' = pp d got
                 let egot' = parser d "" Nothing str'
                 case egot' of
                     Left e' -> H.assertFailure $ "pp roundtrip "
-                                                 ++ "\n" ++ str' ++ "\n"
-                                                 ++ peFormattedError e'
+                                                 ++ "\n" ++ T.unpack str' ++ "\n"
+                                                 ++ T.unpack (prettyError e')
                     Right _got' -> return ()
 
-
 toFTest :: (Eq a, Show a) =>
-          (Dialect -> String -> Maybe (Int,Int) -> String -> Either ParseError a)
-       -> (Dialect -> a -> String)
+          (Dialect -> Text -> Maybe (Int,Int) -> Text -> Either ParseError a)
+       -> (Dialect -> a -> Text)
        -> Dialect
-       -> String
+       -> Text
        -> T.TestTree
-toFTest parser _pp d str = H.testCase str $ do
+toFTest parser _pp d str = H.testCase (T.unpack str) $ do
         let egot = parser d "" Nothing str
         case egot of
             Left _e -> return ()
             Right _got ->
-              H.assertFailure $ "parse didn't fail: " ++ show d ++ "\n" ++ str
+              H.assertFailure $ "parse didn't fail: " ++ show d ++ "\n" ++ T.unpack str

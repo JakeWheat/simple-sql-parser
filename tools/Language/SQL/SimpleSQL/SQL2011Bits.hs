@@ -7,6 +7,7 @@ commit, savepoint, etc.), and session management (set).
 -}
 
 
+{-# LANGUAGE OverloadedStrings #-}
 module Language.SQL.SimpleSQL.SQL2011Bits (sql2011BitsTests) where
 
 import Language.SQL.SimpleSQL.TestTypes

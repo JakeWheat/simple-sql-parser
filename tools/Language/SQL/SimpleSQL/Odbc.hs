@@ -1,4 +1,5 @@
 
+{-# LANGUAGE OverloadedStrings #-}
 module Language.SQL.SimpleSQL.Odbc (odbcTests) where
 
 import Language.SQL.SimpleSQL.TestTypes

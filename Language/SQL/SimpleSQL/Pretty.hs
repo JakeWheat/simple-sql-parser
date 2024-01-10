@@ -15,6 +15,9 @@ TODO: there should be more comments in this file, especially the bits
 which have been changed to try to improve the layout of the output.
 -}
 
+import Prelude hiding (show)
+import qualified Prelude as P
+
 import Prettyprinter (Doc
                      ,parens
                      ,nest
@@ -31,24 +34,24 @@ import Prettyprinter (Doc
                      )
 import qualified Prettyprinter as P
 
-import Prettyprinter.Render.Text (renderLazy)
+import Prettyprinter.Render.Text (renderStrict)
 
 import Data.Maybe (maybeToList, catMaybes)
 import Data.List (intercalate)
 
-import qualified Data.Text.Lazy as L
 import qualified Data.Text as T
+import Data.Text (Text)
 
 import Language.SQL.SimpleSQL.Syntax
 import Language.SQL.SimpleSQL.Dialect
 
 
 -- | Convert a query expr ast to concrete syntax.
-prettyQueryExpr :: Dialect -> QueryExpr -> String
+prettyQueryExpr :: Dialect -> QueryExpr -> Text
 prettyQueryExpr d = render . queryExpr d
 
 -- | Convert a value expr ast to concrete syntax.
-prettyScalarExpr :: Dialect -> ScalarExpr -> String
+prettyScalarExpr :: Dialect -> ScalarExpr -> Text
 prettyScalarExpr d = render . scalarExpr d
 
 -- | A terminating semicolon.
@@ -56,20 +59,20 @@ terminator :: Doc a
 terminator = pretty ";\n"
 
 -- | Convert a statement ast to concrete syntax.
-prettyStatement :: Dialect -> Statement -> String
+prettyStatement :: Dialect -> Statement -> Text
 prettyStatement _ EmptyStatement = render terminator
 prettyStatement d s = render (statement d s)
 
 -- | Convert a list of statements to concrete syntax. A semicolon
 -- is inserted after each statement.
-prettyStatements :: Dialect -> [Statement] -> String
+prettyStatements :: Dialect -> [Statement] -> Text
 prettyStatements d = render . vsep . map prettyStatementWithSemicolon
   where
     prettyStatementWithSemicolon :: Statement -> Doc a
     prettyStatementWithSemicolon s = statement d s <> terminator
 
-render :: Doc a -> String -- L.Text
-render = L.unpack . renderLazy . layoutPretty defaultLayoutOptions
+render :: Doc a -> Text
+render = renderStrict . layoutPretty defaultLayoutOptions
 
 -- = scalar expressions
 
@@ -88,7 +91,7 @@ scalarExpr _ (IntervalLit s v f t) =
 scalarExpr _ (Iden i) = names i
 scalarExpr _ Star = pretty "*"
 scalarExpr _ Parameter = pretty "?"
-scalarExpr _ (PositionalArg n) = pretty $ "$" ++ show n
+scalarExpr _ (PositionalArg n) = pretty $ T.cons '$' $ show n
 scalarExpr _ (HostParameter p i) =
     pretty p
     <+> me (\i' -> pretty "indicator" <+> pretty i') i
@@ -140,7 +143,7 @@ scalarExpr dia (SpecialOp nm [a,b,c]) | nm `elem` [[Name Nothing "between"]
                                                  ,[Name Nothing "not between"]] =
   sep [scalarExpr dia a
       ,names nm <+> scalarExpr dia b
-      ,nest (length (unnames nm) + 1) $ pretty "and" <+> scalarExpr dia c]
+      ,nest (T.length (unnames nm) + 1) $ pretty "and" <+> scalarExpr dia c]
 
 scalarExpr d (SpecialOp [Name Nothing "rowctor"] as) =
     parens $ commaSep $ map (scalarExpr d) as
@@ -164,7 +167,7 @@ scalarExpr d e@(BinOp _ op _) | op `elem` [[Name Nothing "and"]
                        : map ((names op <+>) . scalarExpr d) es)
       [] -> mempty -- shouldn't be possible
   where
-    ands (BinOp a op' b) | op == op' = ands a ++ ands b
+    ands (BinOp a op' b) | op == op' = ands a <> ands b
     ands x = [x]
 -- special case for . we don't use whitespace
 scalarExpr d (BinOp e0 [Name Nothing "."] e1) =
@@ -174,9 +177,9 @@ scalarExpr d (BinOp e0 f e1) =
 
 scalarExpr dia (Case t ws els) =
     sep $ [pretty "case" <+> me (scalarExpr dia) t]
-          ++ map w ws
-          ++ maybeToList (fmap e els)
-          ++ [pretty "end"]
+          <> map w ws
+          <> maybeToList (fmap e els)
+          <> [pretty "end"]
   where
     w (t0,t1) =
       pretty "when" <+> nest 5 (commaSep $ map (scalarExpr dia) t0)
@@ -261,7 +264,7 @@ scalarExpr _ (NextValueFor ns) =
     pretty "next value for" <+> names ns
 
 scalarExpr d (VEComment cmt v) =
-    vsep $ map comment cmt ++ [scalarExpr d v]
+    vsep $ map comment cmt <> [scalarExpr d v]
 
 scalarExpr _ (OdbcLiteral t s) =
     pretty "{" <> lt t <+> squotes (pretty s) <> pretty "}"
@@ -278,13 +281,13 @@ scalarExpr d (Convert t e Nothing) =
 scalarExpr d (Convert t e (Just i)) =
     pretty "convert(" <> typeName t <> pretty "," <+> scalarExpr d e <> pretty "," <+> pretty (show i) <> pretty ")"
 
-unname :: Name -> String
+unname :: Name -> Text
 unname (Name Nothing n) = n
 unname (Name (Just (s,e)) n) =
-    s ++ n ++ e
+    s <> n <> e
 
-unnames :: [Name] -> String
-unnames ns = intercalate "." $ map unname ns
+unnames :: [Name] -> Text
+unnames ns = T.intercalate "." $ map unname ns
 
 
 name :: Name -> Doc a
@@ -404,7 +407,7 @@ queryExpr d (Values vs) =
     <+> nest 7 (commaSep (map (parens . commaSep . map (scalarExpr d)) vs))
 queryExpr _ (Table t) = pretty "table" <+> names t
 queryExpr d (QEComment cmt v) =
-    vsep $ map comment cmt ++ [queryExpr d v]
+    vsep $ map comment cmt <> [queryExpr d v]
 
 
 alias :: Alias -> Doc a
@@ -450,10 +453,10 @@ from d ts =
         pretty "using" <+> parens (commaSep $ map name es)
     joinCond Nothing = mempty
 
-maybeScalarExpr :: Dialect -> String -> Maybe ScalarExpr -> Doc a
+maybeScalarExpr :: Dialect -> Text -> Maybe ScalarExpr -> Doc a
 maybeScalarExpr d k = me
       (\e -> sep [pretty k
-                 ,nest (length k + 1) $ scalarExpr d e])
+                 ,nest (T.length k + 1) $ scalarExpr d e])
 
 grpBy :: Dialect -> [GroupingExpr] -> Doc a
 grpBy _ [] = mempty
@@ -725,7 +728,7 @@ columnDef d (ColumnDef n t mdef cons) =
     pcon ColNullableConstraint = texts ["null"]
     pcon ColUniqueConstraint = pretty "unique"
     pcon (ColPrimaryKeyConstraint autoincrement) = 
-      texts $ ["primary","key"] ++ ["autoincrement"|autoincrement]
+      texts $ ["primary","key"] <> ["autoincrement"|autoincrement]
     --pcon ColPrimaryKeyConstraint = texts ["primary","key"]
     pcon (ColCheckConstraint v) = pretty "check" <+> parens (scalarExpr d v)
     pcon (ColReferencesConstraint tb c m u del) =
@@ -757,7 +760,7 @@ refMatch m = case m of
                      MatchPartial -> texts ["match","partial"]
                      MatchSimple -> texts ["match", "simple"]
 
-refAct :: String -> ReferentialAction -> Doc a
+refAct :: Text -> ReferentialAction -> Doc a
 refAct t a = case a of
                      DefaultReferentialAction -> mempty
                      RefCascade -> texts ["on", t, "cascade"]
@@ -863,11 +866,14 @@ me = maybe mempty
 comment :: Comment -> Doc a
 comment (BlockComment str) = pretty "/*" <+> pretty str <+> pretty "*/"
 
-texts :: [String] -> Doc a
+texts :: [Text] -> Doc a
 texts ts = sep $ map pretty ts
 
 -- regular pretty completely defeats the type checker when you want
 -- to change the ast and get type errors, instead it just produces
 -- incorrect code.
-pretty :: String -> Doc a
-pretty = P.pretty . T.pack
+pretty :: Text -> Doc a
+pretty = P.pretty
+
+show :: Show a => a -> Text
+show = T.pack . P.show

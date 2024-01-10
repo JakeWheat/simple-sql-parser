@@ -1,6 +1,7 @@
 
 -- Here are the tests for the group by component of query exprs
 
+{-# LANGUAGE OverloadedStrings #-}
 module Language.SQL.SimpleSQL.GroupBy (groupByTests) where
 
 import Language.SQL.SimpleSQL.TestTypes

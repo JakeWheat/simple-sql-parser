@@ -1,6 +1,7 @@
 
 -- Tests for oracle dialect parsing
 
+{-# LANGUAGE OverloadedStrings #-}
 module Language.SQL.SimpleSQL.Oracle (oracleTests) where
 
 import Language.SQL.SimpleSQL.TestTypes

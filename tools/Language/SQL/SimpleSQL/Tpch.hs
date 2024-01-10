@@ -8,16 +8,19 @@ The changes made to the official syntax are:
    using a common table expression
 -}
 
+{-# LANGUAGE OverloadedStrings #-}
 module Language.SQL.SimpleSQL.Tpch (tpchTests,tpchQueries) where
 
 import Language.SQL.SimpleSQL.TestTypes
+
+import Data.Text (Text)
 
 tpchTests :: TestItem
 tpchTests =
     Group "parse tpch"
     $ map (ParseQueryExpr ansi2011 . snd) tpchQueries
 
-tpchQueries :: [(String,String)]
+tpchQueries :: [(String,Text)]
 tpchQueries =
   [("Q1","\n\
          \select\n\

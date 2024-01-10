@@ -1,4 +1,5 @@
 
+{-# LANGUAGE OverloadedStrings #-}
 module Language.SQL.SimpleSQL.CreateIndex where
 
 import Language.SQL.SimpleSQL.Syntax

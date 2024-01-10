@@ -31,11 +31,6 @@ Flag parserexe
   Description: Build SimpleSqlParserTool exe
   Default:     False
 
-Flag fixitytest
-  Description: Build fixity test exe
-  Default:     False
-  
-
 common shared-properties
   default-language:    Haskell2010
   build-depends:       base >=4 && <5,
@@ -44,7 +39,8 @@ common shared-properties
                        parsec,
                        mtl >=2.1 && <2.4,
                        prettyprinter >= 1.7 && < 1.8,
-                       text  >= 2.1 && < 2.2
+                       text  >= 2.1 && < 2.2,
+                       containers
 
   ghc-options:         -Wall
 
@@ -56,8 +52,6 @@ library
                        Language.SQL.SimpleSQL.Lex,
                        Language.SQL.SimpleSQL.Syntax,
                        Language.SQL.SimpleSQL.Dialect
-  Other-Modules:       Language.SQL.SimpleSQL.Errors,
-                       Language.SQL.SimpleSQL.Combinators
 
 Test-Suite Tests
   import:              shared-properties
@@ -104,17 +98,3 @@ executable SimpleSqlParserTool
     buildable:         True
   else
     buildable:         False
-
-executable Fixity
-  import:              shared-properties
-  main-is:             Fixity.hs
-  hs-source-dirs:      tools
-  Build-Depends:       simple-sql-parser,
-                       pretty-show >= 1.6 && < 1.10,
-                       tasty >= 1.1 && < 1.6,
-                       tasty-hunit >= 0.9 && < 0.11
-  if flag(fixitytest)
-    buildable:         True
-  else
-    buildable:         False
-

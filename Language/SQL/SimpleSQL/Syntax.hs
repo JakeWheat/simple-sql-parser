@@ -62,6 +62,8 @@ module Language.SQL.SimpleSQL.Syntax
     ,Comment(..)
     ) where
 
+import Data.Text (Text)
+
 import Data.Data
 
 -- | Represents a value expression. This is used for the expressions
@@ -82,21 +84,21 @@ data ScalarExpr
       -- * 1e5
       --
       -- * 12.34e-6
-      NumLit String
+      NumLit Text
       -- | string literal, with the start and end quote
-      -- e.g. 'test' -> StringLit "'" "'" "test"
-    | StringLit String String String
+      -- e.g. 'test' -> TextLit "'" "'" "test"
+    | StringLit Text Text Text
       -- | text of interval literal, units of interval precision,
       -- e.g. interval 3 days (3)
     | IntervalLit
       {ilSign :: Maybe Sign -- ^ if + or - used
-      ,ilLiteral :: String -- ^ literal text
+      ,ilLiteral :: Text -- ^ literal text
       ,ilFrom :: IntervalTypeField
       ,ilTo :: Maybe IntervalTypeField
       }
 
       -- | prefix 'typed literal', e.g. int '42'
-    | TypedLit TypeName String
+    | TypedLit TypeName Text
 
       -- | identifier with parts separated by dots
     | Iden [Name]
@@ -105,9 +107,9 @@ data ScalarExpr
 
     | Parameter -- ^ Represents a ? in a parameterized query
     | PositionalArg Int -- ^ Represents an e.g. $1 in a parameterized query
-    | HostParameter String (Maybe String) -- ^ represents a host
+    | HostParameter Text (Maybe Text) -- ^ represents a host
                                           -- parameter, e.g. :a. The
-                                          -- Maybe String is for the
+                                          -- Maybe Text is for the
                                           -- indicator, e.g. :var
                                           -- indicator :nl
 
@@ -163,7 +165,7 @@ data ScalarExpr
       -- of commas. The maybe is for the first unnamed argument
       -- if it is present, and the list is for the keyword argument
       -- pairs.
-    | SpecialOpK [Name] (Maybe ScalarExpr) [(String,ScalarExpr)]
+    | SpecialOpK [Name] (Maybe ScalarExpr) [(Text,ScalarExpr)]
 
       -- | cast(a as typename)
     | Cast ScalarExpr TypeName
@@ -215,7 +217,7 @@ in other places
     | MultisetQueryCtor QueryExpr
     | NextValueFor [Name]
     | VEComment [Comment] ScalarExpr
-    | OdbcLiteral OdbcLiteralType String
+    | OdbcLiteral OdbcLiteralType Text
       -- ^ an odbc literal e.g. {d '2000-01-01'}
     | OdbcFunc ScalarExpr
       -- ^ an odbc function call e.g. {fn CHARACTER_LENGTH('test')}
@@ -228,7 +230,7 @@ in other places
 -- * "test" -> Name (Just "\"","\"") "test"
 -- * `something` -> Name (Just ("`","`") "something"
 -- * [ms] -> Name (Just ("[","]") "ms"
-data Name = Name (Maybe (String,String)) String
+data Name = Name (Maybe (Text,Text)) Text
             deriving (Eq,Show,Read,Data,Typeable)
 
 -- | Represents a type name, used in casts.
@@ -246,7 +248,7 @@ data TypeName
     | MultisetTypeName TypeName
       deriving (Eq,Show,Read,Data,Typeable)
 
-data IntervalTypeField = Itf String (Maybe (Integer, Maybe Integer))
+data IntervalTypeField = Itf Text (Maybe (Integer, Maybe Integer))
                          deriving (Eq,Show,Read,Data,Typeable)
 
 data Sign = Plus | Minus
@@ -739,6 +741,6 @@ data PrivilegeAction =
 
 -- | Comment. Useful when generating SQL code programmatically. The
 -- parser doesn't produce these.
-newtype Comment = BlockComment String
+newtype Comment = BlockComment Text
                deriving (Eq,Show,Read,Data,Typeable)
 

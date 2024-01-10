@@ -1,4 +1,5 @@
 
+{-# LANGUAGE OverloadedStrings #-}
 module Language.SQL.SimpleSQL.CustomDialect (customDialectTests) where
 
 import Language.SQL.SimpleSQL.TestTypes

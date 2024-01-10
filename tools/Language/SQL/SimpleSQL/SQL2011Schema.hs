@@ -5,6 +5,7 @@ Section 11 in Foundation
 This module covers the tests for parsing schema and DDL statements.
 -}
 
+{-# LANGUAGE OverloadedStrings #-}
 module Language.SQL.SimpleSQL.SQL2011Schema (sql2011SchemaTests) where
 
 import Language.SQL.SimpleSQL.TestTypes

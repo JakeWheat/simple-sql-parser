@@ -1,10 +1,13 @@
 
 -- Tests for parsing scalar expressions
 
+{-# LANGUAGE OverloadedStrings #-}
 module Language.SQL.SimpleSQL.ScalarExprs (scalarExprTests) where
 
 import Language.SQL.SimpleSQL.TestTypes
 import Language.SQL.SimpleSQL.Syntax
+
+import qualified Data.Text as T
 
 scalarExprTests :: TestItem
 scalarExprTests = Group "scalarExprTests"
@@ -428,5 +431,5 @@ functionsWithReservedNames = Group "functionsWithReservedNames" $ map t
     ,"char_length"
     ]
   where
-    t fn = TestScalarExpr ansi2011 (fn ++ "(a)") $ App [Name Nothing fn] [Iden [Name Nothing "a"]]
+    t fn = TestScalarExpr ansi2011 (fn <> "(a)") $ App [Name Nothing fn] [Iden [Name Nothing "a"]]
 

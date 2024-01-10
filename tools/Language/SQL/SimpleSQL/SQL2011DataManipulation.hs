@@ -2,6 +2,7 @@
 -- Section 14 in Foundation
 
 
+{-# LANGUAGE OverloadedStrings #-}
 module Language.SQL.SimpleSQL.SQL2011DataManipulation (sql2011DataManipulationTests) where
 
 import Language.SQL.SimpleSQL.TestTypes

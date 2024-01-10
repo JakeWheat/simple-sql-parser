@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Language.SQL.SimpleSQL.EmptyStatement where
 
 import Language.SQL.SimpleSQL.Syntax

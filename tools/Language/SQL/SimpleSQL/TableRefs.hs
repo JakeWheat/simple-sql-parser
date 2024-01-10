@@ -4,6 +4,7 @@ These are the tests for parsing focusing on the from part of query
 expression
 -}
 
+{-# LANGUAGE OverloadedStrings #-}
 module Language.SQL.SimpleSQL.TableRefs (tableRefTests) where
 
 import Language.SQL.SimpleSQL.TestTypes

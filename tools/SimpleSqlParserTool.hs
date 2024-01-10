@@ -7,20 +7,30 @@ Commands:
 parse: parse sql from file, stdin or from command line
 lex: lex sql same
 indent: parse then pretty print sql
+
+TODO: this is supposed to be a simple example, but it's a total mess
+write some simple helpers so it's all in text?
+
 -}
 
 {-# LANGUAGE TupleSections #-}
-import System.Environment
-import Control.Monad
-import Data.Maybe
-import System.Exit
-import Data.List
-import Text.Show.Pretty
+import System.Environment (getArgs)
+import Control.Monad (forM_, when)
+import Data.Maybe (isJust)
+import System.Exit (exitFailure)
+import Data.List (intercalate)
+import Text.Show.Pretty (ppShow)
 --import Control.Applicative
 
+import qualified Data.Text as T
+
 import Language.SQL.SimpleSQL.Pretty
+    (prettyStatements)
 import Language.SQL.SimpleSQL.Parse
-import Language.SQL.SimpleSQL.Lex
+    (parseStatements
+    ,prettyError)
+import qualified Language.SQL.SimpleSQL.Lex as L
+import Language.SQL.SimpleSQL.Dialect (ansi2011)
 
 
 main :: IO ()
@@ -67,9 +77,9 @@ parseCommand =
   ("parse SQL from file/stdin/command line (use -c to parse from command line)"
   ,\args -> do
       (f,src) <- getInput args
-      either (error . peFormattedError)
+      either (error . T.unpack . prettyError)
           (putStrLn . ppShow)
-          $ parseStatements ansi2011 f Nothing src
+          $ parseStatements ansi2011 (T.pack f) Nothing (T.pack src)
   )
 
 lexCommand :: (String,[String] -> IO ())
@@ -77,9 +87,9 @@ lexCommand =
   ("lex SQL from file/stdin/command line (use -c to parse from command line)"
   ,\args -> do
       (f,src) <- getInput args
-      either (error . peFormattedError)
+      either (error . T.unpack . L.prettyError)
              (putStrLn . intercalate ",\n" . map show)
-             $ lexSQL ansi2011 f Nothing src
+             $ L.lexSQL ansi2011 (T.pack f) Nothing (T.pack src)
   )
 
 
@@ -88,8 +98,8 @@ indentCommand =
   ("parse then pretty print SQL from file/stdin/command line (use -c to parse from command line)"
   ,\args -> do
       (f,src) <- getInput args
-      either (error . peFormattedError)
-          (putStrLn . prettyStatements ansi2011)
-          $ parseStatements ansi2011 f Nothing src
+      either (error . T.unpack . prettyError)
+          (putStrLn . T.unpack . prettyStatements ansi2011)
+          $ parseStatements ansi2011 (T.pack f) Nothing (T.pack src)
 
   )
