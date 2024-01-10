@@ -1165,38 +1165,37 @@ messages, but both of these are too important.
 -}
 
 opTable :: Bool -> [[E.Operator Parser ScalarExpr]]
-opTable bExpr = [] {-
+opTable bExpr =
         [-- parse match and quantified comparisons as postfix ops
           -- todo: left factor the quantified comparison with regular
           -- binary comparison, somehow
          [E.Postfix $ try quantifiedComparisonSuffix
-         ,E.Postfix matchPredicateSuffix
-         ]
+         ,E.Postfix matchPredicateSuffix]
 
-        ,[binarySym "." E.AssocLeft]
+        ,[binarySymL "."]
 
-        ,[postfix' arraySuffix
-         ,postfix' collateSuffix]
+        ,[E.Postfix arraySuffix
+         ,E.Postfix collateSuffix]
 
         ,[prefixSym "+", prefixSym "-"]
 
-        ,[binarySym "^" E.AssocLeft]
+        ,[binarySymL "^"]
 
-        ,[binarySym "*" E.AssocLeft
-         ,binarySym "/" E.AssocLeft
-         ,binarySym "%" E.AssocLeft]
+        ,[binarySymL "*"
+         ,binarySymL "/"
+         ,binarySymL "%"]
 
-        ,[binarySym "+" E.AssocLeft
-         ,binarySym "-" E.AssocLeft]
+        ,[binarySymL "+"
+         ,binarySymL "-"]
 
-        ,[binarySym "||" E.AssocRight
+        ,[binarySymR "||"
          ,prefixSym "~"
-         ,binarySym "&" E.AssocRight
-         ,binarySym "|" E.AssocRight]
+         ,binarySymR "&"
+         ,binarySymR "|"]
 
-        ,[binaryKeyword "overlaps" E.AssocNone]
+        ,[binaryKeywordN "overlaps"]
 
-        ,[binaryKeyword "like" E.AssocNone
+        ,[binaryKeywordN "like"
          -- have to use try with inSuffix because of a conflict
          -- with 'in' in position function, and not between
          -- between also has a try in it to deal with 'not'
@@ -1204,19 +1203,19 @@ opTable bExpr = [] {-
          ,E.Postfix $ try inSuffix
          ,E.Postfix betweenSuffix]
          -- todo: figure out where to put the try?
-         ++ [binaryKeywords $ makeKeywordTree
+         ++ [binaryKeywordsN $ makeKeywordTree
              ["not like"
              ,"is similar to"
              ,"is not similar to"]]
-         ++ [multisetBinOp]
+          ++ [multisetBinOp]
 
-        ,[binarySym "<" E.AssocNone
-         ,binarySym ">" E.AssocNone
-         ,binarySym ">=" E.AssocNone
-         ,binarySym "<=" E.AssocNone
-         ,binarySym "!=" E.AssocRight
-         ,binarySym "<>" E.AssocRight
-         ,binarySym "=" E.AssocRight]
+        ,[binarySymN "<"
+         ,binarySymN ">"
+         ,binarySymN ">="
+         ,binarySymN "<="
+         ,binarySymR "!="
+         ,binarySymR "<>"
+         ,binarySymR "="]
 
         ,[postfixKeywords $ makeKeywordTree
              ["is null"
@@ -1227,42 +1226,44 @@ opTable bExpr = [] {-
              ,"is not false"
              ,"is unknown"
              ,"is not unknown"]]
-         ++ [binaryKeywords $ makeKeywordTree
+         ++ [binaryKeywordsN $ makeKeywordTree
              ["is distinct from"
              ,"is not distinct from"]]
 
         ,[prefixKeyword "not"]
 
-        ,if bExpr then [] else [binaryKeyword "and" E.AssocLeft]
+        ,if bExpr then [] else [binaryKeywordL "and"]
 
-        ,[binaryKeyword "or" E.AssocLeft]
+        ,[binaryKeywordL "or"]
 
        ]
   where
-    binarySym nm assoc = binary (symbol_ nm) nm assoc
-    binaryKeyword nm assoc = binary (keyword_ nm) nm assoc
-    binaryKeywords p =
-        E.Infix (do
+    binarySymL name = E.InfixL (mkBinOp name <$ symbol_ name)
+    binarySymR name = E.InfixR (mkBinOp name <$ symbol_ name)
+    binarySymN name = E.InfixN (mkBinOp name <$ symbol_ name)
+    binaryKeywordN name = E.InfixN (mkBinOp name <$ keyword_ name)
+    binaryKeywordL name = E.InfixL (mkBinOp name <$ keyword_ name)
+    mkBinOp nm a b = BinOp a (mkName nm) b
+    prefixSym  name = E.Prefix (PrefixOp (mkName name) <$ symbol_ name)
+    prefixKeyword  name = E.Prefix (PrefixOp (mkName name) <$ keyword_ name)
+    mkName nm = [Name Nothing nm]
+    binaryKeywordsN p =
+        E.InfixN (do
                  o <- try p
-                 pure (\a b -> BinOp a [Name Nothing $ unwords o] b))
-            E.AssocNone
-    postfixKeywords p =
-      postfix' $ do
-          o <- try p
-          pure $ PostfixOp [Name Nothing $ unwords o]
-    binary p nm assoc =
-      E.Infix (p >> pure (\a b -> BinOp a [Name Nothing nm] b)) assoc
-    multisetBinOp = E.Infix (do
+                 pure (\a b -> BinOp a [Name Nothing $ T.unwords o] b))
+    multisetBinOp = E.InfixL (do
         keyword_ "multiset"
         o <- choice [Union <$ keyword_ "union"
                     ,Intersect <$ keyword_ "intersect"
                     ,Except <$ keyword_ "except"]
         d <- option SQDefault duplicates
         pure (\a b -> MultisetBinOp a o d b))
-          E.AssocLeft
-    prefixKeyword nm = prefix (keyword_ nm) nm
-    prefixSym nm = prefix (symbol_ nm) nm
-    prefix p nm = prefix' (p >> pure (PrefixOp [Name Nothing nm]))
+    postfixKeywords p =
+      E.Postfix $ do
+          o <- try p
+          pure $ PostfixOp [Name Nothing $ T.unwords o]
+      
+    {-
     -- hack from here
     -- http://stackoverflow.com/questions/10475337/parsec-expr-repeated-prefix-postfix-operator-not-supported
     -- not implemented properly yet
@@ -1524,10 +1525,10 @@ and union, etc..
 -}
 
 queryExpr :: Parser QueryExpr
-queryExpr = select {-choice
-    [with
-    ,undefined {-chainr1-} (choice [values,table, select]) setOp]-}
+queryExpr = E.makeExprParser qeterm qeOpTable
   where
+    qeterm = with <|> select <|> table <|> values
+    
     select = keyword_ "select" >>
         mkSelect
         <$> option SQDefault duplicates
@@ -1541,6 +1542,19 @@ queryExpr = select {-choice
              >> Values <$> commaSep (parens (commaSep scalarExpr))
     table = keyword_ "table" >> Table <$> names
 
+    qeOpTable =
+        [[E.InfixL $ setOp Intersect "intersect"]
+        ,[E.InfixL $ setOp Except "except"
+         ,E.InfixL $ setOp Union "union"]]
+    setOp :: SetOperatorName -> Text -> Parser (QueryExpr -> QueryExpr -> QueryExpr)
+    setOp ctor opName = cq
+        <$> (ctor <$ keyword_ opName)
+        <*> option SQDefault duplicates
+        <*> corr
+    cq o d c q0 q1 = QueryExprSetOp q0 o d c q1
+    corr = option Respectively (Corresponding <$ keyword_ "corresponding")
+
+    
 {-
 local data type to help with parsing the bit after the select list,
 called 'table expression' in the ansi sql grammar. Maybe this should
@@ -1567,20 +1581,6 @@ tableExpression = mkTe <$> from
  where
     mkTe f w g h od (ofs,fe) =
         TableExpression f w g h od ofs fe
-
-setOp :: Parser (QueryExpr -> QueryExpr -> QueryExpr)
-setOp = cq
-        <$> setOpK
-        <*> option SQDefault duplicates
-        <*> corr
-  where
-    cq o d c q0 q1 = QueryExprSetOp q0 o d c q1
-    setOpK = choice [Union <$ keyword_ "union"
-                    ,Intersect <$ keyword_ "intersect"
-                    ,Except <$ keyword_ "except"]
-            <?> "set operator"
-    corr = option Respectively (Corresponding <$ keyword_ "corresponding")
-
 
 {-
 wrapper for query expr which ignores optional trailing semicolon.
