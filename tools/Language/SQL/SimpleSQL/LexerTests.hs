@@ -82,7 +82,7 @@ bootstrapTests = Group "bootstrap tests" $
 
     ] ++ map (\a -> (a, [Symbol a])) (
      ["!=", "<>", ">=", "<=", "||"]
-     ++ map T.singleton ("(),-+*/<>=." :: String)))
+     ++ map T.singleton ("(),-+*/<>=." :: [Char])))
 
 
 ansiLexerTable :: [(Text,[Token])]

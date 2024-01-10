@@ -110,8 +110,7 @@ itemToTest (LexFails d s) = makeLexingFailsTest d s
 
 makeLexerTest :: Dialect -> Text -> [Lex.Token] -> T.TestTree
 makeLexerTest d s ts = H.testCase (T.unpack s) $ do
-    let lx = either (error . T.unpack . Lex.prettyError) id $ Lex.lexSQL d "" Nothing s
-        ts1 = map Lex.tokenVal lx
+    let ts1 = either (error . T.unpack . Lex.prettyError) id $ Lex.lexSQL d "" Nothing s
     H.assertEqual "" ts ts1
     let s' = Lex.prettyTokens d $ ts1
     H.assertEqual "pretty print" s s'

@@ -73,16 +73,21 @@ try again to add annotation to the ast
 -- | Lexer for SQL.
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE TypeFamilies      #-}
+
 module Language.SQL.SimpleSQL.Lex
     (Token(..)
     ,WithPos(..)
     ,lexSQL
+    ,lexSQLWithPositions
     ,prettyToken
     ,prettyTokens
     ,ParseError
     ,prettyError
     ,tokenListWillPrintAndLex
     ,ansi2011
+    ,MyStream(..)
     ) where
 
 import Language.SQL.SimpleSQL.Dialect
@@ -94,6 +99,10 @@ import Text.Megaparsec
     (Parsec
     ,runParser'
 
+    ,PosState(..)
+    ,TraversableStream(..)
+    ,VisualStream(..)
+    
     ,ParseErrorBundle(..)
     ,errorBundlePretty
 
@@ -125,10 +134,13 @@ import Text.Megaparsec.Char
     ,char
     )
 import Text.Megaparsec.State (initialState)
-import Control.Applicative ((<**>))
 
+import qualified Data.List          as DL
+import qualified Data.List.NonEmpty as NE
+import Data.Proxy (Proxy(..))
 import Data.Void (Void)
 
+import Control.Applicative ((<**>))
 import Data.Char
     (isAlphaNum
     ,isAlpha
@@ -184,17 +196,34 @@ data Token
 -- main api functions
 
 -- | Lex some SQL to a list of tokens.
-lexSQL :: Dialect
-       -- ^ dialect of SQL to use
-       -> Text
-       -- ^ filename to use in error messages
-       -> Maybe (Int,Int)
-       -- ^ line number and column number of the first character
-       -- in the source to use in error messages
-       -> Text
-       -- ^ the SQL source to lex
-       -> Either ParseError [WithPos Token]
-lexSQL dialect fn p src = myParse fn p (many (sqlToken dialect) <* (eof <?> "")) src
+lexSQLWithPositions
+    :: Dialect
+    -- ^ dialect of SQL to use
+    -> Text
+    -- ^ filename to use in error messages
+    -> Maybe (Int,Int)
+    -- ^ line number and column number of the first character
+    -- in the source to use in error messages
+    -> Text
+    -- ^ the SQL source to lex
+    -> Either ParseError [WithPos Token]
+lexSQLWithPositions dialect fn p src = myParse fn p (many (sqlToken dialect) <* (eof <?> "")) src
+
+
+-- | Lex some SQL to a list of tokens.
+lexSQL
+    :: Dialect
+    -- ^ dialect of SQL to use
+    -> Text
+    -- ^ filename to use in error messages
+    -> Maybe (Int,Int)
+    -- ^ line number and column number of the first character
+    -- in the source to use in error messages
+    -> Text
+    -- ^ the SQL source to lex
+    -> Either ParseError [Token]
+lexSQL dialect fn p src =
+    fmap (map tokenVal) $ lexSQLWithPositions dialect fn p src
 
 myParse :: Text -> (Maybe (Int,Int)) -> Parser a -> Text -> Either ParseError a
 myParse name sp' p s =
@@ -823,3 +852,88 @@ TODO: not 100% on this always being bad
     checkLastAChar f = case T.unsnoc prettya of
         Just (_,la) -> f la
         _ -> False
+
+------------------------------------------------------------------------------
+
+-- megaparsec stream boilerplate
+
+data MyStream = MyStream
+  { myStreamInput :: String
+  , unMyStream :: [WithPos Token]
+  }
+
+instance M.Stream MyStream where
+  type Token  MyStream = WithPos Token
+  type Tokens MyStream = [WithPos Token]
+
+  tokenToChunk Proxy x = [x]
+  tokensToChunk Proxy xs = xs
+  chunkToTokens Proxy = id
+  chunkLength Proxy = length
+  chunkEmpty Proxy = null
+  take1_ (MyStream _ []) = Nothing
+  take1_ (MyStream str (t:ts)) = Just
+    ( t
+    , MyStream (drop (tokensLength pxy (t NE.:|[])) str) ts
+    )
+  takeN_ n (MyStream str s)
+    | n <= 0    = Just ([], MyStream str s)
+    | null s    = Nothing
+    | otherwise =
+        let (x, s') = splitAt n s
+        in case NE.nonEmpty x of
+          Nothing -> Just (x, MyStream str s')
+          Just nex -> Just (x, MyStream (drop (tokensLength pxy nex) str) s')
+  takeWhile_ f (MyStream str s) =
+    let (x, s') = DL.span f s
+    in case NE.nonEmpty x of
+      Nothing -> (x, MyStream str s')
+      Just nex -> (x, MyStream (drop (tokensLength pxy nex) str) s')
+
+instance VisualStream MyStream where
+  showTokens Proxy = DL.intercalate " "
+    . NE.toList
+    . fmap (showMyToken . tokenVal)
+  tokensLength Proxy xs = sum (tokenLength <$> xs)
+
+instance TraversableStream MyStream where
+  reachOffset o M.PosState {..} =
+    ( Just (prefix ++ restOfLine)
+    , PosState
+        { pstateInput = MyStream
+            { myStreamInput = postStr
+            , unMyStream = post
+            }
+        , pstateOffset = max pstateOffset o
+        , pstateSourcePos = newSourcePos
+        , pstateTabWidth = pstateTabWidth
+        , pstateLinePrefix = prefix
+        }
+    )
+    where
+      prefix =
+        if sameLine
+          then pstateLinePrefix ++ preLine
+          else preLine
+      sameLine = sourceLine newSourcePos == sourceLine pstateSourcePos
+      newSourcePos =
+        case post of
+          [] -> case unMyStream pstateInput of
+            [] -> pstateSourcePos
+            xs -> endPos (last xs)
+          (x:_) -> startPos x
+      (pre, post) = splitAt (o - pstateOffset) (unMyStream pstateInput)
+      (preStr, postStr) = splitAt tokensConsumed (myStreamInput pstateInput)
+      preLine = reverse . takeWhile (/= '\n') . reverse $ preStr
+      tokensConsumed =
+        case NE.nonEmpty pre of
+          Nothing -> 0
+          Just nePre -> tokensLength pxy nePre
+      restOfLine = takeWhile (/= '\n') postStr
+
+pxy :: Proxy MyStream
+pxy = Proxy
+
+showMyToken :: Token -> String
+-- todo: how to do this properly?
+showMyToken = T.unpack . prettyToken ansi2011

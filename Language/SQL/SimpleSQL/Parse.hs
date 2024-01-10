@@ -177,10 +177,7 @@ fixing them in the syntax but leaving them till the semantic checking
 -}
 
 {-# LANGUAGE TupleSections #-}
-{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
-{-# LANGUAGE TypeFamilies      #-}
 -- | This is the module with the parser functions.
 module Language.SQL.SimpleSQL.Parse
     (parseQueryExpr
@@ -194,14 +191,6 @@ module Language.SQL.SimpleSQL.Parse
 import Text.Megaparsec
     (ParsecT
     ,runParserT
-
-    ,Stream(..)
-    ,PosState(..)
-    ,TraversableStream(..)
-    ,VisualStream(..)
-    --,ErrorItem(Tokens)
-
-    ,sourceLine
 
     ,ParseErrorBundle(..)
     ,errorBundlePretty
@@ -229,10 +218,7 @@ import Control.Monad.Reader
     ,ask
     )
 
-import qualified Data.List          as DL
-import qualified Data.List.NonEmpty as NE
 import qualified Data.Set           as Set
-import Data.Proxy (Proxy(..))
 import Data.Void (Void)
 
 import Control.Monad (guard, void)
@@ -315,7 +301,7 @@ parseScalarExpr = wrapParse scalarExpr
 
 data ParseError
     = LexError L.ParseError
-    | ParseError (ParseErrorBundle MyStream Void)
+    | ParseError (ParseErrorBundle L.MyStream Void)
 
 prettyError :: ParseError -> Text
 prettyError (LexError e) = T.pack $ errorBundlePretty e
@@ -337,10 +323,10 @@ wrapParse :: Parser a
           -> Text
           -> Either ParseError a
 wrapParse parser d f p src = do
-    lx <- either (Left . LexError) Right $ L.lexSQL d f p src
+    lx <- either (Left . LexError) Right $ L.lexSQLWithPositions d f p src
     either (Left . ParseError) Right $ 
         runReader (runParserT (parser <* (eof <?> "")) (T.unpack f)
-                   $ MyStream (T.unpack src) $ filter notSpace lx) d
+                   $ L.MyStream (T.unpack src) $ filter notSpace lx) d
   where
     notSpace = notSpace' . L.tokenVal
     notSpace' (L.Whitespace {}) = False
@@ -352,7 +338,7 @@ wrapParse parser d f p src = do
 
 -- parsing code
 
-type Parser = ParsecT Void MyStream (Reader Dialect)
+type Parser = ParsecT Void L.MyStream (Reader Dialect)
 
 {-
 ------------------------------------------------
@@ -2384,87 +2370,3 @@ queryDialect f = do
     d <- ask
     pure $ f d
 
-------------------------------------------------------------------------------
-
--- parsec stream boilerplate
-
-data MyStream = MyStream
-  { myStreamInput :: String
-  , unMyStream :: [L.WithPos L.Token]
-  }
-
-instance Stream MyStream where
-  type Token  MyStream = L.WithPos L.Token
-  type Tokens MyStream = [L.WithPos L.Token]
-
-  tokenToChunk Proxy x = [x]
-  tokensToChunk Proxy xs = xs
-  chunkToTokens Proxy = id
-  chunkLength Proxy = length
-  chunkEmpty Proxy = null
-  take1_ (MyStream _ []) = Nothing
-  take1_ (MyStream str (t:ts)) = Just
-    ( t
-    , MyStream (drop (tokensLength pxy (t NE.:|[])) str) ts
-    )
-  takeN_ n (MyStream str s)
-    | n <= 0    = Just ([], MyStream str s)
-    | null s    = Nothing
-    | otherwise =
-        let (x, s') = splitAt n s
-        in case NE.nonEmpty x of
-          Nothing -> Just (x, MyStream str s')
-          Just nex -> Just (x, MyStream (drop (tokensLength pxy nex) str) s')
-  takeWhile_ f (MyStream str s) =
-    let (x, s') = DL.span f s
-    in case NE.nonEmpty x of
-      Nothing -> (x, MyStream str s')
-      Just nex -> (x, MyStream (drop (tokensLength pxy nex) str) s')
-
-instance VisualStream MyStream where
-  showTokens Proxy = DL.intercalate " "
-    . NE.toList
-    . fmap (showMyToken . L.tokenVal)
-  tokensLength Proxy xs = sum (L.tokenLength <$> xs)
-
-instance TraversableStream MyStream where
-  reachOffset o PosState {..} =
-    ( Just (prefix ++ restOfLine)
-    , PosState
-        { pstateInput = MyStream
-            { myStreamInput = postStr
-            , unMyStream = post
-            }
-        , pstateOffset = max pstateOffset o
-        , pstateSourcePos = newSourcePos
-        , pstateTabWidth = pstateTabWidth
-        , pstateLinePrefix = prefix
-        }
-    )
-    where
-      prefix =
-        if sameLine
-          then pstateLinePrefix ++ preLine
-          else preLine
-      sameLine = sourceLine newSourcePos == sourceLine pstateSourcePos
-      newSourcePos =
-        case post of
-          [] -> case unMyStream pstateInput of
-            [] -> pstateSourcePos
-            xs -> L.endPos (last xs)
-          (x:_) -> L.startPos x
-      (pre, post) = splitAt (o - pstateOffset) (unMyStream pstateInput)
-      (preStr, postStr) = splitAt tokensConsumed (myStreamInput pstateInput)
-      preLine = reverse . takeWhile (/= '\n') . reverse $ preStr
-      tokensConsumed =
-        case NE.nonEmpty pre of
-          Nothing -> 0
-          Just nePre -> tokensLength pxy nePre
-      restOfLine = takeWhile (/= '\n') postStr
-
-pxy :: Proxy MyStream
-pxy = Proxy
-
-showMyToken :: L.Token -> String
--- todo: how to do this properly?
-showMyToken = T.unpack . L.prettyToken ansi2011
