@@ -1,14 +1,18 @@
 # For more information, see: http://docs.haskellstack.org/en/stable/yaml_configuration.html
 
 # Specifies the GHC version and set of packages available (e.g., lts-3.5, nightly-2015-09-21, ghc-7.10.2)
-resolver: lts-13.27
+resolver: lts-22.5
 
 # Local packages, usually specified by relative directory name
 packages:
 - '.'
 
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
-extra-deps: []
+# todo: remove this once the version of megaparsec on Stack lts has the same api
+# as the latest one as far as simple sql parser uses it (in this case, lts-22.5
+# has megaparsec 9.5, which doesn't support the megaparsec parser state feature
+# in the same way 9.6 does)
+extra-deps: [megaparsec-9.6.1]
 
 # Override default flag values for local packages and extra-deps
 flags: {}
