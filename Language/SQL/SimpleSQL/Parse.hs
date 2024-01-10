@@ -187,7 +187,7 @@ module Language.SQL.SimpleSQL.Parse
     ,parseScalarExpr
     ,parseStatement
     ,parseStatements
-    ,ParseError
+    ,ParseError(..)
     ,prettyError
     ) where
 
@@ -310,10 +310,16 @@ parseScalarExpr
     -> Either ParseError ScalarExpr
 parseScalarExpr = wrapParse scalarExpr
 
-type ParseError = ParseErrorBundle MyStream Void
+-- Megaparsec is too clever, so have to create a new type to represent
+-- either a lex error or a parse error
+
+data ParseError
+    = LexError L.ParseError
+    | ParseError (ParseErrorBundle MyStream Void)
 
 prettyError :: ParseError -> Text
-prettyError = T.pack . errorBundlePretty
+prettyError (LexError e) = T.pack $ errorBundlePretty e
+prettyError (ParseError e) = T.pack $ errorBundlePretty e
 
 {-
 This helper function takes the parser given and:
@@ -330,10 +336,11 @@ wrapParse :: Parser a
           -> Maybe (Int,Int)
           -> Text
           -> Either ParseError a
-wrapParse parser d f p src =
-    let lx = either (error . show) id $ L.lexSQL d f p src
-    in runReader (runParserT (parser <* (eof <?> "")) (T.unpack f)
-           $ MyStream (T.unpack src) $ filter notSpace lx) d
+wrapParse parser d f p src = do
+    lx <- either (Left . LexError) Right $ L.lexSQL d f p src
+    either (Left . ParseError) Right $ 
+        runReader (runParserT (parser <* (eof <?> "")) (T.unpack f)
+                   $ MyStream (T.unpack src) $ filter notSpace lx) d
   where
     notSpace = notSpace' . L.tokenVal
     notSpace' (L.Whitespace {}) = False
@@ -2306,12 +2313,6 @@ sqlNumberTok intOnly = token test Set.empty <?> ""
   where
     test (L.WithPos _ _ _ (L.SqlNumber p)) | not intOnly || T.all isDigit p = Just p
     test _ = Nothing
-
-     {-mytoken (\tok ->
-    case tok of
-      L.SqlNumber p | not intOnly || all isDigit p -> Just p
-      _ -> Nothing)-}
-
 
 symbolTok :: Maybe Text -> Parser Text
 symbolTok sym = token test Set.empty <?> ""
