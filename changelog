@@ -3,6 +3,8 @@
 	support table constraints without separating comma for sqlite
 	switch source from literate to regular haskell
 	use prettyprinter lib instead of pretty
+	nested block comments regressed - post a bug if you need this
+	fixed fixity parsing of union, except and intersect (matches postgres docs now)
 0.6.1   added odbc handling to sqlsqerver dialect
 		added sqlserver dialect case for convert function
 0.6.0

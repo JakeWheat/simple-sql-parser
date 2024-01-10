@@ -147,30 +147,27 @@ offsetFetch = Group "offsetFetch" $ map (uncurry (TestQueryExpr ansi2011))
 combos :: TestItem
 combos = Group "combos" $ map (uncurry (TestQueryExpr ansi2011))
     [("select a from t union select b from u"
-     ,QueryExprSetOp ms1 Union SQDefault Respectively ms2)
+     ,QueryExprSetOp mst Union SQDefault Respectively msu)
 
     ,("select a from t intersect select b from u"
-     ,QueryExprSetOp ms1 Intersect SQDefault Respectively ms2)
+     ,QueryExprSetOp mst Intersect SQDefault Respectively msu)
 
     ,("select a from t except all select b from u"
-     ,QueryExprSetOp ms1 Except All Respectively ms2)
+     ,QueryExprSetOp mst Except All Respectively msu)
 
     ,("select a from t union distinct corresponding \
       \select b from u"
-     ,QueryExprSetOp ms1 Union Distinct Corresponding ms2)
+     ,QueryExprSetOp mst Union Distinct Corresponding msu)
 
     ,("select a from t union select a from t union select a from t"
-     -- TODO: union should be left associative. I think the others also
-     -- so this needs to be fixed (new optionSuffix variation which
-     -- handles this)
-     ,QueryExprSetOp ms1 Union SQDefault Respectively
-       (QueryExprSetOp ms1 Union SQDefault Respectively ms1))
+     ,QueryExprSetOp (QueryExprSetOp mst Union SQDefault Respectively mst)
+       Union SQDefault Respectively mst)
     ]
   where
-    ms1 = makeSelect
+    mst = makeSelect
           {qeSelectList = [(Iden [Name Nothing "a"],Nothing)]
           ,qeFrom = [TRSimple [Name Nothing "t"]]}
-    ms2 = makeSelect
+    msu = makeSelect
           {qeSelectList = [(Iden [Name Nothing "b"],Nothing)]
           ,qeFrom = [TRSimple [Name Nothing "u"]]}
 

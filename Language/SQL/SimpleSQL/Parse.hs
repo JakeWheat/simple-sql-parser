@@ -1175,13 +1175,13 @@ opTable bExpr =
         [-- parse match and quantified comparisons as postfix ops
           -- todo: left factor the quantified comparison with regular
           -- binary comparison, somehow
-         [E.Postfix $ try quantifiedComparisonSuffix
-         ,E.Postfix matchPredicateSuffix]
+         [postfix $ try quantifiedComparisonSuffix
+         ,postfix matchPredicateSuffix]
 
         ,[binarySymL "."]
 
-        ,[E.Postfix arraySuffix
-         ,E.Postfix collateSuffix]
+        ,[postfix arraySuffix
+         ,postfix collateSuffix]
 
         ,[prefixSym "+", prefixSym "-"]
 
@@ -1206,8 +1206,8 @@ opTable bExpr =
          -- with 'in' in position function, and not between
          -- between also has a try in it to deal with 'not'
          -- ambiguity
-         ,E.Postfix $ try inSuffix
-         ,E.Postfix betweenSuffix]
+         ,postfix $ try inSuffix
+         ,postfix betweenSuffix]
          -- todo: figure out where to put the try?
          ++ [binaryKeywordsN $ makeKeywordTree
              ["not like"
@@ -1250,8 +1250,8 @@ opTable bExpr =
     binaryKeywordN nm = E.InfixN (mkBinOp nm <$ keyword_ nm)
     binaryKeywordL nm = E.InfixL (mkBinOp nm <$ keyword_ nm)
     mkBinOp nm a b = BinOp a (mkNm nm) b
-    prefixSym  nm = E.Prefix (PrefixOp (mkNm nm) <$ symbol_ nm)
-    prefixKeyword  nm = E.Prefix (PrefixOp (mkNm nm) <$ keyword_ nm)
+    prefixSym  nm = prefix (PrefixOp (mkNm nm) <$ symbol_ nm)
+    prefixKeyword  nm = prefix (PrefixOp (mkNm nm) <$ keyword_ nm)
     mkNm nm = [Name Nothing nm]
     binaryKeywordsN p =
         E.InfixN (do
@@ -1265,20 +1265,12 @@ opTable bExpr =
         d <- option SQDefault duplicates
         pure (\a b -> MultisetBinOp a o d b))
     postfixKeywords p =
-      E.Postfix $ do
+      postfix $ do
           o <- try p
           pure $ PostfixOp [Name Nothing $ T.unwords o]
-      
-    {-
-    -- hack from here
-    -- http://stackoverflow.com/questions/10475337/parsec-expr-repeated-prefix-postfix-operator-not-supported
-    -- not implemented properly yet
-    -- I don't think this will be enough for all cases
-    -- at least it works for 'not not a'
-    -- ok: "x is not true is not true"
-    -- no work: "x is not true is not null"
-    prefix'  p = E.Prefix  . chainl1 p $ pure       (.)
-    postfix' p = E.Postfix . chainl1 p $ pure (flip (.))-}
+    -- parse repeated prefix or postfix operators
+    postfix p = E.Postfix $ foldr1 (flip (.)) <$> some p
+    prefix p = E.Prefix $ foldr1 (.) <$> some p
 
 {-
 == scalar expression top level
