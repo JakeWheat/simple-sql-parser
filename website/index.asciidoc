@@ -94,13 +94,27 @@ Parsed AST:
 
 [source,haskell]
 ----
-Select{qeSetQuantifier = All,
-       qeSelectList =
-         [(BinOp (Iden (Name "a")) (Name "+")
-             (BinOp (Iden (Name "b")) (Name "*") (Iden (Name "c"))),
-           Nothing)],
-       qeFrom = [], qeWhere = Nothing, qeGroupBy = [], qeHaving = Nothing,
-       qeOrderBy = [], qeOffset = Nothing, qeFetchFirst = Nothing}
+Select
+  { qeSetQuantifier = SQDefault
+  , qeSelectList =
+      [ ( BinOp
+            (Iden [ Name Nothing "a" ])
+            [ Name Nothing "+" ]
+            (BinOp
+               (Iden [ Name Nothing "b" ])
+               [ Name Nothing "*" ]
+               (Iden [ Name Nothing "c" ]))
+        , Nothing
+        )
+      ]
+  , qeFrom = []
+  , qeWhere = Nothing
+  , qeGroupBy = []
+  , qeHaving = Nothing
+  , qeOrderBy = []
+  , qeOffset = Nothing
+  , qeFetchFirst = Nothing
+  }
 ----
 
 TPC-H query 21:
@@ -153,16 +167,25 @@ Parsed:
 
 [source,haskell]
 ----
-Select{qeSetQuantifier = All,
-       qeSelectList =
-         [(Iden (Name "s_name"), Nothing),
-          (App (Name "count") [Star], Just (Name "numwait"))],
-       qeFrom =
-         [TRSimple (Name "supplier"),
-          TRAlias (TRSimple (Name "lineitem")) (Alias (Name "l1") Nothing),
-          TRSimple (Name "orders"), TRSimple (Name "nation")],
-       qeWhere =
-         Just
+Select
+  { qeSetQuantifier = SQDefault
+  , qeSelectList =
+      [ ( Iden [ Name Nothing "s_name" ] , Nothing )
+      , ( App [ Name Nothing "count" ] [ Star ]
+        , Just (Name Nothing "numwait")
+        )
+      ]
+  , qeFrom =
+      [ TRSimple [ Name Nothing "supplier" ]
+      , TRAlias
+          (TRSimple [ Name Nothing "lineitem" ])
+          (Alias (Name Nothing "l1") Nothing)
+      , TRSimple [ Name Nothing "orders" ]
+      , TRSimple [ Name Nothing "nation" ]
+      ]
+  , qeWhere =
+      Just
+        (BinOp
            (BinOp
               (BinOp
                  (BinOp
@@ -170,90 +193,113 @@ Select{qeSetQuantifier = All,
                        (BinOp
                           (BinOp
                              (BinOp
-                                (BinOp (Iden (Name "s_suppkey")) (Name "=")
-                                   (BinOp (Iden (Name "l1")) (Name ".")
-                                      (Iden (Name "l_suppkey"))))
-                                (Name "and")
-                                (BinOp (Iden (Name "o_orderkey")) (Name "=")
-                                   (BinOp (Iden (Name "l1")) (Name ".")
-                                      (Iden (Name "l_orderkey")))))
-                             (Name "and")
-                             (BinOp (Iden (Name "o_orderstatus")) (Name "=") (StringLit "F")))
-                          (Name "and")
+                                (Iden [ Name Nothing "s_suppkey" ])
+                                [ Name Nothing "=" ]
+                                (Iden [ Name Nothing "l1" , Name Nothing "l_suppkey" ]))
+                             [ Name Nothing "and" ]
+                             (BinOp
+                                (Iden [ Name Nothing "o_orderkey" ])
+                                [ Name Nothing "=" ]
+                                (Iden [ Name Nothing "l1" , Name Nothing "l_orderkey" ])))
+                          [ Name Nothing "and" ]
                           (BinOp
-                             (BinOp (Iden (Name "l1")) (Name ".") (Iden (Name "l_receiptdate")))
-                             (Name ">")
-                             (BinOp (Iden (Name "l1")) (Name ".")
-                                (Iden (Name "l_commitdate")))))
-                       (Name "and")
-                       (SubQueryExpr SqExists
-                          (Select{qeSetQuantifier = All, qeSelectList = [(Star, Nothing)],
-                                  qeFrom =
-                                    [TRAlias (TRSimple (Name "lineitem"))
-                                       (Alias (Name "l2") Nothing)],
-                                  qeWhere =
-                                    Just
-                                      (BinOp
-                                         (BinOp
-                                            (BinOp (Iden (Name "l2")) (Name ".")
-                                               (Iden (Name "l_orderkey")))
-                                            (Name "=")
-                                            (BinOp (Iden (Name "l1")) (Name ".")
-                                               (Iden (Name "l_orderkey"))))
-                                         (Name "and")
-                                         (BinOp
-                                            (BinOp (Iden (Name "l2")) (Name ".")
-                                               (Iden (Name "l_suppkey")))
-                                            (Name "<>")
-                                            (BinOp (Iden (Name "l1")) (Name ".")
-                                               (Iden (Name "l_suppkey"))))),
-                                  qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
-                                  qeOffset = Nothing, qeFetchFirst = Nothing})))
-                    (Name "and")
-                    (PrefixOp (Name "not")
-                       (SubQueryExpr SqExists
-                          (Select{qeSetQuantifier = All, qeSelectList = [(Star, Nothing)],
-                                  qeFrom =
-                                    [TRAlias (TRSimple (Name "lineitem"))
-                                       (Alias (Name "l3") Nothing)],
-                                  qeWhere =
-                                    Just
-                                      (BinOp
-                                         (BinOp
-                                            (BinOp
-                                               (BinOp (Iden (Name "l3")) (Name ".")
-                                                  (Iden (Name "l_orderkey")))
-                                               (Name "=")
-                                               (BinOp (Iden (Name "l1")) (Name ".")
-                                                  (Iden (Name "l_orderkey"))))
-                                            (Name "and")
-                                            (BinOp
-                                               (BinOp (Iden (Name "l3")) (Name ".")
-                                                  (Iden (Name "l_suppkey")))
-                                               (Name "<>")
-                                               (BinOp (Iden (Name "l1")) (Name ".")
-                                                  (Iden (Name "l_suppkey")))))
-                                         (Name "and")
-                                         (BinOp
-                                            (BinOp (Iden (Name "l3")) (Name ".")
-                                               (Iden (Name "l_receiptdate")))
-                                            (Name ">")
-                                            (BinOp (Iden (Name "l3")) (Name ".")
-                                               (Iden (Name "l_commitdate"))))),
-                                  qeGroupBy = [], qeHaving = Nothing, qeOrderBy = [],
-                                  qeOffset = Nothing, qeFetchFirst = Nothing}))))
-                 (Name "and")
-                 (BinOp (Iden (Name "s_nationkey")) (Name "=")
-                    (Iden (Name "n_nationkey"))))
-              (Name "and")
-              (BinOp (Iden (Name "n_name")) (Name "=") (StringLit "INDIA"))),
-       qeGroupBy = [SimpleGroup (Iden (Name "s_name"))],
-       qeHaving = Nothing,
-       qeOrderBy =
-         [SortSpec (Iden (Name "numwait")) Desc NullsOrderDefault,
-          SortSpec (Iden (Name "s_name")) Asc NullsOrderDefault],
-       qeOffset = Nothing, qeFetchFirst = Just (NumLit "100")})
-
+                             (Iden [ Name Nothing "o_orderstatus" ])
+                             [ Name Nothing "=" ]
+                             (StringLit "'" "'" "F")))
+                       [ Name Nothing "and" ]
+                       (BinOp
+                          (Iden [ Name Nothing "l1" , Name Nothing "l_receiptdate" ])
+                          [ Name Nothing ">" ]
+                          (Iden [ Name Nothing "l1" , Name Nothing "l_commitdate" ])))
+                    [ Name Nothing "and" ]
+                    (SubQueryExpr
+                       SqExists
+                       Select
+                         { qeSetQuantifier = SQDefault
+                         , qeSelectList = [ ( Star , Nothing ) ]
+                         , qeFrom =
+                             [ TRAlias
+                                 (TRSimple [ Name Nothing "lineitem" ])
+                                 (Alias (Name Nothing "l2") Nothing)
+                             ]
+                         , qeWhere =
+                             Just
+                               (BinOp
+                                  (BinOp
+                                     (Iden [ Name Nothing "l2" , Name Nothing "l_orderkey" ])
+                                     [ Name Nothing "=" ]
+                                     (Iden [ Name Nothing "l1" , Name Nothing "l_orderkey" ]))
+                                  [ Name Nothing "and" ]
+                                  (BinOp
+                                     (Iden [ Name Nothing "l2" , Name Nothing "l_suppkey" ])
+                                     [ Name Nothing "<>" ]
+                                     (Iden [ Name Nothing "l1" , Name Nothing "l_suppkey" ])))
+                         , qeGroupBy = []
+                         , qeHaving = Nothing
+                         , qeOrderBy = []
+                         , qeOffset = Nothing
+                         , qeFetchFirst = Nothing
+                         }))
+                 [ Name Nothing "and" ]
+                 (PrefixOp
+                    [ Name Nothing "not" ]
+                    (SubQueryExpr
+                       SqExists
+                       Select
+                         { qeSetQuantifier = SQDefault
+                         , qeSelectList = [ ( Star , Nothing ) ]
+                         , qeFrom =
+                             [ TRAlias
+                                 (TRSimple [ Name Nothing "lineitem" ])
+                                 (Alias (Name Nothing "l3") Nothing)
+                             ]
+                         , qeWhere =
+                             Just
+                               (BinOp
+                                  (BinOp
+                                     (BinOp
+                                        (Iden [ Name Nothing "l3" , Name Nothing "l_orderkey" ])
+                                        [ Name Nothing "=" ]
+                                        (Iden
+                                           [ Name Nothing "l1" , Name Nothing "l_orderkey" ]))
+                                     [ Name Nothing "and" ]
+                                     (BinOp
+                                        (Iden [ Name Nothing "l3" , Name Nothing "l_suppkey" ])
+                                        [ Name Nothing "<>" ]
+                                        (Iden
+                                           [ Name Nothing "l1" , Name Nothing "l_suppkey" ])))
+                                  [ Name Nothing "and" ]
+                                  (BinOp
+                                     (Iden [ Name Nothing "l3" , Name Nothing "l_receiptdate" ])
+                                     [ Name Nothing ">" ]
+                                     (Iden
+                                        [ Name Nothing "l3" , Name Nothing "l_commitdate" ])))
+                         , qeGroupBy = []
+                         , qeHaving = Nothing
+                         , qeOrderBy = []
+                         , qeOffset = Nothing
+                         , qeFetchFirst = Nothing
+                         })))
+              [ Name Nothing "and" ]
+              (BinOp
+                 (Iden [ Name Nothing "s_nationkey" ])
+                 [ Name Nothing "=" ]
+                 (Iden [ Name Nothing "n_nationkey" ])))
+           [ Name Nothing "and" ]
+           (BinOp
+              (Iden [ Name Nothing "n_name" ])
+              [ Name Nothing "=" ]
+              (StringLit "'" "'" "INDIA")))
+  , qeGroupBy = [ SimpleGroup (Iden [ Name Nothing "s_name" ]) ]
+  , qeHaving = Nothing
+  , qeOrderBy =
+      [ SortSpec (Iden [ Name Nothing "numwait" ]) Desc NullsOrderDefault
+      , SortSpec
+          (Iden [ Name Nothing "s_name" ]) DirDefault NullsOrderDefault
+      ]
+  , qeOffset = Nothing
+  , qeFetchFirst = Just (NumLit "100")
+  }
 ----
 
 
@@ -290,7 +336,7 @@ Parsing some SQL and printing the AST:
 
 [source,haskell]
 ----
-
+{-# LANGUAGE OverloadedStrings #-}
 import System.Environment
 import Text.Show.Pretty
 import System.IO
@@ -298,10 +344,11 @@ import System.IO
 import Language.SQL.SimpleSQL.Parse
        (parseStatements
        ,ParseError
-       ,peFormattedError)
+       ,prettyError
+       ,ansi2011)
 
-import Language.SQL.SimpleSQL.Syntax (ansi2011, Statement)
-
+import Language.SQL.SimpleSQL.Syntax (Statement)
+import qualified Data.Text as T
 
 main :: IO ()
 main = do
@@ -331,8 +378,8 @@ main = do
 doIt :: String -> IO ()
 doIt src = do
     let parsed :: Either ParseError [Statement]
-        parsed = parseStatements ansi2011 "" Nothing src
-    either (error . peFormattedError)
+        parsed = parseStatements ansi2011 "" Nothing (T.pack src)
+    either (error . T.unpack . prettyError)
            (putStrLn . ppShow)
            parsed
 ----

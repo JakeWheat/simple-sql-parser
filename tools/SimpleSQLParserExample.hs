@@ -15,7 +15,6 @@ import Language.SQL.SimpleSQL.Parse
 import Language.SQL.SimpleSQL.Syntax (Statement)
 import qualified Data.Text as T
 
-
 main :: IO ()
 main = do
     args <- getArgs
