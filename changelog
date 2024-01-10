@@ -5,6 +5,9 @@
 	use prettyprinter lib instead of pretty
 	nested block comments regressed - post a bug if you need this
 	fixed fixity parsing of union, except and intersect (matches postgres docs now)
+	removed the Errors module - the pretty printer function for errors is in the Parse module
+	parses from and pretty prints to strict Text
+	strict Text used instead of String everywhere
 0.6.1   added odbc handling to sqlsqerver dialect
 		added sqlserver dialect case for convert function
 0.6.0

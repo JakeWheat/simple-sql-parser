@@ -20,7 +20,7 @@ maintainer:          jakewheatmail@gmail.com
 copyright:           Copyright Jake Wheat 2013, 2014, 2015
 category:            Database,Language
 build-type:          Simple
-extra-source-files:  README,LICENSE,changelog
+extra-doc-files:     README,LICENSE,changelog
 bug-reports:         https://github.com/JakeWheat/simple-sql-parser/issues
 
 source-repository head
@@ -31,6 +31,10 @@ Flag parserexe
   Description: Build SimpleSqlParserTool exe
   Default:     False
 
+Flag exampleexe
+  Description: Build simple sql parser example exe
+  Default:     False
+
 common shared-properties
   default-language:    Haskell2010
   build-depends:       base >=4 && <5,
@@ -39,7 +43,7 @@ common shared-properties
                        mtl >=2.1 && <2.4,
                        prettyprinter >= 1.7 && < 1.8,
                        text  >= 2.1 && < 2.2,
-                       containers
+                       containers >= 0.6 && < 0.8
 
   ghc-options:         -Wall
 
@@ -94,6 +98,17 @@ executable SimpleSqlParserTool
   Build-Depends:       simple-sql-parser,
                        pretty-show >= 1.6 && < 1.10
   if flag(parserexe)
+    buildable:         True
+  else
+    buildable:         False
+
+executable SimpleSQLParserExample
+  import:              shared-properties
+  main-is:             SimpleSQLParserExample.hs
+  hs-source-dirs:      tools
+  Build-Depends:       simple-sql-parser,
+                       pretty-show >= 1.6 && < 1.10
+  if flag(exampleexe)
     buildable:         True
   else
     buildable:         False

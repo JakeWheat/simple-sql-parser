@@ -87,7 +87,7 @@ module Language.SQL.SimpleSQL.Lex
     ,prettyError
     ,tokenListWillPrintAndLex
     ,ansi2011
-    ,MyStream(..)
+    ,SQLStream(..)
     ) where
 
 import Language.SQL.SimpleSQL.Dialect
@@ -857,52 +857,53 @@ TODO: not 100% on this always being bad
 
 -- megaparsec stream boilerplate
 
-data MyStream = MyStream
-  { myStreamInput :: String
-  , unMyStream :: [WithPos Token]
+-- | Wrapper to allow using the lexer as input to a megaparsec parser.
+data SQLStream = SQLStream
+  { sqlStreamInput :: String
+  , unSQLStream :: [WithPos Token]
   }
 
-instance M.Stream MyStream where
-  type Token  MyStream = WithPos Token
-  type Tokens MyStream = [WithPos Token]
+instance M.Stream SQLStream where
+  type Token  SQLStream = WithPos Token
+  type Tokens SQLStream = [WithPos Token]
 
   tokenToChunk Proxy x = [x]
   tokensToChunk Proxy xs = xs
   chunkToTokens Proxy = id
   chunkLength Proxy = length
   chunkEmpty Proxy = null
-  take1_ (MyStream _ []) = Nothing
-  take1_ (MyStream str (t:ts)) = Just
+  take1_ (SQLStream _ []) = Nothing
+  take1_ (SQLStream str (t:ts)) = Just
     ( t
-    , MyStream (drop (tokensLength pxy (t NE.:|[])) str) ts
+    , SQLStream (drop (tokensLength pxy (t NE.:|[])) str) ts
     )
-  takeN_ n (MyStream str s)
-    | n <= 0    = Just ([], MyStream str s)
+  takeN_ n (SQLStream str s)
+    | n <= 0    = Just ([], SQLStream str s)
     | null s    = Nothing
     | otherwise =
         let (x, s') = splitAt n s
         in case NE.nonEmpty x of
-          Nothing -> Just (x, MyStream str s')
-          Just nex -> Just (x, MyStream (drop (tokensLength pxy nex) str) s')
-  takeWhile_ f (MyStream str s) =
+          Nothing -> Just (x, SQLStream str s')
+          Just nex -> Just (x, SQLStream (drop (tokensLength pxy nex) str) s')
+  takeWhile_ f (SQLStream str s) =
     let (x, s') = DL.span f s
     in case NE.nonEmpty x of
-      Nothing -> (x, MyStream str s')
-      Just nex -> (x, MyStream (drop (tokensLength pxy nex) str) s')
+      Nothing -> (x, SQLStream str s')
+      Just nex -> (x, SQLStream (drop (tokensLength pxy nex) str) s')
 
-instance VisualStream MyStream where
+instance VisualStream SQLStream where
   showTokens Proxy = DL.intercalate " "
     . NE.toList
     . fmap (showMyToken . tokenVal)
   tokensLength Proxy xs = sum (tokenLength <$> xs)
 
-instance TraversableStream MyStream where
+instance TraversableStream SQLStream where
   reachOffset o M.PosState {..} =
     ( Just (prefix ++ restOfLine)
     , PosState
-        { pstateInput = MyStream
-            { myStreamInput = postStr
-            , unMyStream = post
+        { pstateInput = SQLStream
+            { sqlStreamInput = postStr
+            , unSQLStream = post
             }
         , pstateOffset = max pstateOffset o
         , pstateSourcePos = newSourcePos
@@ -918,12 +919,12 @@ instance TraversableStream MyStream where
       sameLine = sourceLine newSourcePos == sourceLine pstateSourcePos
       newSourcePos =
         case post of
-          [] -> case unMyStream pstateInput of
+          [] -> case unSQLStream pstateInput of
             [] -> pstateSourcePos
             xs -> endPos (last xs)
           (x:_) -> startPos x
-      (pre, post) = splitAt (o - pstateOffset) (unMyStream pstateInput)
-      (preStr, postStr) = splitAt tokensConsumed (myStreamInput pstateInput)
+      (pre, post) = splitAt (o - pstateOffset) (unSQLStream pstateInput)
+      (preStr, postStr) = splitAt tokensConsumed (sqlStreamInput pstateInput)
       preLine = reverse . takeWhile (/= '\n') . reverse $ preStr
       tokensConsumed =
         case NE.nonEmpty pre of
@@ -931,7 +932,7 @@ instance TraversableStream MyStream where
           Just nePre -> tokensLength pxy nePre
       restOfLine = takeWhile (/= '\n') postStr
 
-pxy :: Proxy MyStream
+pxy :: Proxy SQLStream
 pxy = Proxy
 
 showMyToken :: Token -> String

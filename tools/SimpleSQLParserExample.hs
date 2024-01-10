@@ -1,6 +1,7 @@
 
 -- Simple example to show parsing some SQL then pretty printing the AST
 
+{-# LANGUAGE OverloadedStrings #-}
 import System.Environment
 import Text.Show.Pretty
 import System.IO
@@ -8,9 +9,11 @@ import System.IO
 import Language.SQL.SimpleSQL.Parse
        (parseStatements
        ,ParseError
-       ,peFormattedError)
+       ,prettyError
+       ,ansi2011)
 
-import Language.SQL.SimpleSQL.Syntax (ansi2011, Statement)
+import Language.SQL.SimpleSQL.Syntax (Statement)
+import qualified Data.Text as T
 
 
 main :: IO ()
@@ -41,7 +44,7 @@ main = do
 doIt :: String -> IO ()
 doIt src = do
     let parsed :: Either ParseError [Statement]
-        parsed = parseStatements ansi2011 "" Nothing src
-    either (error . peFormattedError)
+        parsed = parseStatements ansi2011 "" Nothing (T.pack src)
+    either (error . T.unpack . prettyError)
            (putStrLn . ppShow)
            parsed

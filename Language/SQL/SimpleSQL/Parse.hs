@@ -186,6 +186,7 @@ module Language.SQL.SimpleSQL.Parse
     ,parseStatements
     ,ParseError(..)
     ,prettyError
+    ,ansi2011
     ) where
 
 import Text.Megaparsec
@@ -301,7 +302,7 @@ parseScalarExpr = wrapParse scalarExpr
 
 data ParseError
     = LexError L.ParseError
-    | ParseError (ParseErrorBundle L.MyStream Void)
+    | ParseError (ParseErrorBundle L.SQLStream Void)
 
 prettyError :: ParseError -> Text
 prettyError (LexError e) = T.pack $ errorBundlePretty e
@@ -326,7 +327,7 @@ wrapParse parser d f p src = do
     lx <- either (Left . LexError) Right $ L.lexSQLWithPositions d f p src
     either (Left . ParseError) Right $ 
         runReader (runParserT (parser <* (eof <?> "")) (T.unpack f)
-                   $ L.MyStream (T.unpack src) $ filter notSpace lx) d
+                   $ L.SQLStream (T.unpack src) $ filter notSpace lx) d
   where
     notSpace = notSpace' . L.tokenVal
     notSpace' (L.Whitespace {}) = False
@@ -338,7 +339,7 @@ wrapParse parser d f p src = do
 
 -- parsing code
 
-type Parser = ParsecT Void L.MyStream (Reader Dialect)
+type Parser = ParsecT Void L.SQLStream (Reader Dialect)
 
 {-
 ------------------------------------------------
