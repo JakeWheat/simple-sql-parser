@@ -192,8 +192,9 @@ module Language.SQL.SimpleSQL.Parse
     ) where
 
 import Text.Megaparsec
-    (Parsec
-    ,ParsecT
+    (ParsecT
+    ,runParserT
+
     ,Stream(..)
     ,PosState(..)
     ,TraversableStream(..)
@@ -205,7 +206,6 @@ import Text.Megaparsec
 
     ,ParseErrorBundle(..)
     ,errorBundlePretty
-    ,parse
 
     ,(<?>)
     ,(<|>)
@@ -222,6 +222,12 @@ import Text.Megaparsec
     ,between
     )
 import qualified Control.Monad.Combinators.Expr as E
+
+import Control.Monad.Reader
+    (Reader(..)
+    ,runReader
+    ,ask
+    )
 
 import qualified Data.List          as DL
 import qualified Data.List.NonEmpty as NE
@@ -327,8 +333,8 @@ wrapParse :: Parser a
           -> Either ParseError a
 wrapParse parser d f p src =
     let lx = either (error . show) id $ L.lexSQL d f p src
-    in parse (parser <* (eof <?> "")) (T.unpack f)
-           $ MyStream (T.unpack src) $ filter notSpace lx
+    in runReader (runParserT (parser <* (eof <?> "")) (T.unpack f)
+           $ MyStream (T.unpack src) $ filter notSpace lx) d
   where
     notSpace = notSpace' . L.tokenVal
     notSpace' (L.Whitespace {}) = False
@@ -340,7 +346,7 @@ wrapParse parser d f p src =
 
 -- parsing code
 
-type Parser = Parsec Void MyStream
+type Parser = ParsecT Void MyStream (Reader Dialect)
 
 {-
 ------------------------------------------------
@@ -1158,7 +1164,7 @@ wanted to avoid extensibility and to not be concerned with parse error
 messages, but both of these are too important.
 -}
 
-opTable :: Bool -> [[E.Operator (ParsecT Void MyStream Identity) ScalarExpr]]
+opTable :: Bool -> [[E.Operator Parser ScalarExpr]]
 opTable bExpr = [] {-
         [-- parse match and quantified comparisons as postfix ops
           -- todo: left factor the quantified comparison with regular
@@ -2110,7 +2116,7 @@ makeKeywordTree sets =
         if (or $ map null tls)
           then pr <|> pure [k]
           else pr
-    parseGroup _ = guard False >> error "impossible"
+    parseGroup _ = guard False >> fail "impossible"
     safeHead (x:_) = Just x
     safeHead [] = Nothing
     safeTail (_:x) = Just x
@@ -2378,11 +2384,14 @@ unquotedIdentifierTok blackList kw = token test Set.empty <?> ""
 -- dialect
 
 guardDialect :: (Dialect -> Bool) -> Parser ()
-guardDialect = error "guardDialect"
+guardDialect p = do
+    d <- ask
+    guard (p d)
 
 queryDialect :: (Dialect -> a) -> Parser a
-queryDialect = error "queryDialect"
-
+queryDialect f = do
+    d <- ask
+    pure $ f d
 
 ------------------------------------------------------------------------------
 
