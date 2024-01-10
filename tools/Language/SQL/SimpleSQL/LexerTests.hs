@@ -43,7 +43,7 @@ lexerTests = Group "lexerTests" $
 
 -- quick sanity tests to see something working
 bootstrapTests :: TestItem
-bootstrapTests = Group "bootstrap tests" $
+bootstrapTests = Group "bootstrap tests" [Group "bootstrap tests" $
     map (uncurry (LexTest ansi2011)) (
     [("iden", [Identifier Nothing "iden"])
     ,("'string'", [SqlString "'" "'" "string"])
@@ -82,7 +82,7 @@ bootstrapTests = Group "bootstrap tests" $
 
     ] ++ map (\a -> (a, [Symbol a])) (
      ["!=", "<>", ">=", "<=", "||"]
-     ++ map T.singleton ("(),-+*/<>=." :: [Char])))
+     ++ map T.singleton ("(),-+*/<>=." :: [Char])))]
 
 
 ansiLexerTable :: [(Text,[Token])]

@@ -30,5 +30,5 @@ linkSection =
   \<li><a href=\"https://github.com/JakeWheat/simple-sql-parser/blob/master/changelog\" class=\"bare\">Changes</a></li>\n\
   \<li><a href=\"http://jakewheat.github.io/simple-sql-parser/\" class=\"bare\">Other versions</a></li>\n\
   \<li><a href=\"http://jakewheat.github.io/\" class=\"bare\">Parent project</a>\n\
-  \</li><li>jakewheatmail@gmail.com</li>\n\
+  \</li><li>jakewheat@tutanota.com</li>\n\
   \</ul>\n"

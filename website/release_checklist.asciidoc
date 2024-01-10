@@ -1,0 +1,36 @@
+:toc: right
+:sectnums:
+:toclevels: 10
+:source-highlighter: pygments
+
+= Release checklist
+
+Check the version in the cabal file - update it if it hasn't already been updated
+
+Update the changelog, use git diff or similar to try to avoid missing anything important
+
+run the tests
+
+generate the website:
+
+check the webpages appear nicely
+
+check all the tests are rendered on the example page
+
+check the examples on the main page to check if they need updating
+
+run cabal update, cabal outdated. cabal check
+
+update stack.yaml to latest lts, install latest stack, run stack build
+
+run the tests on the previous 2 ghcs' latest point releases, and the latest ghc, each with the latest cabal-install they support
+
+build the release tarball, run a test with an example using this tarball
+
+if there are any non trivial changes, upload a new wesbite
+
+upload candidate to hackage, run a test with example using this package
+
+if all good, release the candidate
+
+Todo: try to turn as much of this into a script, with a nice report as possible, order this list properly, say what you need to check in more detail, say what else you need to redo if any steps need actions

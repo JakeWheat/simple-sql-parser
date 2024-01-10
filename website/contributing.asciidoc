@@ -1,0 +1,45 @@
+
+:toc: right
+:sectnums:
+:toclevels: 10
+:source-highlighter: pygments
+
+= Contributing
+
+== Contributing to simple sql parser
+
+Contributions are welcome. It's preferred if they follow some guidelines:
+
+If you add something to the public api, follow the pattern already set for haddock.
+
+If something isn't ansi sql, add it under a dialect flag which isn't enabled in the ansi dialect.
+
+If you add dialect flags, add them to the appropriate dialects, create a new one if it's a system which doesn't already have a dialect.
+
+Testing
+
+Run all the preexisting tests and make sure they continue to pass.
+
+Add tests for anything you add, negative tests are a good idea too - check something that's behind a dialect flag doesn't parse when disabled.
+
+It's ideal if tests for something set with a dialect flag go in a test file for that dialect flag, unless it's an ansi feature that's disabled in other dialects. It's also an option to put tests in a test file dedicated to the dialect that the dialect flag was introduced for. But the current testing doesn't quite stick to this approach at the moment, it's not the worse thing about the codebase.
+
+== Key design notes
+
+The parsing is done using the megaparsec library.
+
+The parser uses a separate lexer. I think this makes the code a lot simpler. It used to be a big speed boost over naively not using a separate lexer with parsec, I'm not sure this is still the case with megaparsec.
+
+SQL comes in a huge variety of annoyingly different dialects. The aspirational goal is to have a dialect flag for each dialect that you pass to the parser and it parses that dialect and rejects things not in that dialect. This is a bit of a stretch since most major SQL systems have huge numbers of dialect options. One think you learn when writing a non toy SQL parser is you cannot hope to comprehensively support anything, you just have to do enough, and add bits you missed when you need them.
+
+A big tradeoff here is all code needs to be prepared to deal with the abstract syntax which supports all features from all dialects. I think the least unreasonable way you could fix this would be to have a system which generates dialect specific simple-sql-parser packages, which is still very unreasonable.
+
+The system probably doesn't always pretty print in the right dialect from correct syntax. This might need some changes if it causes a problem.
+
+TODO: tests overview in addition to the above
+
+TODO: how the website works, what it contains
+
+== Releasing
+
+See the link:release_checklist.html[] for things that should be done before each release.

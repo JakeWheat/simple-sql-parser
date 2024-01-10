@@ -39,7 +39,7 @@ website : website-non-haddock build-haddock
 
 .PHONY : website-non-haddock
 website-non-haddock : build/main.css build/ocean.css build/index.html build/supported_sql.html \
-          build/test_cases.html
+          build/test_cases.html build/contributing.html build/release_checklist.html
 
 
 build/main.css : website/main.css
@@ -56,6 +56,13 @@ build/index.html : website/index.asciidoc website/AddLinks.hs
 build/supported_sql.html : website/supported_sql.asciidoc website/AddLinks.hs
 	asciidoctor website/supported_sql.asciidoc -o - | cabal -v0 exec runhaskell website/AddLinks.hs > build/supported_sql.html
 
+build/contributing.html : website/contributing.asciidoc website/AddLinks.hs
+	asciidoctor website/contributing.asciidoc -o - | cabal -v0 exec runhaskell website/AddLinks.hs > build/contributing.html
+
+build/release_checklist.html : website/release_checklist.asciidoc website/AddLinks.hs
+	asciidoctor website/release_checklist.asciidoc -o - | cabal -v0 exec runhaskell website/AddLinks.hs > build/release_checklist.html
+
+
 build/test_cases.html : website/RenderTestCases.hs
 	cabal -v0 exec runhaskell -- --ghc-arg=-package=pretty-show -itools website/RenderTestCases.hs > build/test_cases.asciidoc
 	asciidoctor build/test_cases.asciidoc -o - | \
@@ -65,6 +72,9 @@ build/test_cases.html : website/RenderTestCases.hs
 	# TODO: make the tables autowidth
 	#        -e "s/(code.*)font-size:1em/\1font-size:0.8em/g"
 	rm build/test_cases.asciidoc
+        # the tests don't render right if the TestCases aren't all at the same level
+        # of group nesting, which should be fixed - if this isn't the case, it
+        # will silently not render some of the tests
 
 # works here, but not in a recipe. amazing
 # GHC_VER="$(shell ghc --numeric-version)"

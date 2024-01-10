@@ -22,27 +22,7 @@ probably not very stable, since adding support for all the
 not-yet-supported ANSI SQL syntax, then other dialects of SQL is
 likely to change the abstract syntax types considerably.
 
-Tested with GHC 9.8.1, 9.6.3, and 9.4.8.
-
-== Links
-
-* Haddock: link:haddock/index.html[]
-* Supported SQL: link:supported_sql.html[]
-* Test cases: link:test_cases.html[simple-sql-parser test cases]
-* Homepage: http://jakewheat.github.io/simple-sql-parser/latest
-* Hackage: http://hackage.haskell.org/package/simple-sql-parser
-* Repository: https://github.com/JakeWheat/simple-sql-parser
-* Bug tracker: https://github.com/JakeWheat/simple-sql-parser/issues
-* Changes: https://github.com/JakeWheat/simple-sql-parser/blob/master/changelog
-* Other versions: http://jakewheat.github.io/simple-sql-parser/
-* Parent project: http://jakewheat.github.io/
-* Contact: +++jakewheatmail@gmail.com+++
-
-The simple-sql-parser is a lot less simple than it used to be. If you
-just need to parse much simpler SQL than this, or want to start with a
-simpler parser and modify it slightly, you could also look at the
-basic query parser in the intro_to_parsing project, the code is here:
-link:https://github.com/JakeWheat/intro_to_parsing/blob/master/SimpleSQLQueryParser0.lhs[SimpleSQLQueryParser].
+Tested with GHC 9.8.1, 9.6.4, and 9.4.8.
 
 == Feature support
 
@@ -388,18 +368,14 @@ doIt src = do
 
 == Installation
 
-Installing the latest release from Hackage.
-
-----
-cabal v2-update && cabal v2-install simple-sql-parser
-----
+Use cabal, stack or your usual system to work with the released package.
 
 Working with the latest development version:
 
 ----
 git clone https://github.com/JakeWheat/simple-sql-parser.git
 cd simple-sql-parser
-cabal v2-build
+cabal build
 ----
 
 === Running the tests
@@ -410,7 +386,7 @@ source directory.
 You can run the tests using cabal:
 
 ----
-cabal v2-test
+cabal test
 ----
 
 Or you can run them directly which gives more options. The tests use
@@ -419,7 +395,7 @@ with --ansi-tricks=false so it works is a good option to use:
 
 
 ----
-cabal v2-run test:Tests -- --hide-successes --ansi-tricks=false
+cabal run test:Tests -- --hide-successes --ansi-tricks=false
 ----
 
 == Reporting bugs
@@ -437,4 +413,28 @@ request, or find someone willing to write the fixes and make a pull
 request.
 
 There is a related tutorial on implementing a SQL parser here:
-http://jakewheat.github.io/intro_to_parsing/
+http://jakewheat.github.io/intro_to_parsing/ (TODO: this is out of date, hopefully it will be updated at some point)
+
+== Contributing
+
+Contributions are welcome, there are some notes on these pages: link:contributing.html[], link:release_checklist.html[].
+
+== Links
+
+* Haddock: link:haddock/index.html[]
+* Supported SQL: link:supported_sql.html[]
+* Test cases: link:test_cases.html[simple-sql-parser test cases]
+* Homepage: http://jakewheat.github.io/simple-sql-parser/latest
+* Hackage: http://hackage.haskell.org/package/simple-sql-parser
+* Repository: https://github.com/JakeWheat/simple-sql-parser
+* Bug tracker: https://github.com/JakeWheat/simple-sql-parser/issues
+* Changes: https://github.com/JakeWheat/simple-sql-parser/blob/master/changelog
+* Other versions: http://jakewheat.github.io/simple-sql-parser/
+* Parent project: http://jakewheat.github.io/
+* Contact: +++jakewheat@tutanota.com+++
+
+The simple-sql-parser is a lot less simple than it used to be. If you
+just need to parse much simpler SQL than this, or want to start with a
+simpler parser and modify it slightly, you could also look at the
+basic query parser in the intro_to_parsing project, the code is here:
+link:https://github.com/JakeWheat/intro_to_parsing/blob/master/SimpleSQLQueryParser0.lhs[SimpleSQLQueryParser].
