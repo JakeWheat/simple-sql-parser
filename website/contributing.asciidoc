@@ -36,6 +36,8 @@ A big tradeoff here is all code needs to be prepared to deal with the abstract s
 
 The system probably doesn't always pretty print in the right dialect from correct syntax. This might need some changes if it causes a problem.
 
+TODO: handling of keywords, and relationship with dialect
+
 TODO: tests overview in addition to the above
 
 TODO: how the website works, what it contains

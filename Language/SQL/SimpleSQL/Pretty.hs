@@ -45,11 +45,11 @@ import Language.SQL.SimpleSQL.Syntax
 import Language.SQL.SimpleSQL.Dialect
 
 
--- | Convert a query expr ast to concrete syntax.
+-- | Convert a query expr ast to Text.
 prettyQueryExpr :: Dialect -> QueryExpr -> Text
 prettyQueryExpr d = render . queryExpr d
 
--- | Convert a value expr ast to concrete syntax.
+-- | Convert a value expr ast to Text.
 prettyScalarExpr :: Dialect -> ScalarExpr -> Text
 prettyScalarExpr d = render . scalarExpr d
 
@@ -57,12 +57,12 @@ prettyScalarExpr d = render . scalarExpr d
 terminator :: Doc a
 terminator = pretty ";" <> line
 
--- | Convert a statement ast to concrete syntax.
+-- | Convert a statement ast to Text.
 prettyStatement :: Dialect -> Statement -> Text
 prettyStatement _ EmptyStatement = render terminator
 prettyStatement d s = render (statement d s)
 
--- | Convert a list of statements to concrete syntax. A semicolon
+-- | Convert a list of statements to Text. A semicolon
 -- is inserted after each statement.
 prettyStatements :: Dialect -> [Statement] -> Text
 prettyStatements d = render . vsep . map prettyStatementWithSemicolon

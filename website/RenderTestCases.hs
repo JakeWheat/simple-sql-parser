@@ -40,13 +40,17 @@ doc _ (ParseScalarExprFails d str) =
     [Row str (showResult $ P.parseScalarExpr d "" Nothing str)]
 
 doc _ (LexTest d str t) =
-    [Row str (T.pack $ ppShow $ L.lexSQL d "" Nothing str)]
+    [Row str (showResultL $ L.lexSQL d "" Nothing str)]
 
 doc _ (LexFails d str) =
-    [Row str (T.pack $ ppShow $ L.lexSQL d "" Nothing str)]
+    [Row str (showResultL $ L.lexSQL d "" Nothing str)]
 
 showResult :: Show a => Either P.ParseError a -> Text
-showResult = either P.prettyError (T.pack . ppShow)
+showResult = either (("Left\n" <>) . P.prettyError) (T.pack . ppShow)
+
+showResultL :: Show a => Either L.ParseError a -> Text
+showResultL = either (("Left\n" <>) . L.prettyError) (T.pack . ppShow)
+
 
 -- TODO: should put the dialect in the html output
 

@@ -281,7 +281,7 @@ prettyTokens d ts = T.concat $ map (prettyToken d) ts
 
 -- | parser for a sql token
 sqlToken :: Dialect -> Parser (WithPos Token)
-sqlToken d = do
+sqlToken d = (do
     -- possibly there's a more efficient way of doing the source positions?
     sp <- getSourcePos
     off <- getOffset
@@ -298,7 +298,7 @@ sqlToken d = do
          ,sqlWhitespace d]
     off1 <- getOffset
     ep <- getSourcePos
-    pure $ WithPos sp ep (off1 - off) t
+    pure $ WithPos sp ep (off1 - off) t) <?> "valid lexical token"
 
 --------------------------------------
 
@@ -486,7 +486,7 @@ sqlNumber d =
     -- this is for definitely avoiding possibly ambiguous source
     <* choice [-- special case to allow e.g. 1..2
                guard (diPostgresSymbols d)
-               *> (void $ lookAhead $ try $ string "..")
+               *> (void $ lookAhead $ try $ (string ".." <?> ""))
                   <|> void (notFollowedBy (oneOf "eE."))
               ,notFollowedBy (oneOf "eE.")
               ]
