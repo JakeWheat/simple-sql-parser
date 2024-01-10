@@ -222,6 +222,7 @@ import Text.Megaparsec
     ,between
     )
 import qualified Control.Monad.Combinators.Expr as E
+import qualified Control.Monad.Permutations as P
 
 import Control.Monad.Reader
     (Reader(..)
@@ -1485,8 +1486,10 @@ allows offset and fetch in either order
 -}
 
 offsetFetch :: Parser (Maybe ScalarExpr, Maybe ScalarExpr)
-offsetFetch = undefined {-permute ((,) <$?> (Nothing, Just <$> offset)
-                           <|?> (Nothing, Just <$> fetch))-}
+offsetFetch =
+    P.runPermutation $ (,) <$> maybePermutation offset <*> maybePermutation fetch
+  where
+    maybePermutation p = P.toPermutationWithDefault Nothing (Just <$> p)
 
 offset :: Parser ScalarExpr
 offset = keyword_ "offset" *> scalarExpr
@@ -1712,8 +1715,10 @@ refMatch = option DefaultReferenceMatch
                     ,MatchPartial <$ keyword_ "partial"
                     ,MatchSimple <$ keyword_ "simple"])
 refActions :: Parser (ReferentialAction,ReferentialAction)
-refActions = undefined {-permute ((,) <$?> (DefaultReferentialAction, onUpdate)
-                          <|?> (DefaultReferentialAction, onDelete))-}
+refActions =
+    P.runPermutation $ (,)
+    <$> P.toPermutationWithDefault DefaultReferentialAction onUpdate
+    <*> P.toPermutationWithDefault DefaultReferentialAction onDelete
   where
     -- todo: left factor?
     onUpdate = try (keywords_ ["on", "update"]) *> referentialAction
@@ -1763,20 +1768,20 @@ sequenceGeneratorOptions =
          -- such as cycle and nocycle
          -- sort out options which are sometimes not allowed
          -- as datatype, and restart with
-    undefined {-permute ((\a b c d e f g h j k -> catMaybes [a,b,c,d,e,f,g,h,j,k])
-                  <$?> nj startWith
-                  <|?> nj dataType
-                  <|?> nj restart
-                  <|?> nj incrementBy
-                  <|?> nj maxValue
-                  <|?> nj noMaxValue
-                  <|?> nj minValue
-                  <|?> nj noMinValue
-                  <|?> nj scycle
-                  <|?> nj noCycle
-                 )-}
+    P.runPermutation ((\a b c d e f g h j k -> catMaybes [a,b,c,d,e,f,g,h,j,k])
+                  <$> maybePermutation startWith
+                  <*> maybePermutation dataType
+                  <*> maybePermutation restart
+                  <*> maybePermutation incrementBy
+                  <*> maybePermutation maxValue
+                  <*> maybePermutation noMaxValue
+                  <*> maybePermutation minValue
+                  <*> maybePermutation noMinValue
+                  <*> maybePermutation scycle
+                  <*> maybePermutation noCycle
+                 )
   where
-    nj p = (Nothing,Just <$> p)
+    maybePermutation p = P.toPermutationWithDefault Nothing (Just <$> p)
     startWith = keywords_ ["start", "with"] >>
                 SGOStartWith <$> signedInteger
     dataType = keyword_ "as" >>
