@@ -71,7 +71,6 @@ try again to add annotation to the ast
 -}
 
 -- | Lexer for SQL.
-{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TypeFamilies      #-}
@@ -150,6 +149,7 @@ import Data.Char
 import Control.Monad (void, guard)
 import Data.Text (Text)
 import qualified Data.Text as T
+import Data.Maybe (fromMaybe)
 
 ------------------------------------------------------------------------------
 
@@ -223,13 +223,13 @@ lexSQL
     -- ^ the SQL source to lex
     -> Either ParseError [Token]
 lexSQL dialect fn p src =
-    fmap (map tokenVal) $ lexSQLWithPositions dialect fn p src
+    map tokenVal <$> lexSQLWithPositions dialect fn p src
 
-myParse :: Text -> (Maybe (Int,Int)) -> Parser a -> Text -> Either ParseError a
+myParse :: Text -> Maybe (Int,Int) -> Parser a -> Text -> Either ParseError a
 myParse name sp' p s =
-        let sp = maybe (1,1) id sp'
+        let sp = fromMaybe (1,1) sp'
             ps = SourcePos (T.unpack name) (mkPos $ fst sp) (mkPos $ snd sp)
-            is = (initialState (T.unpack name) s)
+            is = initialState (T.unpack name) s
             sps = (statePosState is) {pstateSourcePos = ps}
             is' = is {statePosState = sps}
         in snd $ runParser' p is'
@@ -352,7 +352,7 @@ sqlString d = dollarString <|> csString <|> normalString
                 <$> try cs
                 <*> pure "'"
                 <*> normalStringSuffix False ""
-    csPrefixes = (map (flip T.cons "'") "nNbBxX") ++ ["u&'", "U&'"]
+    csPrefixes = map (`T.cons` "'") "nNbBxX" ++ ["u&'", "U&'"]
     cs :: Parser Text
     cs = choice $ map string csPrefixes
 
@@ -387,7 +387,7 @@ identifier d =
     -- try is used here to avoid a conflict with identifiers
     -- and quoted strings which also start with a 'u'
     unicodeQuotedIden = Identifier
-                        <$> (f <$> try ((oneOf "uU") <* string "&"))
+                        <$> (f <$> try (oneOf "uU" <* string "&"))
                         <*> qidenPart
       where f x = Just (T.cons x "&\"", "\"")
     qidenPart = char '"' *> qidenSuffix ""
@@ -404,7 +404,7 @@ identifierString :: Parser Text
 identifierString = (do
     c <- satisfy isFirstLetter
     choice
-        [T.cons c <$> (takeWhileP (Just "identifier char") isIdentifierChar)
+        [T.cons c <$> takeWhileP (Just "identifier char") isIdentifierChar
         ,pure $ T.singleton c]) <?> "identifier"
   where
      isFirstLetter c = c == '_' || isAlpha c
@@ -486,7 +486,7 @@ sqlNumber d =
     -- this is for definitely avoiding possibly ambiguous source
     <* choice [-- special case to allow e.g. 1..2
                guard (diPostgresSymbols d)
-               *> (void $ lookAhead $ try $ (string ".." <?> ""))
+               *> void (lookAhead $ try (string ".." <?> ""))
                   <|> void (notFollowedBy (oneOf "eE."))
               ,notFollowedBy (oneOf "eE.")
               ]
@@ -737,7 +737,7 @@ two symbols next to eachother will fail if the symbols can combine and
     | diPostgresSymbols d
     , Symbol a' <- a
     , Symbol b' <- b
-    , b' `notElem` ["+", "-"] || or (map (`T.elem` a') "~!@#%^&|`?") = False
+    , b' `notElem` ["+", "-"] || any (`T.elem` a') ("~!@#%^&|`?" :: [Char]) = False
 
 {-
 check two adjacent symbols in non postgres where the combination

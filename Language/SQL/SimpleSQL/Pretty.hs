@@ -3,6 +3,7 @@
 -- source from ASTs. The code attempts to format the output in a
 -- readable way.
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE LambdaCase #-}
 module Language.SQL.SimpleSQL.Pretty
     (prettyQueryExpr
     ,prettyScalarExpr
@@ -120,7 +121,7 @@ scalarExpr d (WindowApp f es pb od fr) =
     <+> pretty "over"
     <+> parens ((case pb of
                     [] -> mempty
-                    _ -> (pretty "partition by") <+> align
+                    _ -> pretty "partition by" <+> align
                                    (commaSep $ map (scalarExpr d) pb))
                 <+> orderBy d od
     <+> me frd fr)
@@ -142,7 +143,7 @@ scalarExpr dia (SpecialOp nm [a,b,c])
     | nm `elem` [[Name Nothing "between"]
                 ,[Name Nothing "not between"]] =
   sep [scalarExpr dia a
-      ,names nm <+> nest ((T.length (unnames nm) - 3)) (sep
+      ,names nm <+> nest (T.length (unnames nm) - 3) (sep
           [scalarExpr dia b
           ,pretty "and" <+> scalarExpr dia c])]
 
@@ -206,10 +207,10 @@ scalarExpr d (SubQueryExpr ty qe) =
 scalarExpr d (QuantifiedComparison v c cp sq) =
     scalarExpr d v
     <+> names c
-    <+> (pretty $ case cp of
-             CPAny -> "any"
-             CPSome -> "some"
-             CPAll -> "all")
+    <+> pretty (case cp of
+                    CPAny -> "any"
+                    CPSome -> "some"
+                    CPAll -> "all")
     <+> parens (queryExpr d sq)
 
 scalarExpr d (Match v u sq) =
@@ -306,13 +307,13 @@ typeName (PrecScaleTypeName t a b) =
 typeName (PrecLengthTypeName t i m u) =
     names t
     <> parens (pretty (show i)
-               <> me (\x -> case x of
+               <> me (\case
                            PrecK -> pretty "K"
                            PrecM -> pretty "M"
                            PrecG -> pretty "G"
                            PrecT -> pretty "T"
                            PrecP -> pretty "P") m
-               <+> me (\x -> case x of
+               <+> me (\case
                        PrecCharacters -> pretty "CHARACTERS"
                        PrecOctets -> pretty "OCTETS") u)
 typeName (CharTypeName t i cs col) =
@@ -350,7 +351,7 @@ intervalTypeField (Itf n p) =
     pretty n
     <+> me (\(x,x1) ->
              parens (pretty (show x)
-                     <+> me (\y -> (sep [comma,pretty (show y)])) x1)) p
+                     <+> me (\y -> sep [comma,pretty (show y)]) x1)) p
 
 
 -- = query expressions
@@ -524,7 +525,7 @@ statement d (AlterDomain nm act) =
     <+> a act
   where
     a (ADSetDefault v) = texts ["set","default"] <+> scalarExpr d v
-    a (ADDropDefault) = texts ["drop","default"]
+    a ADDropDefault = texts ["drop","default"]
     a (ADAddConstraint cnm e) =
         pretty "add"
         <+> maybe mempty (\cnm' -> pretty "constraint" <+> names cnm') cnm
@@ -603,7 +604,7 @@ statement _ (DropTable n b) =
 statement d (CreateView r nm al q co) =
     pretty "create" <+> (if r then pretty "recursive" else mempty)
     <+> pretty "view" <+> names nm
-    <+> (maybe mempty (\al' -> parens $ commaSep $ map name al')) al
+    <+> maybe mempty (parens . commaSep . map name) al
     <+> pretty "as"
     <+> queryExpr d q
     <+> case co of
@@ -731,7 +732,7 @@ columnDef d (ColumnDef n t mdef cons) =
     pcon (ColReferencesConstraint tb c m u del) =
         pretty "references"
         <+> names tb
-        <+> maybe mempty (\c' -> parens (name c')) c
+        <+> maybe mempty (parens . name) c
         <+> refMatch m
         <+> refAct "update" u
         <+> refAct "delete" del

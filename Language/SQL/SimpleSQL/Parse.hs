@@ -217,6 +217,7 @@ import Control.Monad.Reader
     (Reader
     ,runReader
     ,ask
+    ,asks
     )
 
 import qualified Data.Set           as Set
@@ -227,7 +228,7 @@ import Control.Applicative ((<**>))
 import Data.Char (isDigit)
 import Data.List (sort,groupBy)
 import Data.Function (on)
-import Data.Maybe (catMaybes, isJust)
+import Data.Maybe (catMaybes, isJust, mapMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
 
@@ -379,7 +380,7 @@ u&"example quoted"
 
 name :: Parser Name
 name = do
-    bl <- queryDialect diKeywords
+    bl <- askDialect diKeywords
     uncurry Name <$> identifierTok bl
 
 -- todo: replace (:[]) with a named function all over
@@ -561,7 +562,7 @@ typeName =
     -- type names, plus all the type names which are
     -- reserved words
     reservedTypeNames = do
-        stn <- queryDialect diSpecialTypeNames
+        stn <- askDialect diSpecialTypeNames
         (:[]) . Name Nothing . T.unwords <$> makeKeywordTree stn
         
 
@@ -771,7 +772,7 @@ idenExpr =
     -- special cases for keywords that can be parsed as an iden or app
     keywordFunctionOrIden = try $ do
         x <- unquotedIdentifierTok [] Nothing
-        d <- queryDialect id
+        d <- askDialect id
         let i = T.toLower x `elem` diIdentifierKeywords d
             a = T.toLower x `elem` diAppKeywords d
         case () of
@@ -923,7 +924,7 @@ app =
     openParen *> choice
     [duplicates
      <**> (commaSep1 scalarExpr
-           <**> (((option [] orderBy) <* closeParen)
+           <**> ((option [] orderBy <* closeParen)
                  <**> (optional afilter <$$$$$> AggregateApp)))
      -- separate cases with no all or distinct which must have at
      -- least one scalar expr
@@ -967,17 +968,17 @@ window :: Parser ([ScalarExpr] -> [Name] -> ScalarExpr)
 window =
   keyword_ "over" *> openParen *> option [] partitionBy
   <**> (option [] orderBy
-        <**> (((optional frameClause) <* closeParen) <$$$$$> WindowApp))
+        <**> ((optional frameClause <* closeParen) <$$$$$> WindowApp))
   where
     partitionBy = keywords_ ["partition","by"] *> commaSep1 scalarExpr
     frameClause =
         frameRowsRange -- TODO: this 'and' could be an issue
-        <**> (choice [(keyword_ "between" *> frameLimit True)
+        <**> choice [(keyword_ "between" *> frameLimit True)
                       <**> ((keyword_ "and" *> frameLimit True)
                             <$$$> FrameBetween)
                       -- maybe this should still use a b expression
                       -- for consistency
-                     ,frameLimit False <**> pure (flip FrameFrom)])
+                     ,frameLimit False <**> pure (flip FrameFrom)]
     frameRowsRange = FrameRows <$ keyword_ "rows"
                      <|> FrameRange <$ keyword_ "range"
     frameLimit useB =
@@ -1013,7 +1014,7 @@ inSuffix =
   where
     inty = choice [True <$ keyword_ "in"
                   ,False <$ keywords_ ["not","in"]]
-    mkIn i v = \e -> In i e v
+    mkIn i v e = In i e v
 
 {-
 === between
@@ -1034,14 +1035,15 @@ and operator. This is the call to scalarExprB.
 
 betweenSuffix :: Parser (ScalarExpr -> ScalarExpr)
 betweenSuffix =
-    makeOp <$> Name Nothing <$> opName
+    makeOp . Name Nothing
+           <$> opName
            <*> scalarExprB
            <*> (keyword_ "and" *> scalarExprB)
   where
     opName = choice
              ["between" <$ keyword_ "between"
              ,"not between" <$ try (keywords_ ["not","between"])]
-    makeOp n b c = \a -> SpecialOp [n] [a,b,c]
+    makeOp n b c a = SpecialOp [n] [a,b,c]
 
 {-
 === quantified comparison
@@ -1224,7 +1226,7 @@ opTable bExpr =
 
         ,[prefixKeyword "not"]
 
-        ,if bExpr then [] else [binaryKeywordL "and"]
+        ,[binaryKeywordL "and" | not bExpr]
 
         ,[binaryKeywordL "or"]
 
@@ -1368,7 +1370,7 @@ from = keyword_ "from" *> commaSep1 tref
   where
     -- TODO: use P (a->) for the join tref suffix
     -- chainl or buildexpressionparser
-    tref = (nonJoinTref <?> "table ref") >>= optionSuffix (joinTrefSuffix)
+    tref = (nonJoinTref <?> "table ref") >>= optionSuffix joinTrefSuffix
     nonJoinTref = choice
         [parens $ choice
              [TRQueryExpr <$> queryExpr
@@ -1519,7 +1521,7 @@ queryExpr = E.makeExprParser qeterm qeOpTable
         mkSelect
         <$> option SQDefault duplicates
         <*> selectList
-        <*> (optional tableExpression) <?> "table expression"
+        <*> optional tableExpression <?> "table expression"
     mkSelect d sl Nothing =
         toQueryExpr $ makeSelect {msSetQuantifier = d, msSelectList = sl}
     mkSelect d sl (Just (TableExpression f w g h od ofs fe)) =
@@ -1621,7 +1623,7 @@ statementWithoutSemicolon = choice
     ]
 
 statement :: Parser Statement
-statement = statementWithoutSemicolon <* optional semi <|> semi *> pure EmptyStatement
+statement = statementWithoutSemicolon <* optional semi <|> EmptyStatement <$ semi
 
 createSchema :: Parser Statement
 createSchema = keyword_ "schema" >>
@@ -1629,7 +1631,7 @@ createSchema = keyword_ "schema" >>
 
 createTable :: Parser Statement
 createTable = do 
-  d <- queryDialect id
+  d <- askDialect id
   let 
     parseColumnDef = TableColumnDef <$> columnDef 
     parseConstraintDef = uncurry TableConstraintDef <$> tableConstraintDef
@@ -1675,7 +1677,7 @@ columnDef = ColumnDef <$> name <*> typeName
 tableConstraintDef :: Parser (Maybe [Name], TableConstraint)
 tableConstraintDef =
     (,)
-    <$> (optional (keyword_ "constraint" *> names))
+    <$> optional (keyword_ "constraint" *> names)
     <*> (unique <|> primaryKey <|> check <|> references)
   where
     unique = keyword_ "unique" >>
@@ -1725,7 +1727,7 @@ colConstraintDef =
     unique = ColUniqueConstraint <$ keyword_ "unique"
     primaryKey = do
       keywords_ ["primary", "key"] 
-      d <- queryDialect id
+      d <- askDialect id
       autoincrement <- if diAutoincrement d 
         then optional (keyword_ "autoincrement")
         else pure Nothing
@@ -2099,9 +2101,9 @@ makeKeywordTree sets =
     parseGroup :: [[Text]] -> Parser [Text]
     parseGroup l@((k:_):_) = do
         keyword_ k
-        let tls = catMaybes $ map safeTail l
+        let tls = mapMaybe safeTail l
             pr = (k:) <$> parseTrees tls
-        if (or $ map null tls)
+        if any null tls
           then pr <|> pure [k]
           else pr
     parseGroup _ = guard False >> fail "impossible"
@@ -2175,7 +2177,7 @@ unsignedInteger = read . T.unpack <$> sqlNumberTok True <?> "natural number"
 -- todo: work out the symbol parsing better
 
 symbol :: Text -> Parser Text
-symbol s = symbolTok (Just s) <?> (T.unpack s)
+symbol s = symbolTok (Just s) <?> T.unpack s
 
 singleCharSymbol :: Char -> Parser Char
 singleCharSymbol c = c <$ symbol (T.singleton c)
@@ -2205,12 +2207,12 @@ semi = singleCharSymbol ';' <?> ""
 -- = helper functions
 
 keyword :: Text -> Parser Text
-keyword k = unquotedIdentifierTok [] (Just k) <?> (T.unpack k)
+keyword k = unquotedIdentifierTok [] (Just k) <?> T.unpack k
 
 -- helper function to improve error messages
 
 keywords_ :: [Text] -> Parser ()
-keywords_ ks = mapM_ keyword_ ks <?> (T.unpack (T.unwords ks))
+keywords_ ks = mapM_ keyword_ ks <?> T.unpack (T.unwords ks)
 
 
 parens :: Parser a -> Parser a
@@ -2270,7 +2272,7 @@ stringTokExtend = do
          guard (s == "'" && e == "'")
          (s',e',y) <- stringTokExtend
          guard (s' == "'" && e' == "'")
-         pure $ (s,e,x <> y)
+         pure (s,e,x <> y)
         ,pure (s,e,x)
         ]
 
@@ -2361,12 +2363,8 @@ unquotedIdentifierTok blackList kw = token test Set.empty <?> ""
 -- dialect
 
 guardDialect :: (Dialect -> Bool) -> Parser ()
-guardDialect p = do
-    d <- ask
-    guard (p d)
+guardDialect p = guard . p =<< ask
 
-queryDialect :: (Dialect -> a) -> Parser a
-queryDialect f = do
-    d <- ask
-    pure $ f d
+askDialect :: (Dialect -> a) -> Parser a
+askDialect = asks
 
