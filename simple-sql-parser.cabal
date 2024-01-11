@@ -16,8 +16,8 @@ homepage:            http://jakewheat.github.io/simple-sql-parser/latest
 license:             BSD-3-Clause
 license-file:        LICENSE
 author:              Jake Wheat
-maintainer:          jakewheatmail@gmail.com
-copyright:           Copyright Jake Wheat 2013, 2014, 2015
+maintainer:          jakewheat@tutanota.com
+copyright:           Copyright 2013 - 2024, Jake Wheat and the simple-sql-parser contributors.
 category:            Database,Language
 build-type:          Simple
 extra-doc-files:     README,LICENSE,changelog
