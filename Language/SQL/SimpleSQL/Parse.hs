@@ -392,7 +392,7 @@ names = reverse <$> (((:[]) <$> name) <??*> anotherName)
   -- this will change when this is left factored
   where
     anotherName :: Parser ([Name] -> [Name])
-    anotherName = try ((:) <$> (symbol "." *> name))
+    anotherName = try ((:) <$> ((symbol "." *> name) <?> ""))
 
 {-
 = Type Names
@@ -1369,7 +1369,7 @@ from = keyword_ "from" *> commaSep1 tref
   where
     -- TODO: use P (a->) for the join tref suffix
     -- chainl or buildexpressionparser
-    tref = nonJoinTref >>= optionSuffix joinTrefSuffix
+    tref = (nonJoinTref <?> "table ref") >>= optionSuffix (joinTrefSuffix)
     nonJoinTref = choice
         [parens $ choice
              [TRQueryExpr <$> queryExpr
@@ -1387,11 +1387,11 @@ from = keyword_ "from" *> commaSep1 tref
         ] <??> aliasSuffix
     aliasSuffix = fromAlias <$$> TRAlias
     joinTrefSuffix t =
-        (TRJoin t <$> option False (True <$ keyword_ "natural")
+        ((TRJoin t <$> option False (True <$ keyword_ "natural")
                   <*> joinType
                   <*> nonJoinTref
                   <*> optional joinCondition)
-        >>= optionSuffix joinTrefSuffix
+        >>= optionSuffix joinTrefSuffix) <?> ""
 
 {-
 TODO: factor the join stuff to produce better error messages (and make
@@ -1520,7 +1520,7 @@ queryExpr = E.makeExprParser qeterm qeOpTable
         mkSelect
         <$> option SQDefault duplicates
         <*> selectList
-        <*> optional tableExpression
+        <*> (optional tableExpression) <?> "table expression"
     mkSelect d sl Nothing =
         makeSelect{qeSetQuantifier = d, qeSelectList = sl}
     mkSelect d sl (Just (TableExpression f w g h od ofs fe)) =
@@ -1534,10 +1534,10 @@ queryExpr = E.makeExprParser qeterm qeOpTable
         ,[E.InfixL $ setOp Except "except"
          ,E.InfixL $ setOp Union "union"]]
     setOp :: SetOperatorName -> Text -> Parser (QueryExpr -> QueryExpr -> QueryExpr)
-    setOp ctor opName = cq
+    setOp ctor opName = (cq
         <$> (ctor <$ keyword_ opName)
         <*> option SQDefault duplicates
-        <*> corr
+        <*> corr) <?> ""
     cq o d c q0 q1 = QueryExprSetOp q0 o d c q1
     corr = option Respectively (Corresponding <$ keyword_ "corresponding")
 
@@ -1559,12 +1559,12 @@ data TableExpression
       ,_teFetchFirst :: Maybe ScalarExpr}
 
 tableExpression :: Parser TableExpression
-tableExpression = mkTe <$> from
-                       <*> optional whereClause
-                       <*> option [] groupByClause
-                       <*> optional having
-                       <*> option [] orderBy
-                       <*> offsetFetch
+tableExpression = mkTe <$> (from <?> "from clause")
+                       <*> (optional whereClause <?> "where clause")
+                       <*> (option [] groupByClause <?> "group by clause")
+                       <*> (optional having <?> "having clause")
+                       <*> (option [] orderBy <?> "order by clause")
+                       <*> (offsetFetch <?> "")
  where
     mkTe f w g h od (ofs,fe) =
         TableExpression f w g h od ofs fe
@@ -2198,10 +2198,10 @@ closeBracket = singleCharSymbol ']'
 
 
 comma :: Parser Char
-comma = singleCharSymbol ','
+comma = singleCharSymbol ',' <?> ""
 
 semi :: Parser Char
-semi = singleCharSymbol ';'
+semi = singleCharSymbol ';' <?> ""
 
 -- = helper functions
 

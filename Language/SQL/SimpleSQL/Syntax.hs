@@ -64,7 +64,7 @@ module Language.SQL.SimpleSQL.Syntax
 
 import Data.Text (Text)
 
-import Data.Data
+import Data.Data (Data, Typeable)
 
 -- | Represents a value expression. This is used for the expressions
 -- in select lists. It is also used for expressions in where, group

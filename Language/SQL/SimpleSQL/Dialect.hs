@@ -14,7 +14,7 @@ module Language.SQL.SimpleSQL.Dialect
     ) where
 
 import Data.Text (Text)
-import Data.Data
+import Data.Data (Data,Typeable)
 
 -- | Used to set the dialect used for parsing and pretty printing,
 -- very unfinished at the moment.
