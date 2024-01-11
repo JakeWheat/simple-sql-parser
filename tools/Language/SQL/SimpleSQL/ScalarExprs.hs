@@ -196,9 +196,9 @@ subqueries = Group "unaryOperators" $ map (uncurry (TestScalarExpr ansi2011))
      ,QuantifiedComparison (Iden [Name Nothing "a"]) [Name Nothing "<="] CPAny ms)
     ]
   where
-    ms = makeSelect
-         {qeSelectList = [(Iden [Name Nothing "a"],Nothing)]
-         ,qeFrom = [TRSimple [Name Nothing "t"]]
+    ms = toQueryExpr $ makeSelect
+         {msSelectList = [(Iden [Name Nothing "a"],Nothing)]
+         ,msFrom = [TRSimple [Name Nothing "t"]]
          }
 
 miscOps :: TestItem

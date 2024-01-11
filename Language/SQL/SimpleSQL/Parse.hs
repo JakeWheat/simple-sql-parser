@@ -231,10 +231,9 @@ import Data.Maybe (catMaybes, isJust)
 import Data.Text (Text)
 import qualified Data.Text as T
 
-import Language.SQL.SimpleSQL.Syntax
+import Language.SQL.SimpleSQL.Syntax 
 import Language.SQL.SimpleSQL.Dialect
 import qualified Language.SQL.SimpleSQL.Lex as L
-
 
 ------------------------------------------------------------------------------
 
@@ -1522,7 +1521,7 @@ queryExpr = E.makeExprParser qeterm qeOpTable
         <*> selectList
         <*> (optional tableExpression) <?> "table expression"
     mkSelect d sl Nothing =
-        makeSelect{qeSetQuantifier = d, qeSelectList = sl}
+        toQueryExpr $ makeSelect {msSetQuantifier = d, msSelectList = sl}
     mkSelect d sl (Just (TableExpression f w g h od ofs fe)) =
         Select d sl f w g h od ofs fe
     values = keyword_ "values"

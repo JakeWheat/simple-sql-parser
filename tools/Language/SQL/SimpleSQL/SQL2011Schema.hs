@@ -1161,48 +1161,48 @@ defintely skip
 
     ,(TestStatement ansi2011
       "create view v as select * from t"
-     $ CreateView False [Name Nothing "v"] Nothing (makeSelect
-         {qeSelectList = [(Star, Nothing)]
-         ,qeFrom = [TRSimple [Name Nothing "t"]]
+     $ CreateView False [Name Nothing "v"] Nothing (toQueryExpr $ makeSelect
+         {msSelectList = [(Star, Nothing)]
+         ,msFrom = [TRSimple [Name Nothing "t"]]
          }) Nothing)
 
 
     ,(TestStatement ansi2011
       "create recursive view v as select * from t"
-     $ CreateView True [Name Nothing "v"] Nothing (makeSelect
-         {qeSelectList = [(Star, Nothing)]
-         ,qeFrom = [TRSimple [Name Nothing "t"]]
+     $ CreateView True [Name Nothing "v"] Nothing (toQueryExpr $ makeSelect
+         {msSelectList = [(Star, Nothing)]
+         ,msFrom = [TRSimple [Name Nothing "t"]]
          }) Nothing)
 
     ,(TestStatement ansi2011
       "create view v(a,b) as select * from t"
      $ CreateView False [Name Nothing "v"] (Just [Name Nothing "a", Name Nothing "b"])
-         (makeSelect
-         {qeSelectList = [(Star, Nothing)]
-         ,qeFrom = [TRSimple [Name Nothing "t"]]
+         (toQueryExpr $ makeSelect
+         {msSelectList = [(Star, Nothing)]
+         ,msFrom = [TRSimple [Name Nothing "t"]]
          }) Nothing)
 
 
     ,(TestStatement ansi2011
       "create view v as select * from t with check option"
-     $ CreateView False [Name Nothing "v"] Nothing (makeSelect
-         {qeSelectList = [(Star, Nothing)]
-         ,qeFrom = [TRSimple [Name Nothing "t"]]
+     $ CreateView False [Name Nothing "v"] Nothing (toQueryExpr $ makeSelect
+         {msSelectList = [(Star, Nothing)]
+         ,msFrom = [TRSimple [Name Nothing "t"]]
          }) (Just DefaultCheckOption))
 
     ,(TestStatement ansi2011
       "create view v as select * from t with cascaded check option"
-     $ CreateView False [Name Nothing "v"] Nothing (makeSelect
-         {qeSelectList = [(Star, Nothing)]
-         ,qeFrom = [TRSimple [Name Nothing "t"]]
+     $ CreateView False [Name Nothing "v"] Nothing (toQueryExpr $ makeSelect
+         {msSelectList = [(Star, Nothing)]
+         ,msFrom = [TRSimple [Name Nothing "t"]]
          }) (Just CascadedCheckOption))
 
     ,(TestStatement ansi2011
       "create view v as select * from t with local check option"
      $ CreateView False [Name Nothing "v"] Nothing
-         (makeSelect
-         {qeSelectList = [(Star, Nothing)]
-         ,qeFrom = [TRSimple [Name Nothing "t"]]
+         (toQueryExpr $ makeSelect
+         {msSelectList = [(Star, Nothing)]
+         ,msFrom = [TRSimple [Name Nothing "t"]]
          }) (Just LocalCheckOption))
 
 
@@ -1429,9 +1429,9 @@ defintely skip
       "create assertion t1_not_empty CHECK ((select count(*) from t1) > 0);"
      $ CreateAssertion [Name Nothing "t1_not_empty"]
         $ BinOp (SubQueryExpr SqSq $
-                 makeSelect
-                 {qeSelectList = [(App [Name Nothing "count"] [Star],Nothing)]
-                 ,qeFrom = [TRSimple [Name Nothing "t1"]]
+                 toQueryExpr $ makeSelect
+                 {msSelectList = [(App [Name Nothing "count"] [Star],Nothing)]
+                 ,msFrom = [TRSimple [Name Nothing "t1"]]
                  })
                 [Name Nothing ">"] (NumLit "0"))
 

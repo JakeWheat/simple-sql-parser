@@ -1528,14 +1528,14 @@ setFunctionSpecification = Group "set function specification"
       \   GROUPING(SalesQuota) AS Grouping\n\
       \FROM Sales.SalesPerson\n\
       \GROUP BY ROLLUP(SalesQuota);"
-     ,makeSelect
-      {qeSelectList = [(Iden [Name Nothing "SalesQuota"],Nothing)
+     ,toQueryExpr $ makeSelect
+      {msSelectList = [(Iden [Name Nothing "SalesQuota"],Nothing)
                       ,(App [Name Nothing "SUM"] [Iden [Name Nothing "SalesYTD"]]
                        ,Just (Name Nothing "TotalSalesYTD"))
                       ,(App [Name Nothing "GROUPING"] [Iden [Name Nothing "SalesQuota"]]
                        ,Just (Name Nothing "Grouping"))]
-      ,qeFrom = [TRSimple [Name Nothing "Sales",Name Nothing "SalesPerson"]]
-      ,qeGroupBy = [Rollup [SimpleGroup (Iden [Name Nothing "SalesQuota"])]]})
+      ,msFrom = [TRSimple [Name Nothing "Sales",Name Nothing "SalesPerson"]]
+      ,msGroupBy = [Rollup [SimpleGroup (Iden [Name Nothing "SalesQuota"])]]})
     ]
 
 {-
@@ -2528,14 +2528,14 @@ arrayValueConstructor = Group "array value constructor"
      ,Array (Iden [Name Nothing "array"])
       [Iden [Name Nothing "a"], Iden [Name Nothing "b"], Iden [Name Nothing "c"]])
     ,("array(select * from t)"
-      ,ArrayCtor (makeSelect
-                  {qeSelectList = [(Star,Nothing)]
-                  ,qeFrom = [TRSimple [Name Nothing "t"]]}))
+      ,ArrayCtor (toQueryExpr $ makeSelect
+                  {msSelectList = [(Star,Nothing)]
+                  ,msFrom = [TRSimple [Name Nothing "t"]]}))
     ,("array(select * from t order by a)"
-      ,ArrayCtor (makeSelect
-                  {qeSelectList = [(Star,Nothing)]
-                  ,qeFrom = [TRSimple [Name Nothing "t"]]
-                  ,qeOrderBy = [SortSpec (Iden [Name Nothing "a"])
+      ,ArrayCtor (toQueryExpr $ makeSelect
+                  {msSelectList = [(Star,Nothing)]
+                  ,msFrom = [TRSimple [Name Nothing "t"]]
+                  ,msOrderBy = [SortSpec (Iden [Name Nothing "a"])
                                     DirDefault NullsOrderDefault]}))
     ]
 
@@ -2625,12 +2625,12 @@ multisetValueConstructor = Group "multiset value constructor"
    $ map (uncurry (TestScalarExpr ansi2011))
    [("multiset[a,b,c]", MultisetCtor[Iden [Name Nothing "a"]
                                     ,Iden [Name Nothing "b"], Iden [Name Nothing "c"]])
-   ,("multiset(select * from t)", MultisetQueryCtor qe)
-   ,("table(select * from t)", MultisetQueryCtor qe)
+   ,("multiset(select * from t)", MultisetQueryCtor ms)
+   ,("table(select * from t)", MultisetQueryCtor ms)
    ]
   where
-    qe = makeSelect {qeSelectList = [(Star,Nothing)]
-                    ,qeFrom = [TRSimple [Name Nothing "t"]]}
+    ms = toQueryExpr $ makeSelect {msSelectList = [(Star,Nothing)]
+                    ,msFrom = [TRSimple [Name Nothing "t"]]}
 
 
 -- = 7 Query expressions
@@ -2761,9 +2761,9 @@ tableValueConstructor = Group "table value constructor"
              ,[BinOp (Iden [Name Nothing "a"]) [Name Nothing "+"]
                      (Iden [Name Nothing "b"])
               ,SubQueryExpr SqSq
-               (makeSelect
-                {qeSelectList = [(App [Name Nothing "count"] [Star],Nothing)]
-                ,qeFrom = [TRSimple [Name Nothing "t"]]})]])
+               (toQueryExpr $ makeSelect
+                {msSelectList = [(App [Name Nothing "count"] [Star],Nothing)]
+                ,msFrom = [TRSimple [Name Nothing "t"]]})]])
     ]
 
 {-
@@ -2794,9 +2794,9 @@ fromClause :: TestItem
 fromClause = Group "fromClause"
     $ map (uncurry (TestQueryExpr ansi2011))
     [("select * from tbl1,tbl2"
-     ,makeSelect
-      {qeSelectList = [(Star, Nothing)]
-      ,qeFrom = [TRSimple [Name Nothing "tbl1"], TRSimple [Name Nothing "tbl2"]]
+     ,toQueryExpr $ makeSelect
+      {msSelectList = [(Star, Nothing)]
+      ,msFrom = [TRSimple [Name Nothing "tbl1"], TRSimple [Name Nothing "tbl2"]]
       })]
 
 
@@ -2810,7 +2810,7 @@ Reference a table.
 tableReference :: TestItem
 tableReference = Group "table reference"
     $ map (uncurry (TestQueryExpr ansi2011))
-    [("select * from t", sel)
+    [("select * from t", toQueryExpr sel)
 
 {-
 <table reference> ::= <table factor> | <joined table>
@@ -2901,16 +2901,16 @@ TODO: only
 
 
     -- table or query name
-    ,("select * from t u", a sel)
-    ,("select * from t as u", a sel)
-    ,("select * from t u(a,b)", sel1 )
-    ,("select * from t as u(a,b)", sel1)
+    ,("select * from t u", toQueryExpr $ a sel)
+    ,("select * from t as u", toQueryExpr $ a sel)
+    ,("select * from t u(a,b)", toQueryExpr sel1 )
+    ,("select * from t as u(a,b)", toQueryExpr sel1)
     -- derived table TODO: realistic example
     ,("select * from (select * from t) u"
-     ,a $ sel {qeFrom = [TRQueryExpr sel]})
+     ,toQueryExpr $ a $ sel {msFrom = [TRQueryExpr $ toQueryExpr sel]})
     -- lateral TODO: realistic example
     ,("select * from lateral t"
-     ,af TRLateral sel)
+     ,toQueryExpr $ af TRLateral sel)
     -- TODO: bug, lateral should bind more tightly than the alias
     --,("select * from lateral t u"
     -- ,a $ af sel TRLateral)
@@ -2925,22 +2925,22 @@ TODO: only
      -- TODO: make it work
     --,("select * from table(a)", undefined)
     -- parens
-    ,("select * from (a join b)", jsel)
-    ,("select * from (a join b) u", a jsel)
-    ,("select * from ((a join b)) u", a $ af TRParens jsel)
-    ,("select * from ((a join b) u) u", a $ af TRParens $ a jsel)
+    ,("select * from (a join b)", toQueryExpr jsel)
+    ,("select * from (a join b) u", toQueryExpr $ a jsel)
+    ,("select * from ((a join b)) u", toQueryExpr $ a $ af TRParens jsel)
+    ,("select * from ((a join b) u) u", toQueryExpr $ a $ af TRParens $ a jsel)
     ]
   where
     sel = makeSelect
-          {qeSelectList = [(Star, Nothing)]
-          ,qeFrom = [TRSimple [Name Nothing "t"]]}
-    af f s = s {qeFrom = map f (qeFrom s)}
+          {msSelectList = [(Star, Nothing)]
+          ,msFrom = [TRSimple [Name Nothing "t"]]}
+    af f s = s {msFrom = map f (msFrom s)}
     a s = af (\x -> TRAlias x $ Alias (Name Nothing "u") Nothing) s
     sel1 = makeSelect
-          {qeSelectList = [(Star, Nothing)]
-          ,qeFrom = [TRAlias (TRSimple [Name Nothing "t"])
+          {msSelectList = [(Star, Nothing)]
+          ,msFrom = [TRAlias (TRSimple [Name Nothing "t"])
                      $ Alias (Name Nothing "u") $ Just [Name Nothing "a", Name Nothing "b"]]}
-    jsel = sel {qeFrom =
+    jsel = sel {msFrom =
                 [TRParens $ TRJoin (TRSimple [Name Nothing "a"])
                                    False
                                    JInner
@@ -3032,9 +3032,9 @@ joinedTable = Group "joined table"
      ,sel $ TRJoin a True JFull b Nothing)
     ]
   where
-    sel t = makeSelect
-            {qeSelectList = [(Star, Nothing)]
-            ,qeFrom = [t]}
+    sel t = toQueryExpr $ makeSelect
+            {msSelectList = [(Star, Nothing)]
+            ,msFrom = [t]}
     a = TRSimple [Name Nothing "a"]
     b = TRSimple [Name Nothing "b"]
 
@@ -3055,10 +3055,10 @@ whereClause :: TestItem
 whereClause = Group "where clause"
     $ map (uncurry (TestQueryExpr ansi2011))
     [("select * from t where a = 5"
-    ,makeSelect
-     {qeSelectList = [(Star,Nothing)]
-     ,qeFrom = [TRSimple [Name Nothing "t"]]
-     ,qeWhere = Just $ BinOp (Iden [Name Nothing "a"]) [Name Nothing "="] (NumLit "5")})]
+    ,toQueryExpr $ makeSelect
+     {msSelectList = [(Star,Nothing)]
+     ,msFrom = [TRSimple [Name Nothing "t"]]
+     ,msWhere = Just $ BinOp (Iden [Name Nothing "a"]) [Name Nothing "="] (NumLit "5")})]
 
 {-
 == 7.9 <group by clause>
@@ -3117,11 +3117,11 @@ groupByClause :: TestItem
 groupByClause = Group "group by clause"
     $ map (uncurry (TestQueryExpr ansi2011))
     [("select a,sum(x) from t group by a"
-     ,qe [SimpleGroup $ Iden [Name Nothing "a"]])
+     ,toQueryExpr $ ms [SimpleGroup $ Iden [Name Nothing "a"]])
      ,("select a,sum(x) from t group by a collate c"
-     ,qe [SimpleGroup $ Collate (Iden [Name Nothing "a"]) [Name Nothing "c"]])
+     ,toQueryExpr $ ms [SimpleGroup $ Collate (Iden [Name Nothing "a"]) [Name Nothing "c"]])
     ,("select a,b,sum(x) from t group by a,b"
-     ,qex [SimpleGroup $ Iden [Name Nothing "a"]
+     ,toQueryExpr $ msx [SimpleGroup $ Iden [Name Nothing "a"]
           ,SimpleGroup $ Iden [Name Nothing "b"]])
     -- todo: group by set quantifier
     --,("select a,sum(x) from t group by distinct a"
@@ -3129,28 +3129,33 @@ groupByClause = Group "group by clause"
     --,("select a,sum(x) from t group by all a"
     -- ,undefined)
     ,("select a,b,sum(x) from t group by rollup(a,b)"
-     ,qex [Rollup [SimpleGroup $ Iden [Name Nothing "a"]
+     ,toQueryExpr $ msx [Rollup [SimpleGroup $ Iden [Name Nothing "a"]
                   ,SimpleGroup $ Iden [Name Nothing "b"]]])
     ,("select a,b,sum(x) from t group by cube(a,b)"
-     ,qex [Cube [SimpleGroup $ Iden [Name Nothing "a"]
+     ,toQueryExpr $ msx [Cube [SimpleGroup $ Iden [Name Nothing "a"]
                 ,SimpleGroup $ Iden [Name Nothing "b"]]])
     ,("select a,b,sum(x) from t group by grouping sets((),(a,b))"
-     ,qex [GroupingSets [GroupingParens []
+     ,toQueryExpr $ msx [GroupingSets [GroupingParens []
                         ,GroupingParens [SimpleGroup $ Iden [Name Nothing "a"]
                                         ,SimpleGroup $ Iden [Name Nothing "b"]]]])
     ,("select sum(x) from t group by ()"
-     ,let x = qe [GroupingParens []]
-      in x {qeSelectList = tail $ qeSelectList x})
+     ,toQueryExpr $ makeSelect
+           {msSelectList = [(App [Name Nothing "sum"] [Iden [Name Nothing "x"]], Nothing)]
+           ,msFrom = [TRSimple [Name Nothing "t"]]
+           ,msGroupBy = [GroupingParens []]})
     ]
   where
-    qe g = makeSelect
-           {qeSelectList = [(Iden [Name Nothing "a"], Nothing)
+    ms g = makeSelect
+           {msSelectList = [(Iden [Name Nothing "a"], Nothing)
                            ,(App [Name Nothing "sum"] [Iden [Name Nothing "x"]], Nothing)]
-           ,qeFrom = [TRSimple [Name Nothing "t"]]
-           ,qeGroupBy = g}
-    qex g = let x = qe g
-            in x {qeSelectList = let [a,b] = qeSelectList x
-                                 in [a,(Iden [Name Nothing "b"],Nothing),b]}
+           ,msFrom = [TRSimple [Name Nothing "t"]]
+           ,msGroupBy = g}
+    msx g = makeSelect
+           {msSelectList = [(Iden [Name Nothing "a"], Nothing)
+                           ,(Iden [Name Nothing "b"],Nothing)
+                           ,(App [Name Nothing "sum"] [Iden [Name Nothing "x"]], Nothing)]
+           ,msFrom = [TRSimple [Name Nothing "t"]]
+           ,msGroupBy = g}
 
 {-
 == 7.10 <having clause>
@@ -3167,12 +3172,12 @@ havingClause :: TestItem
 havingClause = Group "having clause"
     $ map (uncurry (TestQueryExpr ansi2011))
     [("select a,sum(x) from t group by a having sum(x) > 1000"
-     ,makeSelect
-      {qeSelectList = [(Iden [Name Nothing "a"], Nothing)
+     ,toQueryExpr $ makeSelect
+      {msSelectList = [(Iden [Name Nothing "a"], Nothing)
                       ,(App [Name Nothing "sum"] [Iden [Name Nothing "x"]], Nothing)]
-      ,qeFrom = [TRSimple [Name Nothing "t"]]
-      ,qeGroupBy = [SimpleGroup $ Iden [Name Nothing "a"]]
-      ,qeHaving = Just $ BinOp (App [Name Nothing "sum"] [Iden [Name Nothing "x"]])
+      ,msFrom = [TRSimple [Name Nothing "t"]]
+      ,msGroupBy = [SimpleGroup $ Iden [Name Nothing "a"]]
+      ,msHaving = Just $ BinOp (App [Name Nothing "sum"] [Iden [Name Nothing "x"]])
                                [Name Nothing ">"]
                                (NumLit "1000")})
     ]
@@ -3293,27 +3298,27 @@ Specify a table derived from the result of a <table expression>.
 querySpecification :: TestItem
 querySpecification = Group "query specification"
     $ map (uncurry (TestQueryExpr ansi2011))
-    [("select a from t",qe)
-    ,("select all a from t",qe {qeSetQuantifier = All})
-    ,("select distinct a from t",qe {qeSetQuantifier = Distinct})
-    ,("select * from t", qe {qeSelectList = [(Star,Nothing)]})
+    [("select a from t",toQueryExpr ms)
+    ,("select all a from t",toQueryExpr $ ms {msSetQuantifier = All})
+    ,("select distinct a from t",toQueryExpr $ ms {msSetQuantifier = Distinct})
+    ,("select * from t", toQueryExpr $ ms {msSelectList = [(Star,Nothing)]})
     ,("select a.* from t"
-     ,qe {qeSelectList = [(BinOp (Iden [Name Nothing "a"]) [Name Nothing "."] Star
+     ,toQueryExpr $ ms {msSelectList = [(BinOp (Iden [Name Nothing "a"]) [Name Nothing "."] Star
                            ,Nothing)]})
     ,("select a b from t"
-     ,qe {qeSelectList = [(Iden [Name Nothing "a"], Just $ Name Nothing "b")]})
+     ,toQueryExpr $ ms {msSelectList = [(Iden [Name Nothing "a"], Just $ Name Nothing "b")]})
     ,("select a as b from t"
-     ,qe {qeSelectList = [(Iden [Name Nothing "a"], Just $ Name Nothing "b")]})
+     ,toQueryExpr $ ms {msSelectList = [(Iden [Name Nothing "a"], Just $ Name Nothing "b")]})
     ,("select a,b from t"
-     ,qe {qeSelectList = [(Iden [Name Nothing "a"], Nothing)
+     ,toQueryExpr $ ms {msSelectList = [(Iden [Name Nothing "a"], Nothing)
                          ,(Iden [Name Nothing "b"], Nothing)]})
     -- todo: all field reference alias
     --,("select * as (a,b) from t",undefined)
     ]
   where
-    qe = makeSelect
-         {qeSelectList = [(Iden [Name Nothing "a"], Nothing)]
-         ,qeFrom = [TRSimple [Name Nothing "t"]]
+    ms = makeSelect
+         {msSelectList = [(Iden [Name Nothing "a"], Nothing)]
+         ,msFrom = [TRSimple [Name Nothing "t"]]
          }
 
 {-
@@ -3430,22 +3435,22 @@ orderOffsetFetchQueryExpression = Group "order, offset, fetch query expression"
     $ map (uncurry (TestQueryExpr ansi2011))
     [-- todo: finish tests for order offset and fetch
      ("select a from t order by a"
-     ,qe {qeOrderBy = [SortSpec (Iden [Name Nothing "a"])
+     ,toQueryExpr $ ms {msOrderBy = [SortSpec (Iden [Name Nothing "a"])
                            DirDefault NullsOrderDefault]})
     ,("select a from t offset 5 row"
-     ,qe {qeOffset = Just $ NumLit "5"})
+     ,toQueryExpr $ ms {msOffset = Just $ NumLit "5"})
     ,("select a from t offset 5 rows"
-     ,qe {qeOffset = Just $ NumLit "5"})
+     ,toQueryExpr $ ms {msOffset = Just $ NumLit "5"})
     ,("select a from t fetch first 5 row only"
-     ,qe {qeFetchFirst = Just $ NumLit "5"})
+     ,toQueryExpr $ ms {msFetchFirst = Just $ NumLit "5"})
     -- todo: support with ties and percent in fetch
     --,("select a from t fetch next 5 rows with ties"
     --,("select a from t fetch first 5 percent rows only"
     ]
  where
-    qe = makeSelect
-         {qeSelectList = [(Iden [Name Nothing "a"], Nothing)]
-         ,qeFrom = [TRSimple [Name Nothing "t"]]
+    ms = makeSelect
+         {msSelectList = [(Iden [Name Nothing "a"], Nothing)]
+         ,msFrom = [TRSimple [Name Nothing "t"]]
          }
 
 
@@ -3813,20 +3818,20 @@ quantifiedComparisonPredicate = Group "quantified comparison predicate"
     $ map (uncurry (TestScalarExpr ansi2011))
 
     [("a = any (select * from t)"
-     ,QuantifiedComparison (Iden [Name Nothing "a"]) [Name Nothing "="] CPAny qe)
+     ,QuantifiedComparison (Iden [Name Nothing "a"]) [Name Nothing "="] CPAny ms)
     ,("a <= some (select * from t)"
-     ,QuantifiedComparison (Iden [Name Nothing "a"]) [Name Nothing "<="] CPSome qe)
+     ,QuantifiedComparison (Iden [Name Nothing "a"]) [Name Nothing "<="] CPSome ms)
     ,("a > all (select * from t)"
-     ,QuantifiedComparison (Iden [Name Nothing "a"]) [Name Nothing ">"] CPAll qe)
+     ,QuantifiedComparison (Iden [Name Nothing "a"]) [Name Nothing ">"] CPAll ms)
     ,("(a,b) <> all (select * from t)"
      ,QuantifiedComparison
       (SpecialOp [Name Nothing "rowctor"] [Iden [Name Nothing "a"]
-                                  ,Iden [Name Nothing "b"]]) [Name Nothing "<>"] CPAll qe)
+                                  ,Iden [Name Nothing "b"]]) [Name Nothing "<>"] CPAll ms)
     ]
   where
-    qe = makeSelect
-         {qeSelectList = [(Star,Nothing)]
-         ,qeFrom = [TRSimple [Name Nothing "t"]]}
+    ms = toQueryExpr $ makeSelect
+         {msSelectList = [(Star,Nothing)]
+         ,msFrom = [TRSimple [Name Nothing "t"]]}
 
 {-
 == 8.10 <exists predicate>
@@ -3842,10 +3847,10 @@ existsPredicate = Group "exists predicate"
     $ map (uncurry (TestScalarExpr ansi2011))
     [("exists(select * from t where a = 4)"
      ,SubQueryExpr SqExists
-      $ makeSelect
-        {qeSelectList = [(Star,Nothing)]
-        ,qeFrom = [TRSimple [Name Nothing "t"]]
-        ,qeWhere = Just (BinOp (Iden [Name Nothing "a"]) [Name Nothing "="] (NumLit "4"))
+      $ toQueryExpr $ makeSelect
+        {msSelectList = [(Star,Nothing)]
+        ,msFrom = [TRSimple [Name Nothing "t"]]
+        ,msWhere = Just (BinOp (Iden [Name Nothing "a"]) [Name Nothing "="] (NumLit "4"))
         }
      )]
 
@@ -3863,10 +3868,10 @@ uniquePredicate = Group "unique predicate"
     $ map (uncurry (TestScalarExpr ansi2011))
     [("unique(select * from t where a = 4)"
      ,SubQueryExpr SqUnique
-      $ makeSelect
-        {qeSelectList = [(Star,Nothing)]
-        ,qeFrom = [TRSimple [Name Nothing "t"]]
-        ,qeWhere = Just (BinOp (Iden [Name Nothing "a"]) [Name Nothing "="] (NumLit "4"))
+      $ toQueryExpr $ makeSelect
+        {msSelectList = [(Star,Nothing)]
+        ,msFrom = [TRSimple [Name Nothing "t"]]
+        ,msWhere = Just (BinOp (Iden [Name Nothing "a"]) [Name Nothing "="] (NumLit "4"))
         }
      )]
 
@@ -3902,19 +3907,19 @@ matchPredicate :: TestItem
 matchPredicate = Group "match predicate"
     $ map (uncurry (TestScalarExpr ansi2011))
     [("a match (select a from t)"
-     ,Match (Iden [Name Nothing "a"]) False qe)
+     ,Match (Iden [Name Nothing "a"]) False $ toQueryExpr ms)
     ,("(a,b) match (select a,b from t)"
      ,Match (SpecialOp [Name Nothing "rowctor"]
-             [Iden [Name Nothing "a"], Iden [Name Nothing "b"]]) False qea)
+             [Iden [Name Nothing "a"], Iden [Name Nothing "b"]]) False $ toQueryExpr msa)
     ,("(a,b) match unique (select a,b from t)"
      ,Match (SpecialOp [Name Nothing "rowctor"]
-             [Iden [Name Nothing "a"], Iden [Name Nothing "b"]]) True qea)
+             [Iden [Name Nothing "a"], Iden [Name Nothing "b"]]) True $ toQueryExpr msa)
     ]
   where
-    qe = makeSelect
-         {qeSelectList = [(Iden [Name Nothing "a"],Nothing)]
-         ,qeFrom = [TRSimple [Name Nothing "t"]]}
-    qea = qe {qeSelectList = qeSelectList qe
+    ms = makeSelect
+         {msSelectList = [(Iden [Name Nothing "a"],Nothing)]
+         ,msFrom = [TRSimple [Name Nothing "t"]]}
+    msa = ms {msSelectList = msSelectList ms
                              <> [(Iden [Name Nothing "b"],Nothing)]}
 
 {-
@@ -4480,36 +4485,36 @@ sortSpecificationList :: TestItem
 sortSpecificationList = Group "sort specification list"
     $ map (uncurry (TestQueryExpr ansi2011))
     [("select * from t order by a"
-     ,qe {qeOrderBy = [SortSpec (Iden [Name Nothing "a"])
+     ,toQueryExpr $ ms {msOrderBy = [SortSpec (Iden [Name Nothing "a"])
                            DirDefault NullsOrderDefault]})
     ,("select * from t order by a,b"
-     ,qe {qeOrderBy = [SortSpec (Iden [Name Nothing "a"])
+     ,toQueryExpr $ ms {msOrderBy = [SortSpec (Iden [Name Nothing "a"])
                            DirDefault NullsOrderDefault
                       ,SortSpec (Iden [Name Nothing "b"])
                            DirDefault NullsOrderDefault]})
     ,("select * from t order by a asc,b"
-     ,qe {qeOrderBy = [SortSpec (Iden [Name Nothing "a"])
+     ,toQueryExpr $ ms {msOrderBy = [SortSpec (Iden [Name Nothing "a"])
                            Asc NullsOrderDefault
                       ,SortSpec (Iden [Name Nothing "b"])
                            DirDefault NullsOrderDefault]})
     ,("select * from t order by a desc,b"
-     ,qe {qeOrderBy = [SortSpec (Iden [Name Nothing "a"])
+     ,toQueryExpr $ ms {msOrderBy = [SortSpec (Iden [Name Nothing "a"])
                            Desc NullsOrderDefault
                       ,SortSpec (Iden [Name Nothing "b"])
                            DirDefault NullsOrderDefault]})
     ,("select * from t order by a collate x desc,b"
-     ,qe {qeOrderBy = [SortSpec
+     ,toQueryExpr $ ms {msOrderBy = [SortSpec
                            (Collate (Iden [Name Nothing "a"]) [Name Nothing "x"])
                            Desc NullsOrderDefault
                       ,SortSpec (Iden [Name Nothing "b"])
                            DirDefault NullsOrderDefault]})
     ,("select * from t order by 1,2"
-     ,qe {qeOrderBy = [SortSpec (NumLit "1")
+     ,toQueryExpr $ ms {msOrderBy = [SortSpec (NumLit "1")
                            DirDefault NullsOrderDefault
                       ,SortSpec (NumLit "2")
                            DirDefault NullsOrderDefault]})
     ]
   where
-    qe = makeSelect
-         {qeSelectList = [(Star,Nothing)]
-         ,qeFrom = [TRSimple [Name Nothing "t"]]}
+    ms = makeSelect
+         {msSelectList = [(Star,Nothing)]
+         ,msFrom = [TRSimple [Name Nothing "t"]]}

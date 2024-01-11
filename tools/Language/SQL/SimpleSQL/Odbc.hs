@@ -32,18 +32,18 @@ odbcTests = Group "odbc" [
        ,Group "outer join" [
              TestQueryExpr ansi2011 {diOdbc=True}
              "select * from {oj t1 left outer join t2 on expr}"
-             $ makeSelect
-                   {qeSelectList = [(Star,Nothing)]
-                   ,qeFrom = [TROdbc $ TRJoin (TRSimple [Name Nothing "t1"]) False JLeft (TRSimple [Name Nothing "t2"])
+             $ toQueryExpr $ makeSelect
+                   {msSelectList = [(Star,Nothing)]
+                   ,msFrom = [TROdbc $ TRJoin (TRSimple [Name Nothing "t1"]) False JLeft (TRSimple [Name Nothing "t2"])
                                          (Just $ JoinOn $ Iden [Name Nothing "expr"])]}]
        ,Group "check parsing bugs" [
              TestQueryExpr ansi2011 {diOdbc=True}
              "select {fn CONVERT(cint,SQL_BIGINT)} from t;"
-             $ makeSelect
-                   {qeSelectList = [(OdbcFunc (ap "CONVERT"
+             $ toQueryExpr $ makeSelect
+                   {msSelectList = [(OdbcFunc (ap "CONVERT"
                                                       [iden "cint"
                                                       ,iden "SQL_BIGINT"]), Nothing)]
-                   ,qeFrom = [TRSimple [Name Nothing "t"]]}]
+                   ,msFrom = [TRSimple [Name Nothing "t"]]}]
        ]
   where
     e = TestScalarExpr ansi2011 {diOdbc = True}

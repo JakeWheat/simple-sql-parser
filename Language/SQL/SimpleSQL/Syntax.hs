@@ -23,7 +23,6 @@ module Language.SQL.SimpleSQL.Syntax
     ,OdbcLiteralType(..)
      -- * Query expressions
     ,QueryExpr(..)
-    ,makeSelect
     ,SetOperatorName(..)
     ,Corresponding(..)
     ,Alias(..)
@@ -60,6 +59,10 @@ module Language.SQL.SimpleSQL.Syntax
     ,GrantOptionFor(..)
      -- * Comment
     ,Comment(..)
+
+    ,makeSelect
+    ,toQueryExpr
+    ,MakeSelect(..)
     ) where
 
 import Data.Text (Text)
@@ -376,31 +379,6 @@ TODO: add queryexpr parens to deal with e.g.
 (select 1 union select 2) union select 3
 I'm not sure if this is valid syntax or not.
 -}
-
--- | Helper/'default' value for query exprs to make creating query
--- expr values a little easier. It is defined like this:
---
--- > makeSelect :: QueryExpr
--- > makeSelect = Select {qeSetQuantifier = SQDefault
--- >                     ,qeSelectList = []
--- >                     ,qeFrom = []
--- >                     ,qeWhere = Nothing
--- >                     ,qeGroupBy = []
--- >                     ,qeHaving = Nothing
--- >                     ,qeOrderBy = []
--- >                     ,qeOffset = Nothing
--- >                     ,qeFetchFirst = Nothing}
-
-makeSelect :: QueryExpr
-makeSelect = Select {qeSetQuantifier = SQDefault
-                    ,qeSelectList = []
-                    ,qeFrom = []
-                    ,qeWhere = Nothing
-                    ,qeGroupBy = []
-                    ,qeHaving = Nothing
-                    ,qeOrderBy = []
-                    ,qeOffset = Nothing
-                    ,qeFetchFirst = Nothing}
 
 -- | Represents the Distinct or All keywords, which can be used
 -- before a select list, in an aggregate/window function
@@ -744,3 +722,50 @@ data PrivilegeAction =
 newtype Comment = BlockComment Text
                deriving (Eq,Show,Read,Data,Typeable)
 
+data MakeSelect
+    = MakeSelect
+    {msSetQuantifier :: SetQuantifier
+    ,msSelectList :: [(ScalarExpr,Maybe Name)]
+    ,msFrom :: [TableRef]
+    ,msWhere :: Maybe ScalarExpr
+    ,msGroupBy :: [GroupingExpr]
+    ,msHaving :: Maybe ScalarExpr
+    ,msOrderBy :: [SortSpec]
+    ,msOffset :: Maybe ScalarExpr
+    ,msFetchFirst :: Maybe ScalarExpr
+    }
+
+-- | Helper/'default' value for query exprs to make creating query
+-- expr values a little easier. It is defined like this:
+--
+-- > makeSelect :: MakeSelect
+-- > makeSelect
+-- >     = MakeSelect
+-- >     {msSetQuantifier = SQDefault
+-- >     ,msSelectList = []
+-- >     ,msFrom = []
+-- >     ,msWhere = Nothing
+-- >     ,msGroupBy = []
+-- >     ,msHaving = Nothing
+-- >     ,msOrderBy = []
+-- >     ,msOffset = Nothing
+-- >     ,msFetchFirst = Nothing}
+-- >
+-- > Example, to create a select query expression with a select list 'sl':
+-- >   toQueryExpr $ makeSelect {msSelectList = sl}
+
+makeSelect :: MakeSelect
+makeSelect
+    = MakeSelect
+    {msSetQuantifier = SQDefault
+    ,msSelectList = []
+    ,msFrom = []
+    ,msWhere = Nothing
+    ,msGroupBy = []
+    ,msHaving = Nothing
+    ,msOrderBy = []
+    ,msOffset = Nothing
+    ,msFetchFirst = Nothing}
+
+toQueryExpr :: MakeSelect -> QueryExpr
+toQueryExpr (MakeSelect q sl f w g h o ff fetch) = Select q sl f w g h o ff fetch

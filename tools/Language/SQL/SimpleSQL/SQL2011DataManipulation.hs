@@ -184,15 +184,15 @@ sql2011DataManipulationTests = Group "sql 2011 data manipulation tests"
 
     ,(TestStatement ansi2011 "insert into t select * from u"
      $ Insert [Name Nothing "t"] Nothing
-       $ InsertQuery makeSelect
-         {qeSelectList = [(Star, Nothing)]
-         ,qeFrom = [TRSimple [Name Nothing "u"]]})
+       $ InsertQuery $ toQueryExpr $ makeSelect
+         {msSelectList = [(Star, Nothing)]
+         ,msFrom = [TRSimple [Name Nothing "u"]]})
 
     ,(TestStatement ansi2011 "insert into t(a,b,c) select * from u"
      $ Insert [Name Nothing "t"] (Just [Name Nothing "a", Name Nothing "b", Name Nothing "c"])
-       $ InsertQuery makeSelect
-         {qeSelectList = [(Star, Nothing)]
-         ,qeFrom = [TRSimple [Name Nothing "u"]]})
+       $ InsertQuery $ toQueryExpr $ makeSelect
+         {msSelectList = [(Star, Nothing)]
+         ,msFrom = [TRSimple [Name Nothing "u"]]})
 
     ,(TestStatement ansi2011 "insert into t default values"
      $ Insert [Name Nothing "t"] Nothing DefaultInsertValues)

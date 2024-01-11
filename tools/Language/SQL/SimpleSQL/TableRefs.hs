@@ -104,5 +104,5 @@ tableRefTests = Group "tableRefTests" $ map (uncurry (TestQueryExpr ansi2011))
            False JCross (TRSimple [Name Nothing "v"]) Nothing])
     ]
   where
-    ms f = makeSelect {qeSelectList = [(Iden [Name Nothing "a"],Nothing)]
-                      ,qeFrom = f}
+    ms f = toQueryExpr $ makeSelect {msSelectList = [(Iden [Name Nothing "a"],Nothing)]
+                                    ,msFrom = f}

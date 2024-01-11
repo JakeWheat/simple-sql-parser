@@ -30,7 +30,7 @@ backtickQuotes = Group "backtickQuotes" (map (uncurry (TestScalarExpr mysql))
 limit :: TestItem
 limit = Group "queries" ( map (uncurry (TestQueryExpr mysql))
     [("select * from t limit 5"
-     ,sel {qeFetchFirst = Just (NumLit "5")}
+     ,toQueryExpr $ sel {msFetchFirst = Just (NumLit "5")}
      )
     ]
     ++ [ParseQueryExprFails mysql "select a from t fetch next 10 rows only;"
@@ -38,6 +38,6 @@ limit = Group "queries" ( map (uncurry (TestQueryExpr mysql))
     )
   where
     sel = makeSelect
-          {qeSelectList = [(Star, Nothing)]
-          ,qeFrom = [TRSimple [Name Nothing "t"]]
+          {msSelectList = [(Star, Nothing)]
+          ,msFrom = [TRSimple [Name Nothing "t"]]
           }
