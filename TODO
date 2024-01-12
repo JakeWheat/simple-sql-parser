@@ -1,406 +1,96 @@
-This file is completely out of date.
+Some random notes on what could be done with the package in the future. None of this is scheduled.
 
+The most important thing is adding more support for needed SQL. Everything else is very secondary to this.
+
+Infrastructure
+--------------
+
+write a CI script
+
+decide if to use a code formatter - pro: it will preserve git blame stuff better
+
+switch the website to use markdown
+
+try to improve the usability of the rendered test cases
+
+add automated tests for the examples on the website
+
+add a few more examples to the website:
+  parse some sql and detect if it has a particular feature
+  do a transformation on some sql
+    idea: convert tpch to sql server syntax
+  generate some sql
+  format some sql
+  check if some sql parses
+  trivial documentation generation for ddl
+  trivial lint checker
+  demos:
+  crunch sql: this takes sql and tries to make it as small as possible
+    (combining nested selects where possible and inlining
+     ctes)
+  expand sql:
+     breaks apart complex sql using nested queries and ctes, try to make
+     queries easier to understand in stages
+
+write a beginners tutorial for how to add support for some new sql syntax
+  show how to develop parsers interactively, then tidy them up for merging
+  to the main branch
+
+review code coverage and see if there are any important gaps to fill in
+set up hlint to run easily
+
+Code
 ----
 
-medium tasks next release
+There could be more negative tests for lexing and dialect options.
 
-review alters, and think about adding rename versions
-  which are really common and useful, but not in ansi
-  https://github.com/JakeWheat/simple-sql-parser/issues/20
+Check the fixity in the tableref parsing, see if there is anywhere else that needs tweaking.
 
-try to get some control over the pretty printing and the error
-messages by creating some dumps of pretty printing and error messages,
-then can rerun these every so often to see how they've changed
+Do all sql dialects have compatible fixities? If not, want to add dialect control over the fixity.
 
-finish off going through the keyword list
+add parse error recovery
 
-do more examples
-what are the use cases?
-  sql generator - queries
-  sql generator - ddl
-  parsing some sql - for what purpose
-    generating documentation of ddl
-    write some sort of trivial sql engine or wrapper around something?
-    write something that takes sql, modifies it, and outputs the result
-    lint checker?
+add ability to type check:
+  uuagc still seems like the nicest option?
+  uuagc has an option to attach to an external ast now, so could
+    put the type checker in a separate package
 
-do an example of adding some new syntax
--> seems quite a few people are using this
-  and there are some feature requests
-  try to give people a path to implement features themselves
+figure out how to support parsing some sql, transforming it, pretty printing it
+  while perserving as much of the original formatting as possible, and all the comments
+  an intermediate step is to minimise the difference in non whitespace/comment tokens
+  when you parse then pretty print any supported sql
 
-goals:
+add an annotation field to the syntax to make it more useful
+  add source positions to this annotation when parsing
 
-1. if someone might want to use this, give them some toy examples to
-help bootstrap them
-
-2. see if can encourage people who want some missing sql to add it
-themselves
-
-
-
-review main missing sql bits - focus on more mainstream things
-  could also review main dialects
-
-
-syntax from hssqlppp:
-  query hints, join hints
-
-unescaping identifiers and strings
-continuation strings testing
-
-add tests for comment pretty printing:
-  use pretty then lex
-
-work on better dialect design: more basic customizability and rule /
-   callback driven
-
-review/fix documentation and website
-fix the groups for generated tests
-
-check the .cabal file module lists
-
-
-medium tasks next release + 1
-add annotation
-lots more negative tests especially for lexing, and for dialects
-escape, uescape
-post hoc fixity
-switch pretty printing to use ansi-wl-pprint
-  http://conscientiousprogrammer.com/blog/2015/12/17/24-days-of-hackage-2015-day-17-ansi-wl-pprint-avoiding-string-hacking/
-
-
-error message analysis:
-start with a set of bad sql, generate & write
-get error messages:
-  simplified ssp parser
-  tutorial parser
-  hssqlppp
-  and also:
-    postgres
-    mysql
-    sqlserver
-    oracle
-    db2
-    vertica?
-evaluate other parsing libs for error messages and general
-   feasibility, shortlist is:
-   megaparsec
-   trifecta
-   uuparsinglib
-   other desirables from parsing lib:
-     incremental parsing
-     context dependent lexer switch
-     continue after error
-
-create some benchmarks (to measure performance when modifying for
-   error messages, and to compare different parser libs for instance)
-
-use quickcheck in lexing
-
-What will make this library nice and complete:
-List of all the SQL that it doesn't support
-annotation, with positions coming from the parser
-dml
-ddl
-procedural sql
-dialects: reasonable support for sql server and oracle, and maybe also
-   postgres, mysql, teradata, redshift, sqlite, db2, sap stuff, etc.
-good work on error messages
-fixity code + get it right
-review names of syntax
-defaults handled better (use default/nothing instead of substituting
-   in the default)
-evaluate uu parsing lib -> could at least remove need to do left
-   factoring, and maybe help make better error messages also
------
-
-work on reasonable subset of sql which is similar to the current
-   subset and smaller than the complete 2011 target: describe the
-   exact target set for the next release
-
-improve the dialect testing: add notes on what to do
-
-position annotation in the syntax
-
-simple stuff for error message and pretty printing monitoring:
-
-create a sample set of valid statements to pretty print
-pretty print these
-compare every so often to catch regressions and approve improvements
-start with tpch, and then add some others
-
-same with invalid statements to see the error messages
-start with some simple scalar exprs and a big query expr which has
-   stuff (either tokens, whitespace or junk strings)
-   semi-systematically added and/or removed
-
-fixing the non idiomatic (pun!) suffix parsing:
-  typename parsing
-  identifier/app/agg/window parsing
-  join parsing in trefs (use chain? - tricky because of postfix onExpr)
-  top level and queryexprs parsing
+can you make it properly extensible? the goal is for users to work with asts that
+  represent only the dialect they are working in
 
 review names in the syntax for correspondence with sql standard, avoid
-   gratuitous differences
+  gratuitous differences
 
-touch up the expr hack as best as can, start thinking about
-   replacement for buildExprParser, maybe this can be a separate
-   general package, or maybe something like this already exists
+reduce use of booleans in the syntax
 
-careful review of token parses wrt trailing delimiters/junk - already
-   caught a few issues like this incidentally when working on other
-   stuff
+quasi quotation support
 
-undo mess in the code created by adding lots of new support:
-much more documentation
-refactor crufty bits
-reorder the code
-reconsider the names and structure of the constructors in the syntax
-refactor the typename parser - it's a real mess
-fix the lexing
+use this lib to build a typesafe sql wrapper for haskell
 
-add documentation in Parser.hs on the left factoring/error handling
-   approach
+optimise the lexer:
+  add some benchmarks
+  do some experiments with left factoring
+  try to use the token approach with megaparsec
 
-fixes:
+rewrite bits of the parser, lots of it is a bit questionable
+  - an expert with megaparsec would write something simpler
+  I think it's not worth doing for the sake of it, but if a bit
+    is too difficult to add new features to, or to improve
+    the error messages, then it might be worth it
 
-keyword tree, add explicit result then can use for joins also
+work on error messages
 
-keyword tree support prefix mode so can start from already parsed
-   token
+review the crazy over the top lexer testing
+  maybe it's enough to document an easy way to skip these tests
 
-left factor/try removal summary (this list needs updating):
+check more of the formatting of the pretty printing and add regression tests for this
 
-identifier starts:
-  interval literal
-  character set literal
-  typed literals, multikeywords
-  identifier
-  app, agg, window
-  keyword function
-issues in the special op internals
-not between + other ops: needs new expression parsing
-  not in also
-  in suffix also
-  lots of overlap with binary and postfix multi keyword operators
-  quantified comparison also
-issues in the typename parsing
-dot in identifiers and as operator
-issues in the symbol parser
-  hardcode all the symbols in the symbol parser/split?
-conflict with in suffix and in in position
-
-rules for changing the multi keyword parsing:
-  if a keyword must be followed by another
-    e.g. left join, want to refactor to produce 'expected "left join"'
-  if the keyword is optionally followed by another, e.g. with
-   recursive, then don't do this.
-
-change join defaults to be defaults
-
-
-rough SQL 2011 todo, including tests to write:
-
-review the commented out reserved keyword entries and work out how to
-   fix
-
-test case insensitvity and case preservation
-
-big areas:
-window functions
-nested window functions
-case
-
-table ref: tablesample, time period spec, only, unnest, table, lateral
-   bug
-joined table: partitioned joins
-group by: set quantifier
-window clause
-
-other areas:
-unicode escape, strings and idens
-character set behaviour review
-datetime literals
-mixed quoting identifier chains
-names/identifiers careful review
-general value bits
-  collate for
-numeric val fn
-string exp fn
-datetime exp fn
-interval exp fn
-rows
-interval qualifier
-with
-setop
-order/offset/fetch
-search/cycle
-preds:
-between
-in
-like
-similar
-regex like?
-null
-normalize
-match
-overlaps
-distinct
-member
-submultiset
-period
-
-alias for * in select list
-
-create list of unsupported syntax: xml, ref, subtypes, modules?
-
----
-
-
-
-after next release
-
-medium term goals:
-1. replace parser and syntax in hssqlppp with this code (keep two
-   separate packages in sync)
-2. this replacement should have better error messages, much more
-   complete ansi sql 2011 support, and probably will have reasonable
-   support for these dialects: mssql, oracle and teradata.
-
-review areas where this parser is too permissive, e.g. value
-   expressions allowed where column reference names only should be
-   allowed, such as group by, order by (perhaps there can be a flag or
-   warnings or something), unqualified asterisk in select list
-
-fix the expression parser completely: the realistic way is to adjust
-   for precedence and associativity after parsing since the concrete
-   syntax is so messy. should also use this expression parser for
-   parsing joins and for set operations, maybe other areas.
-
-table expression in syntax:
-  QueryExpr = Select SelectList (Maybe TableExpr)
-  and the TableExpr contains all the other bits?
-
-change the booleans in the ast to better types for less ambiguity?
-
-decide how to handle character set literals and identifiers: don't
-   have any intention of actually supporting switching character sets
-   in the middle of parsing so maybe this would be better disabled?
-
-review places in the parse which should allow only a fixed set of
-   identifiers (e.g. in interval literals), keep in mind other
-   dialects and extensibility
-
-decide whether to represent numeric literals better, instead of a
-   single string - break up into parts, or parse to a Decimal or
-   something
-
-
-= future big feature summary
-
-all ansi sql queries
-completely working expression tree parsing
-error messages, left factor
-dml, ddl, procedural sql
-position annotation
-type checker/ etc.
-lexer
-dialects
-quasi quotes
-typesafe sql dbms wrapper support for haskell
-extensibility
-performance analysis
-
-try out uu-parsing or polyparse, especially wrt error message
-   improvements
-
-= stuff
-
-try and use the proper css theme
-  create a header like in the haddock with simple-sql-parser +
-    contents link
-  change the toc gen so that it works the same as in haddock (same
-    div, no links on the actual titles
-  fix the page margins, and the table stuff: patches to the css?
-
-release checklist:
-hlint
-haddock review
-spell check
-update changelog
-update website text
-regenerate the examples on the index.txt
-
-= Later general tasks:
-
-docs
-
-add preamble to the rendered test page
-
-add links from the supported sql page to the rendered test page for
-   each section -> have to section up the tests some more
-
-testing
-
-review tests to copy from hssqlppp
-
-add lots more tests using SQL from the xb2 manual
-
-much more table reference tests, for joins and aliases etc.?
-
-review internal sql collection for more syntax/tests
-
-other
-
-----
-
-demo program: convert tpch to sql server syntax exe processor
-
-run through other manuals for example queries and features: sql in a
-   nutshell, sql guide, sql reference guide, sql standard, sql server
-   manual, oracle manual, teradata manual + re-through postgresql
-   manual and make notes in each case of all syntax and which isn't
-   currently supported also.
-
-check the order of exports, imports and functions/cases in the files
-fix up the import namespaces/explicit names nicely
-
-ast checker: checks the ast represents valid syntax, the parser
-   doesn't check as much as it could, and this can also be used to
-   check generated trees. Maybe this doesn't belong in this package
-   though?
-
-= other sql support
-
-top
-string literals
-full number literals -> other bases?
-apply, pivot
-
-maybe add dml and ddl, source poses, quasi quotes
-
-leave: type check, dialects, procedural, separate lexing?
-
-other dialect targets:
-postgres
-oracle
-teradata
-ms sql server
-mysql?
-db2?
-what other major dialects are there?
-sqlite
-sap dbmss (can't work out what are separate products or what are the
-   dialects)
-
-
-
-here is an idea for a little feature:
-crunch sql: this takes sql and tries to make it as small as possible
-  (basically, combining nested selects where possible and inlining
-   ctes)
-expand sql:
-  breaks apart complex sql using nested queries and ctes, try to make
-   queries easier to understand in stages
-
+is there a way to get incremental parsing like attoparsec?

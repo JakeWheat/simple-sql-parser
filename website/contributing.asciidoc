@@ -8,40 +8,152 @@
 
 == Contributing to simple sql parser
 
-Contributions are welcome. It's preferred if they follow some guidelines:
+Guidelines:
 
 If you add something to the public api, follow the pattern already set for haddock.
 
-If something isn't ansi sql, add it under a dialect flag which isn't enabled in the ansi dialect.
+If something isn't ANSI SQL, add it under a dialect flag which isn't enabled in the ANSI dialect.
 
-If you add dialect flags, add them to the appropriate dialects, create a new one if it's a system which doesn't already have a dialect.
+If you add dialect flags, add them to the appropriate dialects, create a new one if the dialect doesn't already exist. The current dialects are very much WIP, improve them if you see a gap you need fixing.
 
-Testing
+Add tests for anything you add, modify or fix.
 
-Run all the preexisting tests and make sure they continue to pass.
+Tests should provide examples of SQL that now parses and what it parses to.
 
-Add tests for anything you add, negative tests are a good idea too - check something that's behind a dialect flag doesn't parse when disabled.
-
-It's ideal if tests for something set with a dialect flag go in a test file for that dialect flag, unless it's an ansi feature that's disabled in other dialects. It's also an option to put tests in a test file dedicated to the dialect that the dialect flag was introduced for. But the current testing doesn't quite stick to this approach at the moment, it's not the worse thing about the codebase.
+When it's ready, make a pull request on github.
 
 == Key design notes
 
-The parsing is done using the megaparsec library.
+The parsing is done using the Megaparsec library. The parser uses a separate lexer, also implemented with Megaparsec.
 
-The parser uses a separate lexer. I think this makes the code a lot simpler. It used to be a big speed boost over naively not using a separate lexer with parsec, I'm not sure this is still the case with megaparsec.
+The dialect system was introduced as a way to deal with a messy problem. Users of the library are able to decide what to consider reserved keywords - this is better than asking them to modify the library source.
 
-SQL comes in a huge variety of annoyingly different dialects. The aspirational goal is to have a dialect flag for each dialect that you pass to the parser and it parses that dialect and rejects things not in that dialect. This is a bit of a stretch since most major SQL systems have huge numbers of dialect options. One think you learn when writing a non toy SQL parser is you cannot hope to comprehensively support anything, you just have to do enough, and add bits you missed when you need them.
+A tradeoff is all code that uses the library needs to be prepared to deal with/ignore parts of the abstract syntax which supports all features from all dialects.
 
-A big tradeoff here is all code needs to be prepared to deal with the abstract syntax which supports all features from all dialects. I think the least unreasonable way you could fix this would be to have a system which generates dialect specific simple-sql-parser packages, which is still very unreasonable.
+== Legal business
 
-The system probably doesn't always pretty print in the right dialect from correct syntax. This might need some changes if it causes a problem.
+All contributions remain copyright of the person who wrote them. By contributing to the main repository, including but not limited to via a pull request, the copyright holder agrees to license those contributions under the BSD 3-clause license. This includes all contributions already made to the project.
 
-TODO: handling of keywords, and relationship with dialect
+== Release checklist
 
-TODO: tests overview in addition to the above
+Check the version in the cabal file - update it if it hasn't already been updated. git grep for any other mentions of the version number that need updating.
 
-TODO: how the website works, what it contains
+Update the changelog, use git diff or similar to try to reduce the chance of missing anything important.
 
-== Releasing
+Run the tests (if any fail at the point of thinking about a release, then something has gone horribly wrong ...)
 
-See the link:release_checklist.html[] for things that should be done before each release.
+----
+cabal test
+----
+
+Generate the website
+
+----
+make website
+----
+
+It's a bit wonky so try running it a second time if it fails.
+
+Then:
+
+* check the webpages appear nicely
+
+* check all the tests are rendered on the example page -> need to find a robust way of doing this, because there are huge numbers and it's impossible to eyeball and tell if it's good unless you somehow spot a problem.
+
+* check the examples on the main page to check if they need updating
+
+Do the cabal checks:
+
+----
+cabal update
+cabal outdated
+cabal check
+----
+
+Update stack.yaml to the latest lts - check this page: https://www.stackage.org/ . While updating, check the extra-deps field, if there are any there, see if they can be removed.
+
+Install latest stack and check it works - maybe the stack.yaml file needs a tweak, maybe the cabal file. 
+
+----
+ghcup list
+ghcup install stack [LATEST FROM THE LIST]
+stack test 
+----
+
+Run the tests on the previous 2 ghcs latest point releases, and the latest ghc, each with the latest cabal-install they support (e.g. as of the start of 2024, these three ghc versions are 9.8.1, 9.6.4, 9.4.8). This is now trivial to do with ghcup, amazing progress in Haskell tools in recent years.
+
+Build the release tarball, run a test with an example using this tarball:
+
+----
+cabal sdist
+mkdir temp-build
+# get the path to the tar.gz from the output of cabal sdist
+cp simple-sql-parser/main/dist-newstyle/sdist/simple-sql-parser-0.X.X.tar.gz temp-build
+cd temp-build
+cabal init -n
+cp ../tools/SimpleSqlParserTool.hs app/Main.hs
+----
+
+Add these to the build-depends: for the Main in the new cabal file, temp-build.cabal:
+
+----
+        simple-sql-parser == 0.X.X,
+        pretty-show,
+        text
+----
+
+Add a cabal.project file containing:
+----
+packages:
+      ./
+      ./simple-sql-parser-0.X.X.tar.gz
+----
+
+Run the test:
+
+----
+cabal run temp-build -- parse -c "select 1"
+----
+
+Example of output on success:
+
+----
+$ cabal run temp-build -- parse -c "select 1"
+Build profile: -w ghc-9.8.1 -O1
+In order, the following will be built (use -v for more details):
+ - simple-sql-parser-0.7.0 (lib) (requires build)
+ - temp-build-0.1.0.0 (exe:temp-build) (first run)
+Starting     simple-sql-parser-0.7.0 (lib)
+Building     simple-sql-parser-0.7.0 (lib)
+Installing   simple-sql-parser-0.7.0 (lib)
+Completed    simple-sql-parser-0.7.0 (lib)
+Configuring executable 'temp-build' for temp-build-0.1.0.0..
+Preprocessing executable 'temp-build' for temp-build-0.1.0.0..
+Building executable 'temp-build' for temp-build-0.1.0.0..
+[1 of 1] Compiling Main             ( app/Main.hs, /home/jake/wd/simple-sql-parser/main/temp-build/dist-newstyle/build/x86_64-linux/ghc-9.8.1/temp-build-0.1.0.0/x/temp-build/build/temp-build/temp-build-tmp/Main.o )
+[2 of 2] Linking /home/jake/wd/simple-sql-parser/main/temp-build/dist-newstyle/build/x86_64-linux/ghc-9.8.1/temp-build-0.1.0.0/x/temp-build/build/temp-build/temp-build
+[ SelectStatement
+    Select
+      { qeSetQuantifier = SQDefault
+      , qeSelectList = [ ( NumLit "1" , Nothing ) ]
+      , qeFrom = []
+      , qeWhere = Nothing
+      , qeGroupBy = []
+      , qeHaving = Nothing
+      , qeOrderBy = []
+      , qeOffset = Nothing
+      , qeFetchFirst = Nothing
+      }
+]
+----
+
+TODO: hlint?, how to do a spell check, what about automatic code formatting?
+
+If there are any non trivial changes to the website or api, upload a new website.
+
+Upload candidate to hackage, run a test with example using this package
+  - don't remember how this works, but I think you'll do the same as testing the tarball locally, but don't copy the tarball or add a cabal.project file, after uploading the candidate I think you just need to do a 'cabal update', then the cabal build should find the candidate if you gave it the exact version.
+
+If all good, release the candidate - a button on the hackage website.
+
+Todo: try to turn as much of this into a script, with a nice report as possible, order this list properly, say what you need to check in more detail, say what else you need to redo if any steps need actions.

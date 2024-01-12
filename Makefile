@@ -39,7 +39,7 @@ website : website-non-haddock build-haddock
 
 .PHONY : website-non-haddock
 website-non-haddock : build/main.css build/ocean.css build/index.html build/supported_sql.html \
-          build/test_cases.html build/contributing.html build/release_checklist.html
+          build/test_cases.html build/contributing.html
 
 
 build/main.css : website/main.css
@@ -58,10 +58,6 @@ build/supported_sql.html : website/supported_sql.asciidoc website/AddLinks.hs
 
 build/contributing.html : website/contributing.asciidoc website/AddLinks.hs
 	asciidoctor website/contributing.asciidoc -o - | cabal -v0 exec runhaskell website/AddLinks.hs > build/contributing.html
-
-build/release_checklist.html : website/release_checklist.asciidoc website/AddLinks.hs
-	asciidoctor website/release_checklist.asciidoc -o - | cabal -v0 exec runhaskell website/AddLinks.hs > build/release_checklist.html
-
 
 build/test_cases.html : website/RenderTestCases.hs
 	cabal -v0 exec runhaskell -- --ghc-arg=-package=pretty-show -itools website/RenderTestCases.hs > build/test_cases.asciidoc

@@ -20,6 +20,7 @@ linkSection =
   \<li><a href='haddock/index.html'>Haddock</li>\n\
   \<li><a href=\"supported_sql.html\" class=\"bare\">Supported SQL</a></li>\n\
   \<li><a href=\"test_cases.html\">Test cases</a></li>\n\
+  \<li><a href=\"contributing.html\">Contributing</a></li>\n\
   \</ul>\n\
   \<br />\n\
   \<ul class=\"sectlevel1\">\n\
