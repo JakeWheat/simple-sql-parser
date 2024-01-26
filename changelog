@@ -1,4 +1,4 @@
-0.7.0   (unreleased)
+0.7.0
 	support autoincrement for sqlite
 	support table constraints without separating comma for sqlite
 	switch source from literate to regular haskell
@@ -11,6 +11,7 @@
 	tested with latest three main ghc releases (9.8.1, 9.6.4, and 9.4.8) and stack lts 22.5
 	the makeSelect helper is now a distinct type, code using it will need some trivial
 	  tweaks, this is change so that code using makeSelect doesn't emit warnings
+	overhaul website
 0.6.1   added odbc handling to sqlsqerver dialect
 		added sqlserver dialect case for convert function
 0.6.0
