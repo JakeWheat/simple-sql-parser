@@ -1,6 +1,5 @@
-Some random notes on what could be done with the package in the future. None of this is scheduled.
-
-The most important thing is adding more support for needed SQL. Everything else is very secondary to this.
+Some random notes on what could be done with the package in the
+future. None of this is scheduled.
 
 Infrastructure
 --------------
@@ -78,7 +77,9 @@ use this lib to build a typesafe sql wrapper for haskell
 optimise the lexer:
   add some benchmarks
   do some experiments with left factoring
-  try to use the token approach with megaparsec
+  try to use the match approach with megaparsec
+  see if it's work using something other than megaparsec for the lexer
+  or// maybe it's no longer worth having a separate lexer?
 
 rewrite bits of the parser, lots of it is a bit questionable
   - an expert with megaparsec would write something simpler

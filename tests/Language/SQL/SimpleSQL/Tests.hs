@@ -133,17 +133,19 @@ toTest parser pp d str expected = H.testCase (T.unpack str) $ do
         let egot = parser d "" Nothing str
         case egot of
             Left e -> H.assertFailure $ T.unpack $ prettyError e
-            Right got -> do
-                H.assertEqual "" expected got
-                let str' = pp d got
-                let egot' = parser d "" Nothing str'
-                case egot' of
-                    Left e' -> H.assertFailure $ "pp roundtrip"
-                                                 ++ "\n" ++ (T.unpack str')
-                                                 ++ (T.unpack $ prettyError e')
-                    Right got' -> H.assertEqual
-                                  ("pp roundtrip" ++ "\n" ++ T.unpack str')
-                                   expected got'
+            Right got -> H.assertEqual "" expected got
+        
+        let str' = pp d expected
+            egot' = parser d "" Nothing str'
+        case egot' of
+            Left e' ->
+                H.assertFailure $ "pp roundtrip"
+                    ++ "\n" ++ (T.unpack str')
+                    ++ (T.unpack $ prettyError e')
+            Right got' ->
+                H.assertEqual
+                    ("pp roundtrip" ++ "\n" ++ T.unpack str')
+                    expected got'
 
 toPTest :: (Eq a, Show a) =>
           (Dialect -> Text -> Maybe (Int,Int) -> Text -> Either ParseError a)

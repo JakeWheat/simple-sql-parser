@@ -50,12 +50,12 @@ commands =
     [("help", helpCommand)
     ,("parse", parseCommand)
     ,("lex", lexCommand)
-    ,("indent", indentCommand)]
+    ,("format", formatCommand)]
 
 showHelp :: Maybe String -> IO ()
 showHelp msg = do
           maybe (return ()) (\e -> putStrLn $ "Error: " ++ e) msg
-          putStrLn "Usage:\n SimpleSqlParserTool command args"
+          putStrLn "Usage:\n SimpleSQLParserTool command args"
           forM_ commands $ \(c, (h,_)) -> do
                putStrLn $ c ++ "\t" ++ h
           when (isJust msg) $ exitFailure
@@ -93,8 +93,8 @@ lexCommand =
   )
 
 
-indentCommand :: (String,[String] -> IO ())
-indentCommand =
+formatCommand :: (String,[String] -> IO ())
+formatCommand =
   ("parse then pretty print SQL from file/stdin/command line (use -c to parse from command line)"
   ,\args -> do
       (f,src) <- getInput args

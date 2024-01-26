@@ -28,11 +28,7 @@ source-repository head
   location:            https://github.com/JakeWheat/simple-sql-parser.git
 
 Flag parserexe
-  Description: Build SimpleSqlParserTool exe
-  Default:     False
-
-Flag exampleexe
-  Description: Build simple sql parser example exe
+  Description: Build SimpleSQLParserTool exe
   Default:     False
 
 common shared-properties
@@ -60,7 +56,7 @@ Test-Suite Tests
   import:              shared-properties
   type:                exitcode-stdio-1.0
   main-is:             RunTests.hs
-  hs-source-dirs:      tools
+  hs-source-dirs:      tests
   Build-Depends:       simple-sql-parser,
                        tasty >= 1.1 && < 1.6,
                        tasty-hunit >= 0.9 && < 0.11
@@ -91,24 +87,13 @@ Test-Suite Tests
                        
   ghc-options:         -threaded
 
-executable SimpleSqlParserTool
+executable SimpleSQLParserTool
   import:              shared-properties
-  main-is:             SimpleSqlParserTool.hs
-  hs-source-dirs:      tools
+  main-is:             SimpleSQLParserTool.hs
+  hs-source-dirs:      examples
   Build-Depends:       simple-sql-parser,
                        pretty-show >= 1.6 && < 1.10
   if flag(parserexe)
-    buildable:         True
-  else
-    buildable:         False
-
-executable SimpleSQLParserExample
-  import:              shared-properties
-  main-is:             SimpleSQLParserExample.hs
-  hs-source-dirs:      tools
-  Build-Depends:       simple-sql-parser,
-                       pretty-show >= 1.6 && < 1.10
-  if flag(exampleexe)
     buildable:         True
   else
     buildable:         False

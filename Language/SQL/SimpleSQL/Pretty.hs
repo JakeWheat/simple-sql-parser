@@ -16,9 +16,6 @@ TODO: there should be more comments in this file, especially the bits
 which have been changed to try to improve the layout of the output.
 -}
 
-import Prelude hiding (show)
-import qualified Prelude as P
-
 import Prettyprinter (Doc
                      ,nest
                      ,punctuate
@@ -91,7 +88,7 @@ scalarExpr _ (IntervalLit s v f t) =
 scalarExpr _ (Iden i) = names i
 scalarExpr _ Star = pretty "*"
 scalarExpr _ Parameter = pretty "?"
-scalarExpr _ (PositionalArg n) = pretty $ T.cons '$' $ show n
+scalarExpr _ (PositionalArg n) = pretty $ T.cons '$' $ showText n
 scalarExpr _ (HostParameter p i) =
     pretty p
     <+> me (\i' -> pretty "indicator" <+> pretty i') i
@@ -281,7 +278,7 @@ scalarExpr d (OdbcFunc e) =
 scalarExpr d (Convert t e Nothing) =
     pretty "convert(" <> typeName t <> pretty "," <+> scalarExpr d e <> pretty ")"
 scalarExpr d (Convert t e (Just i)) =
-    pretty "convert(" <> typeName t <> pretty "," <+> scalarExpr d e <> pretty "," <+> pretty (show i) <> pretty ")"
+    pretty "convert(" <> typeName t <> pretty "," <+> scalarExpr d e <> pretty "," <+> pretty (showText i) <> pretty ")"
 
 unname :: Name -> Text
 unname (Name Nothing n) = n
@@ -301,12 +298,12 @@ names ns = hcat $ punctuate (pretty ".") $ map name ns
 
 typeName :: TypeName -> Doc a
 typeName (TypeName t) = names t
-typeName (PrecTypeName t a) = names t <+> parens (pretty $ show a)
+typeName (PrecTypeName t a) = names t <+> parens (pretty $ showText a)
 typeName (PrecScaleTypeName t a b) =
-    names t <+> parens (pretty (show a) <+> comma <+> pretty (show b))
+    names t <+> parens (pretty (showText a) <+> comma <+> pretty (showText b))
 typeName (PrecLengthTypeName t i m u) =
     names t
-    <> parens (pretty (show i)
+    <> parens (pretty (showText i)
                <> me (\case
                            PrecK -> pretty "K"
                            PrecM -> pretty "M"
@@ -318,7 +315,7 @@ typeName (PrecLengthTypeName t i m u) =
                        PrecOctets -> pretty "OCTETS") u)
 typeName (CharTypeName t i cs col) =
     (names t
-    <> me (\x -> parens (pretty $ show x)) i)
+    <> me (\x -> parens (pretty $ showText x)) i)
     <+> (if null cs
          then mempty
          else pretty "character set" <+> names cs)
@@ -327,7 +324,7 @@ typeName (CharTypeName t i cs col) =
          else pretty "collate" <+> names col)
 typeName (TimeTypeName t i tz) =
     (names t
-    <> me (\x -> parens (pretty $ show x)) i)
+    <> me (\x -> parens (pretty $ showText x)) i)
     <+> pretty (if tz
               then "with time zone"
               else "without time zone")
@@ -341,7 +338,7 @@ typeName (IntervalTypeName f t) =
     <+> me (\x -> pretty "to" <+> intervalTypeField x) t
 
 typeName (ArrayTypeName tn sz) =
-    typeName tn <+> pretty "array" <+> me (brackets . pretty . show) sz
+    typeName tn <+> pretty "array" <+> me (brackets . pretty . showText) sz
 
 typeName (MultisetTypeName tn) =
     typeName tn <+> pretty "multiset"
@@ -350,8 +347,8 @@ intervalTypeField :: IntervalTypeField -> Doc a
 intervalTypeField (Itf n p) =
     pretty n
     <+> me (\(x,x1) ->
-             parens (pretty (show x)
-                     <+> me (\y -> sep [comma,pretty (show y)]) x1)) p
+             parens (pretty (showText x)
+                     <+> me (\y -> sep [comma,pretty (showText y)]) x1)) p
 
 
 -- = query expressions
@@ -741,12 +738,12 @@ sequenceGeneratorOption :: SequenceGeneratorOption -> Doc a
 sequenceGeneratorOption (SGODataType t) =
     pretty "as" <+> typeName t
 sequenceGeneratorOption (SGORestart mi) =
-    pretty "restart" <+> maybe mempty (\mi' -> texts ["with", show mi']) mi
-sequenceGeneratorOption (SGOStartWith i) = texts ["start",  "with", show i]
-sequenceGeneratorOption (SGOIncrementBy i) = texts ["increment", "by", show i]
-sequenceGeneratorOption (SGOMaxValue i) = texts ["maxvalue", show i]
+    pretty "restart" <+> maybe mempty (\mi' -> texts ["with", showText mi']) mi
+sequenceGeneratorOption (SGOStartWith i) = texts ["start",  "with", showText i]
+sequenceGeneratorOption (SGOIncrementBy i) = texts ["increment", "by", showText i]
+sequenceGeneratorOption (SGOMaxValue i) = texts ["maxvalue", showText i]
 sequenceGeneratorOption SGONoMaxValue = texts ["no", "maxvalue"]
-sequenceGeneratorOption (SGOMinValue i) = texts ["minvalue", show i]
+sequenceGeneratorOption (SGOMinValue i) = texts ["minvalue", showText i]
 sequenceGeneratorOption SGONoMinValue = texts ["no", "minvalue"]
 sequenceGeneratorOption SGOCycle = pretty "cycle"
 sequenceGeneratorOption SGONoCycle = pretty "no cycle"
@@ -873,8 +870,8 @@ texts ts = sep $ map pretty ts
 pretty :: Text -> Doc a
 pretty = P.pretty
 
-show :: Show a => a -> Text
-show = T.pack . P.show
+showText :: Show a => a -> Text
+showText = T.pack . show
 
 -- restore the correct behaviour of mempty
 -- this doesn't quite work when you chain <> and <+> together,

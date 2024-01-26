@@ -6,12 +6,11 @@
 
 .PHONY : build
 build :
-	cabal build --enable-tests -fparserexe
+	cabal build
 
 .PHONY : test
 test :
 	cabal run test:Tests -- --hide-successes --ansi-tricks=false
-
 
 .PHONY : test-coverage
 test-coverage :
@@ -24,8 +23,10 @@ clean :
 
 .PHONY : parserexe
 parserexe :
-	cabal build -fparserexe SimpleSqlParserTool
+	cabal build -fparserexe SimpleSQLParserTool
 
+.PHONY : all
+all : build test parserexe
 
 ###############################################
 
