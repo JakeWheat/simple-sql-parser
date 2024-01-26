@@ -13,13 +13,15 @@ body {
   margin-bottom: 5em;
   margin-top: 2em;
 
-  left:auto;
+  /*left:auto;
   right:0;
-  margin-right:30em;
+  margin-right:30em;*/
 
-  max-width: 120ex;
+  /*max-width: 120ex;*/
 
 }
+
+
 
 pre {
     padding: 1em;
@@ -33,7 +35,7 @@ code {
 }
 
 #TOC {
-    position:fixed;
+    /*position:fixed;
     width:25em;
     left:0;
     top:0;
@@ -58,7 +60,7 @@ code {
     padding-right: 1em;
     padding-bottom: 1.25em;
     padding-left: 1em;
-    margin: 0;
+    margin: 0;*/
 
   font-size: .9em;
   font-family:"Noto Serif","Open Sans","DejaVu Sans",sans-serif;
@@ -94,10 +96,10 @@ h1,h2,h3,h4,h5,h6 {
     line-height:1.0125em
 }
 
-h1 {
+/*h1 {
 border-top: 1px solid #858585;
 padding-top:1em;
-}
+}*/
 
 .title {
     color:#000000;
@@ -114,3 +116,15 @@ a {
 
 hr{border:solid #858585;border-width:1px 0 0;clear:both;margin:1.25em 0 1.1875em;height:0}
 
+table {
+    width: 100%;
+    border-spacing: 0;
+    border-collapse: collapse;
+}
+
+td {
+    width: 50%;
+    vertical-align: top;
+    border:solid #c5c5c5;
+    border-width:1px;
+}

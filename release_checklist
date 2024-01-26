@@ -1,40 +1,4 @@
-
-:toc: right
-:sectnums:
-:toclevels: 10
-:source-highlighter: pygments
-
-= Contributing
-
-== Contributing to simple sql parser
-
-Guidelines:
-
-If you add something to the public api, follow the pattern already set for haddock.
-
-If something isn't ANSI SQL, add it under a dialect flag which isn't enabled in the ANSI dialect.
-
-If you add dialect flags, add them to the appropriate dialects, create a new one if the dialect doesn't already exist. The current dialects are very much WIP, improve them if you see a gap you need fixing.
-
-Add tests for anything you add, modify or fix.
-
-Tests should provide examples of SQL that now parses and what it parses to.
-
-When it's ready, make a pull request on github.
-
-== Key design notes
-
-The parsing is done using the Megaparsec library. The parser uses a separate lexer, also implemented with Megaparsec.
-
-The dialect system was introduced as a way to deal with a messy problem. Users of the library are able to decide what to consider reserved keywords - this is better than asking them to modify the library source.
-
-A tradeoff is all code that uses the library needs to be prepared to deal with/ignore parts of the abstract syntax which supports all features from all dialects.
-
-== Legal business
-
-All contributions remain copyright of the person who wrote them. By contributing to the main repository, including but not limited to via a pull request, the copyright holder agrees to license those contributions under the BSD 3-clause license. This includes all contributions already made to the project.
-
-== Release checklist
+# Release checklist
 
 Check the version in the cabal file - update it if it hasn't already been updated. git grep for any other mentions of the version number that need updating.
 
@@ -42,17 +6,26 @@ Update the changelog, use git diff or similar to try to reduce the chance of mis
 
 Run the tests (if any fail at the point of thinking about a release, then something has gone horribly wrong ...)
 
-----
+~~~~
 cabal test
-----
+~~~~
 
-Generate the website
+Do the cabal checks:
 
-----
-make website
-----
+~~~~
+cabal update
+cabal outdated
+cabal check
+~~~~
 
-It's a bit wonky so try running it a second time if it fails.
+Check everything:
+
+~~~~
+make clean
+make really-all
+~~~~
+
+TODO: you need silverbane to check the examples in the index.md.
 
 Then:
 
@@ -60,64 +33,55 @@ Then:
 
 * check all the tests are rendered on the example page -> need to find a robust way of doing this, because there are huge numbers and it's impossible to eyeball and tell if it's good unless you somehow spot a problem.
 
-* check the examples on the main page to check if they need updating
-
-Do the cabal checks:
-
-----
-cabal update
-cabal outdated
-cabal check
-----
-
 Update stack.yaml to the latest lts - check this page: https://www.stackage.org/ . While updating, check the extra-deps field, if there are any there, see if they can be removed.
 
 Install latest stack and check it works - maybe the stack.yaml file needs a tweak, maybe the cabal file. 
 
-----
+~~~~
 ghcup list
-ghcup install stack [LATEST FROM THE LIST]
+ghcup install stack [latest from the list on stackage.org]
 stack test 
-----
+~~~~
 
 Run the tests on the previous 2 ghcs latest point releases, and the latest ghc, each with the latest cabal-install they support (e.g. as of the start of 2024, these three ghc versions are 9.8.1, 9.6.4, 9.4.8). This is now trivial to do with ghcup, amazing progress in Haskell tools in recent years.
 
 Build the release tarball, run a test with an example using this tarball:
 
-----
+~~~~
 cabal sdist
 mkdir temp-build
 # get the path to the tar.gz from the output of cabal sdist
 cp simple-sql-parser/main/dist-newstyle/sdist/simple-sql-parser-0.X.X.tar.gz temp-build
 cd temp-build
 cabal init -n
-cp ../tools/SimpleSqlParserTool.hs app/Main.hs
-----
+cp ../examples/SimpleSQLParserTool.hs app/Main.hs
+~~~~
 
-Add these to the build-depends: for the Main in the new cabal file, temp-build.cabal:
+Add these to the build-depends: for the Main in temp-build.cabal:
 
-----
+~~~~
         simple-sql-parser == 0.X.X,
         pretty-show,
         text
-----
+~~~~
 
-Add a cabal.project file containing:
-----
+Add a cabal.project.local file containing:
+
+~~~~
 packages:
       ./
       ./simple-sql-parser-0.X.X.tar.gz
-----
+~~~~
 
 Run the test:
 
-----
+~~~~
 cabal run temp-build -- parse -c "select 1"
-----
+~~~~
 
 Example of output on success:
 
-----
+~~~~
 $ cabal run temp-build -- parse -c "select 1"
 Build profile: -w ghc-9.8.1 -O1
 In order, the following will be built (use -v for more details):
@@ -145,7 +109,7 @@ Building executable 'temp-build' for temp-build-0.1.0.0..
       , qeFetchFirst = Nothing
       }
 ]
-----
+~~~~
 
 TODO: hlint?, how to do a spell check, what about automatic code formatting?
 
@@ -155,5 +119,7 @@ Upload candidate to hackage, run a test with example using this package
   - don't remember how this works, but I think you'll do the same as testing the tarball locally, but don't copy the tarball or add a cabal.project file, after uploading the candidate I think you just need to do a 'cabal update', then the cabal build should find the candidate if you gave it the exact version.
 
 If all good, release the candidate - a button on the hackage website.
+
+when and how do you add a tag to git?
 
 Todo: try to turn as much of this into a script, with a nice report as possible, order this list properly, say what you need to check in more detail, say what else you need to redo if any steps need actions.

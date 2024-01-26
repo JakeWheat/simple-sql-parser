@@ -1,0 +1,49 @@
+cabal-version:       2.2
+
+name:                simple-sql-parser
+version:             0.7.0
+
+executable RenderTestCases
+  main-is:             RenderTestCases.hs
+  hs-source-dirs:      .,..,../tests
+  Build-Depends:       base >=4 && <5,
+                       text,
+                       megaparsec,
+                       prettyprinter,
+                       parser-combinators,
+                       mtl,
+                       containers,
+                       tasty,
+                       tasty-hunit,
+                       pretty-show,
+  default-language:    Haskell2010
+  ghc-options:         -Wall -O0
+
+  other-modules:
+        Language.SQL.SimpleSQL.CreateIndex
+        Language.SQL.SimpleSQL.CustomDialect
+        Language.SQL.SimpleSQL.Dialect
+        Language.SQL.SimpleSQL.EmptyStatement
+        Language.SQL.SimpleSQL.FullQueries
+        Language.SQL.SimpleSQL.GroupBy
+        Language.SQL.SimpleSQL.Lex
+        Language.SQL.SimpleSQL.LexerTests
+        Language.SQL.SimpleSQL.MySQL
+        Language.SQL.SimpleSQL.Odbc
+        Language.SQL.SimpleSQL.Oracle
+        Language.SQL.SimpleSQL.Parse
+        Language.SQL.SimpleSQL.Postgres
+        Language.SQL.SimpleSQL.Pretty
+        Language.SQL.SimpleSQL.QueryExprComponents
+        Language.SQL.SimpleSQL.QueryExprs
+        Language.SQL.SimpleSQL.SQL2011AccessControl
+        Language.SQL.SimpleSQL.SQL2011Bits
+        Language.SQL.SimpleSQL.SQL2011DataManipulation
+        Language.SQL.SimpleSQL.SQL2011Queries
+        Language.SQL.SimpleSQL.SQL2011Schema
+        Language.SQL.SimpleSQL.ScalarExprs
+        Language.SQL.SimpleSQL.Syntax
+        Language.SQL.SimpleSQL.TableRefs
+        Language.SQL.SimpleSQL.TestTypes
+        Language.SQL.SimpleSQL.Tests
+        Language.SQL.SimpleSQL.Tpch
