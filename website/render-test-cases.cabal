@@ -1,7 +1,7 @@
 cabal-version:       2.2
 
 name:                simple-sql-parser
-version:             0.7.0
+version:             0.7.1
 
 executable RenderTestCases
   main-is:             RenderTestCases.hs

@@ -898,8 +898,9 @@ instance VisualStream SQLStream where
   tokensLength Proxy xs = sum (tokenLength <$> xs)
 
 instance TraversableStream SQLStream where
-  reachOffset o M.PosState {..} =
-    ( Just (prefix ++ restOfLine)
+    -- I have no idea what all this is doing
+  reachOffset o _x@(M.PosState {..}) =
+    ( Just $ actualLine
     , PosState
         { pstateInput = SQLStream
             { sqlStreamInput = postStr
@@ -912,6 +913,11 @@ instance TraversableStream SQLStream where
         }
     )
     where
+      maybeitsthefullsource = sqlStreamInput pstateInput
+      targetLineNo = M.unPos $ sourceLine newSourcePos
+      actualLine = case drop (targetLineNo - 1) $ lines maybeitsthefullsource of
+          (x:_) -> x
+          [] -> "<empty line>"
       prefix =
         if sameLine
           then pstateLinePrefix ++ preLine
@@ -930,7 +936,6 @@ instance TraversableStream SQLStream where
         case NE.nonEmpty pre of
           Nothing -> 0
           Just nePre -> tokensLength pxy nePre
-      restOfLine = takeWhile (/= '\n') postStr
 
 pxy :: Proxy SQLStream
 pxy = Proxy

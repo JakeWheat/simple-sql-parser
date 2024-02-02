@@ -212,10 +212,10 @@ make test
 
 When you add support for new syntax: add some tests. If you modify or
 fix something, and it doesn't have tests, add some. If the syntax
-isn't in ANSI SQL, guard it behind a dialect flag. If you write
-support for a dialect that isn't mention, add a new dialect.
+isn't in ANSI SQL, guard it behind a dialect flag. If you add
+support for something from a new dialect, add that dialect.
 
-Make sure all the tests still pass, then send a pull request on Github.
+Check all the tests still pass, then send a pull request on Github.
 
 # Links
 

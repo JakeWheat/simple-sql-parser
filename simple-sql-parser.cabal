@@ -1,12 +1,10 @@
 cabal-version:       2.2
 
 name:                simple-sql-parser
-version:             0.7.0
+version:             0.7.1
 synopsis:            A parser for SQL.
 
-description:
-
-                     A parser for SQL. Parses most SQL:2011
+description:         A parser for SQL. Parses most SQL:2011
                      queries, non-query DML, DDL, access control and
                      transaction management syntax. Please see the
                      homepage for more information
@@ -22,10 +20,6 @@ category:            Database,Language
 build-type:          Simple
 extra-doc-files:     README,LICENSE,changelog
 bug-reports:         https://github.com/JakeWheat/simple-sql-parser/issues
-
-source-repository head
-  type:                git
-  location:            https://github.com/JakeWheat/simple-sql-parser.git
 
 Flag parserexe
   Description: Build SimpleSQLParserTool exe

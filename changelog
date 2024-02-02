@@ -1,5 +1,5 @@
-0.7.0
-	support autoincrement for sqlite
+0.7.1   fix error message source quoting
+0.7.0   support autoincrement for sqlite
 	support table constraints without separating comma for sqlite
 	switch source from literate to regular haskell
 	use prettyprinter lib instead of pretty
