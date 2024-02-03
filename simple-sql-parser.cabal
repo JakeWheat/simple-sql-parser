@@ -21,6 +21,10 @@ build-type:          Simple
 extra-doc-files:     README,LICENSE,changelog
 bug-reports:         https://github.com/JakeWheat/simple-sql-parser/issues
 
+source-repository head
+  type:                git
+  location:            https://github.com/JakeWheat/simple-sql-parser.git
+
 Flag parserexe
   Description: Build SimpleSQLParserTool exe
   Default:     False
