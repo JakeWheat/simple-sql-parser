@@ -120,6 +120,14 @@ Upload candidate to hackage, run a test with example using this package
 
 If all good, release the candidate - a button on the hackage website.
 
-when and how do you add a tag to git?
+add a tag for the commit corresponding to the version:
+
+~~~~
+git tag -a v0.7.0 -m "0.7.0"
+git push origin v0.7.0
+~~~~
+
+This will add the tag to the current commit.
+
 
 Todo: try to turn as much of this into a script, with a nice report as possible, order this list properly, say what you need to check in more detail, say what else you need to redo if any steps need actions.
