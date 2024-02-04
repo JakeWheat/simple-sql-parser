@@ -1,7 +1,7 @@
 cabal-version:       2.2
 
 name:                simple-sql-parser
-version:             0.7.1
+version:             0.8.0
 synopsis:            A parser for SQL.
 
 description:         A parser for SQL. Parses most SQL:2011
@@ -28,6 +28,11 @@ source-repository head
 Flag parserexe
   Description: Build SimpleSQLParserTool exe
   Default:     False
+
+Flag testexe
+  Description: Build Testing exe
+  Default:     False
+
 
 common shared-properties
   default-language:    Haskell2010
@@ -56,8 +61,10 @@ Test-Suite Tests
   main-is:             RunTests.hs
   hs-source-dirs:      tests
   Build-Depends:       simple-sql-parser,
-                       tasty >= 1.1 && < 1.6,
-                       tasty-hunit >= 0.9 && < 0.11
+                       hspec,
+                       hspec-megaparsec,
+                       hspec-expectations,
+                       raw-strings-qq,
 
   Other-Modules:       Language.SQL.SimpleSQL.ErrorMessages,
                        Language.SQL.SimpleSQL.FullQueries,
@@ -82,6 +89,8 @@ Test-Suite Tests
                        Language.SQL.SimpleSQL.CustomDialect,
                        Language.SQL.SimpleSQL.EmptyStatement,
                        Language.SQL.SimpleSQL.CreateIndex
+                       Language.SQL.SimpleSQL.Expectations
+                       Language.SQL.SimpleSQL.TestRunners
                        
   ghc-options:         -threaded
 
@@ -92,6 +101,26 @@ executable SimpleSQLParserTool
   Build-Depends:       simple-sql-parser,
                        pretty-show >= 1.6 && < 1.10
   if flag(parserexe)
+    buildable:         True
+  else
+    buildable:         False
+
+executable error-messages-tool
+  import:              shared-properties
+  main-is:             ErrorMessagesTool.hs
+  hs-source-dirs:      examples
+  Build-Depends:       base,
+                       text,
+                       raw-strings-qq,
+                       containers,
+                       megaparsec,
+                       simple-sql-parser,
+                       pretty-show,
+                       bytestring,
+                       cassava,
+                       vector,
+                       sqlite-simple,
+  if flag(testexe)
     buildable:         True
   else
     buildable:         False

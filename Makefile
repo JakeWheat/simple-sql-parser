@@ -11,7 +11,11 @@ build :
 
 .PHONY : test
 test :
-	cabal run test:Tests -- --hide-successes --ansi-tricks=false
+	cabal run test:Tests -- -f failed-examples +RTS -N
+
+.PHONY : fast-test
+fast-test :
+	cabal run test:Tests -- -f failed-examples --skip ansiLexerTests --skip postgresLexerTests +RTS -N
 
 .PHONY : test-coverage
 test-coverage :
@@ -67,7 +71,9 @@ build/test_cases.html : website/RenderTestCases.hs website/template1.pandoc
 	# no idea why not using --disable-optimisation on cabal build, but putting -O0
 	# in the cabal file (and then cabal appears to say it's still using -O1
 	# is faster
+	echo Entering directory \`website/\'
 	cd website/ && cabal build RenderTestCases && cabal run RenderTestCases | pandoc -s -N --template template1.pandoc -V toc-title:"Simple SQL Parser test case examples" -c main1.css -f markdown  -t html --toc=true --metadata title="Simple SQL Parse test case examples" > ../build/test_cases.html
+	echo Leaving directory \`website/\'
 
 # works here, but not in a recipe. amazing
 # GHC_VER="$(shell ghc --numeric-version)"

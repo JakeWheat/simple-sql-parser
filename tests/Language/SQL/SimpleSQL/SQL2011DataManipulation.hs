@@ -7,6 +7,8 @@ module Language.SQL.SimpleSQL.SQL2011DataManipulation (sql2011DataManipulationTe
 
 import Language.SQL.SimpleSQL.TestTypes
 import Language.SQL.SimpleSQL.Syntax
+import Language.SQL.SimpleSQL.TestRunners
+import Data.Text (Text)
 
 sql2011DataManipulationTests :: TestItem
 sql2011DataManipulationTests = Group "sql 2011 data manipulation tests"
@@ -111,20 +113,20 @@ sql2011DataManipulationTests = Group "sql 2011 data manipulation tests"
       [ WHERE <search condition> ]
 -}
 
-     (TestStatement ansi2011 "delete from t"
-     $ Delete [Name Nothing "t"] Nothing Nothing)
+     s "delete from t"
+     $ Delete [Name Nothing "t"] Nothing Nothing
 
-    ,(TestStatement ansi2011 "delete from t as u"
-     $ Delete [Name Nothing "t"] (Just (Name Nothing "u")) Nothing)
+    ,s "delete from t as u"
+     $ Delete [Name Nothing "t"] (Just (Name Nothing "u")) Nothing
 
-    ,(TestStatement ansi2011 "delete from t where x = 5"
+    ,s "delete from t where x = 5"
      $ Delete [Name Nothing "t"] Nothing
-       (Just $ BinOp (Iden [Name Nothing "x"]) [Name Nothing "="] (NumLit "5")))
+       (Just $ BinOp (Iden [Name Nothing "x"]) [Name Nothing "="] (NumLit "5"))
 
 
-    ,(TestStatement ansi2011 "delete from t as u where u.x = 5"
+    ,s "delete from t as u where u.x = 5"
      $ Delete [Name Nothing "t"] (Just (Name Nothing "u"))
-       (Just $ BinOp (Iden [Name Nothing "u", Name Nothing "x"]) [Name Nothing "="] (NumLit "5")))
+       (Just $ BinOp (Iden [Name Nothing "u", Name Nothing "x"]) [Name Nothing "="] (NumLit "5"))
 
 {-
 14.10 <truncate table statement>
@@ -137,14 +139,14 @@ sql2011DataManipulationTests = Group "sql 2011 data manipulation tests"
   | RESTART IDENTITY
 -}
 
-    ,(TestStatement ansi2011 "truncate table t"
-     $ Truncate [Name Nothing "t"] DefaultIdentityRestart)
+    ,s "truncate table t"
+     $ Truncate [Name Nothing "t"] DefaultIdentityRestart
 
-    ,(TestStatement ansi2011 "truncate table t continue identity"
-     $ Truncate [Name Nothing "t"] ContinueIdentity)
+    ,s "truncate table t continue identity"
+     $ Truncate [Name Nothing "t"] ContinueIdentity
 
-    ,(TestStatement ansi2011 "truncate table t restart identity"
-     $ Truncate [Name Nothing "t"] RestartIdentity)
+    ,s "truncate table t restart identity"
+     $ Truncate [Name Nothing "t"] RestartIdentity
 
 
 {-
@@ -182,37 +184,37 @@ sql2011DataManipulationTests = Group "sql 2011 data manipulation tests"
   <column name list>
 -}
 
-    ,(TestStatement ansi2011 "insert into t select * from u"
+    ,s "insert into t select * from u"
      $ Insert [Name Nothing "t"] Nothing
        $ InsertQuery $ toQueryExpr $ makeSelect
          {msSelectList = [(Star, Nothing)]
-         ,msFrom = [TRSimple [Name Nothing "u"]]})
+         ,msFrom = [TRSimple [Name Nothing "u"]]}
 
-    ,(TestStatement ansi2011 "insert into t(a,b,c) select * from u"
+    ,s "insert into t(a,b,c) select * from u"
      $ Insert [Name Nothing "t"] (Just [Name Nothing "a", Name Nothing "b", Name Nothing "c"])
        $ InsertQuery $ toQueryExpr $ makeSelect
          {msSelectList = [(Star, Nothing)]
-         ,msFrom = [TRSimple [Name Nothing "u"]]})
+         ,msFrom = [TRSimple [Name Nothing "u"]]}
 
-    ,(TestStatement ansi2011 "insert into t default values"
-     $ Insert [Name Nothing "t"] Nothing DefaultInsertValues)
+    ,s "insert into t default values"
+     $ Insert [Name Nothing "t"] Nothing DefaultInsertValues
 
-    ,(TestStatement ansi2011 "insert into t values(1,2)"
+    ,s "insert into t values(1,2)"
      $ Insert [Name Nothing "t"] Nothing
-       $ InsertQuery $ Values [[NumLit "1", NumLit "2"]])
+       $ InsertQuery $ Values [[NumLit "1", NumLit "2"]]
 
-    ,(TestStatement ansi2011 "insert into t values (1,2),(3,4)"
+    ,s "insert into t values (1,2),(3,4)"
      $ Insert [Name Nothing "t"] Nothing
        $ InsertQuery $ Values [[NumLit "1", NumLit "2"]
-                              ,[NumLit "3", NumLit "4"]])
+                              ,[NumLit "3", NumLit "4"]]
 
-    ,(TestStatement ansi2011
+    ,s
       "insert into t values (default,null,array[],multiset[])"
      $ Insert [Name Nothing "t"] Nothing
        $ InsertQuery $ Values [[Iden [Name Nothing "default"]
                                ,Iden [Name Nothing "null"]
                                ,Array (Iden [Name Nothing "array"]) []
-                               ,MultisetCtor []]])
+                               ,MultisetCtor []]]
 
 
 {-
@@ -456,32 +458,32 @@ FROM CentralOfficeAccounts;
 -}
 
 
-    ,(TestStatement ansi2011 "update t set a=b"
+    ,s "update t set a=b"
      $ Update [Name Nothing "t"] Nothing
-       [Set [Name Nothing "a"] (Iden [Name Nothing "b"])] Nothing)
+       [Set [Name Nothing "a"] (Iden [Name Nothing "b"])] Nothing
 
-    ,(TestStatement ansi2011 "update t set a=b, c=5"
+    ,s "update t set a=b, c=5"
      $ Update [Name Nothing "t"] Nothing
        [Set [Name Nothing "a"] (Iden [Name Nothing "b"])
-       ,Set [Name Nothing "c"] (NumLit "5")] Nothing)
+       ,Set [Name Nothing "c"] (NumLit "5")] Nothing
 
 
-    ,(TestStatement ansi2011 "update t set a=b where a>5"
+    ,s "update t set a=b where a>5"
      $ Update [Name Nothing "t"] Nothing
        [Set [Name Nothing "a"] (Iden [Name Nothing "b"])]
-       $ Just $ BinOp (Iden [Name Nothing "a"]) [Name Nothing ">"] (NumLit "5"))
+       $ Just $ BinOp (Iden [Name Nothing "a"]) [Name Nothing ">"] (NumLit "5")
 
 
-    ,(TestStatement ansi2011 "update t as u set a=b where u.a>5"
+    ,s "update t as u set a=b where u.a>5"
      $ Update [Name Nothing "t"] (Just $ Name Nothing "u")
        [Set [Name Nothing "a"] (Iden [Name Nothing "b"])]
        $ Just $ BinOp (Iden [Name Nothing "u",Name Nothing "a"])
-                      [Name Nothing ">"] (NumLit "5"))
+                      [Name Nothing ">"] (NumLit "5")
 
-    ,(TestStatement ansi2011 "update t set (a,b)=(3,5)"
+    ,s "update t set (a,b)=(3,5)"
      $ Update [Name Nothing "t"] Nothing
        [SetMultiple [[Name Nothing "a"],[Name Nothing "b"]]
-                    [NumLit "3", NumLit "5"]] Nothing)
+                    [NumLit "3", NumLit "5"]] Nothing
 
 
 
@@ -553,3 +555,6 @@ declare local temporary table t (a int) [on commit {preserve | delete} rows]
 
 
    ]
+
+s :: HasCallStack => Text -> Statement -> TestItem
+s src ast = testStatement ansi2011 src ast

@@ -12,7 +12,8 @@ module Language.SQL.SimpleSQL.QueryExprComponents (queryExprComponentTests) wher
 
 import Language.SQL.SimpleSQL.TestTypes
 import Language.SQL.SimpleSQL.Syntax
-
+import Language.SQL.SimpleSQL.TestRunners
+import Data.Text (Text)
 
 queryExprComponentTests :: TestItem
 queryExprComponentTests = Group "queryExprComponentTests"
@@ -31,10 +32,10 @@ queryExprComponentTests = Group "queryExprComponentTests"
 
 
 duplicates :: TestItem
-duplicates = Group "duplicates" $ map (uncurry (TestQueryExpr ansi2011))
-    [("select a from t" ,ms SQDefault)
-    ,("select all a from t" ,ms All)
-    ,("select distinct a from t", ms Distinct)
+duplicates = Group "duplicates"
+    [q "select a from t" $ ms SQDefault
+    ,q "select all a from t" $ ms All
+    ,q "select distinct a from t" $ ms Distinct
     ]
  where
    ms d = toQueryExpr $ makeSelect
@@ -43,77 +44,77 @@ duplicates = Group "duplicates" $ map (uncurry (TestQueryExpr ansi2011))
           ,msFrom = [TRSimple [Name Nothing "t"]]}
 
 selectLists :: TestItem
-selectLists = Group "selectLists" $ map (uncurry (TestQueryExpr ansi2011))
-    [("select 1",
-      toQueryExpr $ makeSelect {msSelectList = [(NumLit "1",Nothing)]})
+selectLists = Group "selectLists"
+    [q "select 1"
+     $ toQueryExpr $ makeSelect {msSelectList = [(NumLit "1",Nothing)]}
 
-    ,("select a"
-     ,toQueryExpr $ makeSelect {msSelectList = [(Iden [Name Nothing "a"],Nothing)]})
+    ,q "select a"
+     $ toQueryExpr $ makeSelect {msSelectList = [(Iden [Name Nothing "a"],Nothing)]}
 
-    ,("select a,b"
-     ,toQueryExpr $ makeSelect {msSelectList = [(Iden [Name Nothing "a"],Nothing)
-                                 ,(Iden [Name Nothing "b"],Nothing)]})
+    ,q "select a,b"
+     $ toQueryExpr $ makeSelect {msSelectList = [(Iden [Name Nothing "a"],Nothing)
+                                 ,(Iden [Name Nothing "b"],Nothing)]}
 
-    ,("select 1+2,3+4"
-     ,toQueryExpr $ makeSelect {msSelectList =
+    ,q "select 1+2,3+4"
+     $ toQueryExpr $ makeSelect {msSelectList =
                      [(BinOp (NumLit "1") [Name Nothing "+"] (NumLit "2"),Nothing)
-                     ,(BinOp (NumLit "3") [Name Nothing "+"] (NumLit "4"),Nothing)]})
+                     ,(BinOp (NumLit "3") [Name Nothing "+"] (NumLit "4"),Nothing)]}
 
-    ,("select a as a, /*comment*/ b as b"
-     ,toQueryExpr $ makeSelect {msSelectList = [(Iden [Name Nothing "a"], Just $ Name Nothing "a")
-                                 ,(Iden [Name Nothing "b"], Just $ Name Nothing "b")]})
+    ,q "select a as a, /*comment*/ b as b"
+     $ toQueryExpr $ makeSelect {msSelectList = [(Iden [Name Nothing "a"], Just $ Name Nothing "a")
+                                 ,(Iden [Name Nothing "b"], Just $ Name Nothing "b")]}
 
-    ,("select a a, b b"
-     ,toQueryExpr $ makeSelect {msSelectList = [(Iden [Name Nothing "a"], Just $ Name Nothing "a")
-                                 ,(Iden [Name Nothing "b"], Just $ Name Nothing "b")]})
+    ,q "select a a, b b"
+     $ toQueryExpr $ makeSelect {msSelectList = [(Iden [Name Nothing "a"], Just $ Name Nothing "a")
+                                 ,(Iden [Name Nothing "b"], Just $ Name Nothing "b")]}
 
-    ,("select a + b * c"
-     ,toQueryExpr $ makeSelect {msSelectList =
+    ,q "select a + b * c"
+     $ toQueryExpr $ makeSelect {msSelectList =
       [(BinOp (Iden [Name Nothing "a"]) [Name Nothing "+"]
         (BinOp (Iden [Name Nothing "b"]) [Name Nothing "*"] (Iden [Name Nothing "c"]))
-       ,Nothing)]})
+       ,Nothing)]}
 
     ]
 
 whereClause :: TestItem
-whereClause = Group "whereClause" $ map (uncurry (TestQueryExpr ansi2011))
-    [("select a from t where a = 5"
-     ,toQueryExpr $ makeSelect {msSelectList = [(Iden [Name Nothing "a"],Nothing)]
+whereClause = Group "whereClause"
+    [q "select a from t where a = 5"
+     $ toQueryExpr $ makeSelect {msSelectList = [(Iden [Name Nothing "a"],Nothing)]
                  ,msFrom = [TRSimple [Name Nothing "t"]]
-                 ,msWhere = Just $ BinOp (Iden [Name Nothing "a"]) [Name Nothing "="] (NumLit "5")})
+                 ,msWhere = Just $ BinOp (Iden [Name Nothing "a"]) [Name Nothing "="] (NumLit "5")}
     ]
 
 having :: TestItem
-having = Group "having" $ map (uncurry (TestQueryExpr ansi2011))
-    [("select a,sum(b) from t group by a having sum(b) > 5"
-     ,toQueryExpr $ makeSelect {msSelectList = [(Iden [Name Nothing "a"],Nothing)
+having = Group "having"
+    [q "select a,sum(b) from t group by a having sum(b) > 5"
+     $ toQueryExpr $ makeSelect {msSelectList = [(Iden [Name Nothing "a"],Nothing)
                                  ,(App [Name Nothing "sum"] [Iden [Name Nothing "b"]],Nothing)]
                  ,msFrom = [TRSimple [Name Nothing "t"]]
                  ,msGroupBy = [SimpleGroup $ Iden [Name Nothing "a"]]
                  ,msHaving = Just $ BinOp (App [Name Nothing "sum"] [Iden [Name Nothing "b"]])
                                           [Name Nothing ">"] (NumLit "5")
-                 })
+                 }
     ]
 
 orderBy :: TestItem
-orderBy = Group "orderBy" $ map (uncurry (TestQueryExpr ansi2011))
-    [("select a from t order by a"
-     ,ms [SortSpec (Iden [Name Nothing "a"]) DirDefault NullsOrderDefault])
+orderBy = Group "orderBy"
+    [q "select a from t order by a"
+     $ ms [SortSpec (Iden [Name Nothing "a"]) DirDefault NullsOrderDefault]
 
-    ,("select a from t order by a, b"
-     ,ms [SortSpec (Iden [Name Nothing "a"]) DirDefault NullsOrderDefault
-         ,SortSpec (Iden [Name Nothing "b"]) DirDefault NullsOrderDefault])
+    ,q "select a from t order by a, b"
+     $ ms [SortSpec (Iden [Name Nothing "a"]) DirDefault NullsOrderDefault
+         ,SortSpec (Iden [Name Nothing "b"]) DirDefault NullsOrderDefault]
 
-    ,("select a from t order by a asc"
-     ,ms [SortSpec (Iden [Name Nothing "a"]) Asc NullsOrderDefault])
+    ,q "select a from t order by a asc"
+     $ ms [SortSpec (Iden [Name Nothing "a"]) Asc NullsOrderDefault]
 
-    ,("select a from t order by a desc, b desc"
-     ,ms [SortSpec (Iden [Name Nothing "a"]) Desc NullsOrderDefault
-         ,SortSpec (Iden [Name Nothing "b"]) Desc NullsOrderDefault])
+    ,q "select a from t order by a desc, b desc"
+     $ ms [SortSpec (Iden [Name Nothing "a"]) Desc NullsOrderDefault
+         ,SortSpec (Iden [Name Nothing "b"]) Desc NullsOrderDefault]
 
-    ,("select a from t order by a desc nulls first, b desc nulls last"
-     ,ms [SortSpec (Iden [Name Nothing "a"]) Desc NullsFirst
-         ,SortSpec (Iden [Name Nothing "b"]) Desc NullsLast])
+    ,q "select a from t order by a desc nulls first, b desc nulls last"
+     $ ms [SortSpec (Iden [Name Nothing "a"]) Desc NullsFirst
+         ,SortSpec (Iden [Name Nothing "b"]) Desc NullsLast]
 
     ]
   where
@@ -122,20 +123,20 @@ orderBy = Group "orderBy" $ map (uncurry (TestQueryExpr ansi2011))
                       ,msOrderBy = o}
 
 offsetFetch :: TestItem
-offsetFetch = Group "offsetFetch" $ map (uncurry (TestQueryExpr ansi2011))
+offsetFetch = Group "offsetFetch"
     [-- ansi standard
-     ("select a from t offset 5 rows fetch next 10 rows only"
-     ,ms (Just $ NumLit "5") (Just $ NumLit "10"))
-    ,("select a from t offset 5 rows;"
-     ,ms (Just $ NumLit "5") Nothing)
-    ,("select a from t fetch next 10 row only;"
-     ,ms Nothing (Just $ NumLit "10"))
-    ,("select a from t offset 5 row fetch first 10 row only"
-     ,ms (Just $ NumLit "5") (Just $ NumLit "10"))
+     q "select a from t offset 5 rows fetch next 10 rows only"
+     $ ms (Just $ NumLit "5") (Just $ NumLit "10")
+    ,q "select a from t offset 5 rows;"
+     $ ms (Just $ NumLit "5") Nothing
+    ,q "select a from t fetch next 10 row only;"
+     $ ms Nothing (Just $ NumLit "10")
+    ,q "select a from t offset 5 row fetch first 10 row only"
+     $ ms (Just $ NumLit "5") (Just $ NumLit "10")
      -- postgres: disabled, will add back when postgres
      -- dialect is added
-    --,("select a from t limit 10 offset 5"
-    -- ,ms (Just $ NumLit "5") (Just $ NumLit "10"))
+    --,q "select a from t limit 10 offset 5"
+    -- $ ms (Just $ NumLit "5") (Just $ NumLit "10"))
     ]
   where
     ms o l = toQueryExpr $ makeSelect
@@ -145,23 +146,23 @@ offsetFetch = Group "offsetFetch" $ map (uncurry (TestQueryExpr ansi2011))
              ,msFetchFirst = l}
 
 combos :: TestItem
-combos = Group "combos" $ map (uncurry (TestQueryExpr ansi2011))
-    [("select a from t union select b from u"
-     ,QueryExprSetOp mst Union SQDefault Respectively msu)
+combos = Group "combos"
+    [q "select a from t union select b from u"
+     $ QueryExprSetOp mst Union SQDefault Respectively msu
 
-    ,("select a from t intersect select b from u"
-     ,QueryExprSetOp mst Intersect SQDefault Respectively msu)
+    ,q "select a from t intersect select b from u"
+     $ QueryExprSetOp mst Intersect SQDefault Respectively msu
 
-    ,("select a from t except all select b from u"
-     ,QueryExprSetOp mst Except All Respectively msu)
+    ,q "select a from t except all select b from u"
+     $ QueryExprSetOp mst Except All Respectively msu
 
-    ,("select a from t union distinct corresponding \
+    ,q "select a from t union distinct corresponding \
       \select b from u"
-     ,QueryExprSetOp mst Union Distinct Corresponding msu)
+     $ QueryExprSetOp mst Union Distinct Corresponding msu
 
-    ,("select a from t union select a from t union select a from t"
-     ,QueryExprSetOp (QueryExprSetOp mst Union SQDefault Respectively mst)
-       Union SQDefault Respectively mst)
+    ,q "select a from t union select a from t union select a from t"
+     $ QueryExprSetOp (QueryExprSetOp mst Union SQDefault Respectively mst)
+       Union SQDefault Respectively mst
     ]
   where
     mst = toQueryExpr $ makeSelect
@@ -173,20 +174,20 @@ combos = Group "combos" $ map (uncurry (TestQueryExpr ansi2011))
 
 
 withQueries :: TestItem
-withQueries = Group "with queries" $ map (uncurry (TestQueryExpr ansi2011))
-    [("with u as (select a from t) select a from u"
-     ,With False [(Alias (Name Nothing "u") Nothing, ms1)] ms2)
+withQueries = Group "with queries"
+    [q "with u as (select a from t) select a from u"
+     $ With False [(Alias (Name Nothing "u") Nothing, ms1)] ms2
 
-    ,("with u(b) as (select a from t) select a from u"
-     ,With False [(Alias (Name Nothing "u") (Just [Name Nothing "b"]), ms1)] ms2)
+    ,q "with u(b) as (select a from t) select a from u"
+     $ With False [(Alias (Name Nothing "u") (Just [Name Nothing "b"]), ms1)] ms2
 
-    ,("with x as (select a from t),\n\
+    ,q "with x as (select a from t),\n\
       \     u as (select a from x)\n\
       \select a from u"
-     ,With False [(Alias (Name Nothing "x") Nothing, ms1), (Alias (Name Nothing "u") Nothing,ms3)] ms2)
+     $ With False [(Alias (Name Nothing "x") Nothing, ms1), (Alias (Name Nothing "u") Nothing,ms3)] ms2
 
-    ,("with recursive u as (select a from t) select a from u"
-     ,With True [(Alias (Name Nothing "u") Nothing, ms1)] ms2)
+    ,q "with recursive u as (select a from t) select a from u"
+     $ With True [(Alias (Name Nothing "u") Nothing, ms1)] ms2
     ]
  where
    ms c t = toQueryExpr $ makeSelect
@@ -197,13 +198,16 @@ withQueries = Group "with queries" $ map (uncurry (TestQueryExpr ansi2011))
    ms3 = ms "a" "x"
 
 values :: TestItem
-values = Group "values" $ map (uncurry (TestQueryExpr ansi2011))
-    [("values (1,2),(3,4)"
-      ,Values [[NumLit "1", NumLit "2"]
-              ,[NumLit "3", NumLit "4"]])
+values = Group "values"
+    [q "values (1,2),(3,4)"
+     $ Values [[NumLit "1", NumLit "2"]
+              ,[NumLit "3", NumLit "4"]]
     ]
 
 tables :: TestItem
-tables = Group "tables" $ map (uncurry (TestQueryExpr ansi2011))
-    [("table tbl", Table [Name Nothing "tbl"])
+tables = Group "tables"
+    [q "table tbl" $ Table [Name Nothing "tbl"]
     ]
+
+q :: HasCallStack => Text -> QueryExpr -> TestItem
+q src ast = testQueryExpr ansi2011 src ast

@@ -74,7 +74,6 @@ try again to add annotation to the ast
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TypeFamilies      #-}
-
 module Language.SQL.SimpleSQL.Lex
     (Token(..)
     ,WithPos(..)
@@ -111,21 +110,26 @@ import Text.Megaparsec
     ,pstateSourcePos
     ,statePosState
     ,mkPos
+    ,hidden
+    ,setErrorOffset
 
     ,choice
     ,satisfy
     ,takeWhileP
     ,takeWhile1P
-    ,(<?>)
     ,eof
     ,many
     ,try
     ,option
     ,(<|>)
     ,notFollowedBy
-    ,manyTill
-    ,anySingle
     ,lookAhead
+    ,match
+    ,optional
+    ,label
+    ,chunk
+    ,region
+    ,anySingle
     )
 import qualified Text.Megaparsec as M
 import Text.Megaparsec.Char
@@ -139,17 +143,17 @@ import qualified Data.List.NonEmpty as NE
 import Data.Proxy (Proxy(..))
 import Data.Void (Void)
 
-import Control.Applicative ((<**>))
 import Data.Char
     (isAlphaNum
     ,isAlpha
     ,isSpace
     ,isDigit
     )
-import Control.Monad (void, guard)
+import Control.Monad (void)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Maybe (fromMaybe)
+--import Text.Megaparsec.Debug (dbg)
 
 ------------------------------------------------------------------------------
 
@@ -189,16 +193,26 @@ data Token
     | LineComment Text
     -- | A block comment, \/* stuff *\/, includes the comment delimiters
     | BlockComment Text
+    -- | Used for generating better error messages when using the
+    --     output of the lexer in a parser
+    | InvalidToken Text
       deriving (Eq,Show,Ord)
 
 ------------------------------------------------------------------------------
 
 -- main api functions
 
--- | Lex some SQL to a list of tokens.
+-- | Lex some SQL to a list of tokens. The invalid token setting
+-- changes the behaviour so that if there's a parse error at the start
+-- of parsing an invalid token, it adds a final InvalidToken with the
+-- character to the result then stop parsing. This can then be used to
+-- produce a parse error with more context in the parser. Parse errors
+-- within tokens still produce Left errors.
 lexSQLWithPositions
     :: Dialect
     -- ^ dialect of SQL to use
+    -> Bool
+    -- ^ produce InvalidToken
     -> Text
     -- ^ filename to use in error messages
     -> Maybe (Int,Int)
@@ -207,13 +221,14 @@ lexSQLWithPositions
     -> Text
     -- ^ the SQL source to lex
     -> Either ParseError [WithPos Token]
-lexSQLWithPositions dialect fn p src = myParse fn p (many (sqlToken dialect) <* (eof <?> "")) src
-
+lexSQLWithPositions dialect pit fn p src = myParse fn p (tokens dialect pit) src
 
 -- | Lex some SQL to a list of tokens.
 lexSQL
     :: Dialect
     -- ^ dialect of SQL to use
+    -> Bool
+    -- ^ produce InvalidToken, see lexSQLWithPositions
     -> Text
     -- ^ filename to use in error messages
     -> Maybe (Int,Int)
@@ -222,8 +237,8 @@ lexSQL
     -> Text
     -- ^ the SQL source to lex
     -> Either ParseError [Token]
-lexSQL dialect fn p src =
-    map tokenVal <$> lexSQLWithPositions dialect fn p src
+lexSQL dialect pit fn p src =
+    map tokenVal <$> lexSQLWithPositions dialect pit fn p src
 
 myParse :: Text -> Maybe (Int,Int) -> Parser a -> Text -> Either ParseError a
 myParse name sp' p s =
@@ -271,6 +286,7 @@ prettyToken _ (SqlNumber r) = r
 prettyToken _ (Whitespace t) = t
 prettyToken _ (LineComment l) = l
 prettyToken _ (BlockComment c) = c
+prettyToken _ (InvalidToken t) = t
 
 prettyTokens :: Dialect -> [Token] -> Text
 prettyTokens d ts = T.concat $ map (prettyToken d) ts
@@ -281,24 +297,54 @@ prettyTokens d ts = T.concat $ map (prettyToken d) ts
 
 -- | parser for a sql token
 sqlToken :: Dialect -> Parser (WithPos Token)
-sqlToken d = (do
-    -- possibly there's a more efficient way of doing the source positions?
+sqlToken d =
+    withPos $ hidden $ choice $
+    [sqlString d
+    ,identifier d
+    ,lineComment d
+    ,blockComment d
+    ,sqlNumber d
+    ,positionalArg d
+    ,dontParseEndBlockComment d
+    ,prefixedVariable d
+    ,symbol d
+    ,sqlWhitespace d]
+
+--fakeSourcePos :: SourcePos
+--fakeSourcePos = SourcePos "" (mkPos 1) (mkPos 1)
+
+--------------------------------------
+
+-- position and error helpers
+
+withPos :: Parser a -> Parser (WithPos a)
+withPos p = do
     sp <- getSourcePos
     off <- getOffset
-    t <- choice
-         [sqlString d
-         ,identifier d
-         ,lineComment d
-         ,blockComment d
-         ,sqlNumber d
-         ,positionalArg d
-         ,dontParseEndBlockComment d
-         ,prefixedVariable d
-         ,symbol d
-         ,sqlWhitespace d]
+    a <- p
     off1 <- getOffset
     ep <- getSourcePos
-    pure $ WithPos sp ep (off1 - off) t) <?> "valid lexical token"
+    pure $ WithPos sp ep (off1 - off) a
+
+{-
+
+TODO: extend this idea, to recover to parsing regular tokens after an
+invalid one. This can then support resumption after error in the parser.
+This would also need something similar being done for parse errors
+within lexical tokens.
+
+-}
+invalidToken :: Dialect -> Parser (WithPos Token)
+invalidToken _ =
+    withPos $ (hidden eof *> fail "") <|> (InvalidToken . T.singleton <$> anySingle)
+
+tokens :: Dialect -> Bool -> Parser [WithPos Token]
+tokens d pit = do
+    x <- many (sqlToken d)
+    if pit
+        then choice [x <$ hidden eof
+                    ,(\y -> x ++ [y]) <$> hidden (invalidToken d)]
+        else x <$ hidden eof
 
 --------------------------------------
 
@@ -313,27 +359,38 @@ x'hexidecimal string'
 -}
 
 sqlString :: Dialect -> Parser Token
-sqlString d = dollarString <|> csString <|> normalString
+sqlString d =
+    (if (diDollarString d)
+     then (dollarString <|>)
+     else id) csString <|> normalString
   where
     dollarString = do
-        guard $ diDollarString d
         -- use try because of ambiguity with symbols and with
         -- positional arg
-        delim <- (\x -> T.concat ["$",x,"$"])
-                 <$> try (char '$' *> option "" identifierString <* char '$')
-        SqlString delim delim . T.pack <$> manyTill anySingle (try $ string delim)
-    normalString = SqlString "'" "'" <$> (char '\'' *> normalStringSuffix False "")
-    normalStringSuffix allowBackslash t = do
-        s <- takeWhileP Nothing $ if allowBackslash
-                                  then (`notElemChar` "'\\")
-                                  else (/= '\'')
-        -- deal with '' or \' as literal quote character
-        choice [do
-                ctu <- choice ["''" <$ try (string "''")
-                              ,"\\'" <$ string "\\'"
-                              ,"\\" <$ char '\\']
-                normalStringSuffix allowBackslash $ T.concat [t,s,ctu]
-               ,T.concat [t,s] <$ char '\'']
+        delim <- fstMatch (try (char '$' *> hoptional_ identifierString <* char '$'))
+        let moreDollarString =
+                label (T.unpack delim) $ takeWhileP_ Nothing (/='$') *> checkDollar
+            checkDollar = label (T.unpack delim) $ 
+                choice
+                [lookAhead (chunk_ delim) *> pure () -- would be nice not to parse it twice?
+                                                     -- but makes the whole match trick much less neat
+                ,char_ '$' *> moreDollarString]
+        str <- fstMatch moreDollarString
+        chunk_ delim
+        pure $ SqlString delim delim str
+    lq = label "'" $ char_ '\''
+    normalString = SqlString "'" "'" <$> (lq *> normalStringSuffix False)
+    normalStringSuffix allowBackslash = label "'" $ do
+        let regularChar = if allowBackslash
+                          then (\x -> x /= '\'' && x /='\\')
+                          else (\x -> x /= '\'')
+            nonQuoteStringChar = takeWhileP_ Nothing regularChar
+            nonRegularContinue = 
+                (hchunk_ "''" <|> hchunk_ "\\'" <|> hchar_ '\\')
+            moreChars = nonQuoteStringChar
+                *> (option () (nonRegularContinue *> moreChars))
+        fstMatch moreChars <* lq
+            
     -- try is used to to avoid conflicts with
     -- identifiers which can start with n,b,x,u
     -- once we read the quote type and the starting '
@@ -345,13 +402,13 @@ sqlString d = dollarString <|> csString <|> normalString
     csString
       | diEString d =
         choice [SqlString <$> try (string "e'" <|> string "E'")
-                          <*> pure "'" <*> normalStringSuffix True ""
+                          <*> pure "'" <*> normalStringSuffix True
                ,csString']
       | otherwise = csString'
     csString' = SqlString
                 <$> try cs
                 <*> pure "'"
-                <*> normalStringSuffix False ""
+                <*> normalStringSuffix False
     csPrefixes = map (`T.cons` "'") "nNbBxX" ++ ["u&'", "U&'"]
     cs :: Parser Text
     cs = choice $ map string csPrefixes
@@ -370,42 +427,49 @@ u&"unicode quoted identifier"
 
 identifier :: Dialect -> Parser Token
 identifier d =
-    choice
+    choice $
     [quotedIden
     ,unicodeQuotedIden
-    ,regularIden
-    ,guard (diBackquotedIden d) >> mySqlQuotedIden
-    ,guard (diSquareBracketQuotedIden d) >> sqlServerQuotedIden
-    ]
+    ,regularIden]
+    ++ [mySqlQuotedIden | diBackquotedIden d]
+    ++ [sqlServerQuotedIden | diSquareBracketQuotedIden d]
   where
     regularIden = Identifier Nothing <$> identifierString
-    quotedIden = Identifier (Just ("\"","\"")) <$> qidenPart
-    mySqlQuotedIden = Identifier (Just ("`","`"))
-                      <$> (char '`' *> takeWhile1P Nothing (/='`') <* char '`')
-    sqlServerQuotedIden = Identifier (Just ("[","]"))
-                          <$> (char '[' *> takeWhile1P Nothing (`notElemChar` "[]") <* char ']')
+    quotedIden = Identifier (Just ("\"","\"")) <$> qiden
+    failEmptyIden c = failOnThis (char_ c) "empty identifier"
+    mySqlQuotedIden =
+        Identifier (Just ("`","`")) <$>
+        (char_ '`' *>
+         (failEmptyIden '`'
+          <|> (takeWhile1P Nothing (/='`') <* char_ '`')))
+    sqlServerQuotedIden =
+        Identifier (Just ("[","]")) <$>
+        (char_ '[' *>
+         (failEmptyIden ']'
+         <|> (takeWhileP Nothing (`notElemChar` "[]")
+              <* choice [char_ ']'
+                         -- should probably do this error message as
+                         -- a proper unexpected message
+                         ,failOnThis (char_ '[') "unexpected ["])))
     -- try is used here to avoid a conflict with identifiers
     -- and quoted strings which also start with a 'u'
     unicodeQuotedIden = Identifier
                         <$> (f <$> try (oneOf "uU" <* string "&"))
-                        <*> qidenPart
+                        <*> qiden
       where f x = Just (T.cons x "&\"", "\"")
-    qidenPart = char '"' *> qidenSuffix ""
-    qidenSuffix t = do
-        s <- takeWhileP Nothing (/='"')
-        void $ char '"'
-        -- deal with "" as literal double quote character
-        choice [do
-                void $ char '"'
-                qidenSuffix $ T.concat [t,s,"\"\""]
-               ,pure $ T.concat [t,s]]
+    qiden =
+        char_ '"' *> (failEmptyIden '"' <|> fstMatch moreQIden <* char_ '"')
+    moreQIden =
+        label "\""
+        (takeWhileP_ Nothing (/='"')
+         *> hoptional_ (chunk "\"\"" *> moreQIden))
 
 identifierString :: Parser Text
-identifierString = (do
+identifierString = label "identifier" $ do
     c <- satisfy isFirstLetter
     choice
-        [T.cons c <$> takeWhileP (Just "identifier char") isIdentifierChar
-        ,pure $ T.singleton c]) <?> "identifier"
+        [T.cons c <$> takeWhileP Nothing isIdentifierChar
+        ,pure $ T.singleton c]
   where
      isFirstLetter c = c == '_' || isAlpha c
 
@@ -415,12 +479,11 @@ isIdentifierChar c = c == '_' || isAlphaNum c
 --------------------------------------
 
 lineComment :: Dialect -> Parser Token
-lineComment _ = do
-    try (string_ "--") <?> ""
-    rest <- takeWhileP (Just "non newline character") (/='\n')
+lineComment _ = LineComment <$> fstMatch (do
+    hidden (string_ "--")
+    takeWhileP_ Nothing (/='\n')
     -- can you optionally read the \n to terminate the takewhilep without reparsing it?
-    suf <- option "" ("\n" <$ char_ '\n')
-    pure $ LineComment $ T.concat ["--", rest, suf]
+    hoptional_  $ char_ '\n')
 
 --------------------------------------
 
@@ -428,28 +491,30 @@ lineComment _ = do
 -- I don't know any dialects that use this, but I think it's useful, if needed,
 -- add it back in under a dialect flag?
 blockComment :: Dialect -> Parser Token
-blockComment _ = (do
-    try $ string_ "/*"
-    BlockComment . T.concat . ("/*":) <$> more) <?> ""
+blockComment _ = BlockComment <$> fstMatch bc
   where
-    more = choice
-        [["*/"] <$ try (string_ "*/")  -- comment ended
-        ,char_ '*' *> (("*":) <$> more) -- comment contains * but this isn't the comment end token
-        -- not sure if there's an easy optimisation here
-        ,(:) <$> takeWhile1P (Just "non comment terminator text") (/= '*') <*> more]
+    bc = chunk_ "/*" *> moreBlockChars
+    regularBlockCommentChars = label "*/" $
+        takeWhileP_ Nothing (\x -> x /= '*' && x /= '/')
+    continueBlockComment = label "*/" (char_ '*' <|> char_ '/') *> moreBlockChars
+    endComment = label "*/" $ chunk_ "*/"
+    moreBlockChars = label "*/" $
+        regularBlockCommentChars
+        *> (endComment
+           <|> (label "*/" bc *> moreBlockChars) -- nest
+           <|> continueBlockComment)
 
 {-
 This is to improve user experience: provide an error if we see */
 outside a comment. This could potentially break postgres ops with */
-in them (which is a stupid thing to do). In other cases, the user
-should write * / instead (I can't think of any cases when this would
-be valid syntax though).
+in them (it is not sensible to use operators that contain this as a
+substring). In other cases, the user should write * / instead (I can't
+think of any cases when this would be valid syntax).
 -}
 
 dontParseEndBlockComment :: Dialect -> Parser Token
 dontParseEndBlockComment _ =
-    -- don't use try, then it should commit to the error
-    try (string "*/") *> fail "comment end without comment start"
+    failOnThis (chunk_ "*/") "comment end without comment start"
 
 --------------------------------------
 
@@ -482,63 +547,51 @@ followed by an optional exponent
 
 sqlNumber :: Dialect -> Parser Token
 sqlNumber d =
-    SqlNumber <$> completeNumber
-    -- this is for definitely avoiding possibly ambiguous source
-    <* choice [-- special case to allow e.g. 1..2
-               guard (diPostgresSymbols d)
-               *> void (lookAhead $ try (string ".." <?> ""))
-                  <|> void (notFollowedBy (oneOf "eE."))
-              ,notFollowedBy (oneOf "eE.")
-              ]
+    SqlNumber <$> fstMatch
+    ((numStartingWithDigits <|> numStartingWithDot)
+     *> hoptional_ expo *> trailingCheck)
   where
-    completeNumber =
-      (digits <??> (pp dot <??.> pp digits)
-      -- try is used in case we read a dot
-      -- and it isn't part of a number
-      -- if there are any following digits, then we commit
-      -- to it being a number and not something else
-      <|> try ((<>) <$> dot <*> digits))
-      <??> pp expon
-
-    -- make sure we don't parse two adjacent dots in a number
-    -- special case for postgresql, we backtrack if we see two adjacent dots
-    -- to parse 1..2, but in other dialects we commit to the failure
-    dot = let p = string "." <* notFollowedBy (char '.')
-          in if diPostgresSymbols d
-             then try p
-             else p
-    expon = T.cons <$> oneOf "eE" <*> sInt
-    sInt = (<>) <$> option "" (T.singleton <$> oneOf "+-") <*> digits
-    pp = (<$$> (<>))
-    p <??> q = p <**> option id q
-    pa <$$> c = pa <**> pure (flip c)
-    pa <??.> pb =
-       let c = (<$>) . flip
-       in (.) `c` pa <*> option id pb
+    numStartingWithDigits = digits_ *> hoptional_ (safeDot *> hoptional_ digits_)
+    -- use try, so we don't commit to a number when there's a . with no following digit
+    numStartingWithDot = try (safeDot *> digits_)
+    expo = (char_ 'e' <|> char_ 'E') *> optional_ (char_ '-' <|> char_ '+') *> digits_
+    digits_ = label "digits" $ takeWhile1P_ Nothing isDigit
+    -- if there's a '..' next to the number, and it's a dialect that has .. as a
+    -- lexical token, parse what we have so far and leave the dots in the chamber
+    -- otherwise, give an error
+    safeDot =
+        if diPostgresSymbols d
+        then try (char_ '.' <* notFollowedBy (char_ '.'))
+        else char_ '.' <* notFollowedBy (char_ '.')
+    -- additional check to give an error if the number is immediately
+    -- followed by e, E or . with an exception for .. if this symbol is supported
+    trailingCheck =
+        if diPostgresSymbols d
+        then -- special case to allow e.g. 1..2
+             void (lookAhead $ hidden $ chunk_ "..")
+             <|> void (notFollowedBy (oneOf "eE."))
+        else notFollowedBy (oneOf "eE.")
 
 digits :: Parser Text
-digits = takeWhile1P (Just "digit") isDigit
+digits = label "digits" $ takeWhile1P Nothing isDigit
 
 --------------------------------------
 
 positionalArg :: Dialect -> Parser Token
 positionalArg d =
-    guard (diPositionalArg d) >>
     -- use try to avoid ambiguities with other syntax which starts with dollar
-    PositionalArg <$> try (char_ '$' *> (read . T.unpack <$> digits))
+    choice [PositionalArg <$>
+            try (char_ '$' *> (read . T.unpack <$> digits)) | diPositionalArg d]
 
 --------------------------------------
 
 -- todo: I think the try here should read a prefix char, then a single valid
 -- identifier char, then commit
 prefixedVariable :: Dialect -> Parser Token
-prefixedVariable d = try $ choice
-    [PrefixedVariable <$> char ':' <*> identifierString
-    ,guard (diAtIdentifier d) >>
-     PrefixedVariable <$> char '@' <*> identifierString
-    ,guard (diHashIdentifier d) >>
-     PrefixedVariable <$> char '#' <*> identifierString
-    ]
+prefixedVariable d = try $ choice $
+    [PrefixedVariable <$> char ':' <*> identifierString]
+    ++ [PrefixedVariable <$> char '@' <*> identifierString | diAtIdentifier d]
+    ++ [PrefixedVariable <$> char '#' <*> identifierString | diHashIdentifier d]
 
 --------------------------------------
 
@@ -565,7 +618,7 @@ symbol d  = Symbol <$> choice (concat
     else basicAnsiOps
    ])
  where
-   dots = [takeWhile1P (Just "dot") (=='.')]
+   dots = [takeWhile1P Nothing (=='.')]
    odbcSymbol = [string "{", string "}"]
    postgresExtraSymbols =
        [try (string ":=")
@@ -670,7 +723,7 @@ generalizedPostgresqlOperator = [singlePlusMinus,opMoreChars]
 --------------------------------------
 
 sqlWhitespace :: Dialect -> Parser Token
-sqlWhitespace _ = Whitespace <$> takeWhile1P (Just "whitespace") isSpace <?> ""
+sqlWhitespace _ = Whitespace <$> takeWhile1P Nothing isSpace
 
 ----------------------------------------------------------------------------
 
@@ -678,6 +731,9 @@ sqlWhitespace _ = Whitespace <$> takeWhile1P (Just "whitespace") isSpace <?> ""
 
 char_ :: Char -> Parser ()
 char_ = void . char
+
+hchar_ :: Char -> Parser ()
+hchar_ = void . hidden . char
 
 string_ :: Text -> Parser ()
 string_ = void . string
@@ -687,6 +743,39 @@ oneOf = M.oneOf
 
 notElemChar :: Char -> [Char] -> Bool
 notElemChar a b = a `notElem` (b :: [Char])
+
+fstMatch :: Parser () -> Parser Text
+fstMatch x = fst <$> match x
+
+hoptional_ :: Parser a -> Parser ()
+hoptional_ = void . hoptional
+
+hoptional :: Parser a -> Parser (Maybe a)
+hoptional = hidden . optional
+
+optional_ :: Parser a -> Parser ()
+optional_ = void . optional
+
+--hoption :: a -> Parser a -> Parser a
+--hoption a p = hidden $ option a p
+
+takeWhileP_ :: Maybe String -> (Char -> Bool) -> Parser ()
+takeWhileP_ m p = void $ takeWhileP m p
+
+takeWhile1P_ :: Maybe String -> (Char -> Bool) -> Parser ()
+takeWhile1P_ m p = void $ takeWhile1P m p
+
+chunk_ :: Text -> Parser ()
+chunk_ = void . chunk
+
+hchunk_ :: Text -> Parser ()
+hchunk_ = void . hidden . chunk
+
+failOnThis :: Parser () -> Text -> Parser a
+failOnThis p msg = do
+    o <- getOffset
+    hidden p
+    region (setErrorOffset o) $ fail $ T.unpack msg
 
 ----------------------------------------------------------------------------
 

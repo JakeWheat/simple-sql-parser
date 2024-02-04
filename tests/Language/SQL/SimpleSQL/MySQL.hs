@@ -6,6 +6,7 @@ module Language.SQL.SimpleSQL.MySQL (mySQLTests) where
 
 import Language.SQL.SimpleSQL.TestTypes
 import Language.SQL.SimpleSQL.Syntax
+import Language.SQL.SimpleSQL.TestRunners
 
 mySQLTests :: TestItem
 mySQLTests = Group "mysql dialect"
@@ -21,21 +22,16 @@ limit syntax
 -}
 
 backtickQuotes :: TestItem
-backtickQuotes = Group "backtickQuotes" (map (uncurry (TestScalarExpr mysql))
-    [("`test`", Iden [Name (Just ("`","`")) "test"])
-    ]
-    ++ [ParseScalarExprFails ansi2011 "`test`"]
-    )
+backtickQuotes = Group "backtickQuotes"
+    [testScalarExpr mysql "`test`" $ Iden [Name (Just ("`","`")) "test"]
+    ,testParseScalarExprFails ansi2011 "`test`"]
 
 limit :: TestItem
-limit = Group "queries" ( map (uncurry (TestQueryExpr mysql))
-    [("select * from t limit 5"
-     ,toQueryExpr $ sel {msFetchFirst = Just (NumLit "5")}
-     )
-    ]
-    ++ [ParseQueryExprFails mysql "select a from t fetch next 10 rows only;"
-       ,ParseQueryExprFails ansi2011 "select * from t limit 5"]
-    )
+limit = Group "queries"
+    [testQueryExpr mysql "select * from t limit 5"
+     $ toQueryExpr $ sel {msFetchFirst = Just (NumLit "5")}
+    ,testParseQueryExprFails mysql "select a from t fetch next 10 rows only;"
+    ,testParseQueryExprFails ansi2011 "select * from t limit 5"]
   where
     sel = makeSelect
           {msSelectList = [(Star, Nothing)]

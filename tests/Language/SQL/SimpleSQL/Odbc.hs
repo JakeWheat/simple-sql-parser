@@ -4,6 +4,8 @@ module Language.SQL.SimpleSQL.Odbc (odbcTests) where
 
 import Language.SQL.SimpleSQL.TestTypes
 import Language.SQL.SimpleSQL.Syntax
+import Language.SQL.SimpleSQL.TestRunners
+import Data.Text (Text)
 
 odbcTests :: TestItem
 odbcTests = Group "odbc" [
@@ -30,14 +32,14 @@ odbcTests = Group "odbc" [
               ,iden "SQL_DATE"])
             ]
        ,Group "outer join" [
-             TestQueryExpr ansi2011 {diOdbc=True}
+             q
              "select * from {oj t1 left outer join t2 on expr}"
              $ toQueryExpr $ makeSelect
                    {msSelectList = [(Star,Nothing)]
                    ,msFrom = [TROdbc $ TRJoin (TRSimple [Name Nothing "t1"]) False JLeft (TRSimple [Name Nothing "t2"])
                                          (Just $ JoinOn $ Iden [Name Nothing "expr"])]}]
        ,Group "check parsing bugs" [
-             TestQueryExpr ansi2011 {diOdbc=True}
+             q
              "select {fn CONVERT(cint,SQL_BIGINT)} from t;"
              $ toQueryExpr $ makeSelect
                    {msSelectList = [(OdbcFunc (ap "CONVERT"
@@ -46,7 +48,12 @@ odbcTests = Group "odbc" [
                    ,msFrom = [TRSimple [Name Nothing "t"]]}]
        ]
   where
-    e = TestScalarExpr ansi2011 {diOdbc = True}
+    e :: HasCallStack => Text -> ScalarExpr -> TestItem
+    e src ast = testScalarExpr ansi2011{diOdbc = True} src ast
+
+    q :: HasCallStack => Text -> QueryExpr -> TestItem
+    q src ast = testQueryExpr ansi2011{diOdbc = True} src ast
+
     --tsql = ParseProcSql defaultParseFlags {pfDialect=sqlServerDialect}
     ap n = App [Name Nothing n]
     iden n = Iden [Name Nothing n]

@@ -20,26 +20,28 @@ doc _ (Group nm _) | "generated" `T.isInfixOf` nm = []
 doc n (Group nm is) =
     Heading n (L.fromStrict nm)
     : concatMap (doc (n + 1)) is
-doc _ (TestScalarExpr _ str e) =
+doc _ (TestScalarExpr _ str e _) =
     [Row (L.fromStrict str) (L.pack $ ppShow e)]
-doc _ (TestQueryExpr _ str e) =
+doc _ (TestQueryExpr _ str e _) =
     [Row (L.fromStrict str) (L.pack $ ppShow e)]
-doc _ (TestStatement _ str e) =
+doc _ (TestStatement _ str e _) =
     [Row (L.fromStrict str) (L.pack $ ppShow e)]
-doc _ (TestStatements _ str e) =
+doc _ (TestStatements _ str e _) =
     [Row (L.fromStrict str) (L.pack $ ppShow e)]
-doc _ (ParseQueryExpr d str) =
+doc _ (ParseQueryExpr d str _) =
     [Row (L.fromStrict str) (showResult $ P.parseQueryExpr d "" Nothing str)]
-doc _ (ParseQueryExprFails d str) =
+doc _ (ParseQueryExprFails d str _) =
     [Row (L.fromStrict str) (showResult $ P.parseQueryExpr d "" Nothing str)]
-doc _ (ParseScalarExprFails d str) =
+doc _ (ParseScalarExprFails d str _) =
     [Row (L.fromStrict str) (showResult $ P.parseScalarExpr d "" Nothing str)]
 
-doc _ (LexTest d str _) =
-    [Row (L.fromStrict str) (showResultL $ L.lexSQL d "" Nothing str)]
+doc _ (LexTest d str _ _) =
+    [Row (L.fromStrict str) (showResultL $ L.lexSQL d False "" Nothing str)]
 
-doc _ (LexFails d str) =
-    [Row (L.fromStrict str) (showResultL $ L.lexSQL d "" Nothing str)]
+doc _ (LexFails d str _) =
+    [Row (L.fromStrict str) (showResultL $ L.lexSQL d False "" Nothing str)]
+doc _ (GeneralParseFailTest {}) = []
+
 
 showResult :: Show a => Either P.ParseError a -> L.Text
 showResult = either (("Left\n" <>) . L.fromStrict . P.prettyError) (L.pack . ppShow)

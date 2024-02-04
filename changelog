@@ -1,3 +1,8 @@
+0.8.0   (not yet released)
+        lexer has new option to output an invalid token on some kinds of
+          parse errors
+        switch tests to hspec
+        improve parse error messages
 0.7.1   fix error message source quoting
 0.7.0   support autoincrement for sqlite
 	support table constraints without separating comma for sqlite

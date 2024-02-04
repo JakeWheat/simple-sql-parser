@@ -89,7 +89,7 @@ lexCommand =
       (f,src) <- getInput args
       either (error . T.unpack . L.prettyError)
              (putStrLn . intercalate ",\n" . map show)
-             $ L.lexSQL ansi2011 (T.pack f) Nothing (T.pack src)
+             $ L.lexSQL ansi2011 False (T.pack f) Nothing (T.pack src)
   )
 
 

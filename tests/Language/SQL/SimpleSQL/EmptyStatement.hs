@@ -3,19 +3,26 @@ module Language.SQL.SimpleSQL.EmptyStatement where
 
 import Language.SQL.SimpleSQL.Syntax
 import Language.SQL.SimpleSQL.TestTypes
+import Language.SQL.SimpleSQL.TestRunners
+import Data.Text (Text)
 
 emptyStatementTests :: TestItem
 emptyStatementTests = Group "empty statement"
-  [ TestStatement ansi2011 ";" EmptyStatement
-  , TestStatements ansi2011 ";" [EmptyStatement]
-  , TestStatements ansi2011 ";;" [EmptyStatement, EmptyStatement]
-  , TestStatements ansi2011 ";;;" [EmptyStatement, EmptyStatement, EmptyStatement]
-  , TestStatement ansi2011 "/* comment */ ;" EmptyStatement
-  , TestStatements ansi2011 "" []
-  , TestStatements ansi2011 "/* comment */" []
-  , TestStatements ansi2011 "/* comment */ ;" [EmptyStatement]
-  , TestStatements ansi2011 "/* comment */ ; /* comment */ ;"
+  [ s ";" EmptyStatement
+  , t ";" [EmptyStatement]
+  , t ";;" [EmptyStatement, EmptyStatement]
+  , t ";;;" [EmptyStatement, EmptyStatement, EmptyStatement]
+  , s "/* comment */ ;" EmptyStatement
+  , t "" []
+  , t "/* comment */" []
+  , t "/* comment */ ;" [EmptyStatement]
+  , t "/* comment */ ; /* comment */ ;"
       [EmptyStatement, EmptyStatement]
-  , TestStatements ansi2011 "/* comment */ ; /* comment */ ; /* comment */ ;"
+  , t "/* comment */ ; /* comment */ ; /* comment */ ;"
       [EmptyStatement, EmptyStatement, EmptyStatement]
   ]
+  where
+    s :: HasCallStack => Text -> Statement -> TestItem
+    s src a = testStatement ansi2011 src a
+    t :: HasCallStack => Text -> [Statement] -> TestItem
+    t src a = testStatements ansi2011 src a

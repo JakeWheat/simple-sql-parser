@@ -12,13 +12,11 @@ module Language.SQL.SimpleSQL.Tests
     ,TestItem(..)
     ) where
 
-import qualified Test.Tasty as T
-import qualified Test.Tasty.HUnit as H
-
---import Language.SQL.SimpleSQL.Syntax
-import Language.SQL.SimpleSQL.Pretty
-import Language.SQL.SimpleSQL.Parse
-import qualified Language.SQL.SimpleSQL.Lex as Lex
+import Test.Hspec
+    (SpecWith
+    ,describe
+    ,parallel
+    )
 
 import Language.SQL.SimpleSQL.TestTypes
 
@@ -44,10 +42,9 @@ import Language.SQL.SimpleSQL.SQL2011Schema
 import Language.SQL.SimpleSQL.MySQL
 import Language.SQL.SimpleSQL.Oracle
 import Language.SQL.SimpleSQL.CustomDialect
+import Language.SQL.SimpleSQL.ErrorMessages
 
-import Data.Text (Text)
 import qualified Data.Text as T
-
 
 {-
 Order the tests to start from the simplest first. This is also the
@@ -77,104 +74,22 @@ testData =
     ,customDialectTests
     ,emptyStatementTests
     ,createIndexTests
+    ,errorMessageTests
     ]
 
-tests :: T.TestTree
-tests = itemToTest testData
+tests :: SpecWith ()
+tests = parallel $ itemToTest testData
 
---runTests :: IO ()
---runTests = void $ H.runTestTT $ itemToTest testData
-
-itemToTest :: TestItem -> T.TestTree
+itemToTest :: TestItem -> SpecWith ()
 itemToTest (Group nm ts) =
-    T.testGroup (T.unpack nm) $ map itemToTest ts
-itemToTest (TestScalarExpr d str expected) =
-    toTest parseScalarExpr prettyScalarExpr d str expected
-itemToTest (TestQueryExpr d str expected) =
-    toTest parseQueryExpr prettyQueryExpr d str expected
-itemToTest (TestStatement d str expected) =
-    toTest parseStatement prettyStatement d str expected
-itemToTest (TestStatements d str expected) =
-    toTest parseStatements prettyStatements d str expected
-itemToTest (ParseQueryExpr d str) =
-    toPTest parseQueryExpr prettyQueryExpr d str
-
-itemToTest (ParseQueryExprFails d str) =
-    toFTest parseQueryExpr prettyQueryExpr d str
-
-itemToTest (ParseScalarExprFails d str) =
-    toFTest parseScalarExpr prettyScalarExpr d str
-
-itemToTest (LexTest d s ts) = makeLexerTest d s ts
-itemToTest (LexFails d s) = makeLexingFailsTest d s
-
-makeLexerTest :: Dialect -> Text -> [Lex.Token] -> T.TestTree
-makeLexerTest d s ts = H.testCase (T.unpack s) $ do
-    let ts1 = either (error . T.unpack . Lex.prettyError) id $ Lex.lexSQL d "" Nothing s
-    H.assertEqual "" ts ts1
-    let s' = Lex.prettyTokens d $ ts1
-    H.assertEqual "pretty print" s s'
-
-makeLexingFailsTest :: Dialect -> Text -> T.TestTree
-makeLexingFailsTest d s = H.testCase (T.unpack s) $ do
-    case Lex.lexSQL d "" Nothing s of
-         Right x -> H.assertFailure $ "lexing should have failed: " ++ T.unpack s ++ "\ngot: " ++ show x
-         Left _ -> pure ()
-
-
-toTest :: (Eq a, Show a) =>
-          (Dialect -> Text -> Maybe (Int,Int) -> Text -> Either ParseError a)
-       -> (Dialect -> a -> Text)
-       -> Dialect
-       -> Text
-       -> a
-       -> T.TestTree
-toTest parser pp d str expected = H.testCase (T.unpack str) $ do
-        let egot = parser d "" Nothing str
-        case egot of
-            Left e -> H.assertFailure $ T.unpack $ prettyError e
-            Right got -> H.assertEqual "" expected got
-        
-        let str' = pp d expected
-            egot' = parser d "" Nothing str'
-        case egot' of
-            Left e' ->
-                H.assertFailure $ "pp roundtrip"
-                    ++ "\n" ++ (T.unpack str')
-                    ++ (T.unpack $ prettyError e')
-            Right got' ->
-                H.assertEqual
-                    ("pp roundtrip" ++ "\n" ++ T.unpack str')
-                    expected got'
-
-toPTest :: (Eq a, Show a) =>
-          (Dialect -> Text -> Maybe (Int,Int) -> Text -> Either ParseError a)
-       -> (Dialect -> a -> Text)
-       -> Dialect
-       -> Text
-       -> T.TestTree
-toPTest parser pp d str = H.testCase (T.unpack str) $ do
-        let egot = parser d "" Nothing str
-        case egot of
-            Left e -> H.assertFailure $ T.unpack $ prettyError e
-            Right got -> do
-                let str' = pp d got
-                let egot' = parser d "" Nothing str'
-                case egot' of
-                    Left e' -> H.assertFailure $ "pp roundtrip "
-                                                 ++ "\n" ++ T.unpack str' ++ "\n"
-                                                 ++ T.unpack (prettyError e')
-                    Right _got' -> return ()
-
-toFTest :: (Eq a, Show a) =>
-          (Dialect -> Text -> Maybe (Int,Int) -> Text -> Either ParseError a)
-       -> (Dialect -> a -> Text)
-       -> Dialect
-       -> Text
-       -> T.TestTree
-toFTest parser _pp d str = H.testCase (T.unpack str) $ do
-        let egot = parser d "" Nothing str
-        case egot of
-            Left _e -> return ()
-            Right _got ->
-              H.assertFailure $ "parse didn't fail: " ++ show d ++ "\n" ++ T.unpack str
+    describe (T.unpack nm) $ mapM_ itemToTest ts
+itemToTest (TestScalarExpr _ _ _ t) = t
+itemToTest (TestQueryExpr _ _ _ t) = t
+itemToTest (TestStatement _ _ _ t) = t
+itemToTest (TestStatements _ _ _ t) = t
+itemToTest (ParseQueryExpr _ _ t) = t
+itemToTest (ParseQueryExprFails _ _ t) = t
+itemToTest (ParseScalarExprFails _ _ t) = t
+itemToTest (LexTest _ _ _ t) = t
+itemToTest (LexFails _ _ t) = t
+itemToTest (GeneralParseFailTest _ _ t) = t

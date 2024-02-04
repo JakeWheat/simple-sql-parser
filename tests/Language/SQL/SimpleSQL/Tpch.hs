@@ -14,15 +14,14 @@ module Language.SQL.SimpleSQL.Tpch (tpchTests,tpchQueries) where
 import Language.SQL.SimpleSQL.TestTypes
 
 import Data.Text (Text)
+import Language.SQL.SimpleSQL.TestRunners
 
 tpchTests :: TestItem
-tpchTests =
-    Group "parse tpch"
-    $ map (ParseQueryExpr ansi2011 . snd) tpchQueries
+tpchTests = Group "parse tpch" tpchQueries
 
-tpchQueries :: [(String,Text)]
+tpchQueries :: [TestItem]
 tpchQueries =
-  [("Q1","\n\
+  [q "Q1" "\n\
          \select\n\
          \        l_returnflag,\n\
          \        l_linestatus,\n\
@@ -43,8 +42,8 @@ tpchQueries =
          \        l_linestatus\n\
          \order by\n\
          \        l_returnflag,\n\
-         \        l_linestatus")
-  ,("Q2","\n\
+         \        l_linestatus"
+  ,q "Q2" "\n\
          \select\n\
          \        s_acctbal,\n\
          \        s_name,\n\
@@ -88,8 +87,8 @@ tpchQueries =
          \        n_name,\n\
          \        s_name,\n\
          \        p_partkey\n\
-         \fetch first 100 rows only")
-  ,("Q3","\n\
+         \fetch first 100 rows only"
+  ,q "Q3" "\n\
          \ select\n\
          \         l_orderkey,\n\
          \         sum(l_extendedprice * (1 - l_discount)) as revenue,\n\
@@ -112,8 +111,8 @@ tpchQueries =
          \ order by\n\
          \         revenue desc,\n\
          \         o_orderdate\n\
-         \ fetch first 10 rows only")
-  ,("Q4","\n\
+         \ fetch first 10 rows only"
+  ,q "Q4" "\n\
          \ select\n\
          \         o_orderpriority,\n\
          \         count(*) as order_count\n\
@@ -134,8 +133,8 @@ tpchQueries =
          \ group by\n\
          \         o_orderpriority\n\
          \ order by\n\
-         \         o_orderpriority")
-  ,("Q5","\n\
+         \         o_orderpriority"
+  ,q "Q5" "\n\
          \ select\n\
          \         n_name,\n\
          \         sum(l_extendedprice * (1 - l_discount)) as revenue\n\
@@ -159,8 +158,8 @@ tpchQueries =
          \ group by\n\
          \         n_name\n\
          \ order by\n\
-         \         revenue desc")
-  ,("Q6","\n\
+         \         revenue desc"
+  ,q "Q6" "\n\
          \ select\n\
          \         sum(l_extendedprice * l_discount) as revenue\n\
          \ from\n\
@@ -169,8 +168,8 @@ tpchQueries =
          \         l_shipdate >= date '1997-01-01'\n\
          \         and l_shipdate < date '1997-01-01' + interval '1' year\n\
          \         and l_discount between 0.07 - 0.01 and 0.07 + 0.01\n\
-         \         and l_quantity < 24")
-  ,("Q7","\n\
+         \         and l_quantity < 24"
+  ,q "Q7" "\n\
          \ select\n\
          \         supp_nation,\n\
          \         cust_nation,\n\
@@ -209,8 +208,8 @@ tpchQueries =
          \ order by\n\
          \         supp_nation,\n\
          \         cust_nation,\n\
-         \         l_year")
-  ,("Q8","\n\
+         \         l_year"
+  ,q "Q8" "\n\
          \ select\n\
          \         o_year,\n\
          \         sum(case\n\
@@ -247,8 +246,8 @@ tpchQueries =
          \ group by\n\
          \         o_year\n\
          \ order by\n\
-         \         o_year")
-   ,("Q9","\n\
+         \         o_year"
+   ,q "Q9" "\n\
          \ select\n\
          \         nation,\n\
          \         o_year,\n\
@@ -280,8 +279,8 @@ tpchQueries =
          \         o_year\n\
          \ order by\n\
          \         nation,\n\
-         \         o_year desc")
-   ,("Q10","\n\
+         \         o_year desc"
+   ,q "Q10" "\n\
          \ select\n\
          \         c_custkey,\n\
          \         c_name,\n\
@@ -313,8 +312,8 @@ tpchQueries =
          \         c_comment\n\
          \ order by\n\
          \         revenue desc\n\
-         \ fetch first 20 rows only")
-   ,("Q11","\n\
+         \ fetch first 20 rows only"
+   ,q "Q11" "\n\
          \ select\n\
          \         ps_partkey,\n\
          \         sum(ps_supplycost * ps_availqty) as value\n\
@@ -341,8 +340,8 @@ tpchQueries =
          \                                 and n_name = 'CHINA'\n\
          \                 )\n\
          \ order by\n\
-         \         value desc")
-   ,("Q12","\n\
+         \         value desc"
+   ,q "Q12" "\n\
          \ select\n\
          \         l_shipmode,\n\
          \         sum(case\n\
@@ -370,8 +369,8 @@ tpchQueries =
          \ group by\n\
          \         l_shipmode\n\
          \ order by\n\
-         \         l_shipmode")
-   ,("Q13","\n\
+         \         l_shipmode"
+   ,q "Q13" "\n\
          \ select\n\
          \         c_count,\n\
          \         count(*) as custdist\n\
@@ -391,8 +390,8 @@ tpchQueries =
          \         c_count\n\
          \ order by\n\
          \         custdist desc,\n\
-         \         c_count desc")
-   ,("Q14","\n\
+         \         c_count desc"
+   ,q "Q14" "\n\
          \ select\n\
          \         100.00 * sum(case\n\
          \                 when p_type like 'PROMO%'\n\
@@ -405,8 +404,8 @@ tpchQueries =
          \ where\n\
          \         l_partkey = p_partkey\n\
          \         and l_shipdate >= date '1994-12-01'\n\
-         \         and l_shipdate < date '1994-12-01' + interval '1' month")
-   ,("Q15","\n\
+         \         and l_shipdate < date '1994-12-01' + interval '1' month"
+   ,q "Q15" "\n\
          \ /*create view revenue0 (supplier_no, total_revenue) as\n\
          \         select\n\
          \                 l_suppkey,\n\
@@ -448,8 +447,8 @@ tpchQueries =
          \                         revenue0\n\
          \         )\n\
          \ order by\n\
-         \         s_suppkey")
-   ,("Q16","\n\
+         \         s_suppkey"
+   ,q "Q16" "\n\
          \ select\n\
          \         p_brand,\n\
          \         p_type,\n\
@@ -479,8 +478,8 @@ tpchQueries =
          \         supplier_cnt desc,\n\
          \         p_brand,\n\
          \         p_type,\n\
-         \         p_size")
-   ,("Q17","\n\
+         \         p_size"
+   ,q "Q17" "\n\
          \ select\n\
          \         sum(l_extendedprice) / 7.0 as avg_yearly\n\
          \ from\n\
@@ -497,8 +496,8 @@ tpchQueries =
          \                         lineitem\n\
          \                 where\n\
          \                         l_partkey = p_partkey\n\
-         \         )")
-   ,("Q18","\n\
+         \         )"
+   ,q "Q18" "\n\
          \ select\n\
          \         c_name,\n\
          \         c_custkey,\n\
@@ -531,8 +530,8 @@ tpchQueries =
          \ order by\n\
          \         o_totalprice desc,\n\
          \         o_orderdate\n\
-         \ fetch first 100 rows only")
-   ,("Q19","\n\
+         \ fetch first 100 rows only"
+   ,q "Q19" "\n\
          \ select\n\
          \         sum(l_extendedprice* (1 - l_discount)) as revenue\n\
          \ from\n\
@@ -567,8 +566,8 @@ tpchQueries =
          \                 and p_size between 1 and 15\n\
          \                 and l_shipmode in ('AIR', 'AIR REG')\n\
          \                 and l_shipinstruct = 'DELIVER IN PERSON'\n\
-         \         )")
-   ,("Q20","\n\
+         \         )"
+   ,q "Q20" "\n\
          \ select\n\
          \         s_name,\n\
          \         s_address\n\
@@ -605,8 +604,8 @@ tpchQueries =
          \         and s_nationkey = n_nationkey\n\
          \         and n_name = 'VIETNAM'\n\
          \ order by\n\
-         \         s_name")
-   ,("Q21","\n\
+         \         s_name"
+   ,q "Q21" "\n\
          \ select\n\
          \         s_name,\n\
          \         count(*) as numwait\n\
@@ -646,8 +645,8 @@ tpchQueries =
          \ order by\n\
          \         numwait desc,\n\
          \         s_name\n\
-         \ fetch first 100 rows only")
-   ,("Q22","\n\
+         \ fetch first 100 rows only"
+   ,q "Q22" "\n\
          \ select\n\
          \         cntrycode,\n\
          \         count(*) as numcust,\n\
@@ -684,5 +683,8 @@ tpchQueries =
          \ group by\n\
          \         cntrycode\n\
          \ order by\n\
-         \         cntrycode")
+         \         cntrycode"
   ]
+  where
+    q :: HasCallStack => Text -> Text -> TestItem
+    q _ src = testParseQueryExpr ansi2011 src

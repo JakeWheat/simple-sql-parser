@@ -6,6 +6,8 @@ module Language.SQL.SimpleSQL.GroupBy (groupByTests) where
 
 import Language.SQL.SimpleSQL.TestTypes
 import Language.SQL.SimpleSQL.Syntax
+import Language.SQL.SimpleSQL.TestRunners
+import Data.Text (Text)
 
 
 groupByTests :: TestItem
@@ -15,23 +17,31 @@ groupByTests = Group "groupByTests"
     ,randomGroupBy
     ]
 
+q :: HasCallStack => Text -> QueryExpr -> TestItem
+q src a = testQueryExpr ansi2011 src a
+
+p :: HasCallStack => Text -> TestItem
+p src = testParseQueryExpr ansi2011 src
+
+
+
 simpleGroupBy :: TestItem
-simpleGroupBy = Group "simpleGroupBy" $ map (uncurry (TestQueryExpr ansi2011))
-    [("select a,sum(b) from t group by a"
-     ,toQueryExpr $ makeSelect {msSelectList = [(Iden [Name Nothing "a"],Nothing)
+simpleGroupBy = Group "simpleGroupBy"
+    [q "select a,sum(b) from t group by a"
+     $ toQueryExpr $ makeSelect {msSelectList = [(Iden [Name Nothing "a"],Nothing)
                                  ,(App [Name Nothing "sum"] [Iden [Name Nothing "b"]],Nothing)]
                  ,msFrom = [TRSimple [Name Nothing "t"]]
                  ,msGroupBy = [SimpleGroup $ Iden [Name Nothing "a"]]
-                 })
+                 }
 
-    ,("select a,b,sum(c) from t group by a,b"
-     ,toQueryExpr $ makeSelect {msSelectList = [(Iden [Name Nothing "a"],Nothing)
+    ,q "select a,b,sum(c) from t group by a,b"
+     $ toQueryExpr $ makeSelect {msSelectList = [(Iden [Name Nothing "a"],Nothing)
                                  ,(Iden [Name Nothing "b"],Nothing)
                                  ,(App [Name Nothing "sum"] [Iden [Name Nothing "c"]],Nothing)]
                  ,msFrom = [TRSimple [Name Nothing "t"]]
                  ,msGroupBy = [SimpleGroup $ Iden [Name Nothing "a"]
                               ,SimpleGroup $ Iden [Name Nothing "b"]]
-                 })
+                 }
     ]
 
 {-
@@ -40,15 +50,15 @@ sure which sql version they were introduced, 1999 or 2003 I think).
 -}
 
 newGroupBy :: TestItem
-newGroupBy = Group "newGroupBy" $ map (uncurry (TestQueryExpr ansi2011))
-    [("select * from t group by ()", ms [GroupingParens []])
-    ,("select * from t group by grouping sets ((), (a))"
-     ,ms [GroupingSets [GroupingParens []
-                       ,GroupingParens [SimpleGroup $ Iden [Name Nothing "a"]]]])
-    ,("select * from t group by cube(a,b)"
-     ,ms [Cube [SimpleGroup $ Iden [Name Nothing "a"], SimpleGroup $ Iden [Name Nothing "b"]]])
-    ,("select * from t group by rollup(a,b)"
-     ,ms [Rollup [SimpleGroup $ Iden [Name Nothing "a"], SimpleGroup $ Iden [Name Nothing "b"]]])
+newGroupBy = Group "newGroupBy"
+    [q "select * from t group by ()" $ ms [GroupingParens []]
+    ,q "select * from t group by grouping sets ((), (a))"
+     $ ms [GroupingSets [GroupingParens []
+                       ,GroupingParens [SimpleGroup $ Iden [Name Nothing "a"]]]]
+    ,q "select * from t group by cube(a,b)"
+     $ ms [Cube [SimpleGroup $ Iden [Name Nothing "a"], SimpleGroup $ Iden [Name Nothing "b"]]]
+    ,q "select * from t group by rollup(a,b)"
+     $ ms [Rollup [SimpleGroup $ Iden [Name Nothing "a"], SimpleGroup $ Iden [Name Nothing "b"]]]
     ]
   where
     ms g = toQueryExpr $ makeSelect {msSelectList = [(Star,Nothing)]
@@ -56,21 +66,21 @@ newGroupBy = Group "newGroupBy" $ map (uncurry (TestQueryExpr ansi2011))
                       ,msGroupBy = g}
 
 randomGroupBy :: TestItem
-randomGroupBy = Group "randomGroupBy" $ map (ParseQueryExpr ansi2011)
-    ["select * from t GROUP BY a"
-    ,"select * from t GROUP BY GROUPING SETS((a))"
-    ,"select * from t GROUP BY a,b,c"
-    ,"select * from t GROUP BY GROUPING SETS((a,b,c))"
-    ,"select * from t GROUP BY ROLLUP(a,b)"
-    ,"select * from t GROUP BY GROUPING SETS((a,b),\n\
+randomGroupBy = Group "randomGroupBy"
+    [p "select * from t GROUP BY a"
+    ,p "select * from t GROUP BY GROUPING SETS((a))"
+    ,p "select * from t GROUP BY a,b,c"
+    ,p "select * from t GROUP BY GROUPING SETS((a,b,c))"
+    ,p "select * from t GROUP BY ROLLUP(a,b)"
+    ,p "select * from t GROUP BY GROUPING SETS((a,b),\n\
      \(a),\n\
      \() )"
-    ,"select * from t GROUP BY ROLLUP(b,a)"
-    ,"select * from t GROUP BY GROUPING SETS((b,a),\n\
+    ,p "select * from t GROUP BY ROLLUP(b,a)"
+    ,p "select * from t GROUP BY GROUPING SETS((b,a),\n\
      \(b),\n\
      \() )"
-    ,"select * from t GROUP BY CUBE(a,b,c)"
-    ,"select * from t GROUP BY GROUPING SETS((a,b,c),\n\
+    ,p "select * from t GROUP BY CUBE(a,b,c)"
+    ,p "select * from t GROUP BY GROUPING SETS((a,b,c),\n\
      \(a,b),\n\
      \(a,c),\n\
      \(b,c),\n\
@@ -78,33 +88,33 @@ randomGroupBy = Group "randomGroupBy" $ map (ParseQueryExpr ansi2011)
      \(b),\n\
      \(c),\n\
      \() )"
-    ,"select * from t GROUP BY ROLLUP(Province, County, City)"
-    ,"select * from t GROUP BY ROLLUP(Province, (County, City))"
-    ,"select * from t GROUP BY ROLLUP(Province, (County, City))"
-    ,"select * from t GROUP BY GROUPING SETS((Province, County, City),\n\
+    ,p "select * from t GROUP BY ROLLUP(Province, County, City)"
+    ,p "select * from t GROUP BY ROLLUP(Province, (County, City))"
+    ,p "select * from t GROUP BY ROLLUP(Province, (County, City))"
+    ,p "select * from t GROUP BY GROUPING SETS((Province, County, City),\n\
      \(Province),\n\
      \() )"
-    ,"select * from t GROUP BY GROUPING SETS((Province, County, City),\n\
+    ,p "select * from t GROUP BY GROUPING SETS((Province, County, City),\n\
      \(Province, County),\n\
      \(Province),\n\
      \() )"
-    ,"select * from t GROUP BY a, ROLLUP(b,c)"
-    ,"select * from t GROUP BY GROUPING SETS((a,b,c),\n\
+    ,p "select * from t GROUP BY a, ROLLUP(b,c)"
+    ,p "select * from t GROUP BY GROUPING SETS((a,b,c),\n\
      \(a,b),\n\
      \(a) )"
-    ,"select * from t GROUP BY a, b, ROLLUP(c,d)"
-    ,"select * from t GROUP BY GROUPING SETS((a,b,c,d),\n\
+    ,p "select * from t GROUP BY a, b, ROLLUP(c,d)"
+    ,p "select * from t GROUP BY GROUPING SETS((a,b,c,d),\n\
      \(a,b,c),\n\
      \(a,b) )"
-    ,"select * from t GROUP BY ROLLUP(a), ROLLUP(b,c)"
-    ,"select * from t GROUP BY GROUPING SETS((a,b,c),\n\
+    ,p "select * from t GROUP BY ROLLUP(a), ROLLUP(b,c)"
+    ,p "select * from t GROUP BY GROUPING SETS((a,b,c),\n\
      \(a,b),\n\
      \(a),\n\
      \(b,c),\n\
      \(b),\n\
      \() )"
-    ,"select * from t GROUP BY ROLLUP(a), CUBE(b,c)"
-    ,"select * from t GROUP BY GROUPING SETS((a,b,c),\n\
+    ,p "select * from t GROUP BY ROLLUP(a), CUBE(b,c)"
+    ,p "select * from t GROUP BY GROUPING SETS((a,b,c),\n\
      \(a,b),\n\
      \(a,c),\n\
      \(a),\n\
@@ -112,8 +122,8 @@ randomGroupBy = Group "randomGroupBy" $ map (ParseQueryExpr ansi2011)
      \(b),\n\
      \(c),\n\
      \() )"
-    ,"select * from t GROUP BY CUBE(a,b), ROLLUP(c,d)"
-    ,"select * from t GROUP BY GROUPING SETS((a,b,c,d),\n\
+    ,p "select * from t GROUP BY CUBE(a,b), ROLLUP(c,d)"
+    ,p "select * from t GROUP BY GROUPING SETS((a,b,c,d),\n\
      \(a,b,c),\n\
      \(a,b),\n\
      \(a,c,d),\n\
@@ -125,16 +135,16 @@ randomGroupBy = Group "randomGroupBy" $ map (ParseQueryExpr ansi2011)
      \(c,d),\n\
      \(c),\n\
      \() )"
-    ,"select * from t GROUP BY a, ROLLUP(a,b)"
-    ,"select * from t GROUP BY GROUPING SETS((a,b),\n\
+    ,p "select * from t GROUP BY a, ROLLUP(a,b)"
+    ,p "select * from t GROUP BY GROUPING SETS((a,b),\n\
      \(a) )"
-    ,"select * from t GROUP BY Region,\n\
+    ,p "select * from t GROUP BY Region,\n\
      \ROLLUP(Sales_Person, WEEK(Sales_Date)),\n\
      \CUBE(YEAR(Sales_Date), MONTH (Sales_Date))"
-    ,"select * from t GROUP BY ROLLUP (Region, Sales_Person, WEEK(Sales_Date),\n\
+    ,p "select * from t GROUP BY ROLLUP (Region, Sales_Person, WEEK(Sales_Date),\n\
      \YEAR(Sales_Date), MONTH(Sales_Date) )"
 
-    ,"SELECT WEEK(SALES_DATE) AS WEEK,\n\
+    ,p "SELECT WEEK(SALES_DATE) AS WEEK,\n\
      \DAYOFWEEK(SALES_DATE) AS DAY_WEEK,\n\
      \SALES_PERSON, SUM(SALES) AS UNITS_SOLD\n\
      \FROM SALES\n\
@@ -142,7 +152,7 @@ randomGroupBy = Group "randomGroupBy" $ map (ParseQueryExpr ansi2011)
      \GROUP BY WEEK(SALES_DATE), DAYOFWEEK(SALES_DATE), SALES_PERSON\n\
      \ORDER BY WEEK, DAY_WEEK, SALES_PERSON"
 
-    ,"SELECT WEEK(SALES_DATE) AS WEEK,\n\
+    ,p "SELECT WEEK(SALES_DATE) AS WEEK,\n\
      \DAYOFWEEK(SALES_DATE) AS DAY_WEEK,\n\
      \SALES_PERSON, SUM(SALES) AS UNITS_SOLD\n\
      \FROM SALES\n\
@@ -151,7 +161,7 @@ randomGroupBy = Group "randomGroupBy" $ map (ParseQueryExpr ansi2011)
      \(DAYOFWEEK(SALES_DATE), SALES_PERSON))\n\
      \ORDER BY WEEK, DAY_WEEK, SALES_PERSON"
 
-    ,"SELECT WEEK(SALES_DATE) AS WEEK,\n\
+    ,p "SELECT WEEK(SALES_DATE) AS WEEK,\n\
      \DAYOFWEEK(SALES_DATE) AS DAY_WEEK,\n\
      \SALES_PERSON, SUM(SALES) AS UNITS_SOLD\n\
      \FROM SALES\n\
@@ -159,7 +169,7 @@ randomGroupBy = Group "randomGroupBy" $ map (ParseQueryExpr ansi2011)
      \GROUP BY ROLLUP ( WEEK(SALES_DATE), DAYOFWEEK(SALES_DATE), SALES_PERSON )\n\
      \ORDER BY WEEK, DAY_WEEK, SALES_PERSON"
 
-    ,"SELECT WEEK(SALES_DATE) AS WEEK,\n\
+    ,p "SELECT WEEK(SALES_DATE) AS WEEK,\n\
      \DAYOFWEEK(SALES_DATE) AS DAY_WEEK,\n\
      \SALES_PERSON, SUM(SALES) AS UNITS_SOLD\n\
      \FROM SALES\n\
@@ -167,7 +177,7 @@ randomGroupBy = Group "randomGroupBy" $ map (ParseQueryExpr ansi2011)
      \GROUP BY CUBE ( WEEK(SALES_DATE), DAYOFWEEK(SALES_DATE), SALES_PERSON )\n\
      \ORDER BY WEEK, DAY_WEEK, SALES_PERSON"
 
-    ,"SELECT SALES_PERSON,\n\
+    ,p "SELECT SALES_PERSON,\n\
      \MONTH(SALES_DATE) AS MONTH,\n\
      \SUM(SALES) AS UNITS_SOLD\n\
      \FROM SALES\n\
@@ -176,21 +186,21 @@ randomGroupBy = Group "randomGroupBy" $ map (ParseQueryExpr ansi2011)
      \)\n\
      \ORDER BY SALES_PERSON, MONTH"
 
-    ,"SELECT WEEK(SALES_DATE) AS WEEK,\n\
+    ,p "SELECT WEEK(SALES_DATE) AS WEEK,\n\
      \DAYOFWEEK(SALES_DATE) AS DAY_WEEK,\n\
      \SUM(SALES) AS UNITS_SOLD\n\
      \FROM SALES\n\
      \GROUP BY ROLLUP ( WEEK(SALES_DATE), DAYOFWEEK(SALES_DATE) )\n\
      \ORDER BY WEEK, DAY_WEEK"
 
-    ,"SELECT MONTH(SALES_DATE) AS MONTH,\n\
+    ,p "SELECT MONTH(SALES_DATE) AS MONTH,\n\
      \REGION,\n\
      \SUM(SALES) AS UNITS_SOLD\n\
      \FROM SALES\n\
      \GROUP BY ROLLUP ( MONTH(SALES_DATE), REGION )\n\
      \ORDER BY MONTH, REGION"
 
-    ,"SELECT WEEK(SALES_DATE) AS WEEK,\n\
+    ,p "SELECT WEEK(SALES_DATE) AS WEEK,\n\
      \DAYOFWEEK(SALES_DATE) AS DAY_WEEK,\n\
      \MONTH(SALES_DATE) AS MONTH,\n\
      \REGION,\n\
@@ -200,7 +210,7 @@ randomGroupBy = Group "randomGroupBy" $ map (ParseQueryExpr ansi2011)
      \ROLLUP( MONTH(SALES_DATE), REGION ) )\n\
      \ORDER BY WEEK, DAY_WEEK, MONTH, REGION"
 
-    ,"SELECT R1, R2,\n\
+    ,p "SELECT R1, R2,\n\
      \WEEK(SALES_DATE) AS WEEK,\n\
      \DAYOFWEEK(SALES_DATE) AS DAY_WEEK,\n\
      \MONTH(SALES_DATE) AS MONTH,\n\
@@ -211,7 +221,7 @@ randomGroupBy = Group "randomGroupBy" $ map (ParseQueryExpr ansi2011)
      \(R2,ROLLUP( MONTH(SALES_DATE), REGION ) ))\n\
      \ORDER BY WEEK, DAY_WEEK, MONTH, REGION"
 
-    {-,"SELECT COALESCE(R1,R2) AS GROUP,\n\
+    {-,p "SELECT COALESCE(R1,R2) AS GROUP,\n\
      \WEEK(SALES_DATE) AS WEEK,\n\
      \DAYOFWEEK(SALES_DATE) AS DAY_WEEK,\n\
      \MONTH(SALES_DATE) AS MONTH,\n\
@@ -226,7 +236,7 @@ randomGroupBy = Group "randomGroupBy" $ map (ParseQueryExpr ansi2011)
     -- decimal as a function not allowed due to the reserved keyword
     -- handling: todo, review if this is ansi standard function or
     -- if there are places where reserved keywords can still be used
-    ,"SELECT MONTH(SALES_DATE) AS MONTH,\n\
+    ,p "SELECT MONTH(SALES_DATE) AS MONTH,\n\
      \REGION,\n\
      \SUM(SALES) AS UNITS_SOLD,\n\
      \MAX(SALES) AS BEST_SALE,\n\

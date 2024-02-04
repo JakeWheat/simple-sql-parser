@@ -6,24 +6,24 @@ module Language.SQL.SimpleSQL.FullQueries (fullQueriesTests) where
 
 import Language.SQL.SimpleSQL.TestTypes
 import Language.SQL.SimpleSQL.Syntax
-
+import Language.SQL.SimpleSQL.TestRunners
+import Data.Text (Text)
 
 fullQueriesTests :: TestItem
-fullQueriesTests = Group "queries" $ map (uncurry (TestQueryExpr ansi2011))
-    [("select count(*) from t"
-     ,toQueryExpr $ makeSelect
+fullQueriesTests = Group "queries" $
+    [q "select count(*) from t"
+     $ toQueryExpr $ makeSelect
       {msSelectList = [(App [Name Nothing "count"] [Star], Nothing)]
       ,msFrom = [TRSimple [Name Nothing "t"]]
       }
-     )
 
-    ,("select a, sum(c+d) as s\n\
+    ,q "select a, sum(c+d) as s\n\
       \  from t,u\n\
       \  where a > 5\n\
       \  group by a\n\
       \  having count(1) > 5\n\
       \  order by s"
-     ,toQueryExpr $ makeSelect
+     $ toQueryExpr $ makeSelect
       {msSelectList = [(Iden [Name Nothing "a"], Nothing)
                       ,(App [Name Nothing "sum"]
                         [BinOp (Iden [Name Nothing "c"])
@@ -36,5 +36,8 @@ fullQueriesTests = Group "queries" $ map (uncurry (TestQueryExpr ansi2011))
                                [Name Nothing ">"] (NumLit "5")
       ,msOrderBy = [SortSpec (Iden [Name Nothing "s"]) DirDefault NullsOrderDefault]
       }
-     )
+     
     ]
+  where
+    q :: HasCallStack => Text -> QueryExpr -> TestItem
+    q src a = testQueryExpr ansi2011 src a

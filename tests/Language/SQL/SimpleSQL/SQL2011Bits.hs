@@ -12,6 +12,8 @@ module Language.SQL.SimpleSQL.SQL2011Bits (sql2011BitsTests) where
 
 import Language.SQL.SimpleSQL.TestTypes
 import Language.SQL.SimpleSQL.Syntax
+import Language.SQL.SimpleSQL.TestRunners
+import Data.Text (Text)
 
 sql2011BitsTests :: TestItem
 sql2011BitsTests = Group "sql 2011 bits tests" [
@@ -27,10 +29,8 @@ sql2011BitsTests = Group "sql 2011 bits tests" [
 BEGIN is not in the standard!
 -}
 
-     (TestStatement ansi2011
-      "start transaction"
-     $ StartTransaction)
-
+     s "start transaction" StartTransaction
+     
 {-
 17.2 <set transaction statement>
 
@@ -84,9 +84,8 @@ BEGIN is not in the standard!
   <savepoint name>
 -}
 
-    ,(TestStatement ansi2011
-      "savepoint difficult_bit"
-     $ Savepoint $ Name Nothing "difficult_bit")
+    ,s "savepoint difficult_bit"
+     $ Savepoint $ Name Nothing "difficult_bit"
 
 
 {-
@@ -96,9 +95,8 @@ BEGIN is not in the standard!
   RELEASE SAVEPOINT <savepoint specifier>
 -}
 
-    ,(TestStatement ansi2011
-      "release savepoint difficult_bit"
-     $ ReleaseSavepoint $ Name Nothing "difficult_bit")
+    ,s "release savepoint difficult_bit"
+     $ ReleaseSavepoint $ Name Nothing "difficult_bit"
 
 
 {-
@@ -108,13 +106,9 @@ BEGIN is not in the standard!
   COMMIT [ WORK ] [ AND [ NO ] CHAIN ]
 -}
 
-    ,(TestStatement ansi2011
-      "commit"
-     $ Commit)
+    ,s "commit" Commit
 
-    ,(TestStatement ansi2011
-      "commit work"
-     $ Commit)
+    ,s "commit work" Commit
 
 
 {-
@@ -127,17 +121,12 @@ BEGIN is not in the standard!
   TO SAVEPOINT <savepoint specifier>
 -}
 
-    ,(TestStatement ansi2011
-      "rollback"
-     $ Rollback Nothing)
+    ,s "rollback" $ Rollback Nothing
 
-    ,(TestStatement ansi2011
-      "rollback work"
-     $ Rollback Nothing)
+    ,s "rollback work" $ Rollback Nothing
 
-    ,(TestStatement ansi2011
-      "rollback to savepoint difficult_bit"
-     $ Rollback $ Just $ Name Nothing "difficult_bit")
+    ,s "rollback to savepoint difficult_bit"
+       $ Rollback $ Just $ Name Nothing "difficult_bit"
 
 
 {-
@@ -232,3 +221,6 @@ BEGIN is not in the standard!
 -}
 
    ]
+
+s :: HasCallStack => Text -> Statement -> TestItem
+s src ast = testStatement ansi2011 src ast

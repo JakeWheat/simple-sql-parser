@@ -184,6 +184,8 @@ generally available to work on these, so you should either make a pull
 request, or find someone willing to implement the features and make a
 pull request.
 
+Bug reports of confusing or poor parse errors are also encouraged.
+
 There is a related tutorial on implementing a SQL parser here:
 <http://jakewheat.github.io/intro_to_parsing/> (TODO: this is out of
 date, in the process of being updated)
@@ -208,6 +210,13 @@ Or use the makefile target
 
 ~~~~
 make test
+~~~~
+
+To skip some of the slow lexer tests, which you usually only need to
+run before each commit, use:
+
+~~~~
+make fast-test
 ~~~~
 
 When you add support for new syntax: add some tests. If you modify or

@@ -37,6 +37,7 @@ import Language.SQL.SimpleSQL.TestTypes
 import Language.SQL.SimpleSQL.Syntax
 
 import Data.Text (Text)
+import Language.SQL.SimpleSQL.TestRunners
 
 sql2011QueryTests :: TestItem
 sql2011QueryTests = Group "sql 2011 query tests"
@@ -515,19 +516,19 @@ generalLiterals = Group "general literals"
 
 characterStringLiterals :: TestItem
 characterStringLiterals = Group "character string literals"
-    $ map (uncurry (TestScalarExpr ansi2011))
-    [("'a regular string literal'"
-     ,StringLit "'" "'" "a regular string literal")
-    ,("'something' ' some more' 'and more'"
-     ,StringLit "'" "'" "something some moreand more")
-    ,("'something' \n ' some more' \t 'and more'"
-     ,StringLit "'" "'" "something some moreand more")
-    ,("'something' -- a comment\n ' some more' /*another comment*/ 'and more'"
-     ,StringLit "'" "'" "something some moreand more")
-    ,("'a quote: '', stuff'"
-     ,StringLit "'" "'" "a quote: '', stuff")
-    ,("''"
-     ,StringLit "'" "'" "")
+    $
+    [e "'a regular string literal'"
+     $ StringLit "'" "'" "a regular string literal"
+    ,e "'something' ' some more' 'and more'"
+     $ StringLit "'" "'" "something some moreand more"
+    ,e "'something' \n ' some more' \t 'and more'"
+     $ StringLit "'" "'" "something some moreand more"
+    ,e "'something' -- a comment\n ' some more' /*another comment*/ 'and more'"
+     $ StringLit "'" "'" "something some moreand more"
+    ,e "'a quote: '', stuff'"
+     $ StringLit "'" "'" "a quote: '', stuff"
+    ,e "''"
+     $ StringLit "'" "'" ""
 
 {-
 I'm not sure how this should work. Maybe the parser should reject non
@@ -535,8 +536,8 @@ ascii characters in strings and identifiers unless the current SQL
 character set allows them.
 -}
 
-    ,("_francais 'français'"
-     ,TypedLit (TypeName [Name Nothing "_francais"]) "français")
+    ,e "_francais 'français'"
+     $ TypedLit (TypeName [Name Nothing "_francais"]) "français"
     ]
 
 {-
@@ -547,9 +548,9 @@ character set allows them.
 
 nationalCharacterStringLiterals :: TestItem
 nationalCharacterStringLiterals = Group "national character string literals"
-    $ map (uncurry (TestScalarExpr ansi2011))
-    [("N'something'", StringLit "N'" "'" "something")
-    ,("n'something'", StringLit "n'" "'" "something")
+    $
+    [e "N'something'" $ StringLit "N'" "'" "something"
+    ,e "n'something'" $ StringLit "n'" "'" "something"
     ]
 
 {-
@@ -566,8 +567,8 @@ nationalCharacterStringLiterals = Group "national character string literals"
 
 unicodeCharacterStringLiterals :: TestItem
 unicodeCharacterStringLiterals = Group "unicode character string literals"
-    $ map (uncurry (TestScalarExpr ansi2011))
-    [("U&'something'", StringLit "U&'" "'" "something")
+    $
+    [e "U&'something'" $ StringLit "U&'" "'" "something"
     {-,("u&'something' escape ="
      ,Escape (StringLit "u&'" "'" "something") '=')
     ,("u&'something' uescape ="
@@ -587,9 +588,9 @@ TODO: unicode escape
 
 binaryStringLiterals :: TestItem
 binaryStringLiterals = Group "binary string literals"
-    $ map (uncurry (TestScalarExpr ansi2011))
+    $
     [--("B'101010'", CSStringLit "B" "101010")
-     ("X'7f7f7f'", StringLit "X'" "'" "7f7f7f")
+     e "X'7f7f7f'" $ StringLit "X'" "'" "7f7f7f"
     --,("X'7f7f7f' escape z", Escape (StringLit "X'" "'" "7f7f7f") 'z')
     ]
 
@@ -619,33 +620,32 @@ binaryStringLiterals = Group "binary string literals"
 
 numericLiterals :: TestItem
 numericLiterals = Group "numeric literals"
-    $ map (uncurry (TestScalarExpr ansi2011))
-    [("11", NumLit "11")
-    ,("11.11", NumLit "11.11")
+    [e "11" $ NumLit "11"
+    ,e "11.11" $ NumLit "11.11"
 
-    ,("11E23", NumLit "11E23")
-    ,("11E+23", NumLit "11E+23")
-    ,("11E-23", NumLit "11E-23")
+    ,e "11E23" $ NumLit "11E23"
+    ,e "11E+23" $ NumLit "11E+23"
+    ,e "11E-23" $ NumLit "11E-23"
 
-    ,("11.11E23", NumLit "11.11E23")
-    ,("11.11E+23", NumLit "11.11E+23")
-    ,("11.11E-23", NumLit "11.11E-23")
+    ,e "11.11E23" $ NumLit "11.11E23"
+    ,e "11.11E+23" $ NumLit "11.11E+23"
+    ,e "11.11E-23" $ NumLit "11.11E-23"
 
-    ,("+11E23", PrefixOp [Name Nothing "+"] $ NumLit "11E23")
-    ,("+11E+23", PrefixOp [Name Nothing "+"] $ NumLit "11E+23")
-    ,("+11E-23", PrefixOp [Name Nothing "+"] $ NumLit "11E-23")
-    ,("+11.11E23", PrefixOp [Name Nothing "+"] $ NumLit "11.11E23")
-    ,("+11.11E+23", PrefixOp [Name Nothing "+"] $ NumLit "11.11E+23")
-    ,("+11.11E-23", PrefixOp [Name Nothing "+"] $ NumLit "11.11E-23")
+    ,e "+11E23" $ PrefixOp [Name Nothing "+"] $ NumLit "11E23"
+    ,e "+11E+23" $ PrefixOp [Name Nothing "+"] $ NumLit "11E+23"
+    ,e "+11E-23" $ PrefixOp [Name Nothing "+"] $ NumLit "11E-23"
+    ,e "+11.11E23" $ PrefixOp [Name Nothing "+"] $ NumLit "11.11E23"
+    ,e "+11.11E+23" $ PrefixOp [Name Nothing "+"] $ NumLit "11.11E+23"
+    ,e "+11.11E-23" $ PrefixOp [Name Nothing "+"] $ NumLit "11.11E-23"
 
-    ,("-11E23", PrefixOp [Name Nothing "-"] $ NumLit "11E23")
-    ,("-11E+23", PrefixOp [Name Nothing "-"] $ NumLit "11E+23")
-    ,("-11E-23", PrefixOp [Name Nothing "-"] $ NumLit "11E-23")
-    ,("-11.11E23", PrefixOp [Name Nothing "-"] $ NumLit "11.11E23")
-    ,("-11.11E+23", PrefixOp [Name Nothing "-"] $ NumLit "11.11E+23")
-    ,("-11.11E-23", PrefixOp [Name Nothing "-"] $ NumLit "11.11E-23")
+    ,e "-11E23" $ PrefixOp [Name Nothing "-"] $ NumLit "11E23"
+    ,e "-11E+23" $ PrefixOp [Name Nothing "-"] $ NumLit "11E+23"
+    ,e "-11E-23" $ PrefixOp [Name Nothing "-"] $ NumLit "11E-23"
+    ,e "-11.11E23" $ PrefixOp [Name Nothing "-"] $ NumLit "11.11E23"
+    ,e "-11.11E+23" $ PrefixOp [Name Nothing "-"] $ NumLit "11.11E+23"
+    ,e "-11.11E-23" $ PrefixOp [Name Nothing "-"] $ NumLit "11.11E-23"
 
-    ,("11.11e23", NumLit "11.11e23")
+    ,e "11.11e23" $ NumLit "11.11e23"
 
     ]
 
@@ -729,33 +729,30 @@ dateTimeLiterals = Group "datetime literals"
 
 intervalLiterals :: TestItem
 intervalLiterals = Group "intervalLiterals literals"
-    $ map (uncurry (TestScalarExpr ansi2011))
-    [("interval '1'", TypedLit (TypeName [Name Nothing "interval"]) "1")
-    ,("interval '1' day"
-     ,IntervalLit Nothing "1" (Itf "day" Nothing) Nothing)
-    ,("interval '1' day(3)"
-     ,IntervalLit Nothing "1" (Itf "day" $ Just (3,Nothing)) Nothing)
-    ,("interval + '1' day(3)"
-     ,IntervalLit (Just Plus) "1" (Itf "day" $ Just (3,Nothing)) Nothing)
-    ,("interval - '1' second(2,2)"
-     ,IntervalLit (Just Minus) "1" (Itf "second" $ Just (2,Just 2)) Nothing)
-    ,("interval '1' year to month"
-     ,IntervalLit Nothing "1" (Itf "year" Nothing)
-                                  (Just $ Itf "month" Nothing))
-
-    ,("interval '1' year(4) to second(2,3) "
-     ,IntervalLit Nothing "1" (Itf "year" $ Just (4,Nothing))
-                            (Just $ Itf "second" $ Just (2, Just 3)))
+    [e "interval '1'" $ TypedLit (TypeName [Name Nothing "interval"]) "1"
+    ,e "interval '1' day"
+     $ IntervalLit Nothing "1" (Itf "day" Nothing) Nothing
+    ,e "interval '1' day(3)"
+     $ IntervalLit Nothing "1" (Itf "day" $ Just (3,Nothing)) Nothing
+    ,e "interval + '1' day(3)"
+     $ IntervalLit (Just Plus) "1" (Itf "day" $ Just (3,Nothing)) Nothing
+    ,e "interval - '1' second(2,2)"
+     $ IntervalLit (Just Minus) "1" (Itf "second" $ Just (2,Just 2)) Nothing
+    ,e "interval '1' year to month"
+     $ IntervalLit Nothing "1" (Itf "year" Nothing)
+                                  (Just $ Itf "month" Nothing)
+    ,e "interval '1' year(4) to second(2,3) "
+     $ IntervalLit Nothing "1" (Itf "year" $ Just (4,Nothing))
+                            (Just $ Itf "second" $ Just (2, Just 3))
     ]
 
 -- <boolean literal> ::= TRUE | FALSE | UNKNOWN
 
 booleanLiterals :: TestItem
 booleanLiterals = Group "boolean literals"
-    $ map (uncurry (TestScalarExpr ansi2011))
-    [("true", Iden [Name Nothing "true"])
-    ,("false", Iden [Name Nothing "false"])
-    ,("unknown", Iden [Name Nothing "unknown"])
+    [e "true" $ Iden [Name Nothing "true"]
+    ,e "false" $ Iden [Name Nothing "false"]
+    ,e "unknown" $ Iden [Name Nothing "unknown"]
     ]
 
 {-
@@ -774,16 +771,15 @@ Specify names.
 
 identifiers :: TestItem
 identifiers = Group "identifiers"
-    $ map (uncurry (TestScalarExpr ansi2011))
-    [("test",Iden [Name Nothing "test"])
-    ,("_test",Iden [Name Nothing "_test"])
-    ,("t1",Iden [Name Nothing "t1"])
-    ,("a.b",Iden [Name Nothing "a", Name Nothing "b"])
-    ,("a.b.c",Iden [Name Nothing "a", Name Nothing "b", Name Nothing "c"])
-    ,("\"quoted iden\"", Iden [Name (Just ("\"","\"")) "quoted iden"])
-    ,("\"quoted \"\" iden\"", Iden [Name (Just ("\"","\"")) "quoted \"\" iden"])
-    ,("U&\"quoted iden\"", Iden [Name (Just ("U&\"","\"")) "quoted iden"])
-    ,("U&\"quoted \"\" iden\"", Iden [Name (Just ("U&\"","\"")) "quoted \"\" iden"])
+    [e "test" $ Iden [Name Nothing "test"]
+    ,e "_test" $ Iden [Name Nothing "_test"]
+    ,e "t1" $ Iden [Name Nothing "t1"]
+    ,e "a.b" $ Iden [Name Nothing "a", Name Nothing "b"]
+    ,e "a.b.c" $ Iden [Name Nothing "a", Name Nothing "b", Name Nothing "c"]
+    ,e "\"quoted iden\"" $ Iden [Name (Just ("\"", "\"")) "quoted iden"]
+    ,e "\"quoted \"\" iden\"" $ Iden [Name (Just ("\"", "\"")) "quoted \"\" iden"]
+    ,e "U&\"quoted iden\"" $ Iden [Name (Just ("U&\"", "\"")) "quoted iden"]
+    ,e "U&\"quoted \"\" iden\"" $ Iden [Name (Just ("U&\"", "\"")) "quoted \"\" iden"]
     ]
 
 {-
@@ -1220,11 +1216,11 @@ expression
 
 typeNameTests :: TestItem
 typeNameTests = Group "type names"
-    [Group "type names" $ map (uncurry (TestScalarExpr ansi2011))
+    [Group "type names" $ map (uncurry (testScalarExpr ansi2011))
                           $ concatMap makeSimpleTests $ fst typeNames
-    ,Group "generated casts" $ map (uncurry (TestScalarExpr ansi2011))
+    ,Group "generated casts" $ map (uncurry (testScalarExpr ansi2011))
                           $ concatMap makeCastTests $ fst typeNames
-    ,Group "generated typename" $ map (uncurry (TestScalarExpr ansi2011))
+    ,Group "generated typename" $ map (uncurry (testScalarExpr ansi2011))
                           $ concatMap makeTests $ snd typeNames]
   where
     makeSimpleTests (ctn, stn) =
@@ -1247,12 +1243,10 @@ Define a field of a row type.
 
 fieldDefinition :: TestItem
 fieldDefinition = Group "field definition"
-    $ map (uncurry (TestScalarExpr ansi2011))
-    [("cast('(1,2)' as row(a int,b char))"
-     ,Cast (StringLit "'" "'" "(1,2)")
+    [e "cast('(1,2)' as row(a int,b char))"
+     $ Cast (StringLit "'" "'" "(1,2)")
      $ RowTypeName [(Name Nothing "a", TypeName [Name Nothing "int"])
-                   ,(Name Nothing "b", TypeName [Name Nothing "char"])])]
-
+                   ,(Name Nothing "b", TypeName [Name Nothing "char"])]]
 {-
 == 6.3 <value expression primary>
 
@@ -1329,9 +1323,8 @@ valueExpressions = Group "value expressions"
 
 parenthesizedScalarExpression :: TestItem
 parenthesizedScalarExpression = Group "parenthesized value expression"
-    $ map (uncurry (TestScalarExpr ansi2011))
-    [("(3)", Parens (NumLit "3"))
-    ,("((3))", Parens $ Parens (NumLit "3"))
+    [e "(3)" $ Parens (NumLit "3")
+    ,e "((3))" $ Parens $ Parens (NumLit "3")
     ]
 
 {-
@@ -1367,8 +1360,7 @@ Specify one or more values, host parameters, SQL parameters, dynamic parameters,
 
 generalValueSpecification :: TestItem
 generalValueSpecification = Group "general value specification"
-    $ map (uncurry (TestScalarExpr ansi2011)) $
-    map mkIden ["CURRENT_DEFAULT_TRANSFORM_GROUP"
+    $ map mkIden ["CURRENT_DEFAULT_TRANSFORM_GROUP"
                ,"CURRENT_PATH"
                ,"CURRENT_ROLE"
                ,"CURRENT_USER"
@@ -1377,7 +1369,7 @@ generalValueSpecification = Group "general value specification"
                ,"USER"
                ,"VALUE"]
   where
-    mkIden nm = (nm,Iden [Name Nothing nm])
+    mkIden nm = e nm $ Iden [Name Nothing nm]
 
 {-
 TODO: add the missing bits
@@ -1423,12 +1415,11 @@ TODO: add the missing bits
 
 parameterSpecification :: TestItem
 parameterSpecification = Group "parameter specification"
-    $ map (uncurry (TestScalarExpr ansi2011))
-    [(":hostparam", HostParameter ":hostparam" Nothing)
-    ,(":hostparam indicator :another_host_param"
-     ,HostParameter ":hostparam" $ Just ":another_host_param")
-    ,("?", Parameter)
-    ,(":h[3]", Array (HostParameter ":h" Nothing) [NumLit "3"])
+    [e ":hostparam" $ HostParameter ":hostparam" Nothing
+    ,e ":hostparam indicator :another_host_param"
+     $ HostParameter ":hostparam" $ Just ":another_host_param"
+    ,e "?" $ Parameter
+    ,e ":h[3]" $ Array (HostParameter ":h" Nothing) [NumLit "3"]
     ]
 
 {-
@@ -1462,11 +1453,10 @@ Specify a value whose data type is to be inferred from its context.
 contextuallyTypedValueSpecification :: TestItem
 contextuallyTypedValueSpecification =
     Group "contextually typed value specification"
-    $ map (uncurry (TestScalarExpr ansi2011))
-    [("null", Iden [Name Nothing "null"])
-    ,("array[]", Array (Iden [Name Nothing "array"]) [])
-    ,("multiset[]", MultisetCtor [])
-    ,("default", Iden [Name Nothing "default"])
+    [e "null" $ Iden [Name Nothing "null"]
+    ,e "array[]" $ Array (Iden [Name Nothing "array"]) []
+    ,e "multiset[]" $ MultisetCtor []
+    ,e "default" $ Iden [Name Nothing "default"]
     ]
 
 {-
@@ -1482,8 +1472,7 @@ Disambiguate a <period>-separated chain of identifiers.
 
 identifierChain :: TestItem
 identifierChain = Group "identifier chain"
-    $ map (uncurry (TestScalarExpr ansi2011))
-    [("a.b", Iden [Name Nothing "a",Name Nothing "b"])]
+    [e "a.b" $ Iden [Name Nothing "a",Name Nothing "b"]]
 
 {-
 == 6.7 <column reference>
@@ -1498,8 +1487,7 @@ Reference a column.
 
 columnReference :: TestItem
 columnReference = Group "column reference"
-    $ map (uncurry (TestScalarExpr ansi2011))
-    [("module.a.b", Iden [Name Nothing "module",Name Nothing "a",Name Nothing "b"])]
+    [e "module.a.b" $ Iden [Name Nothing "module",Name Nothing "a",Name Nothing "b"]]
 
 {-
 == 6.8 <SQL parameter reference>
@@ -1523,19 +1511,19 @@ Specify a value derived by the application of a function to an argument.
 
 setFunctionSpecification :: TestItem
 setFunctionSpecification = Group "set function specification"
-    $ map (uncurry (TestQueryExpr ansi2011))
-    [("SELECT SalesQuota, SUM(SalesYTD) TotalSalesYTD,\n\
+    $
+    [q "SELECT SalesQuota, SUM(SalesYTD) TotalSalesYTD,\n\
       \   GROUPING(SalesQuota) AS Grouping\n\
       \FROM Sales.SalesPerson\n\
       \GROUP BY ROLLUP(SalesQuota);"
-     ,toQueryExpr $ makeSelect
+     $ toQueryExpr $ makeSelect
       {msSelectList = [(Iden [Name Nothing "SalesQuota"],Nothing)
                       ,(App [Name Nothing "SUM"] [Iden [Name Nothing "SalesYTD"]]
                        ,Just (Name Nothing "TotalSalesYTD"))
                       ,(App [Name Nothing "GROUPING"] [Iden [Name Nothing "SalesQuota"]]
                        ,Just (Name Nothing "Grouping"))]
       ,msFrom = [TRSimple [Name Nothing "Sales",Name Nothing "SalesPerson"]]
-      ,msGroupBy = [Rollup [SimpleGroup (Iden [Name Nothing "SalesQuota"])]]})
+      ,msGroupBy = [Rollup [SimpleGroup (Iden [Name Nothing "SalesQuota"])]]}
     ]
 
 {-
@@ -1732,9 +1720,8 @@ Specify a data conversion.
 
 castSpecification :: TestItem
 castSpecification = Group "cast specification"
-    $ map (uncurry (TestScalarExpr ansi2011))
-    [("cast(a as int)"
-     ,Cast (Iden [Name Nothing "a"]) (TypeName [Name Nothing "int"]))
+    [e "cast(a as int)"
+     $ Cast (Iden [Name Nothing "a"]) (TypeName [Name Nothing "int"])
     ]
 
 {-
@@ -1748,8 +1735,7 @@ Return the next value of a sequence generator.
 
 nextScalarExpression :: TestItem
 nextScalarExpression = Group "next value expression"
-    $ map (uncurry (TestScalarExpr ansi2011))
-    [("next value for a.b", NextValueFor [Name Nothing "a", Name Nothing "b"])
+    [e "next value for a.b" $ NextValueFor [Name Nothing "a", Name Nothing "b"]
     ]
 
 {-
@@ -1763,11 +1749,10 @@ Reference a field of a row value.
 
 fieldReference :: TestItem
 fieldReference = Group "field reference"
-    $ map (uncurry (TestScalarExpr ansi2011))
-    [("f(something).a"
-      ,BinOp (App [Name Nothing "f"] [Iden [Name Nothing "something"]])
+    [e "f(something).a"
+      $ BinOp (App [Name Nothing "f"] [Iden [Name Nothing "something"]])
        [Name Nothing "."]
-       (Iden [Name Nothing "a"]))
+       (Iden [Name Nothing "a"])
     ]
 
 {-
@@ -1889,17 +1874,16 @@ Return an element of an array.
 
 arrayElementReference :: TestItem
 arrayElementReference = Group "array element reference"
-    $ map (uncurry (TestScalarExpr ansi2011))
-    [("something[3]"
-     ,Array (Iden [Name Nothing "something"]) [NumLit "3"])
-    ,("(something(a))[x]"
-      ,Array (Parens (App [Name Nothing "something"] [Iden [Name Nothing "a"]]))
-        [Iden [Name Nothing "x"]])
-    ,("(something(a))[x][y] "
-      ,Array (
+    [e "something[3]"
+      $ Array (Iden [Name Nothing "something"]) [NumLit "3"]
+    ,e "(something(a))[x]"
+      $ Array (Parens (App [Name Nothing "something"] [Iden [Name Nothing "a"]]))
+        [Iden [Name Nothing "x"]]
+    ,e "(something(a))[x][y] "
+      $ Array (
         Array (Parens (App [Name Nothing "something"] [Iden [Name Nothing "a"]]))
         [Iden [Name Nothing "x"]])
-        [Iden [Name Nothing "y"]])
+        [Iden [Name Nothing "y"]]
     ]
 
 {-
@@ -1914,9 +1898,8 @@ Return the sole element of a multiset of one element.
 
 multisetElementReference :: TestItem
 multisetElementReference = Group "multisetElementReference"
-    $ map (uncurry (TestScalarExpr ansi2011))
-    [("element(something)"
-     ,App [Name Nothing "element"] [Iden [Name Nothing "something"]])
+    [e "element(something)"
+     $ App [Name Nothing "element"] [Iden [Name Nothing "something"]]
     ]
 
 {-
@@ -1966,13 +1949,12 @@ Specify a numeric value.
 
 numericScalarExpression :: TestItem
 numericScalarExpression = Group "numeric value expression"
-    $ map (uncurry (TestScalarExpr ansi2011))
-    [("a + b", binOp "+")
-    ,("a - b", binOp "-")
-    ,("a * b", binOp "*")
-    ,("a / b", binOp "/")
-    ,("+a", prefOp "+")
-    ,("-a", prefOp "-")
+    [e "a + b" $ binOp "+"
+    ,e "a - b" $ binOp "-"
+    ,e "a * b" $ binOp "*"
+    ,e "a / b" $ binOp "/"
+    ,e "+a" $ prefOp "+"
+    ,e "-a" $ prefOp "-"
     ]
   where
     binOp o = BinOp (Iden [Name Nothing "a"]) [Name Nothing o] (Iden [Name Nothing "b"])
@@ -2439,17 +2421,16 @@ Specify a boolean value.
 
 booleanScalarExpression :: TestItem
 booleanScalarExpression = Group "booleab value expression"
-    $ map (uncurry (TestScalarExpr ansi2011))
-    [("a or b", BinOp a [Name Nothing "or"] b)
-    ,("a and b", BinOp a [Name Nothing "and"] b)
-    ,("not a", PrefixOp [Name Nothing "not"] a)
-    ,("a is true", postfixOp "is true")
-    ,("a is false", postfixOp "is false")
-    ,("a is unknown", postfixOp "is unknown")
-    ,("a is not true", postfixOp "is not true")
-    ,("a is not false", postfixOp "is not false")
-    ,("a is not unknown", postfixOp "is not unknown")
-    ,("(a or b)", Parens $ BinOp a [Name Nothing "or"] b)
+    [e "a or b" $ BinOp a [Name Nothing "or"] b
+    ,e "a and b" $ BinOp a [Name Nothing "and"] b
+    ,e "not a" $ PrefixOp [Name Nothing "not"] a
+    ,e "a is true" $ postfixOp "is true"
+    ,e "a is false" $ postfixOp "is false"
+    ,e "a is unknown" $ postfixOp "is unknown"
+    ,e "a is not true" $ postfixOp "is not true"
+    ,e "a is not false" $ postfixOp "is not false"
+    ,e "a is not unknown" $ postfixOp "is not unknown"
+    ,e "(a or b)" $ Parens $ BinOp a [Name Nothing "or"] b
     ]
   where
     a = Iden [Name Nothing "a"]
@@ -2520,23 +2501,22 @@ Specify construction of an array.
 
 arrayValueConstructor :: TestItem
 arrayValueConstructor = Group "array value constructor"
-    $ map (uncurry (TestScalarExpr ansi2011))
-    [("array[1,2,3]"
-     ,Array (Iden [Name Nothing "array"])
-      [NumLit "1", NumLit "2", NumLit "3"])
-    ,("array[a,b,c]"
-     ,Array (Iden [Name Nothing "array"])
-      [Iden [Name Nothing "a"], Iden [Name Nothing "b"], Iden [Name Nothing "c"]])
-    ,("array(select * from t)"
-      ,ArrayCtor (toQueryExpr $ makeSelect
+    [e "array[1,2,3]"
+     $ Array (Iden [Name Nothing "array"])
+      [NumLit "1", NumLit "2", NumLit "3"]
+    ,e "array[a,b,c]"
+     $ Array (Iden [Name Nothing "array"])
+      [Iden [Name Nothing "a"], Iden [Name Nothing "b"], Iden [Name Nothing "c"]]
+    ,e "array(select * from t)"
+      $ ArrayCtor (toQueryExpr $ makeSelect
                   {msSelectList = [(Star,Nothing)]
-                  ,msFrom = [TRSimple [Name Nothing "t"]]}))
-    ,("array(select * from t order by a)"
-      ,ArrayCtor (toQueryExpr $ makeSelect
+                  ,msFrom = [TRSimple [Name Nothing "t"]]})
+    ,e "array(select * from t order by a)"
+      $ ArrayCtor (toQueryExpr $ makeSelect
                   {msSelectList = [(Star,Nothing)]
                   ,msFrom = [TRSimple [Name Nothing "t"]]
                   ,msOrderBy = [SortSpec (Iden [Name Nothing "a"])
-                                    DirDefault NullsOrderDefault]}))
+                                    DirDefault NullsOrderDefault]})
     ]
 
 
@@ -2560,7 +2540,7 @@ Specify a multiset value.
 
 multisetScalarExpression :: TestItem
 multisetScalarExpression = Group "multiset value expression"
-   $ map (uncurry (TestScalarExpr ansi2011))
+   $ map (uncurry (testScalarExpr ansi2011))
    [("a multiset union b"
     ,MultisetBinOp (Iden [Name Nothing "a"]) Union SQDefault (Iden [Name Nothing "b"]))
    ,("a multiset union all b"
@@ -2592,7 +2572,7 @@ special case term.
 
 multisetValueFunction :: TestItem
 multisetValueFunction = Group "multiset value function"
-   $ map (uncurry (TestScalarExpr ansi2011))
+   $ map (uncurry (testScalarExpr ansi2011))
    [("set(a)", App [Name Nothing "set"] [Iden [Name Nothing "a"]])
    ]
 
@@ -2622,7 +2602,7 @@ Specify construction of a multiset.
 
 multisetValueConstructor :: TestItem
 multisetValueConstructor = Group "multiset value constructor"
-   $ map (uncurry (TestScalarExpr ansi2011))
+   $ map (uncurry (testScalarExpr ansi2011))
    [("multiset[a,b,c]", MultisetCtor[Iden [Name Nothing "a"]
                                     ,Iden [Name Nothing "b"], Iden [Name Nothing "c"]])
    ,("multiset(select * from t)", MultisetQueryCtor ms)
@@ -2702,7 +2682,7 @@ Specify a value or list of values to be constructed into a row.
 
 rowValueConstructor :: TestItem
 rowValueConstructor = Group "row value constructor"
-    $ map (uncurry (TestScalarExpr ansi2011))
+    $ map (uncurry (testScalarExpr ansi2011))
     [("(a,b)"
      ,SpecialOp [Name Nothing "rowctor"] [Iden [Name Nothing "a"], Iden [Name Nothing "b"]])
     ,("row(1)",App [Name Nothing "row"] [NumLit "1"])
@@ -2755,7 +2735,7 @@ Specify a set of <row value expression>s to be constructed into a table.
 
 tableValueConstructor :: TestItem
 tableValueConstructor = Group "table value constructor"
-    $ map (uncurry (TestQueryExpr ansi2011))
+    $ map (uncurry (testQueryExpr ansi2011))
     [("values (1,2), (a+b,(select count(*) from t));"
      ,Values [[NumLit "1", NumLit "2"]
              ,[BinOp (Iden [Name Nothing "a"]) [Name Nothing "+"]
@@ -2792,7 +2772,7 @@ Specify a table derived from one or more tables.
 
 fromClause :: TestItem
 fromClause = Group "fromClause"
-    $ map (uncurry (TestQueryExpr ansi2011))
+    $ map (uncurry (testQueryExpr ansi2011))
     [("select * from tbl1,tbl2"
      ,toQueryExpr $ makeSelect
       {msSelectList = [(Star, Nothing)]
@@ -2809,7 +2789,7 @@ Reference a table.
 
 tableReference :: TestItem
 tableReference = Group "table reference"
-    $ map (uncurry (TestQueryExpr ansi2011))
+    $ map (uncurry (testQueryExpr ansi2011))
     [("select * from t", toQueryExpr sel)
 
 {-
@@ -2994,7 +2974,7 @@ Specify a table derived from a Cartesian product, inner join, or outer join.
 
 joinedTable :: TestItem
 joinedTable = Group "joined table"
-    $ map (uncurry (TestQueryExpr ansi2011))
+    $ map (uncurry (testQueryExpr ansi2011))
     [("select * from a cross join b"
      ,sel $ TRJoin a False JCross b Nothing)
     ,("select * from a join b on true"
@@ -3053,7 +3033,7 @@ the result of the preceding <from clause>.
 
 whereClause :: TestItem
 whereClause = Group "where clause"
-    $ map (uncurry (TestQueryExpr ansi2011))
+    $ map (uncurry (testQueryExpr ansi2011))
     [("select * from t where a = 5"
     ,toQueryExpr $ makeSelect
      {msSelectList = [(Star,Nothing)]
@@ -3115,7 +3095,7 @@ clause> to the result of the previously specified clause.
 
 groupByClause :: TestItem
 groupByClause = Group "group by clause"
-    $ map (uncurry (TestQueryExpr ansi2011))
+    $ map (uncurry (testQueryExpr ansi2011))
     [("select a,sum(x) from t group by a"
      ,toQueryExpr $ ms [SimpleGroup $ Iden [Name Nothing "a"]])
      ,("select a,sum(x) from t group by a collate c"
@@ -3170,7 +3150,7 @@ not satisfy a <search condition>.
 
 havingClause :: TestItem
 havingClause = Group "having clause"
-    $ map (uncurry (TestQueryExpr ansi2011))
+    $ map (uncurry (testQueryExpr ansi2011))
     [("select a,sum(x) from t group by a having sum(x) > 1000"
      ,toQueryExpr $ makeSelect
       {msSelectList = [(Iden [Name Nothing "a"], Nothing)
@@ -3297,7 +3277,7 @@ Specify a table derived from the result of a <table expression>.
 
 querySpecification :: TestItem
 querySpecification = Group "query specification"
-    $ map (uncurry (TestQueryExpr ansi2011))
+    $ map (uncurry (testQueryExpr ansi2011))
     [("select a from t",toQueryExpr ms)
     ,("select all a from t",toQueryExpr $ ms {msSetQuantifier = All})
     ,("select distinct a from t",toQueryExpr $ ms {msSetQuantifier = Distinct})
@@ -3369,7 +3349,7 @@ withQueryExpression= Group "with query expression"
 
 setOpQueryExpression :: TestItem
 setOpQueryExpression= Group "set operation query expression"
-    $ map (uncurry (TestQueryExpr ansi2011))
+    $ map (uncurry (testQueryExpr ansi2011))
     -- todo: complete setop query expression tests
     [{-("select * from t union select * from t"
      ,undefined)
@@ -3408,7 +3388,7 @@ everywhere
 
 explicitTableQueryExpression :: TestItem
 explicitTableQueryExpression= Group "explicit table query expression"
-    $ map (uncurry (TestQueryExpr ansi2011))
+    $ map (uncurry (testQueryExpr ansi2011))
     [("table t", Table [Name Nothing "t"])
     ]
 
@@ -3432,7 +3412,7 @@ explicitTableQueryExpression= Group "explicit table query expression"
 
 orderOffsetFetchQueryExpression :: TestItem
 orderOffsetFetchQueryExpression = Group "order, offset, fetch query expression"
-    $ map (uncurry (TestQueryExpr ansi2011))
+    $ map (uncurry (testQueryExpr ansi2011))
     [-- todo: finish tests for order offset and fetch
      ("select a from t order by a"
      ,toQueryExpr $ ms {msOrderBy = [SortSpec (Iden [Name Nothing "a"])
@@ -3597,7 +3577,7 @@ Specify a comparison of two row values.
 
 comparisonPredicates :: TestItem
 comparisonPredicates = Group "comparison predicates"
-    $ map (uncurry (TestScalarExpr ansi2011))
+    $ map (uncurry (testScalarExpr ansi2011))
     $ map mkOp ["=", "<>", "<", ">", "<=", ">="]
     <> [("ROW(a) = ROW(b)"
         ,BinOp (App [Name Nothing "ROW"] [a])
@@ -3815,7 +3795,7 @@ Specify a quantified comparison.
 
 quantifiedComparisonPredicate :: TestItem
 quantifiedComparisonPredicate = Group "quantified comparison predicate"
-    $ map (uncurry (TestScalarExpr ansi2011))
+    $ map (uncurry (testScalarExpr ansi2011))
 
     [("a = any (select * from t)"
      ,QuantifiedComparison (Iden [Name Nothing "a"]) [Name Nothing "="] CPAny ms)
@@ -3844,7 +3824,7 @@ Specify a test for a non-empty set.
 
 existsPredicate :: TestItem
 existsPredicate = Group "exists predicate"
-    $ map (uncurry (TestScalarExpr ansi2011))
+    $ map (uncurry (testScalarExpr ansi2011))
     [("exists(select * from t where a = 4)"
      ,SubQueryExpr SqExists
       $ toQueryExpr $ makeSelect
@@ -3865,7 +3845,7 @@ Specify a test for the absence of duplicate rows.
 
 uniquePredicate :: TestItem
 uniquePredicate = Group "unique predicate"
-    $ map (uncurry (TestScalarExpr ansi2011))
+    $ map (uncurry (testScalarExpr ansi2011))
     [("unique(select * from t where a = 4)"
      ,SubQueryExpr SqUnique
       $ toQueryExpr $ makeSelect
@@ -3905,7 +3885,7 @@ Specify a test for matching rows.
 
 matchPredicate :: TestItem
 matchPredicate = Group "match predicate"
-    $ map (uncurry (TestScalarExpr ansi2011))
+    $ map (uncurry (testScalarExpr ansi2011))
     [("a match (select a from t)"
      ,Match (Iden [Name Nothing "a"]) False $ toQueryExpr ms)
     ,("(a,b) match (select a,b from t)"
@@ -4273,7 +4253,7 @@ Specify a default collation.
 
 collateClause :: TestItem
 collateClause = Group "collate clause"
-    $ map (uncurry (TestScalarExpr ansi2011))
+    $ map (uncurry (testScalarExpr ansi2011))
     [("a collate my_collation"
      ,Collate (Iden [Name Nothing "a"]) [Name Nothing "my_collation"])]
 
@@ -4386,7 +4366,7 @@ Specify a value computed from a collection of rows.
 
 aggregateFunction :: TestItem
 aggregateFunction = Group "aggregate function"
-    $ map (uncurry (TestScalarExpr ansi2011)) $
+    $ map (uncurry (testScalarExpr ansi2011)) $
     [("count(*)",App [Name Nothing "count"] [Star])
     ,("count(*) filter (where something > 5)"
      ,AggregateApp [Name Nothing "count"] SQDefault [Star] [] fil)
@@ -4483,7 +4463,7 @@ Specify a sort order.
 
 sortSpecificationList :: TestItem
 sortSpecificationList = Group "sort specification list"
-    $ map (uncurry (TestQueryExpr ansi2011))
+    $ map (uncurry (testQueryExpr ansi2011))
     [("select * from t order by a"
      ,toQueryExpr $ ms {msOrderBy = [SortSpec (Iden [Name Nothing "a"])
                            DirDefault NullsOrderDefault]})
@@ -4518,3 +4498,10 @@ sortSpecificationList = Group "sort specification list"
     ms = makeSelect
          {msSelectList = [(Star,Nothing)]
          ,msFrom = [TRSimple [Name Nothing "t"]]}
+
+
+q :: HasCallStack => Text -> QueryExpr -> TestItem
+q src ast = testQueryExpr ansi2011 src ast
+
+e :: HasCallStack => Text -> ScalarExpr -> TestItem
+e src ast = testScalarExpr ansi2011 src ast

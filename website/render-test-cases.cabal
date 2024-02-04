@@ -1,7 +1,7 @@
 cabal-version:       2.2
 
 name:                simple-sql-parser
-version:             0.7.1
+version:             0.8.0
 
 executable RenderTestCases
   main-is:             RenderTestCases.hs
@@ -13,9 +13,11 @@ executable RenderTestCases
                        parser-combinators,
                        mtl,
                        containers,
-                       tasty,
-                       tasty-hunit,
+                       hspec,
+                       hspec-megaparsec,
                        pretty-show,
+                       hspec-expectations,
+                       raw-strings-qq,
   default-language:    Haskell2010
   ghc-options:         -Wall -O0
 
@@ -47,3 +49,6 @@ executable RenderTestCases
         Language.SQL.SimpleSQL.TestTypes
         Language.SQL.SimpleSQL.Tests
         Language.SQL.SimpleSQL.Tpch
+        Language.SQL.SimpleSQL.Expectations
+        Language.SQL.SimpleSQL.TestRunners
+        Language.SQL.SimpleSQL.ErrorMessages

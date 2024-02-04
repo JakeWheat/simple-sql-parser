@@ -23,6 +23,7 @@ import Language.SQL.SimpleSQL.Lex
     (Token(..)
     ,tokenListWillPrintAndLex
     )
+import Language.SQL.SimpleSQL.TestRunners
 
 import qualified Data.Text as T
 import Data.Text (Text)
@@ -39,50 +40,57 @@ lexerTests = Group "lexerTests" $
     ,sqlServerLexerTests
     ,oracleLexerTests
     ,mySqlLexerTests
-    ,odbcLexerTests]
+    ,odbcLexerTests
+    ]
 
 -- quick sanity tests to see something working
 bootstrapTests :: TestItem
-bootstrapTests = Group "bootstrap tests" [Group "bootstrap tests" $
-    map (uncurry (LexTest ansi2011)) (
-    [("iden", [Identifier Nothing "iden"])
-    ,("'string'", [SqlString "'" "'" "string"])
+bootstrapTests = Group "bootstrap tests" $
+    [t "iden" [Identifier Nothing "iden"]
 
-    ,("  ", [Whitespace "  "])
-    ,("\t  ", [Whitespace "\t  "])
-    ,("  \n  ", [Whitespace "  \n  "])
+    ,t "\"a1normal \"\" iden\"" [Identifier (Just ("\"","\"")) "a1normal \"\" iden"]
 
-    ,("--", [LineComment "--"])
-    ,("--\n", [LineComment "--\n"])
-    ,("--stuff", [LineComment "--stuff"])
-    ,("-- stuff", [LineComment "-- stuff"])
-    ,("-- stuff\n", [LineComment "-- stuff\n"])
-    ,("--\nstuff", [LineComment "--\n", Identifier Nothing "stuff"])
-    ,("-- com \nstuff", [LineComment "-- com \n", Identifier Nothing "stuff"])
+    ,t "'string'" [SqlString "'" "'" "string"]
 
-    ,("/*test1*/", [BlockComment "/*test1*/"])
-    ,("/**/", [BlockComment "/**/"])
-    ,("/***/", [BlockComment "/***/"])
-    ,("/* * */", [BlockComment "/* * */"])
-    ,("/*test*/", [BlockComment "/*test*/"])
-    ,("/*te/*st*/", [BlockComment "/*te/*st*/"])
-    ,("/*te*st*/", [BlockComment "/*te*st*/"])
-    ,("/*lines\nmore lines*/", [BlockComment "/*lines\nmore lines*/"])
-    ,("/*test1*/\n", [BlockComment "/*test1*/", Whitespace "\n"])
-    ,("/*test1*/stuff", [BlockComment "/*test1*/", Identifier Nothing "stuff"])
+    ,t "  " [Whitespace "  "]
+    ,t "\t  " [Whitespace "\t  "]
+    ,t "  \n  " [Whitespace "  \n  "]
+    
+    ,t "--" [LineComment "--"]
+    ,t "--\n" [LineComment "--\n"]
+    ,t "--stuff" [LineComment "--stuff"]
+    ,t "-- stuff" [LineComment "-- stuff"]
+    ,t "-- stuff\n" [LineComment "-- stuff\n"]
+    ,t "--\nstuff" [LineComment "--\n", Identifier Nothing "stuff"]
+    ,t "-- com \nstuff" [LineComment "-- com \n", Identifier Nothing "stuff"]
 
-    ,("1", [SqlNumber "1"])
-    ,("42", [SqlNumber "42"])
+    ,t "/*test1*/" [BlockComment "/*test1*/"]
+    ,t "/**/" [BlockComment "/**/"]
+    ,t "/***/" [BlockComment "/***/"]
+    ,t "/* * */" [BlockComment "/* * */"]
+    ,t "/*test*/" [BlockComment "/*test*/"]
+    ,t "/*te/*st*/*/" [BlockComment "/*te/*st*/*/"]
+    ,t "/*te*st*/" [BlockComment "/*te*st*/"]
+    ,t "/*lines\nmore lines*/" [BlockComment "/*lines\nmore lines*/"]
+    ,t "/*test1*/\n" [BlockComment "/*test1*/", Whitespace "\n"]
+    ,t "/*test1*/stuff" [BlockComment "/*test1*/", Identifier Nothing "stuff"]
 
-    -- have to fix the dialect handling in the tests
-    --,("$1", [PositionalArg 1])
-    --,("$200", [PositionalArg 200])
+    ,t "1" [SqlNumber "1"]
+    ,t "42" [SqlNumber "42"]
 
-    ,(":test", [PrefixedVariable ':' "test"])
+    ,tp "$1" [PositionalArg 1]
+    ,tp "$200" [PositionalArg 200]
 
-    ] ++ map (\a -> (a, [Symbol a])) (
+    ,t ":test" [PrefixedVariable ':' "test"]
+       
+    ] ++ map (\a -> t a [Symbol a]) (
      ["!=", "<>", ">=", "<=", "||"]
-     ++ map T.singleton ("(),-+*/<>=." :: [Char])))]
+     ++ map T.singleton ("(),-+*/<>=." :: [Char]))
+  where
+    t :: HasCallStack => Text -> [Token] -> TestItem
+    t src ast = testLex ansi2011 src ast
+    tp :: HasCallStack => Text -> [Token] -> TestItem
+    tp src ast = testLex ansi2011{diPositionalArg=True} src ast
 
 
 ansiLexerTable :: [(Text,[Token])]
@@ -103,7 +111,7 @@ ansiLexerTable =
        )
     -- quoted identifiers with embedded double quotes
     -- the lexer doesn't unescape the quotes
-    ++ [("\"normal \"\" iden\"", [Identifier (Just ("\"","\"")) "normal \"\" iden"])]
+    ++ [("\"anormal \"\" iden\"", [Identifier (Just ("\"","\"")) "anormal \"\" iden"])]
     -- strings
     -- the lexer doesn't apply escapes at all
     ++ [("'string'", [SqlString "'" "'" "string"])
@@ -137,39 +145,44 @@ ansiLexerTable =
 
 ansiLexerTests :: TestItem
 ansiLexerTests = Group "ansiLexerTests" $
-    [Group "ansi lexer token tests" $ [LexTest ansi2011 s t |  (s,t) <- ansiLexerTable]
+    [Group "ansi lexer token tests" $ [l s t |  (s,t) <- ansiLexerTable]
     ,Group "ansi generated combination lexer tests" $
-    [ LexTest ansi2011 (s <> s1) (t <> t1)
-    | (s,t) <- ansiLexerTable
-    , (s1,t1) <- ansiLexerTable
-    , tokenListWillPrintAndLex ansi2011 $ t <> t1
+        [ l (s <> s1) (t <> t1)
+        | (s,t) <- ansiLexerTable
+        , (s1,t1) <- ansiLexerTable
+        , tokenListWillPrintAndLex ansi2011 $ t <> t1
 
-    ]
+        ]
     ,Group "ansiadhoclexertests" $
-       map (uncurry $ LexTest ansi2011)
-       [("", [])
-       ,("-- line com\nstuff", [LineComment "-- line com\n",Identifier Nothing "stuff"])
-       ] ++
-       [-- want to make sure this gives a parse error
-        LexFails ansi2011 "*/"
-        -- combinations of pipes: make sure they fail because they could be
-        -- ambiguous and it is really unclear when they are or not, and
-        -- what the result is even when they are not ambiguous
-       ,LexFails ansi2011 "|||"
-       ,LexFails ansi2011 "||||"
-       ,LexFails ansi2011 "|||||"
-       -- another user experience thing: make sure extra trailing
-       -- number chars are rejected rather than attempting to parse
-       -- if the user means to write something that is rejected by this code,
-       -- then they can use whitespace to make it clear and then it will parse
-       ,LexFails ansi2011 "12e3e4"
-       ,LexFails ansi2011 "12e3e4"
-       ,LexFails ansi2011 "12e3e4"
-       ,LexFails ansi2011 "12e3.4"
-       ,LexFails ansi2011 "12.4.5"
-       ,LexFails ansi2011 "12.4e5.6"
-       ,LexFails ansi2011 "12.4e5e7"]
-     ]
+        [l "" []
+        ,l "-- line com\nstuff"  [LineComment "-- line com\n",Identifier Nothing "stuff"]
+        ] ++
+        [-- want to make sure this gives a parse error
+         f "*/"
+         -- combinations of pipes: make sure they fail because they could be
+         -- ambiguous and it is really unclear when they are or not, and
+         -- what the result is even when they are not ambiguous
+        ,f "|||"
+        ,f "||||"
+        ,f "|||||"
+         -- another user experience thing: make sure extra trailing
+         -- number chars are rejected rather than attempting to parse
+         -- if the user means to write something that is rejected by this code,
+         -- then they can use whitespace to make it clear and then it will parse
+        ,f "12e3e4"
+        ,f "12e3e4"
+        ,f "12e3e4"
+        ,f "12e3.4"
+        ,f "12.4.5"
+        ,f "12.4e5.6"
+        ,f "12.4e5e7"]
+    ]
+  where
+    l :: HasCallStack => Text -> [Token] -> TestItem
+    l src ast = testLex ansi2011 src ast
+    f :: HasCallStack => Text -> TestItem
+    f src = lexFails ansi2011 src
+
 
 {-
 todo: lexing tests
@@ -303,22 +316,21 @@ somePostgresOpsWhichWontAddTrailingPlusMinus l =
        , not (T.last x `T.elem` "+-")
        ]
 
-
 postgresLexerTests :: TestItem
 postgresLexerTests = Group "postgresLexerTests" $
     [Group "postgres lexer token tests" $
-     [LexTest postgres s t | (s,t) <- postgresLexerTable]
+     [l s t | (s,t) <- postgresLexerTable]
     ,Group "postgres generated lexer token tests" $
-     [LexTest postgres s t | (s,t) <- postgresShortOperatorTable ++ postgresExtraOperatorTable]
+     [l s t | (s,t) <- postgresShortOperatorTable ++ postgresExtraOperatorTable]
     ,Group "postgres generated combination lexer tests" $
-    [ LexTest postgres (s <> s1) (t <> t1)
+    [ l (s <> s1) (t <> t1)
     | (s,t) <- postgresLexerTable ++ postgresShortOperatorTable
     , (s1,t1) <- postgresLexerTable ++ postgresShortOperatorTable
     , tokenListWillPrintAndLex postgres $ t ++ t1
 
     ]
     ,Group "generated postgres edgecase lexertests" $
-     [LexTest postgres s t
+     [l s t
      | (s,t) <- edgeCaseCommentOps
                 ++ edgeCasePlusMinusOps
                 ++ edgeCasePlusMinusComments]
@@ -326,22 +338,23 @@ postgresLexerTests = Group "postgresLexerTests" $
     ,Group "adhoc postgres lexertests" $
       -- need more tests for */ to make sure it is caught if it is in the middle of a
       -- sequence of symbol letters
-        [LexFails postgres "*/"
-        ,LexFails postgres ":::"
-        ,LexFails postgres "::::"
-        ,LexFails postgres ":::::"
-        ,LexFails postgres "@*/"
-        ,LexFails postgres "-*/"
-        ,LexFails postgres "12e3e4"
-        ,LexFails postgres "12e3e4"
-        ,LexFails postgres "12e3e4"
-        ,LexFails postgres "12e3.4"
-        ,LexFails postgres "12.4.5"
-        ,LexFails postgres "12.4e5.6"
-        ,LexFails postgres "12.4e5e7"
+        [f "*/"
+        ,f ":::"
+        ,f "::::"
+        ,f ":::::"
+        ,f "@*/"
+        ,f "-*/"
+        ,f "12e3e4"
+        ,f "12e3e4"
+        ,f "12e3e4"
+        ,f "12e3.4"
+        ,f "12.4.5"
+        ,f "12.4e5.6"
+        ,f "12.4e5e7"
          -- special case allow this to lex to 1 .. 2
          -- this is for 'for loops' in plpgsql
-        ,LexTest postgres "1..2" [SqlNumber "1", Symbol "..", SqlNumber "2"]]
+        ,l "1..2" [SqlNumber "1", Symbol "..", SqlNumber "2"]
+        ]
     ]
  where
    edgeCaseCommentOps =
@@ -365,14 +378,21 @@ postgresLexerTests = Group "postgresLexerTests" $
      ,("-/**/", [Symbol "-", BlockComment "/**/"])
      ,("+/**/", [Symbol "+", BlockComment "/**/"])
      ]
+   l :: HasCallStack => Text -> [Token] -> TestItem
+   l src ast = testLex postgres src ast
+   f :: HasCallStack => Text -> TestItem
+   f src = lexFails postgres src
 
 sqlServerLexerTests :: TestItem
 sqlServerLexerTests = Group "sqlServerLexTests" $
-    [ LexTest sqlserver s t | (s,t) <-
+    [l s t | (s,t) <-
     [("@variable", [(PrefixedVariable '@' "variable")])
     ,("#variable", [(PrefixedVariable '#' "variable")])
     ,("[quoted identifier]", [(Identifier (Just ("[", "]")) "quoted identifier")])
     ]]
+ where
+    l :: HasCallStack => Text -> [Token] -> TestItem
+    l src ast = testLex sqlserver src ast
 
 oracleLexerTests :: TestItem
 oracleLexerTests = Group "oracleLexTests" $
@@ -380,19 +400,29 @@ oracleLexerTests = Group "oracleLexTests" $
 
 mySqlLexerTests :: TestItem
 mySqlLexerTests = Group "mySqlLexerTests" $
-    [ LexTest mysql s t | (s,t) <-
+    [ l s t | (s,t) <-
     [("`quoted identifier`", [(Identifier (Just ("`", "`")) "quoted identifier")])
     ]
     ]
+ where
+    l :: HasCallStack => Text -> [Token] -> TestItem
+    l src ast = testLex mysql src ast
 
 odbcLexerTests :: TestItem
 odbcLexerTests = Group "odbcLexTests" $
-    [ LexTest sqlserver {diOdbc = True} s t | (s,t) <-
+    [ lo s t | (s,t) <-
     [("{}", [Symbol "{", Symbol "}"])
     ]]
-    ++ [LexFails sqlserver {diOdbc = False} "{"
-       ,LexFails sqlserver {diOdbc = False} "}"]
+    ++ [lno "{"
+       ,lno "}"]
+ where
+    lo :: HasCallStack => Text -> [Token] -> TestItem
+    lo src ast = testLex (sqlserver {diOdbc = True}) src ast
+    lno :: HasCallStack => Text -> TestItem
+    lno src = lexFails (sqlserver{diOdbc = False}) src
+
 
 combos :: [Char] -> Int -> [Text]
 combos _ 0 = [T.empty]
 combos l n = [ T.cons x tl | x <- l, tl <- combos l (n - 1) ]
+
