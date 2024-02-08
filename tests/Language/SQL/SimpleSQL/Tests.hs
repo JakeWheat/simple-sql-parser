@@ -93,3 +93,4 @@ itemToTest (ParseScalarExprFails _ _ t) = t
 itemToTest (LexTest _ _ _ t) = t
 itemToTest (LexFails _ _ t) = t
 itemToTest (GeneralParseFailTest _ _ t) = t
+itemToTest (GoldenErrorTest _ _ t) = t

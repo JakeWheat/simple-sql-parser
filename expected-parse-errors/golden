@@ -1,0 +1,5884 @@
+scalarExpr
+ansi2011
+'test
+
+1:6:
+  |
+1 | 'test
+  |      ^
+unexpected end of input
+expecting '
+
+
+queryExpr
+ansi2011
+select 'test
+
+1:13:
+  |
+1 | select 'test
+  |             ^
+unexpected end of input
+expecting '
+
+
+queryExpr
+ansi2011
+select 'test,
+
+1:14:
+  |
+1 | select 'test,
+  |              ^
+unexpected end of input
+expecting '
+
+
+queryExpr
+ansi2011
+select 'test from
+
+1:18:
+  |
+1 | select 'test from
+  |                  ^
+unexpected end of input
+expecting '
+
+
+scalarExpr
+ansi2011
+'test''t
+
+1:9:
+  |
+1 | 'test''t
+  |         ^
+unexpected end of input
+expecting '
+
+
+queryExpr
+ansi2011
+select 'test''t
+
+1:16:
+  |
+1 | select 'test''t
+  |                ^
+unexpected end of input
+expecting '
+
+
+queryExpr
+ansi2011
+select 'test''t,
+
+1:17:
+  |
+1 | select 'test''t,
+  |                 ^
+unexpected end of input
+expecting '
+
+
+queryExpr
+ansi2011
+select 'test''t from
+
+1:21:
+  |
+1 | select 'test''t from
+  |                     ^
+unexpected end of input
+expecting '
+
+
+scalarExpr
+ansi2011
+'test''
+
+1:8:
+  |
+1 | 'test''
+  |        ^
+unexpected end of input
+expecting '
+
+
+queryExpr
+ansi2011
+select 'test''
+
+1:15:
+  |
+1 | select 'test''
+  |               ^
+unexpected end of input
+expecting '
+
+
+queryExpr
+ansi2011
+select 'test'',
+
+1:16:
+  |
+1 | select 'test'',
+  |                ^
+unexpected end of input
+expecting '
+
+
+queryExpr
+ansi2011
+select 'test'' from
+
+1:20:
+  |
+1 | select 'test'' from
+  |                    ^
+unexpected end of input
+expecting '
+
+
+scalarExpr
+ansi2011
+3.23e-
+
+1:7:
+  |
+1 | 3.23e-
+  |       ^
+unexpected end of input
+expecting digits
+
+
+queryExpr
+ansi2011
+select 3.23e-
+
+1:14:
+  |
+1 | select 3.23e-
+  |              ^
+unexpected end of input
+expecting digits
+
+
+queryExpr
+ansi2011
+select 3.23e-,
+
+1:14:
+  |
+1 | select 3.23e-,
+  |              ^
+unexpected ','
+expecting digits
+
+
+queryExpr
+ansi2011
+select 3.23e- from
+
+1:14:
+  |
+1 | select 3.23e- from
+  |              ^
+unexpected space
+expecting digits
+
+
+scalarExpr
+ansi2011
+.
+
+1:1:
+  |
+1 | .
+  | ^
+unexpected .
+expecting expression
+
+
+queryExpr
+ansi2011
+select .
+
+1:8:
+  |
+1 | select .
+  |        ^
+unexpected .
+expecting select item
+
+
+queryExpr
+ansi2011
+select .,
+
+1:8:
+  |
+1 | select .,
+  |        ^
+unexpected .
+expecting select item
+
+
+queryExpr
+ansi2011
+select . from
+
+1:8:
+  |
+1 | select . from
+  |        ^
+unexpected .
+expecting select item
+
+
+scalarExpr
+ansi2011
+3.23e
+
+1:6:
+  |
+1 | 3.23e
+  |      ^
+unexpected end of input
+expecting '+', '-', or digits
+
+
+queryExpr
+ansi2011
+select 3.23e
+
+1:13:
+  |
+1 | select 3.23e
+  |             ^
+unexpected end of input
+expecting '+', '-', or digits
+
+
+queryExpr
+ansi2011
+select 3.23e,
+
+1:13:
+  |
+1 | select 3.23e,
+  |             ^
+unexpected ','
+expecting '+', '-', or digits
+
+
+queryExpr
+ansi2011
+select 3.23e from
+
+1:13:
+  |
+1 | select 3.23e from
+  |             ^
+unexpected space
+expecting '+', '-', or digits
+
+
+scalarExpr
+ansi2011
+a.3
+
+1:2:
+  |
+1 | a.3
+  |  ^^
+unexpected .3
+
+
+queryExpr
+ansi2011
+select a.3
+
+1:9:
+  |
+1 | select a.3
+  |         ^^
+unexpected .3
+expecting alias or from
+
+
+queryExpr
+ansi2011
+select a.3,
+
+1:9:
+  |
+1 | select a.3,
+  |         ^^
+unexpected .3
+expecting alias or from
+
+
+queryExpr
+ansi2011
+select a.3 from
+
+1:9:
+  |
+1 | select a.3 from
+  |         ^^
+unexpected .3
+expecting alias or from
+
+
+scalarExpr
+ansi2011
+3.a
+
+1:3:
+  |
+1 | 3.a
+  |   ^
+unexpected a
+
+
+queryExpr
+ansi2011
+select 3.a
+
+Select
+  { qeSetQuantifier = SQDefault
+  , qeSelectList = [ ( NumLit "3." , Just (Name Nothing "a") ) ]
+  , qeFrom = []
+  , qeWhere = Nothing
+  , qeGroupBy = []
+  , qeHaving = Nothing
+  , qeOrderBy = []
+  , qeOffset = Nothing
+  , qeFetchFirst = Nothing
+  }
+
+queryExpr
+ansi2011
+select 3.a,
+
+1:12:
+  |
+1 | select 3.a,
+  |            ^
+unexpected end of input
+expecting select item
+
+
+queryExpr
+ansi2011
+select 3.a from
+
+1:16:
+  |
+1 | select 3.a from
+  |                ^
+unexpected end of input
+expecting table ref
+
+
+scalarExpr
+ansi2011
+3.2a
+
+1:4:
+  |
+1 | 3.2a
+  |    ^
+unexpected a
+
+
+queryExpr
+ansi2011
+select 3.2a
+
+Select
+  { qeSetQuantifier = SQDefault
+  , qeSelectList = [ ( NumLit "3.2" , Just (Name Nothing "a") ) ]
+  , qeFrom = []
+  , qeWhere = Nothing
+  , qeGroupBy = []
+  , qeHaving = Nothing
+  , qeOrderBy = []
+  , qeOffset = Nothing
+  , qeFetchFirst = Nothing
+  }
+
+queryExpr
+ansi2011
+select 3.2a,
+
+1:13:
+  |
+1 | select 3.2a,
+  |             ^
+unexpected end of input
+expecting select item
+
+
+queryExpr
+ansi2011
+select 3.2a from
+
+1:17:
+  |
+1 | select 3.2a from
+  |                 ^
+unexpected end of input
+expecting table ref
+
+
+scalarExpr
+ansi2011
+4iden
+
+1:2:
+  |
+1 | 4iden
+  |  ^^^^
+unexpected iden
+
+
+queryExpr
+ansi2011
+select 4iden
+
+Select
+  { qeSetQuantifier = SQDefault
+  , qeSelectList = [ ( NumLit "4" , Just (Name Nothing "iden") ) ]
+  , qeFrom = []
+  , qeWhere = Nothing
+  , qeGroupBy = []
+  , qeHaving = Nothing
+  , qeOrderBy = []
+  , qeOffset = Nothing
+  , qeFetchFirst = Nothing
+  }
+
+queryExpr
+ansi2011
+select 4iden,
+
+1:14:
+  |
+1 | select 4iden,
+  |              ^
+unexpected end of input
+expecting select item
+
+
+queryExpr
+ansi2011
+select 4iden from
+
+1:18:
+  |
+1 | select 4iden from
+  |                  ^
+unexpected end of input
+expecting table ref
+
+
+scalarExpr
+ansi2011
+4iden.
+
+1:2:
+  |
+1 | 4iden.
+  |  ^^^^
+unexpected iden
+
+
+queryExpr
+ansi2011
+select 4iden.
+
+1:13:
+  |
+1 | select 4iden.
+  |             ^
+unexpected .
+expecting from
+
+
+queryExpr
+ansi2011
+select 4iden.,
+
+1:13:
+  |
+1 | select 4iden.,
+  |             ^
+unexpected .
+expecting from
+
+
+queryExpr
+ansi2011
+select 4iden. from
+
+1:13:
+  |
+1 | select 4iden. from
+  |             ^
+unexpected .
+expecting from
+
+
+scalarExpr
+ansi2011
+iden.4iden
+
+1:5:
+  |
+1 | iden.4iden
+  |     ^^
+unexpected .4
+
+
+queryExpr
+ansi2011
+select iden.4iden
+
+1:12:
+  |
+1 | select iden.4iden
+  |            ^^
+unexpected .4
+expecting alias or from
+
+
+queryExpr
+ansi2011
+select iden.4iden,
+
+1:12:
+  |
+1 | select iden.4iden,
+  |            ^^
+unexpected .4
+expecting alias or from
+
+
+queryExpr
+ansi2011
+select iden.4iden from
+
+1:12:
+  |
+1 | select iden.4iden from
+  |            ^^
+unexpected .4
+expecting alias or from
+
+
+scalarExpr
+ansi2011
+4iden.*
+
+1:2:
+  |
+1 | 4iden.*
+  |  ^^^^
+unexpected iden
+
+
+queryExpr
+ansi2011
+select 4iden.*
+
+1:13:
+  |
+1 | select 4iden.*
+  |             ^
+unexpected .
+expecting from
+
+
+queryExpr
+ansi2011
+select 4iden.*,
+
+1:13:
+  |
+1 | select 4iden.*,
+  |             ^
+unexpected .
+expecting from
+
+
+queryExpr
+ansi2011
+select 4iden.* from
+
+1:13:
+  |
+1 | select 4iden.* from
+  |             ^
+unexpected .
+expecting from
+
+
+scalarExpr
+ansi2011
+from
+
+1:1:
+  |
+1 | from
+  | ^^^^
+unexpected from
+expecting expression
+
+
+queryExpr
+ansi2011
+select from
+
+1:8:
+  |
+1 | select from
+  |        ^^^^
+unexpected from
+expecting select item
+
+
+queryExpr
+ansi2011
+select from,
+
+1:8:
+  |
+1 | select from,
+  |        ^^^^
+unexpected from
+expecting select item
+
+
+queryExpr
+ansi2011
+select from from
+
+1:8:
+  |
+1 | select from from
+  |        ^^^^
+unexpected from
+expecting select item
+
+
+scalarExpr
+ansi2011
+from.a
+
+1:1:
+  |
+1 | from.a
+  | ^^^^
+unexpected from
+expecting expression
+
+
+queryExpr
+ansi2011
+select from.a
+
+1:8:
+  |
+1 | select from.a
+  |        ^^^^
+unexpected from
+expecting select item
+
+
+queryExpr
+ansi2011
+select from.a,
+
+1:8:
+  |
+1 | select from.a,
+  |        ^^^^
+unexpected from
+expecting select item
+
+
+queryExpr
+ansi2011
+select from.a from
+
+1:8:
+  |
+1 | select from.a from
+  |        ^^^^
+unexpected from
+expecting select item
+
+
+scalarExpr
+ansi2011
+a.from
+
+1:3:
+  |
+1 | a.from
+  |   ^^^^
+unexpected from
+expecting expression
+
+
+queryExpr
+ansi2011
+select a.from
+
+1:10:
+  |
+1 | select a.from
+  |          ^^^^
+unexpected from
+expecting expression
+
+
+queryExpr
+ansi2011
+select a.from,
+
+1:10:
+  |
+1 | select a.from,
+  |          ^^^^
+unexpected from
+expecting expression
+
+
+queryExpr
+ansi2011
+select a.from from
+
+1:10:
+  |
+1 | select a.from from
+  |          ^^^^
+unexpected from
+expecting expression
+
+
+scalarExpr
+ansi2011
+not
+
+1:4:
+  |
+1 | not
+  |    ^
+unexpected end of input
+expecting expression
+
+
+queryExpr
+ansi2011
+select not
+
+1:11:
+  |
+1 | select not
+  |           ^
+unexpected end of input
+expecting expression
+
+
+queryExpr
+ansi2011
+select not,
+
+1:11:
+  |
+1 | select not,
+  |           ^
+unexpected ,
+expecting expression
+
+
+queryExpr
+ansi2011
+select not from
+
+1:12:
+  |
+1 | select not from
+  |            ^^^^
+unexpected from
+expecting expression
+
+
+scalarExpr
+ansi2011
+4 +
+
+1:4:
+  |
+1 | 4 +
+  |    ^
+unexpected end of input
+expecting expression
+
+
+queryExpr
+ansi2011
+select 4 +
+
+1:11:
+  |
+1 | select 4 +
+  |           ^
+unexpected end of input
+expecting expression
+
+
+queryExpr
+ansi2011
+select 4 +,
+
+1:11:
+  |
+1 | select 4 +,
+  |           ^
+unexpected ,
+expecting expression
+
+
+queryExpr
+ansi2011
+select 4 + from
+
+1:12:
+  |
+1 | select 4 + from
+  |            ^^^^
+unexpected from
+expecting expression
+
+
+scalarExpr
+ansi2011
+4 + from
+
+1:5:
+  |
+1 | 4 + from
+  |     ^^^^
+unexpected from
+expecting expression
+
+
+queryExpr
+ansi2011
+select 4 + from
+
+1:12:
+  |
+1 | select 4 + from
+  |            ^^^^
+unexpected from
+expecting expression
+
+
+queryExpr
+ansi2011
+select 4 + from,
+
+1:12:
+  |
+1 | select 4 + from,
+  |            ^^^^
+unexpected from
+expecting expression
+
+
+queryExpr
+ansi2011
+select 4 + from from
+
+1:12:
+  |
+1 | select 4 + from from
+  |            ^^^^
+unexpected from
+expecting expression
+
+
+scalarExpr
+ansi2011
+(5
+
+1:3:
+  |
+1 | (5
+  |   ^
+unexpected end of input
+expecting )
+
+
+queryExpr
+ansi2011
+select (5
+
+1:10:
+  |
+1 | select (5
+  |          ^
+unexpected end of input
+expecting )
+
+
+queryExpr
+ansi2011
+select (5,
+
+1:11:
+  |
+1 | select (5,
+  |           ^
+unexpected end of input
+expecting expression
+
+
+queryExpr
+ansi2011
+select (5 from
+
+1:11:
+  |
+1 | select (5 from
+  |           ^^^^
+unexpected from
+expecting )
+
+
+scalarExpr
+ansi2011
+(5 +
+
+1:5:
+  |
+1 | (5 +
+  |     ^
+unexpected end of input
+expecting expression
+
+
+queryExpr
+ansi2011
+select (5 +
+
+1:12:
+  |
+1 | select (5 +
+  |            ^
+unexpected end of input
+expecting expression
+
+
+queryExpr
+ansi2011
+select (5 +,
+
+1:12:
+  |
+1 | select (5 +,
+  |            ^
+unexpected ,
+expecting expression
+
+
+queryExpr
+ansi2011
+select (5 + from
+
+1:13:
+  |
+1 | select (5 + from
+  |             ^^^^
+unexpected from
+expecting expression
+
+
+scalarExpr
+ansi2011
+(5 + 6
+
+1:7:
+  |
+1 | (5 + 6
+  |       ^
+unexpected end of input
+expecting )
+
+
+queryExpr
+ansi2011
+select (5 + 6
+
+1:14:
+  |
+1 | select (5 + 6
+  |              ^
+unexpected end of input
+expecting )
+
+
+queryExpr
+ansi2011
+select (5 + 6,
+
+1:15:
+  |
+1 | select (5 + 6,
+  |               ^
+unexpected end of input
+expecting expression
+
+
+queryExpr
+ansi2011
+select (5 + 6 from
+
+1:15:
+  |
+1 | select (5 + 6 from
+  |               ^^^^
+unexpected from
+expecting )
+
+
+scalarExpr
+ansi2011
+(5 + from)
+
+1:6:
+  |
+1 | (5 + from)
+  |      ^^^^
+unexpected from
+expecting expression
+
+
+queryExpr
+ansi2011
+select (5 + from)
+
+1:13:
+  |
+1 | select (5 + from)
+  |             ^^^^
+unexpected from
+expecting expression
+
+
+queryExpr
+ansi2011
+select (5 + from),
+
+1:13:
+  |
+1 | select (5 + from),
+  |             ^^^^
+unexpected from
+expecting expression
+
+
+queryExpr
+ansi2011
+select (5 + from) from
+
+1:13:
+  |
+1 | select (5 + from) from
+  |             ^^^^
+unexpected from
+expecting expression
+
+
+scalarExpr
+ansi2011
+case
+
+1:5:
+  |
+1 | case
+  |     ^
+unexpected end of input
+expecting expression or when
+
+
+queryExpr
+ansi2011
+select case
+
+1:12:
+  |
+1 | select case
+  |            ^
+unexpected end of input
+expecting expression or when
+
+
+queryExpr
+ansi2011
+select case,
+
+1:12:
+  |
+1 | select case,
+  |            ^
+unexpected ,
+expecting expression or when
+
+
+queryExpr
+ansi2011
+select case from
+
+1:13:
+  |
+1 | select case from
+  |             ^^^^
+unexpected from
+expecting expression or when
+
+
+scalarExpr
+ansi2011
+case a
+
+1:7:
+  |
+1 | case a
+  |       ^
+unexpected end of input
+expecting when
+
+
+queryExpr
+ansi2011
+select case a
+
+1:14:
+  |
+1 | select case a
+  |              ^
+unexpected end of input
+expecting when
+
+
+queryExpr
+ansi2011
+select case a,
+
+1:14:
+  |
+1 | select case a,
+  |              ^
+unexpected ,
+expecting when
+
+
+queryExpr
+ansi2011
+select case a from
+
+1:15:
+  |
+1 | select case a from
+  |               ^^^^
+unexpected from
+expecting when
+
+
+scalarExpr
+ansi2011
+case a when b c end
+
+1:15:
+  |
+1 | case a when b c end
+  |               ^
+unexpected c
+expecting then
+
+
+queryExpr
+ansi2011
+select case a when b c end
+
+1:22:
+  |
+1 | select case a when b c end
+  |                      ^
+unexpected c
+expecting then
+
+
+queryExpr
+ansi2011
+select case a when b c end,
+
+1:22:
+  |
+1 | select case a when b c end,
+  |                      ^
+unexpected c
+expecting then
+
+
+queryExpr
+ansi2011
+select case a when b c end from
+
+1:22:
+  |
+1 | select case a when b c end from
+  |                      ^
+unexpected c
+expecting then
+
+
+scalarExpr
+ansi2011
+case a when b then c
+
+1:21:
+  |
+1 | case a when b then c
+  |                     ^
+unexpected end of input
+expecting else, end, or when
+
+
+queryExpr
+ansi2011
+select case a when b then c
+
+1:28:
+  |
+1 | select case a when b then c
+  |                            ^
+unexpected end of input
+expecting else, end, or when
+
+
+queryExpr
+ansi2011
+select case a when b then c,
+
+1:28:
+  |
+1 | select case a when b then c,
+  |                            ^
+unexpected ,
+expecting else, end, or when
+
+
+queryExpr
+ansi2011
+select case a when b then c from
+
+1:29:
+  |
+1 | select case a when b then c from
+  |                             ^^^^
+unexpected from
+expecting else, end, or when
+
+
+scalarExpr
+ansi2011
+case a else d end
+
+1:8:
+  |
+1 | case a else d end
+  |        ^^^^
+unexpected else
+expecting when
+
+
+queryExpr
+ansi2011
+select case a else d end
+
+1:15:
+  |
+1 | select case a else d end
+  |               ^^^^
+unexpected else
+expecting when
+
+
+queryExpr
+ansi2011
+select case a else d end,
+
+1:15:
+  |
+1 | select case a else d end,
+  |               ^^^^
+unexpected else
+expecting when
+
+
+queryExpr
+ansi2011
+select case a else d end from
+
+1:15:
+  |
+1 | select case a else d end from
+  |               ^^^^
+unexpected else
+expecting when
+
+
+scalarExpr
+ansi2011
+case a from c end
+
+1:8:
+  |
+1 | case a from c end
+  |        ^^^^
+unexpected from
+expecting when
+
+
+queryExpr
+ansi2011
+select case a from c end
+
+1:15:
+  |
+1 | select case a from c end
+  |               ^^^^
+unexpected from
+expecting when
+
+
+queryExpr
+ansi2011
+select case a from c end,
+
+1:15:
+  |
+1 | select case a from c end,
+  |               ^^^^
+unexpected from
+expecting when
+
+
+queryExpr
+ansi2011
+select case a from c end from
+
+1:15:
+  |
+1 | select case a from c end from
+  |               ^^^^
+unexpected from
+expecting when
+
+
+scalarExpr
+ansi2011
+case a when from then to end
+
+1:13:
+  |
+1 | case a when from then to end
+  |             ^^^^
+unexpected from
+expecting expression
+
+
+queryExpr
+ansi2011
+select case a when from then to end
+
+1:20:
+  |
+1 | select case a when from then to end
+  |                    ^^^^
+unexpected from
+expecting expression
+
+
+queryExpr
+ansi2011
+select case a when from then to end,
+
+1:20:
+  |
+1 | select case a when from then to end,
+  |                    ^^^^
+unexpected from
+expecting expression
+
+
+queryExpr
+ansi2011
+select case a when from then to end from
+
+1:20:
+  |
+1 | select case a when from then to end from
+  |                    ^^^^
+unexpected from
+expecting expression
+
+
+scalarExpr
+ansi2011
+/* blah
+
+1:8:
+  |
+1 | /* blah
+  |        ^
+unexpected end of input
+expecting */
+
+
+queryExpr
+ansi2011
+select /* blah
+
+1:15:
+  |
+1 | select /* blah
+  |               ^
+unexpected end of input
+expecting */
+
+
+queryExpr
+ansi2011
+select /* blah,
+
+1:16:
+  |
+1 | select /* blah,
+  |                ^
+unexpected end of input
+expecting */
+
+
+queryExpr
+ansi2011
+select /* blah from
+
+1:20:
+  |
+1 | select /* blah from
+  |                    ^
+unexpected end of input
+expecting */
+
+
+scalarExpr
+ansi2011
+/* blah /* stuff */
+
+1:20:
+  |
+1 | /* blah /* stuff */
+  |                    ^
+unexpected end of input
+expecting */
+
+
+queryExpr
+ansi2011
+select /* blah /* stuff */
+
+1:27:
+  |
+1 | select /* blah /* stuff */
+  |                           ^
+unexpected end of input
+expecting */
+
+
+queryExpr
+ansi2011
+select /* blah /* stuff */,
+
+1:28:
+  |
+1 | select /* blah /* stuff */,
+  |                            ^
+unexpected end of input
+expecting */
+
+
+queryExpr
+ansi2011
+select /* blah /* stuff */ from
+
+1:32:
+  |
+1 | select /* blah /* stuff */ from
+  |                                ^
+unexpected end of input
+expecting */
+
+
+scalarExpr
+ansi2011
+/* *
+
+1:5:
+  |
+1 | /* *
+  |     ^
+unexpected end of input
+expecting */
+
+
+queryExpr
+ansi2011
+select /* *
+
+1:12:
+  |
+1 | select /* *
+  |            ^
+unexpected end of input
+expecting */
+
+
+queryExpr
+ansi2011
+select /* *,
+
+1:13:
+  |
+1 | select /* *,
+  |             ^
+unexpected end of input
+expecting */
+
+
+queryExpr
+ansi2011
+select /* * from
+
+1:17:
+  |
+1 | select /* * from
+  |                 ^
+unexpected end of input
+expecting */
+
+
+scalarExpr
+ansi2011
+/* /
+
+1:5:
+  |
+1 | /* /
+  |     ^
+unexpected end of input
+expecting */
+
+
+queryExpr
+ansi2011
+select /* /
+
+1:12:
+  |
+1 | select /* /
+  |            ^
+unexpected end of input
+expecting */
+
+
+queryExpr
+ansi2011
+select /* /,
+
+1:13:
+  |
+1 | select /* /,
+  |             ^
+unexpected end of input
+expecting */
+
+
+queryExpr
+ansi2011
+select /* / from
+
+1:17:
+  |
+1 | select /* / from
+  |                 ^
+unexpected end of input
+expecting */
+
+
+scalarExpr
+ansi2011
+$$something$
+
+1:1:
+  |
+1 | $$something$
+  | ^
+unexpected $
+expecting expression
+
+
+queryExpr
+ansi2011
+select $$something$
+
+1:8:
+  |
+1 | select $$something$
+  |        ^
+unexpected $
+expecting select item
+
+
+queryExpr
+ansi2011
+select $$something$,
+
+1:8:
+  |
+1 | select $$something$,
+  |        ^
+unexpected $
+expecting select item
+
+
+queryExpr
+ansi2011
+select $$something$ from
+
+1:8:
+  |
+1 | select $$something$ from
+  |        ^
+unexpected $
+expecting select item
+
+
+scalarExpr
+ansi2011
+$$something
+
+1:1:
+  |
+1 | $$something
+  | ^
+unexpected $
+expecting expression
+
+
+queryExpr
+ansi2011
+select $$something
+
+1:8:
+  |
+1 | select $$something
+  |        ^
+unexpected $
+expecting select item
+
+
+queryExpr
+ansi2011
+select $$something,
+
+1:8:
+  |
+1 | select $$something,
+  |        ^
+unexpected $
+expecting select item
+
+
+queryExpr
+ansi2011
+select $$something from
+
+1:8:
+  |
+1 | select $$something from
+  |        ^
+unexpected $
+expecting select item
+
+
+scalarExpr
+ansi2011
+$$something
+x
+
+1:1:
+  |
+1 | $$something
+  | ^
+unexpected $
+expecting expression
+
+
+queryExpr
+ansi2011
+select $$something
+x
+
+1:8:
+  |
+1 | select $$something
+  |        ^
+unexpected $
+expecting select item
+
+
+queryExpr
+ansi2011
+select $$something
+x,
+
+1:8:
+  |
+1 | select $$something
+  |        ^
+unexpected $
+expecting select item
+
+
+queryExpr
+ansi2011
+select $$something
+x from
+
+1:8:
+  |
+1 | select $$something
+  |        ^
+unexpected $
+expecting select item
+
+
+scalarExpr
+ansi2011
+$a$something$b$
+
+1:1:
+  |
+1 | $a$something$b$
+  | ^
+unexpected $
+expecting expression
+
+
+queryExpr
+ansi2011
+select $a$something$b$
+
+1:8:
+  |
+1 | select $a$something$b$
+  |        ^
+unexpected $
+expecting select item
+
+
+queryExpr
+ansi2011
+select $a$something$b$,
+
+1:8:
+  |
+1 | select $a$something$b$,
+  |        ^
+unexpected $
+expecting select item
+
+
+queryExpr
+ansi2011
+select $a$something$b$ from
+
+1:8:
+  |
+1 | select $a$something$b$ from
+  |        ^
+unexpected $
+expecting select item
+
+
+scalarExpr
+ansi2011
+$a$
+
+1:1:
+  |
+1 | $a$
+  | ^
+unexpected $
+expecting expression
+
+
+queryExpr
+ansi2011
+select $a$
+
+1:8:
+  |
+1 | select $a$
+  |        ^
+unexpected $
+expecting select item
+
+
+queryExpr
+ansi2011
+select $a$,
+
+1:8:
+  |
+1 | select $a$,
+  |        ^
+unexpected $
+expecting select item
+
+
+queryExpr
+ansi2011
+select $a$ from
+
+1:8:
+  |
+1 | select $a$ from
+  |        ^
+unexpected $
+expecting select item
+
+
+scalarExpr
+ansi2011
+'''
+
+1:4:
+  |
+1 | '''
+  |    ^
+unexpected end of input
+expecting '
+
+
+queryExpr
+ansi2011
+select '''
+
+1:11:
+  |
+1 | select '''
+  |           ^
+unexpected end of input
+expecting '
+
+
+queryExpr
+ansi2011
+select ''',
+
+1:12:
+  |
+1 | select ''',
+  |            ^
+unexpected end of input
+expecting '
+
+
+queryExpr
+ansi2011
+select ''' from
+
+1:16:
+  |
+1 | select ''' from
+  |                ^
+unexpected end of input
+expecting '
+
+
+scalarExpr
+ansi2011
+'''''
+
+1:6:
+  |
+1 | '''''
+  |      ^
+unexpected end of input
+expecting '
+
+
+queryExpr
+ansi2011
+select '''''
+
+1:13:
+  |
+1 | select '''''
+  |             ^
+unexpected end of input
+expecting '
+
+
+queryExpr
+ansi2011
+select ''''',
+
+1:14:
+  |
+1 | select ''''',
+  |              ^
+unexpected end of input
+expecting '
+
+
+queryExpr
+ansi2011
+select ''''' from
+
+1:18:
+  |
+1 | select ''''' from
+  |                  ^
+unexpected end of input
+expecting '
+
+
+scalarExpr
+ansi2011
+"a
+
+1:3:
+  |
+1 | "a
+  |   ^
+unexpected end of input
+expecting '"'
+
+
+queryExpr
+ansi2011
+select "a
+
+1:10:
+  |
+1 | select "a
+  |          ^
+unexpected end of input
+expecting '"'
+
+
+queryExpr
+ansi2011
+select "a,
+
+1:11:
+  |
+1 | select "a,
+  |           ^
+unexpected end of input
+expecting '"'
+
+
+queryExpr
+ansi2011
+select "a from
+
+1:15:
+  |
+1 | select "a from
+  |               ^
+unexpected end of input
+expecting '"'
+
+
+scalarExpr
+ansi2011
+"a""
+
+1:5:
+  |
+1 | "a""
+  |     ^
+unexpected end of input
+expecting '"'
+
+
+queryExpr
+ansi2011
+select "a""
+
+1:12:
+  |
+1 | select "a""
+  |            ^
+unexpected end of input
+expecting '"'
+
+
+queryExpr
+ansi2011
+select "a"",
+
+1:13:
+  |
+1 | select "a"",
+  |             ^
+unexpected end of input
+expecting '"'
+
+
+queryExpr
+ansi2011
+select "a"" from
+
+1:17:
+  |
+1 | select "a"" from
+  |                 ^
+unexpected end of input
+expecting '"'
+
+
+scalarExpr
+ansi2011
+"""
+
+1:2:
+  |
+1 | """
+  |  ^
+empty identifier
+
+
+queryExpr
+ansi2011
+select """
+
+1:9:
+  |
+1 | select """
+  |         ^
+empty identifier
+
+
+queryExpr
+ansi2011
+select """,
+
+1:9:
+  |
+1 | select """,
+  |         ^
+empty identifier
+
+
+queryExpr
+ansi2011
+select """ from
+
+1:9:
+  |
+1 | select """ from
+  |         ^
+empty identifier
+
+
+scalarExpr
+ansi2011
+"""""
+
+1:2:
+  |
+1 | """""
+  |  ^
+empty identifier
+
+
+queryExpr
+ansi2011
+select """""
+
+1:9:
+  |
+1 | select """""
+  |         ^
+empty identifier
+
+
+queryExpr
+ansi2011
+select """"",
+
+1:9:
+  |
+1 | select """"",
+  |         ^
+empty identifier
+
+
+queryExpr
+ansi2011
+select """"" from
+
+1:9:
+  |
+1 | select """"" from
+  |         ^
+empty identifier
+
+
+scalarExpr
+ansi2011
+""
+
+1:2:
+  |
+1 | ""
+  |  ^
+empty identifier
+
+
+queryExpr
+ansi2011
+select ""
+
+1:9:
+  |
+1 | select ""
+  |         ^
+empty identifier
+
+
+queryExpr
+ansi2011
+select "",
+
+1:9:
+  |
+1 | select "",
+  |         ^
+empty identifier
+
+
+queryExpr
+ansi2011
+select "" from
+
+1:9:
+  |
+1 | select "" from
+  |         ^
+empty identifier
+
+
+scalarExpr
+ansi2011
+*/
+
+1:1:
+  |
+1 | */
+  | ^
+comment end without comment start
+
+
+queryExpr
+ansi2011
+select */
+
+1:8:
+  |
+1 | select */
+  |        ^
+comment end without comment start
+
+
+queryExpr
+ansi2011
+select */,
+
+1:8:
+  |
+1 | select */,
+  |        ^
+comment end without comment start
+
+
+queryExpr
+ansi2011
+select */ from
+
+1:8:
+  |
+1 | select */ from
+  |        ^
+comment end without comment start
+
+
+scalarExpr
+ansi2011
+:3
+
+1:1:
+  |
+1 | :3
+  | ^
+unexpected :
+expecting expression
+
+
+queryExpr
+ansi2011
+select :3
+
+1:8:
+  |
+1 | select :3
+  |        ^
+unexpected :
+expecting select item
+
+
+queryExpr
+ansi2011
+select :3,
+
+1:8:
+  |
+1 | select :3,
+  |        ^
+unexpected :
+expecting select item
+
+
+queryExpr
+ansi2011
+select :3 from
+
+1:8:
+  |
+1 | select :3 from
+  |        ^
+unexpected :
+expecting select item
+
+
+scalarExpr
+ansi2011
+@3
+
+1:1:
+  |
+1 | @3
+  | ^
+unexpected @
+expecting expression
+
+
+queryExpr
+ansi2011
+select @3
+
+1:8:
+  |
+1 | select @3
+  |        ^
+unexpected @
+expecting select item
+
+
+queryExpr
+ansi2011
+select @3,
+
+1:8:
+  |
+1 | select @3,
+  |        ^
+unexpected @
+expecting select item
+
+
+queryExpr
+ansi2011
+select @3 from
+
+1:8:
+  |
+1 | select @3 from
+  |        ^
+unexpected @
+expecting select item
+
+
+scalarExpr
+ansi2011
+#3
+
+1:1:
+  |
+1 | #3
+  | ^
+unexpected #
+expecting expression
+
+
+queryExpr
+ansi2011
+select #3
+
+1:8:
+  |
+1 | select #3
+  |        ^
+unexpected #
+expecting select item
+
+
+queryExpr
+ansi2011
+select #3,
+
+1:8:
+  |
+1 | select #3,
+  |        ^
+unexpected #
+expecting select item
+
+
+queryExpr
+ansi2011
+select #3 from
+
+1:8:
+  |
+1 | select #3 from
+  |        ^
+unexpected #
+expecting select item
+
+
+scalarExpr
+ansi2011
+:::
+
+1:1:
+  |
+1 | :::
+  | ^
+unexpected :
+expecting expression
+
+
+queryExpr
+ansi2011
+select :::
+
+1:8:
+  |
+1 | select :::
+  |        ^
+unexpected :
+expecting select item
+
+
+queryExpr
+ansi2011
+select :::,
+
+1:8:
+  |
+1 | select :::,
+  |        ^
+unexpected :
+expecting select item
+
+
+queryExpr
+ansi2011
+select ::: from
+
+1:8:
+  |
+1 | select ::: from
+  |        ^
+unexpected :
+expecting select item
+
+
+scalarExpr
+ansi2011
+|||
+
+1:3:
+  |
+1 | |||
+  |   ^
+unexpected '|'
+
+
+queryExpr
+ansi2011
+select |||
+
+1:10:
+  |
+1 | select |||
+  |          ^
+unexpected '|'
+
+
+queryExpr
+ansi2011
+select |||,
+
+1:10:
+  |
+1 | select |||,
+  |          ^
+unexpected '|'
+
+
+queryExpr
+ansi2011
+select ||| from
+
+1:10:
+  |
+1 | select ||| from
+  |          ^
+unexpected '|'
+
+
+scalarExpr
+ansi2011
+...
+
+1:1:
+  |
+1 | ...
+  | ^^^
+unexpected ...
+expecting expression
+
+
+queryExpr
+ansi2011
+select ...
+
+1:8:
+  |
+1 | select ...
+  |        ^^^
+unexpected ...
+expecting select item
+
+
+queryExpr
+ansi2011
+select ...,
+
+1:8:
+  |
+1 | select ...,
+  |        ^^^
+unexpected ...
+expecting select item
+
+
+queryExpr
+ansi2011
+select ... from
+
+1:8:
+  |
+1 | select ... from
+  |        ^^^
+unexpected ...
+expecting select item
+
+
+scalarExpr
+ansi2011
+"
+
+1:2:
+  |
+1 | "
+  |  ^
+unexpected end of input
+expecting '"'
+
+
+queryExpr
+ansi2011
+select "
+
+1:9:
+  |
+1 | select "
+  |         ^
+unexpected end of input
+expecting '"'
+
+
+queryExpr
+ansi2011
+select ",
+
+1:10:
+  |
+1 | select ",
+  |          ^
+unexpected end of input
+expecting '"'
+
+
+queryExpr
+ansi2011
+select " from
+
+1:14:
+  |
+1 | select " from
+  |              ^
+unexpected end of input
+expecting '"'
+
+
+scalarExpr
+ansi2011
+]
+
+1:1:
+  |
+1 | ]
+  | ^
+unexpected ]
+expecting expression
+
+
+queryExpr
+ansi2011
+select ]
+
+1:8:
+  |
+1 | select ]
+  |        ^
+unexpected ]
+expecting select item
+
+
+queryExpr
+ansi2011
+select ],
+
+1:8:
+  |
+1 | select ],
+  |        ^
+unexpected ]
+expecting select item
+
+
+queryExpr
+ansi2011
+select ] from
+
+1:8:
+  |
+1 | select ] from
+  |        ^
+unexpected ]
+expecting select item
+
+
+scalarExpr
+ansi2011
+)
+
+1:1:
+  |
+1 | )
+  | ^
+unexpected )
+expecting expression
+
+
+queryExpr
+ansi2011
+select )
+
+1:8:
+  |
+1 | select )
+  |        ^
+unexpected )
+expecting select item
+
+
+queryExpr
+ansi2011
+select ),
+
+1:8:
+  |
+1 | select ),
+  |        ^
+unexpected )
+expecting select item
+
+
+queryExpr
+ansi2011
+select ) from
+
+1:8:
+  |
+1 | select ) from
+  |        ^
+unexpected )
+expecting select item
+
+
+scalarExpr
+ansi2011
+[test
+
+1:1:
+  |
+1 | [test
+  | ^
+unexpected [
+expecting expression
+
+
+queryExpr
+ansi2011
+select [test
+
+1:8:
+  |
+1 | select [test
+  |        ^
+unexpected [
+expecting select item
+
+
+queryExpr
+ansi2011
+select [test,
+
+1:8:
+  |
+1 | select [test,
+  |        ^
+unexpected [
+expecting select item
+
+
+queryExpr
+ansi2011
+select [test from
+
+1:8:
+  |
+1 | select [test from
+  |        ^
+unexpected [
+expecting select item
+
+
+scalarExpr
+ansi2011
+[]
+
+1:1:
+  |
+1 | []
+  | ^
+unexpected [
+expecting expression
+
+
+queryExpr
+ansi2011
+select []
+
+1:8:
+  |
+1 | select []
+  |        ^
+unexpected [
+expecting select item
+
+
+queryExpr
+ansi2011
+select [],
+
+1:8:
+  |
+1 | select [],
+  |        ^
+unexpected [
+expecting select item
+
+
+queryExpr
+ansi2011
+select [] from
+
+1:8:
+  |
+1 | select [] from
+  |        ^
+unexpected [
+expecting select item
+
+
+scalarExpr
+ansi2011
+[[test]]
+
+1:1:
+  |
+1 | [[test]]
+  | ^
+unexpected [
+expecting expression
+
+
+queryExpr
+ansi2011
+select [[test]]
+
+1:8:
+  |
+1 | select [[test]]
+  |        ^
+unexpected [
+expecting select item
+
+
+queryExpr
+ansi2011
+select [[test]],
+
+1:8:
+  |
+1 | select [[test]],
+  |        ^
+unexpected [
+expecting select item
+
+
+queryExpr
+ansi2011
+select [[test]] from
+
+1:8:
+  |
+1 | select [[test]] from
+  |        ^
+unexpected [
+expecting select item
+
+
+scalarExpr
+ansi2011
+`open
+
+1:1:
+  |
+1 | `open
+  | ^
+unexpected `
+expecting expression
+
+
+queryExpr
+ansi2011
+select `open
+
+1:8:
+  |
+1 | select `open
+  |        ^
+unexpected `
+expecting select item
+
+
+queryExpr
+ansi2011
+select `open,
+
+1:8:
+  |
+1 | select `open,
+  |        ^
+unexpected `
+expecting select item
+
+
+queryExpr
+ansi2011
+select `open from
+
+1:8:
+  |
+1 | select `open from
+  |        ^
+unexpected `
+expecting select item
+
+
+scalarExpr
+ansi2011
+```
+
+1:1:
+  |
+1 | ```
+  | ^
+unexpected `
+expecting expression
+
+
+queryExpr
+ansi2011
+select ```
+
+1:8:
+  |
+1 | select ```
+  |        ^
+unexpected `
+expecting select item
+
+
+queryExpr
+ansi2011
+select ```,
+
+1:8:
+  |
+1 | select ```,
+  |        ^
+unexpected `
+expecting select item
+
+
+queryExpr
+ansi2011
+select ``` from
+
+1:8:
+  |
+1 | select ``` from
+  |        ^
+unexpected `
+expecting select item
+
+
+scalarExpr
+ansi2011
+``
+
+1:1:
+  |
+1 | ``
+  | ^
+unexpected `
+expecting expression
+
+
+queryExpr
+ansi2011
+select ``
+
+1:8:
+  |
+1 | select ``
+  |        ^
+unexpected `
+expecting select item
+
+
+queryExpr
+ansi2011
+select ``,
+
+1:8:
+  |
+1 | select ``,
+  |        ^
+unexpected `
+expecting select item
+
+
+queryExpr
+ansi2011
+select `` from
+
+1:8:
+  |
+1 | select `` from
+  |        ^
+unexpected `
+expecting select item
+
+
+scalarExpr
+ansi2011
+}
+
+1:1:
+  |
+1 | }
+  | ^
+unexpected }
+expecting expression
+
+
+queryExpr
+ansi2011
+select }
+
+1:8:
+  |
+1 | select }
+  |        ^
+unexpected }
+expecting select item
+
+
+queryExpr
+ansi2011
+select },
+
+1:8:
+  |
+1 | select },
+  |        ^
+unexpected }
+expecting select item
+
+
+queryExpr
+ansi2011
+select } from
+
+1:8:
+  |
+1 | select } from
+  |        ^
+unexpected }
+expecting select item
+
+
+scalarExpr
+ansi2011
+mytype(4 '4'
+
+1:10:
+  |
+1 | mytype(4 '4'
+  |          ^^^
+unexpected '4'
+expecting )
+
+
+queryExpr
+ansi2011
+select mytype(4 '4'
+
+1:17:
+  |
+1 | select mytype(4 '4'
+  |                 ^^^
+unexpected '4'
+expecting )
+
+
+queryExpr
+ansi2011
+select mytype(4 '4',
+
+1:17:
+  |
+1 | select mytype(4 '4',
+  |                 ^^^
+unexpected '4'
+expecting )
+
+
+queryExpr
+ansi2011
+select mytype(4 '4' from
+
+1:17:
+  |
+1 | select mytype(4 '4' from
+  |                 ^^^
+unexpected '4'
+expecting )
+
+
+scalarExpr
+ansi2011
+app(3
+
+1:6:
+  |
+1 | app(3
+  |      ^
+unexpected end of input
+expecting )
+
+
+queryExpr
+ansi2011
+select app(3
+
+1:13:
+  |
+1 | select app(3
+  |             ^
+unexpected end of input
+expecting )
+
+
+queryExpr
+ansi2011
+select app(3,
+
+1:14:
+  |
+1 | select app(3,
+  |              ^
+unexpected end of input
+expecting expression
+
+
+queryExpr
+ansi2011
+select app(3 from
+
+1:14:
+  |
+1 | select app(3 from
+  |              ^^^^
+unexpected from
+expecting )
+
+
+scalarExpr
+ansi2011
+app(
+
+1:5:
+  |
+1 | app(
+  |     ^
+unexpected end of input
+expecting ) or expression
+
+
+queryExpr
+ansi2011
+select app(
+
+1:12:
+  |
+1 | select app(
+  |            ^
+unexpected end of input
+expecting ) or expression
+
+
+queryExpr
+ansi2011
+select app(,
+
+1:12:
+  |
+1 | select app(,
+  |            ^
+unexpected ,
+expecting ) or expression
+
+
+queryExpr
+ansi2011
+select app( from
+
+1:13:
+  |
+1 | select app( from
+  |             ^^^^
+unexpected from
+expecting ) or expression
+
+
+scalarExpr
+ansi2011
+app(something
+
+1:14:
+  |
+1 | app(something
+  |              ^
+unexpected end of input
+expecting )
+
+
+queryExpr
+ansi2011
+select app(something
+
+1:21:
+  |
+1 | select app(something
+  |                     ^
+unexpected end of input
+expecting )
+
+
+queryExpr
+ansi2011
+select app(something,
+
+1:22:
+  |
+1 | select app(something,
+  |                      ^
+unexpected end of input
+expecting expression
+
+
+queryExpr
+ansi2011
+select app(something from
+
+1:22:
+  |
+1 | select app(something from
+  |                      ^^^^
+unexpected from
+expecting )
+
+
+scalarExpr
+ansi2011
+app(something,
+
+1:15:
+  |
+1 | app(something,
+  |               ^
+unexpected end of input
+expecting expression
+
+
+queryExpr
+ansi2011
+select app(something,
+
+1:22:
+  |
+1 | select app(something,
+  |                      ^
+unexpected end of input
+expecting expression
+
+
+queryExpr
+ansi2011
+select app(something,,
+
+1:22:
+  |
+1 | select app(something,,
+  |                      ^
+unexpected ,
+expecting expression
+
+
+queryExpr
+ansi2011
+select app(something, from
+
+1:23:
+  |
+1 | select app(something, from
+  |                       ^^^^
+unexpected from
+expecting expression
+
+
+scalarExpr
+ansi2011
+count(*
+
+1:8:
+  |
+1 | count(*
+  |        ^
+unexpected end of input
+expecting )
+
+
+queryExpr
+ansi2011
+select count(*
+
+1:15:
+  |
+1 | select count(*
+  |               ^
+unexpected end of input
+expecting )
+
+
+queryExpr
+ansi2011
+select count(*,
+
+1:16:
+  |
+1 | select count(*,
+  |                ^
+unexpected end of input
+expecting expression
+
+
+queryExpr
+ansi2011
+select count(* from
+
+1:16:
+  |
+1 | select count(* from
+  |                ^^^^
+unexpected from
+expecting )
+
+
+scalarExpr
+ansi2011
+count(* filter (where something > 5)
+
+1:9:
+  |
+1 | count(* filter (where something > 5)
+  |         ^^^^^^
+unexpected filter
+expecting )
+
+
+queryExpr
+ansi2011
+select count(* filter (where something > 5)
+
+1:16:
+  |
+1 | select count(* filter (where something > 5)
+  |                ^^^^^^
+unexpected filter
+expecting )
+
+
+queryExpr
+ansi2011
+select count(* filter (where something > 5),
+
+1:16:
+  |
+1 | select count(* filter (where something > 5),
+  |                ^^^^^^
+unexpected filter
+expecting )
+
+
+queryExpr
+ansi2011
+select count(* filter (where something > 5) from
+
+1:16:
+  |
+1 | select count(* filter (where something > 5) from
+  |                ^^^^^^
+unexpected filter
+expecting )
+
+
+scalarExpr
+ansi2011
+count(*) filter (where something > 5
+
+1:37:
+  |
+1 | count(*) filter (where something > 5
+  |                                     ^
+unexpected end of input
+expecting )
+
+
+queryExpr
+ansi2011
+select count(*) filter (where something > 5
+
+1:44:
+  |
+1 | select count(*) filter (where something > 5
+  |                                            ^
+unexpected end of input
+expecting )
+
+
+queryExpr
+ansi2011
+select count(*) filter (where something > 5,
+
+1:44:
+  |
+1 | select count(*) filter (where something > 5,
+  |                                            ^
+unexpected ,
+expecting )
+
+
+queryExpr
+ansi2011
+select count(*) filter (where something > 5 from
+
+1:45:
+  |
+1 | select count(*) filter (where something > 5 from
+  |                                             ^^^^
+unexpected from
+expecting )
+
+
+scalarExpr
+ansi2011
+count(*) filter (
+
+1:18:
+  |
+1 | count(*) filter (
+  |                  ^
+unexpected end of input
+expecting where
+
+
+queryExpr
+ansi2011
+select count(*) filter (
+
+1:25:
+  |
+1 | select count(*) filter (
+  |                         ^
+unexpected end of input
+expecting where
+
+
+queryExpr
+ansi2011
+select count(*) filter (,
+
+1:25:
+  |
+1 | select count(*) filter (,
+  |                         ^
+unexpected ,
+expecting where
+
+
+queryExpr
+ansi2011
+select count(*) filter ( from
+
+1:26:
+  |
+1 | select count(*) filter ( from
+  |                          ^^^^
+unexpected from
+expecting where
+
+
+scalarExpr
+ansi2011
+sum(a over (order by b)
+
+1:7:
+  |
+1 | sum(a over (order by b)
+  |       ^^^^
+unexpected over
+expecting )
+
+
+queryExpr
+ansi2011
+select sum(a over (order by b)
+
+1:14:
+  |
+1 | select sum(a over (order by b)
+  |              ^^^^
+unexpected over
+expecting )
+
+
+queryExpr
+ansi2011
+select sum(a over (order by b),
+
+1:14:
+  |
+1 | select sum(a over (order by b),
+  |              ^^^^
+unexpected over
+expecting )
+
+
+queryExpr
+ansi2011
+select sum(a over (order by b) from
+
+1:14:
+  |
+1 | select sum(a over (order by b) from
+  |              ^^^^
+unexpected over
+expecting )
+
+
+scalarExpr
+ansi2011
+sum(a) over (order by b
+
+1:24:
+  |
+1 | sum(a) over (order by b
+  |                        ^
+unexpected end of input
+expecting ) or frame clause
+
+
+queryExpr
+ansi2011
+select sum(a) over (order by b
+
+1:31:
+  |
+1 | select sum(a) over (order by b
+  |                               ^
+unexpected end of input
+expecting ) or frame clause
+
+
+queryExpr
+ansi2011
+select sum(a) over (order by b,
+
+1:32:
+  |
+1 | select sum(a) over (order by b,
+  |                                ^
+unexpected end of input
+expecting expression
+
+
+queryExpr
+ansi2011
+select sum(a) over (order by b from
+
+1:32:
+  |
+1 | select sum(a) over (order by b from
+  |                                ^^^^
+unexpected from
+expecting ) or frame clause
+
+
+scalarExpr
+ansi2011
+sum(a) over (
+
+1:14:
+  |
+1 | sum(a) over (
+  |              ^
+unexpected end of input
+expecting ), frame clause, order by, or partition by
+
+
+queryExpr
+ansi2011
+select sum(a) over (
+
+1:21:
+  |
+1 | select sum(a) over (
+  |                     ^
+unexpected end of input
+expecting ), frame clause, order by, or partition by
+
+
+queryExpr
+ansi2011
+select sum(a) over (,
+
+1:21:
+  |
+1 | select sum(a) over (,
+  |                     ^
+unexpected ,
+expecting ), frame clause, order by, or partition by
+
+
+queryExpr
+ansi2011
+select sum(a) over ( from
+
+1:22:
+  |
+1 | select sum(a) over ( from
+  |                      ^^^^
+unexpected from
+expecting ), frame clause, order by, or partition by
+
+
+scalarExpr
+ansi2011
+rank(a,c within group (order by b)
+
+1:10:
+  |
+1 | rank(a,c within group (order by b)
+  |          ^^^^^^
+unexpected within
+expecting )
+
+
+queryExpr
+ansi2011
+select rank(a,c within group (order by b)
+
+1:17:
+  |
+1 | select rank(a,c within group (order by b)
+  |                 ^^^^^^
+unexpected within
+expecting )
+
+
+queryExpr
+ansi2011
+select rank(a,c within group (order by b),
+
+1:17:
+  |
+1 | select rank(a,c within group (order by b),
+  |                 ^^^^^^
+unexpected within
+expecting )
+
+
+queryExpr
+ansi2011
+select rank(a,c within group (order by b) from
+
+1:17:
+  |
+1 | select rank(a,c within group (order by b) from
+  |                 ^^^^^^
+unexpected within
+expecting )
+
+
+scalarExpr
+ansi2011
+rank(a,c) within group (order by b
+
+1:35:
+  |
+1 | rank(a,c) within group (order by b
+  |                                   ^
+unexpected end of input
+expecting )
+
+
+queryExpr
+ansi2011
+select rank(a,c) within group (order by b
+
+1:42:
+  |
+1 | select rank(a,c) within group (order by b
+  |                                          ^
+unexpected end of input
+expecting )
+
+
+queryExpr
+ansi2011
+select rank(a,c) within group (order by b,
+
+1:43:
+  |
+1 | select rank(a,c) within group (order by b,
+  |                                           ^
+unexpected end of input
+expecting expression
+
+
+queryExpr
+ansi2011
+select rank(a,c) within group (order by b from
+
+1:43:
+  |
+1 | select rank(a,c) within group (order by b from
+  |                                           ^^^^
+unexpected from
+expecting )
+
+
+scalarExpr
+ansi2011
+rank(a,c) within group (
+
+1:25:
+  |
+1 | rank(a,c) within group (
+  |                         ^
+unexpected end of input
+expecting order by
+
+
+queryExpr
+ansi2011
+select rank(a,c) within group (
+
+1:32:
+  |
+1 | select rank(a,c) within group (
+  |                                ^
+unexpected end of input
+expecting order by
+
+
+queryExpr
+ansi2011
+select rank(a,c) within group (,
+
+1:32:
+  |
+1 | select rank(a,c) within group (,
+  |                                ^
+unexpected ,
+expecting order by
+
+
+queryExpr
+ansi2011
+select rank(a,c) within group ( from
+
+1:33:
+  |
+1 | select rank(a,c) within group ( from
+  |                                 ^^^^
+unexpected from
+expecting order by
+
+
+scalarExpr
+ansi2011
+array[
+
+1:7:
+  |
+1 | array[
+  |       ^
+unexpected end of input
+expecting ] or expression
+
+
+queryExpr
+ansi2011
+select array[
+
+1:14:
+  |
+1 | select array[
+  |              ^
+unexpected end of input
+expecting ] or expression
+
+
+queryExpr
+ansi2011
+select array[,
+
+1:14:
+  |
+1 | select array[,
+  |              ^
+unexpected ,
+expecting ] or expression
+
+
+queryExpr
+ansi2011
+select array[ from
+
+1:15:
+  |
+1 | select array[ from
+  |               ^^^^
+unexpected from
+expecting ] or expression
+
+
+scalarExpr
+ansi2011
+(a
+
+1:3:
+  |
+1 | (a
+  |   ^
+unexpected end of input
+expecting )
+
+
+queryExpr
+ansi2011
+select (a
+
+1:10:
+  |
+1 | select (a
+  |          ^
+unexpected end of input
+expecting )
+
+
+queryExpr
+ansi2011
+select (a,
+
+1:11:
+  |
+1 | select (a,
+  |           ^
+unexpected end of input
+expecting expression
+
+
+queryExpr
+ansi2011
+select (a from
+
+1:11:
+  |
+1 | select (a from
+  |           ^^^^
+unexpected from
+expecting )
+
+
+scalarExpr
+ansi2011
+(
+
+1:2:
+  |
+1 | (
+  |  ^
+unexpected end of input
+expecting expression or query expr
+
+
+queryExpr
+ansi2011
+select (
+
+1:9:
+  |
+1 | select (
+  |         ^
+unexpected end of input
+expecting expression or query expr
+
+
+queryExpr
+ansi2011
+select (,
+
+1:9:
+  |
+1 | select (,
+  |         ^
+unexpected ,
+expecting expression or query expr
+
+
+queryExpr
+ansi2011
+select ( from
+
+1:10:
+  |
+1 | select ( from
+  |          ^^^^
+unexpected from
+expecting expression or query expr
+
+
+scalarExpr
+ansi2011
+a >*
+BinOp (Iden [ Name Nothing "a" ]) [ Name Nothing ">" ] Star
+
+queryExpr
+ansi2011
+select a >*
+
+Select
+  { qeSetQuantifier = SQDefault
+  , qeSelectList =
+      [ ( BinOp (Iden [ Name Nothing "a" ]) [ Name Nothing ">" ] Star
+        , Nothing
+        )
+      ]
+  , qeFrom = []
+  , qeWhere = Nothing
+  , qeGroupBy = []
+  , qeHaving = Nothing
+  , qeOrderBy = []
+  , qeOffset = Nothing
+  , qeFetchFirst = Nothing
+  }
+
+queryExpr
+ansi2011
+select a >*,
+
+1:13:
+  |
+1 | select a >*,
+  |             ^
+unexpected end of input
+expecting select item
+
+
+queryExpr
+ansi2011
+select a >* from
+
+1:17:
+  |
+1 | select a >* from
+  |                 ^
+unexpected end of input
+expecting table ref
+
+
+scalarExpr
+ansi2011
+a >* b
+
+1:6:
+  |
+1 | a >* b
+  |      ^
+unexpected b
+
+
+queryExpr
+ansi2011
+select a >* b
+
+Select
+  { qeSetQuantifier = SQDefault
+  , qeSelectList =
+      [ ( BinOp (Iden [ Name Nothing "a" ]) [ Name Nothing ">" ] Star
+        , Just (Name Nothing "b")
+        )
+      ]
+  , qeFrom = []
+  , qeWhere = Nothing
+  , qeGroupBy = []
+  , qeHaving = Nothing
+  , qeOrderBy = []
+  , qeOffset = Nothing
+  , qeFetchFirst = Nothing
+  }
+
+queryExpr
+ansi2011
+select a >* b,
+
+1:15:
+  |
+1 | select a >* b,
+  |               ^
+unexpected end of input
+expecting select item
+
+
+queryExpr
+ansi2011
+select a >* b from
+
+1:19:
+  |
+1 | select a >* b from
+  |                   ^
+unexpected end of input
+expecting table ref
+
+
+scalarExpr
+ansi2011
+( ( a
+
+1:6:
+  |
+1 | ( ( a
+  |      ^
+unexpected end of input
+expecting )
+
+
+queryExpr
+ansi2011
+select ( ( a
+
+1:13:
+  |
+1 | select ( ( a
+  |             ^
+unexpected end of input
+expecting )
+
+
+queryExpr
+ansi2011
+select ( ( a,
+
+1:14:
+  |
+1 | select ( ( a,
+  |              ^
+unexpected end of input
+expecting expression
+
+
+queryExpr
+ansi2011
+select ( ( a from
+
+1:14:
+  |
+1 | select ( ( a from
+  |              ^^^^
+unexpected from
+expecting )
+
+
+scalarExpr
+ansi2011
+( ( a )
+
+1:8:
+  |
+1 | ( ( a )
+  |        ^
+unexpected end of input
+expecting )
+
+
+queryExpr
+ansi2011
+select ( ( a )
+
+1:15:
+  |
+1 | select ( ( a )
+  |               ^
+unexpected end of input
+expecting )
+
+
+queryExpr
+ansi2011
+select ( ( a ),
+
+1:16:
+  |
+1 | select ( ( a ),
+  |                ^
+unexpected end of input
+expecting expression
+
+
+queryExpr
+ansi2011
+select ( ( a ) from
+
+1:16:
+  |
+1 | select ( ( a ) from
+  |                ^^^^
+unexpected from
+expecting )
+
+
+scalarExpr
+ansi2011
+( ( a  + )
+
+1:10:
+  |
+1 | ( ( a  + )
+  |          ^
+unexpected )
+expecting expression
+
+
+queryExpr
+ansi2011
+select ( ( a  + )
+
+1:17:
+  |
+1 | select ( ( a  + )
+  |                 ^
+unexpected )
+expecting expression
+
+
+queryExpr
+ansi2011
+select ( ( a  + ),
+
+1:17:
+  |
+1 | select ( ( a  + ),
+  |                 ^
+unexpected )
+expecting expression
+
+
+queryExpr
+ansi2011
+select ( ( a  + ) from
+
+1:17:
+  |
+1 | select ( ( a  + ) from
+  |                 ^
+unexpected )
+expecting expression
+
+
+scalarExpr
+postgres
+$$something$
+
+1:13:
+  |
+1 | $$something$
+  |             ^
+unexpected end of input
+expecting $$
+
+
+scalarExpr
+postgres
+$$something
+
+1:12:
+  |
+1 | $$something
+  |            ^
+unexpected end of input
+expecting $$
+
+
+scalarExpr
+postgres
+$$something
+x
+
+2:2:
+  |
+2 | x
+  |  ^
+unexpected end of input
+expecting $$
+
+
+scalarExpr
+postgres
+$a$something$b$
+
+1:16:
+  |
+1 | $a$something$b$
+  |                ^
+unexpected end of input
+expecting $a$
+
+
+scalarExpr
+postgres
+$a$
+
+1:4:
+  |
+1 | $a$
+  |    ^
+unexpected end of input
+expecting $a$
+
+
+scalarExpr
+postgres
+:::
+
+1:1:
+  |
+1 | :::
+  | ^
+unexpected :
+expecting expression
+
+
+scalarExpr
+postgres
+|||
+
+1:1:
+  |
+1 | |||
+  | ^^^
+unexpected |||
+expecting expression
+
+
+scalarExpr
+postgres
+...
+
+1:1:
+  |
+1 | ...
+  | ^^^
+unexpected ...
+expecting expression
+
+
+scalarExpr
+sqlserver
+]
+
+1:1:
+  |
+1 | ]
+  | ^
+unexpected ]
+expecting expression
+
+
+scalarExpr
+sqlserver
+[test
+
+1:6:
+  |
+1 | [test
+  |      ^
+unexpected end of input
+expecting ']'
+
+
+scalarExpr
+sqlserver
+[]
+
+1:2:
+  |
+1 | []
+  |  ^
+empty identifier
+
+
+scalarExpr
+sqlserver
+[[test]]
+
+1:2:
+  |
+1 | [[test]]
+  |  ^
+unexpected [
+
+
+scalarExpr
+mysql
+`open
+
+1:6:
+  |
+1 | `open
+  |      ^
+unexpected end of input
+expecting '`'
+
+
+scalarExpr
+mysql
+```
+
+1:2:
+  |
+1 | ```
+  |  ^
+empty identifier
+
+
+scalarExpr
+mysql
+``
+
+1:2:
+  |
+1 | ``
+  |  ^
+empty identifier
+
+
+scalarExpr
+params
+:3
+
+1:1:
+  |
+1 | :3
+  | ^
+unexpected :
+expecting expression
+
+
+scalarExpr
+params
+@3
+
+1:1:
+  |
+1 | @3
+  | ^
+unexpected @
+expecting expression
+
+
+scalarExpr
+params
+#3
+
+1:1:
+  |
+1 | #3
+  | ^
+unexpected #
+expecting expression
+
+
+scalarExpr
+odbc
+{d '2000-01-01'
+
+1:16:
+  |
+1 | {d '2000-01-01'
+  |                ^
+unexpected end of input
+expecting }
+
+
+scalarExpr
+odbc
+{fn CHARACTER_LENGTH(string_exp)
+
+1:33:
+  |
+1 | {fn CHARACTER_LENGTH(string_exp)
+  |                                 ^
+unexpected end of input
+expecting }
+
+
+queryExpr
+odbc
+select * from {oj t1 left outer join t2 on expr
+
+1:48:
+  |
+1 | select * from {oj t1 left outer join t2 on expr
+  |                                                ^
+unexpected end of input
+expecting }
+
+
+queryExpr
+ansi2011
+select a select
+
+1:10:
+  |
+1 | select a select
+  |          ^^^^^^
+unexpected select
+expecting alias or from
+
+
+queryExpr
+ansi2011
+select a from t,
+
+1:17:
+  |
+1 | select a from t,
+  |                 ^
+unexpected end of input
+expecting table ref
+
+
+queryExpr
+ansi2011
+select a from t select
+
+1:17:
+  |
+1 | select a from t select
+  |                 ^^^^^^
+unexpected select
+expecting group by, having, order by, or where
+
+
+queryExpr
+ansi2011
+select a from t(a)
+
+Select
+  { qeSetQuantifier = SQDefault
+  , qeSelectList = [ ( Iden [ Name Nothing "a" ] , Nothing ) ]
+  , qeFrom =
+      [ TRFunction [ Name Nothing "t" ] [ Iden [ Name Nothing "a" ] ] ]
+  , qeWhere = Nothing
+  , qeGroupBy = []
+  , qeHaving = Nothing
+  , qeOrderBy = []
+  , qeOffset = Nothing
+  , qeFetchFirst = Nothing
+  }
+
+queryExpr
+ansi2011
+select a from (t
+
+1:17:
+  |
+1 | select a from (t
+  |                 ^
+unexpected end of input
+expecting )
+
+
+queryExpr
+ansi2011
+select a from (t having
+
+1:18:
+  |
+1 | select a from (t having
+  |                  ^^^^^^
+unexpected having
+expecting )
+
+
+queryExpr
+ansi2011
+select a from t a b
+
+1:19:
+  |
+1 | select a from t a b
+  |                   ^
+unexpected b
+expecting group by, having, order by, or where
+
+
+queryExpr
+ansi2011
+select a from t as
+
+1:19:
+  |
+1 | select a from t as
+  |                   ^
+unexpected end of input
+expecting name
+
+
+queryExpr
+ansi2011
+select a from t as having
+
+1:20:
+  |
+1 | select a from t as having
+  |                    ^^^^^^
+unexpected having
+expecting name
+
+
+queryExpr
+ansi2011
+select a from (1234)
+
+1:16:
+  |
+1 | select a from (1234)
+  |                ^^^^
+unexpected 1234
+expecting query expr or table ref
+
+
+queryExpr
+ansi2011
+select a from (1234
+
+1:16:
+  |
+1 | select a from (1234
+  |                ^^^^
+unexpected 1234
+expecting query expr or table ref
+
+
+queryExpr
+ansi2011
+select a from a wrong join b
+
+Select
+  { qeSetQuantifier = SQDefault
+  , qeSelectList = [ ( Iden [ Name Nothing "a" ] , Nothing ) ]
+  , qeFrom =
+      [ TRJoin
+          (TRAlias
+             (TRSimple [ Name Nothing "a" ])
+             (Alias (Name Nothing "wrong") Nothing))
+          False
+          JInner
+          (TRSimple [ Name Nothing "b" ])
+          Nothing
+      ]
+  , qeWhere = Nothing
+  , qeGroupBy = []
+  , qeHaving = Nothing
+  , qeOrderBy = []
+  , qeOffset = Nothing
+  , qeFetchFirst = Nothing
+  }
+
+queryExpr
+ansi2011
+select a from a natural wrong join b
+
+1:25:
+  |
+1 | select a from a natural wrong join b
+  |                         ^^^^^
+unexpected wrong
+expecting cross, full, inner, join, left, or right
+
+
+queryExpr
+ansi2011
+select a from a left wrong join b
+
+1:22:
+  |
+1 | select a from a left wrong join b
+  |                      ^^^^^
+unexpected wrong
+expecting join or outer
+
+
+queryExpr
+ansi2011
+select a from a left wrong join b
+
+1:22:
+  |
+1 | select a from a left wrong join b
+  |                      ^^^^^
+unexpected wrong
+expecting join or outer
+
+
+queryExpr
+ansi2011
+select a from a join b select
+
+1:24:
+  |
+1 | select a from a join b select
+  |                        ^^^^^^
+unexpected select
+expecting group by, having, order by, or where
+
+
+queryExpr
+ansi2011
+select a from a join b on select
+
+1:27:
+  |
+1 | select a from a join b on select
+  |                           ^^^^^^
+unexpected select
+expecting expression
+
+
+queryExpr
+ansi2011
+select a from a join b on (1234
+
+1:32:
+  |
+1 | select a from a join b on (1234
+  |                                ^
+unexpected end of input
+expecting )
+
+
+queryExpr
+ansi2011
+select a from a join b using(a
+
+1:31:
+  |
+1 | select a from a join b using(a
+  |                               ^
+unexpected end of input
+expecting )
+
+
+queryExpr
+ansi2011
+select a from a join b using(a,
+
+1:32:
+  |
+1 | select a from a join b using(a,
+  |                                ^
+unexpected end of input
+expecting name
+
+
+queryExpr
+ansi2011
+select a from a join b using(a,)
+
+1:32:
+  |
+1 | select a from a join b using(a,)
+  |                                ^
+unexpected )
+expecting name
+
+
+queryExpr
+ansi2011
+select a from a join b using(1234
+
+1:30:
+  |
+1 | select a from a join b using(1234
+  |                              ^^^^
+unexpected 1234
+expecting name
+
+
+queryExpr
+ansi2011
+select a from t order no a
+
+1:23:
+  |
+1 | select a from t order no a
+  |                       ^^
+unexpected no
+expecting by
+
+
+queryExpr
+ansi2011
+select a from t order by a where c
+
+1:28:
+  |
+1 | select a from t order by a where c
+  |                            ^^^^^
+unexpected where
+
+
+queryExpr
+ansi2011
+select 'test
+'
+
+Select
+  { qeSetQuantifier = SQDefault
+  , qeSelectList = [ ( StringLit "'" "'" "test\n" , Nothing ) ]
+  , qeFrom = []
+  , qeWhere = Nothing
+  , qeGroupBy = []
+  , qeHaving = Nothing
+  , qeOrderBy = []
+  , qeOffset = Nothing
+  , qeFetchFirst = Nothing
+  }
+
+queryExpr
+ansi2011
+select a as
+
+1:12:
+  |
+1 | select a as
+  |            ^
+unexpected end of input
+expecting name
+
+
+queryExpr
+ansi2011
+select a as from t
+
+1:13:
+  |
+1 | select a as from t
+  |             ^^^^
+unexpected from
+expecting name
+
+
+queryExpr
+ansi2011
+select a as,
+
+1:12:
+  |
+1 | select a as,
+  |            ^
+unexpected ,
+expecting name
+
+
+queryExpr
+ansi2011
+select a,
+
+1:10:
+  |
+1 | select a,
+  |          ^
+unexpected end of input
+expecting select item
+
+
+queryExpr
+ansi2011
+select a, from t
+
+1:11:
+  |
+1 | select a, from t
+  |           ^^^^
+unexpected from
+expecting select item
+
+
+queryExpr
+ansi2011
+select a as from
+
+1:13:
+  |
+1 | select a as from
+  |             ^^^^
+unexpected from
+expecting name
+
+
+queryExpr
+ansi2011
+select a as from from
+
+1:13:
+  |
+1 | select a as from from
+  |             ^^^^
+unexpected from
+expecting name
+
+
+queryExpr
+ansi2011
+select a as from2 from
+
+1:23:
+  |
+1 | select a as from2 from
+  |                       ^
+unexpected end of input
+expecting table ref
+
+
+queryExpr
+ansi2011
+select a fromt
+
+Select
+  { qeSetQuantifier = SQDefault
+  , qeSelectList =
+      [ ( Iden [ Name Nothing "a" ] , Just (Name Nothing "fromt") ) ]
+  , qeFrom = []
+  , qeWhere = Nothing
+  , qeGroupBy = []
+  , qeHaving = Nothing
+  , qeOrderBy = []
+  , qeOffset = Nothing
+  , qeFetchFirst = Nothing
+  }
+
+queryExpr
+ansi2011
+select a b fromt
+
+1:12:
+  |
+1 | select a b fromt
+  |            ^^^^^
+unexpected fromt
+expecting from
+
+
+queryExpr
+ansi2011
+select a from t u v
+
+1:19:
+  |
+1 | select a from t u v
+  |                   ^
+unexpected v
+expecting group by, having, order by, or where
+
+
+queryExpr
+ansi2011
+select a from t as
+
+1:19:
+  |
+1 | select a from t as
+  |                   ^
+unexpected end of input
+expecting name
+
+
+queryExpr
+ansi2011
+select a from t,
+
+1:17:
+  |
+1 | select a from t,
+  |                 ^
+unexpected end of input
+expecting table ref
+
+
+queryExpr
+ansi2011
+select a from group by b
+
+1:15:
+  |
+1 | select a from group by b
+  |               ^^^^^
+unexpected group
+expecting table ref
+
+
+queryExpr
+ansi2011
+select a from t join group by a
+
+1:22:
+  |
+1 | select a from t join group by a
+  |                      ^^^^^
+unexpected group
+expecting name
+
+
+queryExpr
+ansi2011
+select a from t join
+
+1:21:
+  |
+1 | select a from t join
+  |                     ^
+unexpected end of input
+expecting name
+
+
+queryExpr
+ansi2011
+select a from (@
+
+1:16:
+  |
+1 | select a from (@
+  |                ^
+unexpected @
+expecting query expr or table ref
+
+
+queryExpr
+ansi2011
+select a from ()
+
+1:16:
+  |
+1 | select a from ()
+  |                ^
+unexpected )
+expecting query expr or table ref
+
+
+queryExpr
+ansi2011
+select a from t left join u on
+
+1:31:
+  |
+1 | select a from t left join u on
+  |                               ^
+unexpected end of input
+expecting expression
+
+
+queryExpr
+ansi2011
+select a from t left join u on group by a
+
+1:32:
+  |
+1 | select a from t left join u on group by a
+  |                                ^^^^^
+unexpected group
+expecting expression
+
+
+queryExpr
+ansi2011
+select a from t left join u using
+
+1:34:
+  |
+1 | select a from t left join u using
+  |                                  ^
+unexpected end of input
+expecting (
+
+
+queryExpr
+ansi2011
+select a from t left join u using (
+
+1:36:
+  |
+1 | select a from t left join u using (
+  |                                    ^
+unexpected end of input
+expecting name
+
+
+queryExpr
+ansi2011
+select a from t left join u using (a
+
+1:37:
+  |
+1 | select a from t left join u using (a
+  |                                     ^
+unexpected end of input
+expecting )
+
+
+queryExpr
+ansi2011
+select a from t left join u using (a,
+
+1:38:
+  |
+1 | select a from t left join u using (a,
+  |                                      ^
+unexpected end of input
+expecting name
+
+
+queryExpr
+ansi2011
+select a from (select a from)
+
+1:29:
+  |
+1 | select a from (select a from)
+  |                             ^
+unexpected )
+expecting table ref
+
+
+queryExpr
+ansi2011
+select a from (select a
+
+1:24:
+  |
+1 | select a from (select a
+  |                        ^
+unexpected end of input
+expecting ), alias, or from
+
+
+queryExpr
+ansi2011
+select a from t where
+
+1:22:
+  |
+1 | select a from t where
+  |                      ^
+unexpected end of input
+expecting expression
+
+
+queryExpr
+ansi2011
+select a from t group by a having b where
+
+1:37:
+  |
+1 | select a from t group by a having b where
+  |                                     ^^^^^
+unexpected where
+expecting order by
+
+
+queryExpr
+ansi2011
+select a from t where (a
+
+1:25:
+  |
+1 | select a from t where (a
+  |                         ^
+unexpected end of input
+expecting )
+
+
+queryExpr
+ansi2011
+select a from t where group by b
+
+1:23:
+  |
+1 | select a from t where group by b
+  |                       ^^^^^
+unexpected group
+expecting expression
+
+
+queryExpr
+ansi2011
+select a from t group by
+
+1:25:
+  |
+1 | select a from t group by
+  |                         ^
+unexpected end of input
+expecting (, cube, expression, grouping sets, or rollup
+
+
+queryExpr
+ansi2011
+select a from t group
+
+1:22:
+  |
+1 | select a from t group
+  |                      ^
+unexpected end of input
+expecting by
+
+
+queryExpr
+ansi2011
+select a from t group by a as
+
+1:28:
+  |
+1 | select a from t group by a as
+  |                            ^^
+unexpected as
+expecting having or order by
+
+
+queryExpr
+ansi2011
+select a from t group by a,
+
+1:28:
+  |
+1 | select a from t group by a,
+  |                            ^
+unexpected end of input
+expecting (, cube, expression, grouping sets, or rollup
+
+
+queryExpr
+ansi2011
+select a from t group by order by
+
+1:26:
+  |
+1 | select a from t group by order by
+  |                          ^^^^^
+unexpected order
+expecting (, cube, expression, grouping sets, or rollup
+
+
+queryExpr
+ansi2011
+select a <<== b from t
+
+1:11:
+  |
+1 | select a <<== b from t
+  |           ^^
+unexpected <=
+expecting expression
+
+
+queryExpr
+ansi2011
+/*
+
+1:3:
+  |
+1 | /*
+  |   ^
+unexpected end of input
+expecting */
+
+
+queryExpr
+ansi2011
+select * as a
+
+Select
+  { qeSetQuantifier = SQDefault
+  , qeSelectList = [ ( Star , Just (Name Nothing "a") ) ]
+  , qeFrom = []
+  , qeWhere = Nothing
+  , qeGroupBy = []
+  , qeHaving = Nothing
+  , qeOrderBy = []
+  , qeOffset = Nothing
+  , qeFetchFirst = Nothing
+  }
+
+queryExpr
+ansi2011
+select t.* as a
+
+Select
+  { qeSetQuantifier = SQDefault
+  , qeSelectList =
+      [ ( BinOp (Iden [ Name Nothing "t" ]) [ Name Nothing "." ] Star
+        , Just (Name Nothing "a")
+        )
+      ]
+  , qeFrom = []
+  , qeWhere = Nothing
+  , qeGroupBy = []
+  , qeHaving = Nothing
+  , qeOrderBy = []
+  , qeOffset = Nothing
+  , qeFetchFirst = Nothing
+  }
+
+queryExpr
+ansi2011
+select 3 + *
+
+Select
+  { qeSetQuantifier = SQDefault
+  , qeSelectList =
+      [ ( BinOp (NumLit "3") [ Name Nothing "+" ] Star , Nothing ) ]
+  , qeFrom = []
+  , qeWhere = Nothing
+  , qeGroupBy = []
+  , qeHaving = Nothing
+  , qeOrderBy = []
+  , qeOffset = Nothing
+  , qeFetchFirst = Nothing
+  }
+
+queryExpr
+ansi2011
+select case when * then 1 end
+
+Select
+  { qeSetQuantifier = SQDefault
+  , qeSelectList =
+      [ ( Case
+            { caseTest = Nothing
+            , caseWhens = [ ( [ Star ] , NumLit "1" ) ]
+            , caseElse = Nothing
+            }
+        , Nothing
+        )
+      ]
+  , qeFrom = []
+  , qeWhere = Nothing
+  , qeGroupBy = []
+  , qeHaving = Nothing
+  , qeOrderBy = []
+  , qeOffset = Nothing
+  , qeFetchFirst = Nothing
+  }
+
+queryExpr
+ansi2011
+select (*)
+
+Select
+  { qeSetQuantifier = SQDefault
+  , qeSelectList = [ ( Parens Star , Nothing ) ]
+  , qeFrom = []
+  , qeWhere = Nothing
+  , qeGroupBy = []
+  , qeHaving = Nothing
+  , qeOrderBy = []
+  , qeOffset = Nothing
+  , qeFetchFirst = Nothing
+  }
+
+queryExpr
+ansi2011
+select * from (select a
+        from t
+
+2:15:
+  |
+2 |         from t
+  |               ^
+unexpected end of input
+expecting ), group by, having, order by, or where
+
+
+queryExpr
+ansi2011
+select * from (select a(stuff)
+        from t
+
+2:15:
+  |
+2 |         from t
+  |               ^
+unexpected end of input
+expecting ), group by, having, order by, or where
+
+
+queryExpr
+ansi2011
+select *
+     from (select a,b
+           from t
+           where a = 1
+                 and b > a
+
+5:27:
+  |
+5 |                  and b > a
+  |                           ^
+unexpected end of input
+expecting ), group by, having, or order by
+
+
+queryExpr
+ansi2011
+select *
+     from (select a,b
+           from t
+           where a = 1
+                 and b > a
+           from t)
+
+6:12:
+  |
+6 |            from t)
+  |            ^^^^
+unexpected from
+expecting ), group by, having, or order by
+
+
+statement
+ansi2011
+create
+
+1:7:
+  |
+1 | create
+  |       ^
+unexpected end of input
+expecting assertion, domain, index, role, schema, sequence, table, unique index, or view
+
+
+statement
+ansi2011
+drop
+
+1:5:
+  |
+1 | drop
+  |     ^
+unexpected end of input
+expecting assertion, domain, role, schema, sequence, table, or view
+
+
+statement
+ansi2011
+delete this
+
+1:8:
+  |
+1 | delete this
+  |        ^^^^
+unexpected this
+expecting from
+
+
+statement
+ansi2011
+delete where 7
+
+1:8:
+  |
+1 | delete where 7
+  |        ^^^^^
+unexpected where
+expecting from
+
+
+statement
+ansi2011
+delete from where t
+
+1:13:
+  |
+1 | delete from where t
+  |             ^^^^^
+unexpected where
+expecting name
+
+
+statement
+ansi2011
+truncate nothing
+
+1:10:
+  |
+1 | truncate nothing
+  |          ^^^^^^^
+unexpected nothing
+expecting table
+
+
+statement
+ansi2011
+truncate nothing nothing
+
+1:10:
+  |
+1 | truncate nothing nothing
+  |          ^^^^^^^
+unexpected nothing
+expecting table
+
+
+statement
+ansi2011
+truncate table from
+
+1:16:
+  |
+1 | truncate table from
+  |                ^^^^
+unexpected from
+expecting name
+
+
+statement
+ansi2011
+truncate table t u
+
+1:18:
+  |
+1 | truncate table t u
+  |                  ^
+unexpected u
+expecting ;, continue identity, or restart identity
+
+
+statement
+ansi2011
+insert t select u
+
+1:8:
+  |
+1 | insert t select u
+  |        ^
+unexpected t
+expecting into
+
+
+statement
+ansi2011
+insert into t insert
+
+1:15:
+  |
+1 | insert into t insert
+  |               ^^^^^^
+unexpected insert
+expecting default values, parens column names, or query expr
+
+
+statement
+ansi2011
+insert into t (1,2)
+
+1:16:
+  |
+1 | insert into t (1,2)
+  |                ^
+unexpected 1
+expecting name
+
+
+statement
+ansi2011
+insert into t(
+
+1:15:
+  |
+1 | insert into t(
+  |               ^
+unexpected end of input
+expecting name
+
+
+statement
+ansi2011
+insert into t(1
+
+1:15:
+  |
+1 | insert into t(1
+  |               ^
+unexpected 1
+expecting name
+
+
+statement
+ansi2011
+insert into t(a
+
+1:16:
+  |
+1 | insert into t(a
+  |                ^
+unexpected end of input
+expecting )
+
+
+statement
+ansi2011
+insert into t(a,
+
+1:17:
+  |
+1 | insert into t(a,
+  |                 ^
+unexpected end of input
+expecting name
+
+
+statement
+ansi2011
+insert into t(a,b)
+
+1:19:
+  |
+1 | insert into t(a,b)
+  |                   ^
+unexpected end of input
+expecting default values or query expr
+
+
+statement
+ansi2011
+insert into t(a,b) values
+
+Insert
+  [ Name Nothing "t" ]
+  (Just [ Name Nothing "a" , Name Nothing "b" ])
+  (InsertQuery (Values []))
+
+statement
+ansi2011
+insert into t(a,b) values (
+
+1:28:
+  |
+1 | insert into t(a,b) values (
+  |                            ^
+unexpected end of input
+expecting ) or expression
+
+
+statement
+ansi2011
+insert into t(a,b) values (1
+
+1:29:
+  |
+1 | insert into t(a,b) values (1
+  |                             ^
+unexpected end of input
+expecting )
+
+
+statement
+ansi2011
+insert into t(a,b) values (1,
+
+1:30:
+  |
+1 | insert into t(a,b) values (1,
+  |                              ^
+unexpected end of input
+expecting expression
+
+
+statement
+ansi2011
+insert into t(a,b) values (1,2) and stuff
+
+1:33:
+  |
+1 | insert into t(a,b) values (1,2) and stuff
+  |                                 ^^^
+unexpected and
+expecting ;
+
+
+statement
+ansi2011
+update set 1
+
+1:8:
+  |
+1 | update set 1
+  |        ^^^
+unexpected set
+expecting name
+
+
+statement
+ansi2011
+update t u
+
+1:11:
+  |
+1 | update t u
+  |           ^
+unexpected end of input
+expecting set
+
+
+statement
+ansi2011
+update t u v
+
+1:12:
+  |
+1 | update t u v
+  |            ^
+unexpected v
+expecting set
+
+
+statement
+ansi2011
+update t set a
+
+1:15:
+  |
+1 | update t set a
+  |               ^
+unexpected end of input
+expecting =
+
+
+statement
+ansi2011
+update t set a=
+
+1:16:
+  |
+1 | update t set a=
+  |                ^
+unexpected end of input
+expecting expression
+
+
+statement
+ansi2011
+update t set a=1,
+
+1:18:
+  |
+1 | update t set a=1,
+  |                  ^
+unexpected end of input
+expecting ( or name
+
+
+statement
+ansi2011
+update t set a=1 where
+
+1:23:
+  |
+1 | update t set a=1 where
+  |                       ^
+unexpected end of input
+expecting expression
+
+
+statement
+ansi2011
+update t set a=1 where 1 also
+
+1:26:
+  |
+1 | update t set a=1 where 1 also
+  |                          ^^^^
+unexpected also
+expecting ;
+
+
+statement
+ansi2011
+create table
+
+1:13:
+  |
+1 | create table
+  |             ^
+unexpected end of input
+expecting name
+
+
+statement
+ansi2011
+create table t (
+  a
+)
+
+3:1:
+  |
+3 | )
+  | ^
+unexpected )
+expecting typename
+
+
+statement
+ansi2011
+create table t (
+  a
+
+2:4:
+  |
+2 |   a
+  |    ^
+unexpected end of input
+expecting typename
+
+
+statement
+ansi2011
+create table t (
+  a,
+)
+
+2:4:
+  |
+2 |   a,
+  |    ^
+unexpected ,
+expecting typename
+
+
+statement
+ansi2011
+create table t (
+)
+CreateTable [ Name Nothing "t" ] []
+
+statement
+ansi2011
+create table t (
+
+1:17:
+  |
+1 | create table t (
+  |                 ^
+unexpected end of input
+expecting ), check, constraint, foreign key, name, primary key, or unique
+
+
+statement
+ansi2011
+create table t
+
+1:15:
+  |
+1 | create table t
+  |               ^
+unexpected end of input
+expecting (
+
+
+statement
+ansi2011
+create table t. (
+
+1:15:
+  |
+1 | create table t. (
+  |               ^
+unexpected .
+expecting (
+
+
+statement
+ansi2011
+truncate table t.
+
+1:17:
+  |
+1 | truncate table t.
+  |                 ^
+unexpected .
+expecting ;, continue identity, or restart identity
+
+
+statement
+ansi2011
+drop table t. where
+
+1:13:
+  |
+1 | drop table t. where
+  |             ^
+unexpected .
+expecting ;, cascade, or restrict
+
+
+statement
+ansi2011
+update t. set
+
+1:9:
+  |
+1 | update t. set
+  |         ^
+unexpected .
+expecting alias or set
+
+
+statement
+ansi2011
+delete from t. where
+
+1:14:
+  |
+1 | delete from t. where
+  |              ^
+unexpected .
+expecting ;, as, name, or where
+
+
+statement
+ansi2011
+insert into t. values
+
+1:14:
+  |
+1 | insert into t. values
+  |              ^
+unexpected .
+expecting default values, parens column names, or query expr
+
+
+statement
+ansi2011
+with a as (select * from t
+select 1
+
+2:1:
+  |
+2 | select 1
+  | ^^^^^^
+unexpected select
+expecting ), group by, having, order by, or where
+
+
+statement
+ansi2011
+with a as (select * from t
+
+1:27:
+  |
+1 | with a as (select * from t
+  |                           ^
+unexpected end of input
+expecting ), group by, having, order by, or where
+
+
+statement
+ansi2011
+with a as (
+
+1:12:
+  |
+1 | with a as (
+  |            ^
+unexpected end of input
+expecting query expr
+
+
+statement
+ansi2011
+with a (
+
+1:9:
+  |
+1 | with a (
+  |         ^
+unexpected end of input
+expecting name
+
+
+statement
+ansi2011
+with as (select * from t)
+select 1
+
+1:6:
+  |
+1 | with as (select * from t)
+  |      ^^
+unexpected as
+expecting name
+
+
+statement
+ansi2011
+with (select * from t) as a
+select 1
+
+1:6:
+  |
+1 | with (select * from t) as a
+  |      ^
+unexpected (
+expecting name
+
+

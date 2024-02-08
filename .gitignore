@@ -8,3 +8,4 @@
 dist-newstyle/
 /cabal.project.local
 .emacs.*
+/expected-parse-errors/actual

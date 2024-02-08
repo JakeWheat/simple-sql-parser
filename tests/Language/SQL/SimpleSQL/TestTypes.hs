@@ -52,4 +52,5 @@ should all be TODO to convert to a testqueryexpr test.
               | LexTest Dialect Text [Token] (SpecWith ())
               | LexFails Dialect Text (SpecWith ())
               | GeneralParseFailTest Text Text (SpecWith ())
+              | GoldenErrorTest Text [(Text,Text,Text)] (SpecWith ())
 

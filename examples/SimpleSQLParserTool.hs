@@ -38,7 +38,8 @@ main = do
     args <- getArgs
     case args of
         [] -> do
-              showHelp $ Just "no command given"
+              -- exit with 0 in this case
+              showHelp Nothing --  $ Just "no command given"
         (c:as) -> do
              let cmd = lookup c commands
              maybe (showHelp (Just "command not recognised"))
