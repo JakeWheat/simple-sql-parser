@@ -634,8 +634,8 @@ from
 1:1:
   |
 1 | from
-  | ^^^^
-unexpected from
+  | ^
+unexpected keyword from
 expecting expression
 
 
@@ -646,8 +646,8 @@ select from
 1:8:
   |
 1 | select from
-  |        ^^^^
-unexpected from
+  |        ^
+unexpected keyword from
 expecting select item
 
 
@@ -658,8 +658,8 @@ select from,
 1:8:
   |
 1 | select from,
-  |        ^^^^
-unexpected from
+  |        ^
+unexpected keyword from
 expecting select item
 
 
@@ -670,8 +670,8 @@ select from from
 1:8:
   |
 1 | select from from
-  |        ^^^^
-unexpected from
+  |        ^
+unexpected keyword from
 expecting select item
 
 
@@ -682,8 +682,8 @@ from.a
 1:1:
   |
 1 | from.a
-  | ^^^^
-unexpected from
+  | ^
+unexpected keyword from
 expecting expression
 
 
@@ -694,8 +694,8 @@ select from.a
 1:8:
   |
 1 | select from.a
-  |        ^^^^
-unexpected from
+  |        ^
+unexpected keyword from
 expecting select item
 
 
@@ -706,8 +706,8 @@ select from.a,
 1:8:
   |
 1 | select from.a,
-  |        ^^^^
-unexpected from
+  |        ^
+unexpected keyword from
 expecting select item
 
 
@@ -718,8 +718,8 @@ select from.a from
 1:8:
   |
 1 | select from.a from
-  |        ^^^^
-unexpected from
+  |        ^
+unexpected keyword from
 expecting select item
 
 
@@ -730,8 +730,8 @@ a.from
 1:3:
   |
 1 | a.from
-  |   ^^^^
-unexpected from
+  |   ^
+unexpected keyword from
 expecting expression
 
 
@@ -742,8 +742,8 @@ select a.from
 1:10:
   |
 1 | select a.from
-  |          ^^^^
-unexpected from
+  |          ^
+unexpected keyword from
 expecting expression
 
 
@@ -754,8 +754,8 @@ select a.from,
 1:10:
   |
 1 | select a.from,
-  |          ^^^^
-unexpected from
+  |          ^
+unexpected keyword from
 expecting expression
 
 
@@ -766,8 +766,8 @@ select a.from from
 1:10:
   |
 1 | select a.from from
-  |          ^^^^
-unexpected from
+  |          ^
+unexpected keyword from
 expecting expression
 
 
@@ -814,8 +814,8 @@ select not from
 1:12:
   |
 1 | select not from
-  |            ^^^^
-unexpected from
+  |            ^
+unexpected keyword from
 expecting expression
 
 
@@ -862,8 +862,8 @@ select 4 + from
 1:12:
   |
 1 | select 4 + from
-  |            ^^^^
-unexpected from
+  |            ^
+unexpected keyword from
 expecting expression
 
 
@@ -874,8 +874,8 @@ ansi2011
 1:5:
   |
 1 | 4 + from
-  |     ^^^^
-unexpected from
+  |     ^
+unexpected keyword from
 expecting expression
 
 
@@ -886,8 +886,8 @@ select 4 + from
 1:12:
   |
 1 | select 4 + from
-  |            ^^^^
-unexpected from
+  |            ^
+unexpected keyword from
 expecting expression
 
 
@@ -898,8 +898,8 @@ select 4 + from,
 1:12:
   |
 1 | select 4 + from,
-  |            ^^^^
-unexpected from
+  |            ^
+unexpected keyword from
 expecting expression
 
 
@@ -910,8 +910,8 @@ select 4 + from from
 1:12:
   |
 1 | select 4 + from from
-  |            ^^^^
-unexpected from
+  |            ^
+unexpected keyword from
 expecting expression
 
 
@@ -1006,8 +1006,8 @@ select (5 + from
 1:13:
   |
 1 | select (5 + from
-  |             ^^^^
-unexpected from
+  |             ^
+unexpected keyword from
 expecting expression
 
 
@@ -1066,8 +1066,8 @@ ansi2011
 1:6:
   |
 1 | (5 + from)
-  |      ^^^^
-unexpected from
+  |      ^
+unexpected keyword from
 expecting expression
 
 
@@ -1078,8 +1078,8 @@ select (5 + from)
 1:13:
   |
 1 | select (5 + from)
-  |             ^^^^
-unexpected from
+  |             ^
+unexpected keyword from
 expecting expression
 
 
@@ -1090,8 +1090,8 @@ select (5 + from),
 1:13:
   |
 1 | select (5 + from),
-  |             ^^^^
-unexpected from
+  |             ^
+unexpected keyword from
 expecting expression
 
 
@@ -1102,8 +1102,8 @@ select (5 + from) from
 1:13:
   |
 1 | select (5 + from) from
-  |             ^^^^
-unexpected from
+  |             ^
+unexpected keyword from
 expecting expression
 
 
@@ -1402,8 +1402,8 @@ case a when from then to end
 1:13:
   |
 1 | case a when from then to end
-  |             ^^^^
-unexpected from
+  |             ^
+unexpected keyword from
 expecting expression
 
 
@@ -1414,8 +1414,8 @@ select case a when from then to end
 1:20:
   |
 1 | select case a when from then to end
-  |                    ^^^^
-unexpected from
+  |                    ^
+unexpected keyword from
 expecting expression
 
 
@@ -1426,8 +1426,8 @@ select case a when from then to end,
 1:20:
   |
 1 | select case a when from then to end,
-  |                    ^^^^
-unexpected from
+  |                    ^
+unexpected keyword from
 expecting expression
 
 
@@ -1438,8 +1438,8 @@ select case a when from then to end from
 1:20:
   |
 1 | select case a when from then to end from
-  |                    ^^^^
-unexpected from
+  |                    ^
+unexpected keyword from
 expecting expression
 
 
@@ -3150,8 +3150,8 @@ select app( from
 1:13:
   |
 1 | select app( from
-  |             ^^^^
-unexpected from
+  |             ^
+unexpected keyword from
 expecting ) or expression
 
 
@@ -3246,8 +3246,8 @@ select app(something, from
 1:23:
   |
 1 | select app(something, from
-  |                       ^^^^
-unexpected from
+  |                       ^
+unexpected keyword from
 expecting expression
 
 
@@ -3870,8 +3870,8 @@ select ( from
 1:10:
   |
 1 | select ( from
-  |          ^^^^
-unexpected from
+  |          ^
+unexpected keyword from
 expecting expression or query expr
 
 
@@ -4397,7 +4397,7 @@ select a from t select
 1 | select a from t select
   |                 ^^^^^^
 unexpected select
-expecting group by, having, order by, or where
+expecting alias, group by, having, order by, or where
 
 
 queryExpr
@@ -4426,7 +4426,7 @@ select a from (t
 1 | select a from (t
   |                 ^
 unexpected end of input
-expecting )
+expecting ) or alias
 
 
 queryExpr
@@ -4438,7 +4438,7 @@ select a from (t having
 1 | select a from (t having
   |                  ^^^^^^
 unexpected having
-expecting )
+expecting ) or alias
 
 
 queryExpr
@@ -4462,7 +4462,7 @@ select a from t as
 1 | select a from t as
   |                   ^
 unexpected end of input
-expecting name
+expecting alias
 
 
 queryExpr
@@ -4474,7 +4474,7 @@ select a from t as having
 1 | select a from t as having
   |                    ^^^^^^
 unexpected having
-expecting name
+expecting alias
 
 
 queryExpr
@@ -4581,8 +4581,8 @@ select a from a join b on select
 1:27:
   |
 1 | select a from a join b on select
-  |                           ^^^^^^
-unexpected select
+  |                           ^
+unexpected keyword select
 expecting expression
 
 
@@ -4619,7 +4619,7 @@ select a from a join b using(a,
 1 | select a from a join b using(a,
   |                                ^
 unexpected end of input
-expecting name
+expecting column name
 
 
 queryExpr
@@ -4631,7 +4631,7 @@ select a from a join b using(a,)
 1 | select a from a join b using(a,)
   |                                ^
 unexpected )
-expecting name
+expecting column name
 
 
 queryExpr
@@ -4643,7 +4643,7 @@ select a from a join b using(1234
 1 | select a from a join b using(1234
   |                              ^^^^
 unexpected 1234
-expecting name
+expecting column name
 
 
 queryExpr
@@ -4695,7 +4695,7 @@ select a as
 1 | select a as
   |            ^
 unexpected end of input
-expecting name
+expecting alias
 
 
 queryExpr
@@ -4707,7 +4707,7 @@ select a as from t
 1 | select a as from t
   |             ^^^^
 unexpected from
-expecting name
+expecting alias
 
 
 queryExpr
@@ -4719,7 +4719,7 @@ select a as,
 1 | select a as,
   |            ^
 unexpected ,
-expecting name
+expecting alias
 
 
 queryExpr
@@ -4741,8 +4741,8 @@ select a, from t
 1:11:
   |
 1 | select a, from t
-  |           ^^^^
-unexpected from
+  |           ^
+unexpected keyword from
 expecting select item
 
 
@@ -4755,7 +4755,7 @@ select a as from
 1 | select a as from
   |             ^^^^
 unexpected from
-expecting name
+expecting alias
 
 
 queryExpr
@@ -4767,7 +4767,7 @@ select a as from from
 1 | select a as from from
   |             ^^^^
 unexpected from
-expecting name
+expecting alias
 
 
 queryExpr
@@ -4832,7 +4832,7 @@ select a from t as
 1 | select a from t as
   |                   ^
 unexpected end of input
-expecting name
+expecting alias
 
 
 queryExpr
@@ -4868,7 +4868,7 @@ select a from t join group by a
 1 | select a from t join group by a
   |                      ^^^^^
 unexpected group
-expecting name
+expecting table ref
 
 
 queryExpr
@@ -4880,7 +4880,7 @@ select a from t join
 1 | select a from t join
   |                     ^
 unexpected end of input
-expecting name
+expecting table ref
 
 
 queryExpr
@@ -4926,8 +4926,8 @@ select a from t left join u on group by a
 1:32:
   |
 1 | select a from t left join u on group by a
-  |                                ^^^^^
-unexpected group
+  |                                ^
+unexpected keyword group
 expecting expression
 
 
@@ -4952,7 +4952,7 @@ select a from t left join u using (
 1 | select a from t left join u using (
   |                                    ^
 unexpected end of input
-expecting name
+expecting column name
 
 
 queryExpr
@@ -4976,7 +4976,7 @@ select a from t left join u using (a,
 1 | select a from t left join u using (a,
   |                                      ^
 unexpected end of input
-expecting name
+expecting column name
 
 
 queryExpr
@@ -5046,8 +5046,8 @@ select a from t where group by b
 1:23:
   |
 1 | select a from t where group by b
-  |                       ^^^^^
-unexpected group
+  |                       ^
+unexpected keyword group
 expecting expression
 
 
@@ -5060,7 +5060,7 @@ select a from t group by
 1 | select a from t group by
   |                         ^
 unexpected end of input
-expecting (, cube, expression, grouping sets, or rollup
+expecting grouping expression
 
 
 queryExpr
@@ -5096,7 +5096,7 @@ select a from t group by a,
 1 | select a from t group by a,
   |                            ^
 unexpected end of input
-expecting (, cube, expression, grouping sets, or rollup
+expecting grouping expression
 
 
 queryExpr
@@ -5106,9 +5106,9 @@ select a from t group by order by
 1:26:
   |
 1 | select a from t group by order by
-  |                          ^^^^^
-unexpected order
-expecting (, cube, expression, grouping sets, or rollup
+  |                          ^
+unexpected keyword order
+expecting grouping expression
 
 
 queryExpr
@@ -5205,7 +5205,7 @@ select * from (select a
 2 |         from t
   |               ^
 unexpected end of input
-expecting ), group by, having, order by, or where
+expecting ), alias, group by, having, order by, or where
 
 
 queryExpr
@@ -5218,7 +5218,7 @@ select * from (select a(stuff)
 2 |         from t
   |               ^
 unexpected end of input
-expecting ), group by, having, order by, or where
+expecting ), alias, group by, having, order by, or where
 
 
 queryExpr
@@ -5311,7 +5311,7 @@ delete from where t
 1 | delete from where t
   |             ^^^^^
 unexpected where
-expecting name
+expecting table name
 
 
 statement
@@ -5347,7 +5347,7 @@ truncate table from
 1 | truncate table from
   |                ^^^^
 unexpected from
-expecting name
+expecting table name
 
 
 statement
@@ -5359,7 +5359,7 @@ truncate table t u
 1 | truncate table t u
   |                  ^
 unexpected u
-expecting ;, continue identity, or restart identity
+expecting ;
 
 
 statement
@@ -5383,7 +5383,7 @@ insert into t insert
 1 | insert into t insert
   |               ^^^^^^
 unexpected insert
-expecting default values, parens column names, or query expr
+expecting query expr or values
 
 
 statement
@@ -5395,7 +5395,7 @@ insert into t (1,2)
 1 | insert into t (1,2)
   |                ^
 unexpected 1
-expecting name
+expecting column name
 
 
 statement
@@ -5407,7 +5407,7 @@ insert into t(
 1 | insert into t(
   |               ^
 unexpected end of input
-expecting name
+expecting column name
 
 
 statement
@@ -5419,7 +5419,7 @@ insert into t(1
 1 | insert into t(1
   |               ^
 unexpected 1
-expecting name
+expecting column name
 
 
 statement
@@ -5443,7 +5443,7 @@ insert into t(a,
 1 | insert into t(a,
   |                 ^
 unexpected end of input
-expecting name
+expecting column name
 
 
 statement
@@ -5455,7 +5455,7 @@ insert into t(a,b)
 1 | insert into t(a,b)
   |                   ^
 unexpected end of input
-expecting default values or query expr
+expecting query expr or values
 
 
 statement
@@ -5524,7 +5524,7 @@ update set 1
 1 | update set 1
   |        ^^^
 unexpected set
-expecting name
+expecting table name
 
 
 statement
@@ -5584,7 +5584,7 @@ update t set a=1,
 1 | update t set a=1,
   |                  ^
 unexpected end of input
-expecting ( or name
+expecting set clause
 
 
 statement
@@ -5620,7 +5620,7 @@ create table
 1 | create table
   |             ^
 unexpected end of input
-expecting name
+expecting table name
 
 
 statement
@@ -5679,7 +5679,7 @@ create table t (
 1 | create table t (
   |                 ^
 unexpected end of input
-expecting ), check, constraint, foreign key, name, primary key, or unique
+expecting ), column name, or table constraint
 
 
 statement
@@ -5715,7 +5715,7 @@ truncate table t.
 1 | truncate table t.
   |                 ^
 unexpected .
-expecting ;, continue identity, or restart identity
+expecting ;
 
 
 statement
@@ -5751,7 +5751,7 @@ delete from t. where
 1 | delete from t. where
   |              ^
 unexpected .
-expecting ;, as, name, or where
+expecting ;, alias, or where
 
 
 statement
@@ -5763,7 +5763,7 @@ insert into t. values
 1 | insert into t. values
   |              ^
 unexpected .
-expecting default values, parens column names, or query expr
+expecting query expr or values
 
 
 statement
@@ -5776,7 +5776,7 @@ select 1
 2 | select 1
   | ^^^^^^
 unexpected select
-expecting ), group by, having, order by, or where
+expecting ), alias, group by, having, order by, or where
 
 
 statement
@@ -5788,7 +5788,7 @@ with a as (select * from t
 1 | with a as (select * from t
   |                           ^
 unexpected end of input
-expecting ), group by, having, order by, or where
+expecting ), alias, group by, having, order by, or where
 
 
 statement
@@ -5812,7 +5812,7 @@ with a (
 1 | with a (
   |         ^
 unexpected end of input
-expecting name
+expecting column alias
 
 
 statement
@@ -5825,7 +5825,7 @@ select 1
 1 | with as (select * from t)
   |      ^^
 unexpected as
-expecting name
+expecting alias
 
 
 statement
@@ -5838,6 +5838,6 @@ select 1
 1 | with (select * from t) as a
   |      ^
 unexpected (
-expecting name
+expecting alias
 
 

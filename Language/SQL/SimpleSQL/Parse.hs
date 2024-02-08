@@ -196,6 +196,8 @@ import Text.Megaparsec
     ,ParseErrorBundle(..)
     ,errorBundlePretty
     ,hidden
+    ,failure
+    ,ErrorItem(..)
     
     ,(<|>)
     ,token
@@ -209,6 +211,7 @@ import Text.Megaparsec
     ,some
     ,many
     ,between
+    ,lookAhead
     )
 import qualified Control.Monad.Combinators.Expr as E
 import qualified Control.Monad.Permutations as P
@@ -222,6 +225,7 @@ import Control.Monad.Reader
     )
 
 import qualified Data.Set           as Set
+import qualified Data.List.NonEmpty as NE
 import Data.Void (Void)
 
 import Control.Monad (guard, void)
@@ -381,21 +385,22 @@ with U& or u&
 u&"example quoted"
 -}
 
-name :: Parser Name
-name = label "name" $ do
+name :: Text -> Parser Name
+name lbl = label lbl $ do
     bl <- askDialect diKeywords
     uncurry Name <$> identifierTok bl
 
 -- todo: replace (:[]) with a named function all over
 
-names :: Parser [Name]
-names = label "name" (reverse <$> (((:[]) <$> name) <??*> anotherName))
+names :: Text -> Parser [Name]
+names lbl =
+    label lbl (reverse <$> (((:[]) <$> name lbl) `chainrSuffix` anotherName))
   -- can't use a simple chain here since we
   -- want to wrap the . + name in a try
   -- this will change when this is left factored
   where
     anotherName :: Parser ([Name] -> [Name])
-    anotherName = try ((:) <$> (hidden (symbol "." *> name)))
+    anotherName = try ((:) <$> (hidden (symbol "." *> name lbl)))
 
 {-
 = Type Names
@@ -519,11 +524,11 @@ typeName' :: Bool -> Parser TypeName
 typeName' hideArg =
     label "typename" (
         (rowTypeName <|> intervalTypeName <|> otherTypeName)
-        <??*> tnSuffix)
+        `chainrSuffix` tnSuffix)
   where
     rowTypeName =
         RowTypeName <$> (hidden (keyword_ "row") *> parens (commaSep1 rowField))
-    rowField = (,) <$> name <*> typeName
+    rowField = (,) <$> name "type name" <*> typeName
     ----------------------------
     intervalTypeName =
         hidden (keyword_ "interval") *>
@@ -534,9 +539,9 @@ typeName' hideArg =
             (typeNameWithParens
              <|> pure Nothing <**> (hidden timeTypeName <|> hidden charTypeName)
              <|> pure TypeName)
-    nameOfType = reservedTypeNames <|> names
-    charTypeName = charSet <**> (option [] tcollate <$$$$> CharTypeName)
-                   <|> pure [] <**> (tcollate <$$$$> CharTypeName)
+    nameOfType = reservedTypeNames <|> names "type name"
+    charTypeName = charSet <**> (option [] tcollate <**> pure (flip4 CharTypeName))
+                   <|> pure [] <**> (tcollate <**> pure (flip4 CharTypeName))
     typeNameWithParens =
         (hidden openParen *> (if hideArg then hidden unsignedInteger else unsignedInteger))
         <**> (closeParen *> hidden precMaybeSuffix
@@ -545,12 +550,12 @@ typeName' hideArg =
                       <|> pure (flip PrecTypeName)
     precScaleTypeName =
         (hidden comma *> (if hideArg then hidden unsignedInteger else unsignedInteger))
-        <$$$> PrecScaleTypeName
+        <**> pure (flip3 PrecScaleTypeName)
     precLengthTypeName =
         Just <$> lobPrecSuffix
-        <**> (optional lobUnits <$$$$> PrecLengthTypeName)
-        <|> pure Nothing <**> ((Just <$> lobUnits) <$$$$> PrecLengthTypeName)
-    timeTypeName = tz <$$$> TimeTypeName
+        <**> (optional lobUnits <**> pure (flip4 PrecLengthTypeName))
+        <|> pure Nothing <**> ((Just <$> lobUnits) <**> pure (flip4 PrecLengthTypeName))
+    timeTypeName = tz <**> pure (flip3 TimeTypeName)
     ----------------------------
     lobPrecSuffix = PrecK <$ keyword_ "k"
                     <|> PrecM <$ keyword_ "m"
@@ -565,13 +570,13 @@ typeName' hideArg =
                <|> PrecOctets <$ keyword_ "byte"
     tz = True <$ keywords_ ["with", "time","zone"]
          <|> False <$ keywords_ ["without", "time","zone"]
-    charSet = keywords_ ["character", "set"] *> names
-    tcollate = keyword_ "collate" *> names
+    charSet = keywords_ ["character", "set"] *> names "character set name"
+    tcollate = keyword_ "collate" *> names "collation name"
     ----------------------------
     tnSuffix = multiset <|> array
     multiset = MultisetTypeName <$ keyword_ "multiset"
     array = keyword_ "array" *>
-        (optional (brackets unsignedInteger) <$$> ArrayTypeName)
+        (optional (brackets unsignedInteger) <**> pure (flip ArrayTypeName))
     ----------------------------
     -- this parser handles the fixed set of multi word
     -- type names, plus all the type names which are
@@ -616,7 +621,7 @@ star =
     [Star <$ symbol "*"
     -- much easier to use try here than to left factor where
     -- this is allowed and not allowed
-    ,try (QStar <$> (names <* symbol "." <* symbol "*"))]
+    ,try (QStar <$> (names "qualified star" <* symbol "." <* symbol "*"))]
 
 {-
 == parameter
@@ -732,7 +737,7 @@ multisetCtor =
 
 nextValueFor :: Parser ScalarExpr
 nextValueFor = keywords_ ["next","value","for"] >>
-    NextValueFor <$> names
+    NextValueFor <$> names "sequence generator name"
 
 {-
 === interval
@@ -796,7 +801,8 @@ idenExpr =
     -- if it could potentially be a typed literal typename 'literaltext'
     -- optionally try to parse that
     regularAppLike = do
-        e <- (keywordFunctionOrIden <|> (names <**> hoption Iden app))
+        e <- (keywordFunctionOrIden
+              <|> (names "identifier" <**> (hidden app <|> pure Iden)))
         let getInt s = readMaybe (T.unpack s)
         case e of
             Iden nm -> tryTypedLiteral (TypeName nm) <|> pure e
@@ -810,14 +816,15 @@ idenExpr =
             _ -> pure e
     tryTypedLiteral tn =
         TypedLit tn <$> hidden singleQuotesOnlyStringTok
-    typedLiteral = TypedLit <$> hidden (typeName' True) <*> singleQuotesOnlyStringTok
+    typedLiteral =
+        TypedLit <$> hidden (typeName' True) <*> singleQuotesOnlyStringTok
     keywordFunctionOrIden = do
         d <- askDialect id
         x <- hidden (keywordTok (diIdentifierKeywords d ++ diAppKeywords d))
         let i = T.toLower x `elem` diIdentifierKeywords d
             a = T.toLower x `elem` diAppKeywords d
         case () of
-            _ | i && a -> pure [Name Nothing x] <**> hoption Iden app
+            _ | i && a -> pure [Name Nothing x] <**> (hidden app <|> pure Iden)
               | i -> pure (Iden [Name Nothing x])
               | a -> pure [Name Nothing x] <**> app
               | otherwise -> -- shouldn't get here
@@ -966,7 +973,7 @@ app =
     [hidden duplicates
      <**> (commaSep1 scalarExprOrStar
            <**> ((hoption [] orderBy <* closeParen)
-                 <**> (hoptional afilter <$$$$$> AggregateApp)))
+                 <**> (hoptional afilter <**> pure (flip5 AggregateApp))))
      -- separate cases with no all or distinct which must have at
      -- least one scalar expr
     ,commaSep1 scalarExprOrStar
@@ -974,12 +981,15 @@ app =
           [closeParen *> hidden (choice
                          [window
                          ,withinGroup
-                         ,(Just <$> afilter) <$$$> aggAppWithoutDupeOrd
+                         ,(Just <$> afilter) <**> pure (flip3 aggAppWithoutDupeOrd)
                          ,pure (flip App)])
           ,hidden orderBy <* closeParen
-           <**> (hoptional afilter <$$$$> aggAppWithoutDupe)]
+           <**> (hoptional afilter <**> pure (flip4 aggAppWithoutDupe))]
      -- no scalarExprs: duplicates and order by not allowed
-    ,([] <$ closeParen) <**> hoption (flip App) (window <|> withinGroup)
+    ,([] <$ closeParen) <**> choice
+                             [window
+                             ,withinGroup
+                             ,pure $ flip App]
     ]
   where
     aggAppWithoutDupeOrd n es f = AggregateApp n SQDefault es [] f
@@ -990,7 +1000,7 @@ afilter = keyword_ "filter" *> parens (keyword_ "where" *> scalarExpr)
 
 withinGroup :: Parser ([ScalarExpr] -> [Name] -> ScalarExpr)
 withinGroup =
-    (keywords_ ["within", "group"] *> parens orderBy) <$$$> AggregateAppGroup
+    (keywords_ ["within", "group"] *> parens orderBy) <**> pure (flip3 AggregateAppGroup)
 
 {-
 ==== window
@@ -1009,7 +1019,7 @@ window :: Parser ([ScalarExpr] -> [Name] -> ScalarExpr)
 window =
   keyword_ "over" *> openParen *> option [] partitionBy
   <**> (option [] orderBy
-        <**> ((optional frameClause <* closeParen) <$$$$$> WindowApp))
+        <**> ((optional frameClause <* closeParen) <**> pure (flip5 WindowApp)))
   where
     partitionBy =
         label "partition by" $
@@ -1019,7 +1029,7 @@ window =
         frameRowsRange -- TODO: this 'and' could be an issue
         <**> choice [(keyword_ "between" *> frameLimit True)
                       <**> ((keyword_ "and" *> frameLimit True)
-                            <$$$> FrameBetween)
+                            <**> pure (flip3 FrameBetween))
                       -- maybe this should still use a b expression
                       -- for consistency
                      ,frameLimit False <**> pure (flip FrameFrom)]
@@ -1160,7 +1170,7 @@ escapeSuffix = do
 collateSuffix:: Parser (ScalarExpr -> ScalarExpr)
 collateSuffix = do
     keyword_ "collate"
-    i <- names
+    i <- names "collation name"
     pure $ \v -> Collate v i
 
 {-
@@ -1315,17 +1325,22 @@ documenting/fixing.
 -}
 
 scalarExpr :: Parser ScalarExpr
-scalarExpr = label "expression" $ E.makeExprParser term (opTable False)
+scalarExpr = expressionLabel $ E.makeExprParser term (opTable False)
 
 -- used when parsing contexts where a * or x.* is allowed
 -- currently at the top level of a select item or top level of
 -- argument passed to an app-like. This list may need to be extended.
 
 scalarExprOrStar :: Parser ScalarExpr
-scalarExprOrStar = label "expression" (star <|> scalarExpr)
+scalarExprOrStar = star <|> scalarExpr
+
+-- use this to get a nice unexpected keyword error which doesn't also
+-- mangle other errors
+expressionLabel :: Parser a -> Parser a
+expressionLabel p = label "expression" p <|> failOnKeyword
 
 term :: Parser ScalarExpr
-term = label "expression" $
+term = expressionLabel $
     choice
     [simpleLiteral
     ,parameter
@@ -1401,7 +1416,7 @@ selectItem =
     [(,Nothing) <$> star
     ,(,) <$> scalarExpr <*> optional als]
   where
-    als = label "alias" $ optional (keyword_ "as") *> name
+    als = label "alias" $ optional (keyword_ "as") *> name "alias"
 
 selectList :: Parser [(ScalarExpr,Maybe Name)]
 selectList = commaSep1 selectItem
@@ -1424,31 +1439,30 @@ aliases.
 from :: Parser [TableRef]
 from = label "from" (keyword_ "from" *> commaSep1 tref)
   where
-    -- TODO: use P (a->) for the join tref suffix
-    -- chainl or buildexpressionparser
-    tref = (nonJoinTref <?> "table ref") >>= hoptionSuffix joinTrefSuffix
-    nonJoinTref = choice
+    tref = nonJoinTref <**> (hidden (chainl tjoin) <|> pure id)
+    nonJoinTref =
+        label "table ref" $ choice
         [hidden $ parens $ choice
              [TRQueryExpr <$> queryExpr
              ,TRParens <$> tref]
-        ,TRLateral <$> (hidden (keyword_ "lateral")
-                        *> nonJoinTref)
+        ,TRLateral <$> (hidden (keyword_ "lateral") *> nonJoinTref)
         ,do
-         n <- names
-         choice [TRFunction n
-                 <$> hidden (parens (commaSep scalarExpr))
+         n <- names "table name"
+         choice [TRFunction n <$> hidden (parens (commaSep scalarExpr))
                 ,pure $ TRSimple n]
          -- todo: I think you can only have outer joins inside the oj,
          -- not sure.
         ,TROdbc <$> (hidden (braces (keyword_ "oj" *> tref)))
-        ] <??> aliasSuffix
-    aliasSuffix = hidden (fromAlias <$$> TRAlias)
-    joinTrefSuffix t =
-        ((TRJoin t <$> option False (True <$ keyword_ "natural")
-                  <*> joinType
-                  <*> nonJoinTref
-                  <*> hoptional joinCondition)
-        >>= hoptionSuffix joinTrefSuffix)
+        ] <**> (talias <|> pure id)
+    talias = fromAlias <**> pure (flip TRAlias)
+    tjoin =
+        (\jn jt tr1 jc tr0 -> TRJoin tr0 jn jt tr1 jc)
+        <$> option False (True <$ keyword_ "natural")
+        <*> joinType
+        <*> nonJoinTref
+        <*> hoptional joinCondition
+    chainl p = foldr (.) id . reverse <$> some p
+
 
 {-
 TODO: factor the join stuff to produce better error messages (and make
@@ -1473,13 +1487,13 @@ joinType = choice
 joinCondition :: Parser JoinCondition
 joinCondition = choice
     [keyword_ "on" >> JoinOn <$> scalarExpr
-    ,keyword_ "using" >> JoinUsing <$> parens (commaSep1 name)]
+    ,keyword_ "using" >> JoinUsing <$> parens (commaSep1 (name "column name"))]
 
 fromAlias :: Parser Alias
 fromAlias = Alias <$> tableAlias <*> columnAliases
   where
-    tableAlias = hoptional (keyword_ "as") *> name
-    columnAliases = hoptional $ parens $ commaSep1 name
+    tableAlias = hoptional (keyword_ "as") *> name "alias"
+    columnAliases = hoptional $ parens $ commaSep1 (name "column name")
 
 {-
 == simple other parts
@@ -1495,7 +1509,9 @@ groupByClause :: Parser [GroupingExpr]
 groupByClause =
     label "group by" (keywords_ ["group","by"] *> commaSep1 groupingExpression)
   where
-    groupingExpression = choice
+    groupingExpression =
+      label "grouping expression" $
+      choice
       [keyword_ "cube" >>
        Cube <$> parens (commaSep groupingExpression)
       ,keyword_ "rollup" >>
@@ -1558,8 +1574,8 @@ with = keyword_ "with" >>
   where
     withQuery = (,) <$> (withAlias <* keyword_ "as")
                     <*> parens queryExpr
-    withAlias = Alias <$> name <*> columnAliases
-    columnAliases = hoptional $ parens $ commaSep1 name
+    withAlias = Alias <$> name "alias" <*> columnAliases
+    columnAliases = hoptional $ parens $ commaSep1 (name "column alias")
 
 
 {-
@@ -1585,7 +1601,7 @@ queryExpr = label "query expr" $ E.makeExprParser qeterm qeOpTable
         Select d sl f w g h od ofs fe
     values = keyword_ "values"
              >> Values <$> commaSep (parens (commaSep scalarExpr))
-    table = keyword_ "table" >> Table <$> names
+    table = keyword_ "table" >> Table <$> names "table name"
 
     qeOpTable =
         [[E.InfixL $ setOp Intersect "intersect"]
@@ -1688,7 +1704,7 @@ statement = statementWithoutSemicolon <* optional semi <|> EmptyStatement <$ hid
 
 createSchema :: Parser Statement
 createSchema = keyword_ "schema" >>
-    CreateSchema <$> names
+    CreateSchema <$> names "schema name"
 
 createTable :: Parser Statement
 createTable = do 
@@ -1704,7 +1720,7 @@ createTable = do
 
   keyword_ "table" >>
     CreateTable
-    <$> names 
+    <$> names  "table name"
     <*> parens entries
 
 createIndex :: Parser Statement
@@ -1712,12 +1728,12 @@ createIndex =
     CreateIndex
     <$> ((keyword_ "index" >> pure False) <|>
          (keywords_ ["unique", "index"] >> pure True))
-    <*> names
-    <*> (keyword_ "on" >> names)
-    <*> parens (commaSep1 name)
+    <*> names "index name"
+    <*> (keyword_ "on" >> names "table name")
+    <*> parens (commaSep1 (name "column name"))
 
 columnDef :: Parser ColumnDef
-columnDef = ColumnDef <$> name <*> typeName
+columnDef = ColumnDef <$> name "column name" <*> typeName
             <*> optional defaultClause
             <*> option [] (some colConstraintDef)
   where
@@ -1737,20 +1753,21 @@ columnDef = ColumnDef <$> name <*> typeName
 
 tableConstraintDef :: Parser (Maybe [Name], TableConstraint)
 tableConstraintDef =
+    label "table constraint" $
     (,)
-    <$> optional (keyword_ "constraint" *> names)
+    <$> optional (keyword_ "constraint" *> names "constraint name")
     <*> (unique <|> primaryKey <|> check <|> references)
   where
     unique = keyword_ "unique" >>
-        TableUniqueConstraint <$> parens (commaSep1 name)
+        TableUniqueConstraint <$> parens (commaSep1 $ name "column name")
     primaryKey = keywords_ ["primary", "key"] >>
-        TablePrimaryKeyConstraint <$> parens (commaSep1 name)
+        TablePrimaryKeyConstraint <$> parens (commaSep1 $ name "column name")
     check = keyword_ "check" >> TableCheckConstraint <$> parens scalarExpr
     references = keywords_ ["foreign", "key"] >>
         (\cs ft ftcs m (u,d) -> TableReferencesConstraint cs ft ftcs m u d)
-        <$> parens (commaSep1 name)
-        <*> (keyword_ "references" *> names)
-        <*> hoptional (parens $ commaSep1 name)
+        <$> parens (commaSep1 $ name "column name")
+        <*> (keyword_ "references" *> names "table name")
+        <*> hoptional (parens $ commaSep1 $ name "column name")
         <*> refMatch
         <*> refActions
 
@@ -1780,7 +1797,7 @@ refActions =
 colConstraintDef :: Parser ColConstraintDef
 colConstraintDef =
     ColConstraintDef
-    <$> optional (keyword_ "constraint" *> names)
+    <$> optional (keyword_ "constraint" *> names "constraint name")
     <*> (nullable <|> notNull <|> unique <|> primaryKey <|> check <|> references)
   where
     nullable = ColNullableConstraint <$ keyword "null"
@@ -1796,8 +1813,8 @@ colConstraintDef =
     check = keyword_ "check" >> ColCheckConstraint <$> parens scalarExpr
     references = keyword_ "references" >>
         (\t c m (ou,od) -> ColReferencesConstraint t c m ou od)
-        <$> names
-        <*> optional (parens name)
+        <$> names "table name"
+        <*> optional (parens $ name "column name")
         <*> refMatch
         <*> refActions
 
@@ -1849,54 +1866,56 @@ sequenceGeneratorOptions =
 alterTable :: Parser Statement
 alterTable = keyword_ "table" >>
     -- the choices have been ordered so that it works
-    AlterTable <$> names <*> choice [addConstraint
-                                    ,dropConstraint
-                                    ,addColumnDef
-                                    ,alterColumn
-                                    ,dropColumn
-                                    ]
+    AlterTable <$> names "table name"
+    <*> choice [addConstraint
+               ,dropConstraint
+               ,addColumnDef
+               ,alterColumn
+               ,dropColumn
+               ]
   where
     addColumnDef = try (keyword_ "add"
                         *> optional (keyword_ "column")) >>
                    AddColumnDef <$> columnDef
     alterColumn = keyword_ "alter" >> optional (keyword_ "column") >>
-                  name <**> choice [setDefault
-                                   ,dropDefault
-                                   ,setNotNull
-                                   ,dropNotNull
-                                   ,setDataType]
+                  name "column name"
+                  <**> choice [setDefault
+                              ,dropDefault
+                              ,setNotNull
+                              ,dropNotNull
+                              ,setDataType]
     setDefault :: Parser (Name -> AlterTableAction)
     -- todo: left factor
     setDefault = try (keywords_ ["set","default"]) >>
-                 scalarExpr <$$> AlterColumnSetDefault
+                 scalarExpr <**> pure (flip AlterColumnSetDefault)
     dropDefault = AlterColumnDropDefault <$ try (keywords_ ["drop","default"])
     setNotNull = AlterColumnSetNotNull <$ try (keywords_ ["set","not","null"])
     dropNotNull = AlterColumnDropNotNull <$ try (keywords_ ["drop","not","null"])
     setDataType = try (keywords_ ["set","data","type"]) >>
-                  typeName <$$> AlterColumnSetDataType
+                  typeName <**> pure (flip AlterColumnSetDataType)
     dropColumn = try (keyword_ "drop" *> optional (keyword_ "column")) >>
-                 DropColumn <$> name <*> dropBehaviour
+                 DropColumn <$> name "column name" <*> dropBehaviour
     -- todo: left factor, this try is especially bad
     addConstraint = try (keyword_ "add" >>
         uncurry AddTableConstraintDef <$> tableConstraintDef)
     dropConstraint = try (keywords_ ["drop","constraint"]) >>
-        DropTableConstraintDef <$> names <*> dropBehaviour
+        DropTableConstraintDef <$> names "constraint name" <*> dropBehaviour
 
 
 dropSchema :: Parser Statement
 dropSchema = keyword_ "schema" >>
-    DropSchema <$> names <*> dropBehaviour
+    DropSchema <$> names "schema name" <*> dropBehaviour
 
 dropTable :: Parser Statement
 dropTable = keyword_ "table" >>
-    DropTable <$> names <*> dropBehaviour
+    DropTable <$> names "table name" <*> dropBehaviour
 
 createView :: Parser Statement
 createView =
     CreateView
     <$> (hoption False (True <$ keyword_ "recursive") <* keyword_ "view")
-    <*> names
-    <*> optional (parens (commaSep1 name))
+    <*> names "view name"
+    <*> optional (parens (commaSep1 $ name "column name"))
     <*> (keyword_ "as" *> queryExpr)
     <*> hoptional (choice [
             -- todo: left factor
@@ -1907,64 +1926,64 @@ createView =
 
 dropView :: Parser Statement
 dropView = keyword_ "view" >>
-    DropView <$> names <*> dropBehaviour
+    DropView <$> names "view name" <*> dropBehaviour
 
 createDomain :: Parser Statement
 createDomain = keyword_ "domain" >>
     CreateDomain
-    <$> names
+    <$> names "domain name"
     <*> ((optional (keyword_ "as") *> typeName) <?> "alias")
     <*> optional (keyword_ "default" *> scalarExpr)
     <*> many con
   where
-    con = (,) <$> optional (keyword_ "constraint" *> names)
+    con = (,) <$> optional (keyword_ "constraint" *> names "constraint name")
           <*> (keyword_ "check" *> parens scalarExpr)
 
 alterDomain :: Parser Statement
 alterDomain = keyword_ "domain" >>
     AlterDomain
-    <$> names
+    <$> names "domain name"
     <*> (setDefault <|> constraint
          <|> (keyword_ "drop" *> (dropDefault <|> dropConstraint)))
   where
     setDefault = keywords_ ["set", "default"] >> ADSetDefault <$> scalarExpr
     constraint = keyword_ "add" >>
        ADAddConstraint
-       <$> optional (keyword_ "constraint" *> names)
+       <$> optional (keyword_ "constraint" *> names "constraint name")
        <*> (keyword_ "check" *> parens scalarExpr)
     dropDefault = ADDropDefault <$ keyword_ "default"
-    dropConstraint = keyword_ "constraint" >> ADDropConstraint <$> names
+    dropConstraint = keyword_ "constraint" >> ADDropConstraint <$> names "constraint name"
 
 dropDomain :: Parser Statement
 dropDomain = keyword_ "domain" >>
-    DropDomain <$> names <*> dropBehaviour
+    DropDomain <$> names "domain name" <*> dropBehaviour
 
 createSequence :: Parser Statement
 createSequence = keyword_ "sequence" >>
     CreateSequence
-    <$> names
+    <$> names "sequence name"
     <*> sequenceGeneratorOptions
 
 alterSequence :: Parser Statement
 alterSequence = keyword_ "sequence" >>
     AlterSequence
-    <$> names
+    <$> names "sequence name"
     <*> sequenceGeneratorOptions
 
 dropSequence :: Parser Statement
 dropSequence = keyword_ "sequence" >>
-    DropSequence <$> names <*> dropBehaviour
+    DropSequence <$> names "sequence name" <*> dropBehaviour
 
 createAssertion :: Parser Statement
 createAssertion = keyword_ "assertion" >>
     CreateAssertion
-    <$> names
+    <$> names "assertion name"
     <*> (keyword_ "check" *> parens scalarExpr)
 
 
 dropAssertion :: Parser Statement
 dropAssertion = keyword_ "assertion" >>
-    DropAssertion <$> names <*> dropBehaviour
+    DropAssertion <$> names "assertion name" <*> dropBehaviour
 
 {-
 -----------------
@@ -1975,40 +1994,42 @@ dropAssertion = keyword_ "assertion" >>
 delete :: Parser Statement
 delete = keywords_ ["delete","from"] >>
     Delete
-    <$> names
-    <*> optional (optional (keyword_ "as") *> name)
+    <$> names "table name"
+    <*> optional (hoptional (keyword_ "as") *> name "alias")
     <*> optional (keyword_ "where" *> scalarExpr)
 
-truncateSt :: Parser Statement
+truncateSt :: Parser Statement 
 truncateSt = keywords_ ["truncate", "table"] >>
     Truncate
-    <$> names
-    <*> option DefaultIdentityRestart
+    <$> names "table name"
+    <*> hoption DefaultIdentityRestart
         (ContinueIdentity <$ keywords_ ["continue","identity"]
          <|> RestartIdentity <$ keywords_ ["restart","identity"])
 
 insert :: Parser Statement
 insert = keywords_ ["insert", "into"] >>
     Insert
-    <$> names
-    <*> label "parens column names" (optional (parens $ commaSep1 name))
-    <*> (DefaultInsertValues <$ keywords_ ["default", "values"]
+    <$> names "table name"
+    <*> (hoptional (parens $ commaSep1 $ name "column name"))
+    <*> 
+        -- slight hack
+        (DefaultInsertValues <$ label "values" (keywords_ ["default", "values"])
          <|> InsertQuery <$> queryExpr)
 
 update :: Parser Statement
 update = keywords_ ["update"] >>
     Update
-    <$> names
-    <*> label "alias" (optional (optional (keyword_ "as") *> name))
+    <$> names "table name"
+    <*> label "alias" (optional (optional (keyword_ "as") *> name "alias"))
     <*> (keyword_ "set" *> commaSep1 setClause)
     <*> optional (keyword_ "where" *> scalarExpr)
   where
-    setClause = multipleSet <|> singleSet
+    setClause = label "set clause" (multipleSet <|> singleSet)
     multipleSet = SetMultiple
-                  <$> parens (commaSep1 names)
+                  <$> parens (commaSep1 $ names "column name")
                   <*> (symbol "=" *> parens (commaSep1 scalarExpr))
     singleSet = Set
-                <$> names
+                <$> names "column name"
                 <*> (symbol "=" *> scalarExpr)
 
 dropBehaviour :: Parser DropBehaviour
@@ -2028,18 +2049,18 @@ startTransaction = StartTransaction <$ keywords_ ["start","transaction"]
 
 savepoint :: Parser Statement
 savepoint = keyword_ "savepoint" >>
-    Savepoint <$> name
+    Savepoint <$> name "savepoint name"
 
 releaseSavepoint :: Parser Statement
 releaseSavepoint = keywords_ ["release","savepoint"] >>
-    ReleaseSavepoint <$> name
+    ReleaseSavepoint <$> name "savepoint name"
 
 commit :: Parser Statement
 commit = Commit <$ keyword_ "commit" <* hoptional (keyword_ "work")
 
 rollback :: Parser Statement
 rollback = keyword_ "rollback" >> hoptional (keyword_ "work") >>
-    Rollback <$> optional (keywords_ ["to", "savepoint"] *> name)
+    Rollback <$> optional (keywords_ ["to", "savepoint"] *> name "savepoint name")
 
 
 {-
@@ -2056,22 +2077,22 @@ grant = keyword_ "grant" >> (try priv <|> role)
     priv = GrantPrivilege
            <$> commaSep privilegeAction
            <*> (keyword_ "on" *> privilegeObject)
-           <*> (keyword_ "to" *> commaSep name)
+           <*> (keyword_ "to" *> commaSep (name "role name"))
            <*> option WithoutGrantOption
                (WithGrantOption <$ keywords_ ["with","grant","option"])
     role = GrantRole
-           <$> commaSep name
-           <*> (keyword_ "to" *> commaSep name)
+           <$> commaSep (name "role name")
+           <*> (keyword_ "to" *> commaSep (name "role name"))
            <*> option WithoutAdminOption
                (WithAdminOption <$ keywords_ ["with","admin","option"])
 
 createRole :: Parser Statement
 createRole = keyword_ "role" >>
-    CreateRole <$> name
+    CreateRole <$> name "role name"
 
 dropRole :: Parser Statement
 dropRole = keyword_ "role" >>
-    DropRole <$> name
+    DropRole <$> name "role name"
 
 -- TODO: fix try at the 'on'
 
@@ -2083,39 +2104,39 @@ revoke = keyword_ "revoke" >> (try priv <|> role)
                (GrantOptionFor <$ keywords_ ["grant","option","for"])
            <*> commaSep privilegeAction
            <*> (keyword_ "on" *> privilegeObject)
-           <*> (keyword_ "from" *> commaSep name)
+           <*> (keyword_ "from" *> commaSep (name "role name"))
            <*> dropBehaviour
     role = RevokeRole
            <$> option NoAdminOptionFor
                (AdminOptionFor <$ keywords_ ["admin","option", "for"])
-           <*> commaSep name
-           <*> (keyword_ "from" *> commaSep name)
+           <*> commaSep (name "role name")
+           <*> (keyword_ "from" *> commaSep (name "role name"))
            <*> dropBehaviour
 
 privilegeAction :: Parser PrivilegeAction
 privilegeAction = choice
     [PrivAll <$ keywords_ ["all","privileges"]
     ,keyword_ "select" >>
-     PrivSelect <$> option [] (parens $ commaSep name)
+     PrivSelect <$> option [] (parens $ commaSep $ name "column name")
     ,PrivDelete <$ keyword_ "delete"
     ,PrivUsage <$ keyword_ "usage"
     ,PrivTrigger <$ keyword_ "trigger"
     ,PrivExecute <$ keyword_ "execute"
     ,keyword_ "insert" >>
-     PrivInsert <$> option [] (parens $ commaSep name)
+     PrivInsert <$> option [] (parens $ commaSep $ name "column name")
     ,keyword_ "update" >>
-     PrivUpdate <$> option [] (parens $ commaSep name)
+     PrivUpdate <$> option [] (parens $ commaSep $ name "column name")
     ,keyword_ "references" >>
-     PrivReferences <$> option [] (parens $ commaSep name)
+     PrivReferences <$> option [] (parens $ commaSep $ name "column name")
     ]
 
 privilegeObject :: Parser PrivilegeObject
 privilegeObject = choice
-    [keyword_ "domain" >> PrivDomain <$> names
-    ,keyword_ "type" >> PrivType <$> names
-    ,keyword_ "sequence" >> PrivSequence <$> names
-    ,keywords_ ["specific","function"] >> PrivFunction <$> names
-    ,optional (keyword_ "table") >> PrivTable <$> names
+    [keyword_ "domain" >> PrivDomain <$> names "domain name"
+    ,keyword_ "type" >> PrivType <$> names "type name"
+    ,keyword_ "sequence" >> PrivSequence <$> names "sequence name"
+    ,keywords_ ["specific","function"] >> PrivFunction <$> names "function name"
+    ,optional (keyword_ "table") >> PrivTable <$> names "table name"
     ]
 
 
@@ -2178,27 +2199,15 @@ makeKeywordTree sets =
 
 -- parser helpers
 
-(<$$>) :: Parser b -> (a -> b -> c) -> Parser (a -> c)
-(<$$>) pa c = pa <**> pure (flip c)
-
-(<$$$>) :: Parser c -> (a -> b -> c -> t) -> Parser (b -> a -> t)
-p <$$$> c = p <**> pure (flip3 c)
-
-(<$$$$>) :: Parser d -> (a -> b -> c -> d -> t) -> Parser (c -> b -> a -> t)
-p <$$$$> c = p <**> pure (flip4 c)
-
-(<$$$$$>) :: Parser e -> (a -> b -> c -> d -> e -> t) -> Parser (d -> c -> b -> a -> t)
-p <$$$$$> c = p <**> pure (flip5 c)
-
-hoptionSuffix :: (a -> Parser a) -> a -> Parser a
-hoptionSuffix p a = hoption a (p a)
-
 {-
 parses an optional postfix element and applies its result to its left
 hand result, taken from uu-parsinglib
 
 TODO: make sure the precedence higher than <|> and lower than the
 other operators so it can be used nicely
+
+TODO: this name is not so good because it's similar to <?> which does
+something completely different
 -}
 
 (<??>) :: Parser a -> Parser (a -> a) -> Parser a
@@ -2206,8 +2215,8 @@ p <??> q = p <**> hoption id q
 
 -- 0 to many repeated applications of suffix parser
 
-(<??*>) :: Parser a -> Parser (a -> a) -> Parser a
-p <??*> q = foldr ($) <$> p <*> (reverse <$> many (hidden q))
+chainrSuffix :: Parser a -> Parser (a -> a) -> Parser a
+chainrSuffix p q = foldr ($) <$> p <*> (reverse <$> many (hidden q))
 
 {-
 These are to help with left factored parsers:
@@ -2327,6 +2336,8 @@ This is to support SQL strings where you can write
 and it will parse as a single string
 
 It is only allowed when all the strings are quoted with ' atm.
+
+TODO: move this to the lexer?
 -}
 
 stringTokExtend :: Parser (Text,Text,Text)
@@ -2423,6 +2434,17 @@ keywordTok allowed = do
     test (L.WithPos _ _ _ (L.Identifier Nothing p))
         | T.toLower p `elem` allowed = Just p
     test _ = Nothing
+
+
+unexpectedKeywordError :: Text -> Parser a
+unexpectedKeywordError kw =
+    failure (Just $ Label (NE.fromList $ T.unpack $ "keyword " <> kw)) Set.empty
+
+failOnKeyword :: Parser a
+failOnKeyword = do
+    kws <- asks diKeywords
+    i <- lookAhead $ keywordTok kws
+    unexpectedKeywordError i
 
 ------------------------------------------------------------------------------
 
