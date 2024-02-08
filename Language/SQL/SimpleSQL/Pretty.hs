@@ -87,6 +87,7 @@ scalarExpr _ (IntervalLit s v f t) =
     <+> me (\x -> pretty "to" <+> intervalTypeField x) t
 scalarExpr _ (Iden i) = names i
 scalarExpr _ Star = pretty "*"
+scalarExpr _ (QStar nms) = names nms <> pretty ".*"
 scalarExpr _ Parameter = pretty "?"
 scalarExpr _ (PositionalArg n) = pretty $ T.cons '$' $ showText n
 scalarExpr _ (HostParameter p i) =

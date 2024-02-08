@@ -105,8 +105,10 @@ data ScalarExpr
 
       -- | identifier with parts separated by dots
     | Iden [Name]
-      -- | star, as in select *, t.*, count(*)
+      -- | star, as in select *, count(*)
     | Star
+      -- | qualified star, as in a.*, b.c.*
+    | QStar [Name]
 
     | Parameter -- ^ Represents a ? in a parameterized query
     | PositionalArg Int -- ^ Represents an e.g. $1 in a parameterized query

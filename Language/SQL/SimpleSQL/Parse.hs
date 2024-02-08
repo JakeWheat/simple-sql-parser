@@ -604,12 +604,19 @@ simpleLiteral = numberLit <|> stringLit
 === star
 
 used in select *, select x.*, and agg(*) variations, and some other
-places as well. The parser doesn't attempt to check that the star is
-in a valid context, it parses it OK in any scalar expression context.
+places as well. The parser makes an attempt to not parse star in
+most contexts, to provide better experience when the user makes a mistake
+in an expression containing * meaning multiple. It will parse a *
+at the top level of a select item, or in arg in a app argument list.
 -}
 
 star :: Parser ScalarExpr
-star = Star <$ symbol "*"
+star =
+    hidden $ choice
+    [Star <$ symbol "*"
+    -- much easier to use try here than to left factor where
+    -- this is allowed and not allowed
+    ,try (QStar <$> (names <* symbol "." <* symbol "*"))]
 
 {-
 == parameter
@@ -957,12 +964,12 @@ app :: Parser ([Name] -> ScalarExpr)
 app =
     hidden openParen *> choice
     [hidden duplicates
-     <**> (commaSep1 scalarExpr
+     <**> (commaSep1 scalarExprOrStar
            <**> ((hoption [] orderBy <* closeParen)
                  <**> (hoptional afilter <$$$$$> AggregateApp)))
      -- separate cases with no all or distinct which must have at
      -- least one scalar expr
-    ,commaSep1 scalarExpr
+    ,commaSep1 scalarExprOrStar
      <**> choice
           [closeParen *> hidden (choice
                          [window
@@ -1310,13 +1317,19 @@ documenting/fixing.
 scalarExpr :: Parser ScalarExpr
 scalarExpr = label "expression" $ E.makeExprParser term (opTable False)
 
+-- used when parsing contexts where a * or x.* is allowed
+-- currently at the top level of a select item or top level of
+-- argument passed to an app-like. This list may need to be extended.
+
+scalarExprOrStar :: Parser ScalarExpr
+scalarExprOrStar = label "expression" (star <|> scalarExpr)
+
 term :: Parser ScalarExpr
 term = label "expression" $
     choice
     [simpleLiteral
     ,parameter
     ,positionalArg
-    ,star
     ,parensExpr
     ,caseExpr
     ,cast
@@ -1383,8 +1396,12 @@ duplicates =
 -}
 
 selectItem :: Parser (ScalarExpr,Maybe Name)
-selectItem = label "select item" ((,) <$> scalarExpr <*> optional als)
-  where als = label "alias" $ optional (keyword_ "as") *> name
+selectItem =
+    label "select item" $ choice
+    [(,Nothing) <$> star
+    ,(,) <$> scalarExpr <*> optional als]
+  where
+    als = label "alias" $ optional (keyword_ "as") *> name
 
 selectList :: Parser [(ScalarExpr,Maybe Name)]
 selectList = commaSep1 selectItem

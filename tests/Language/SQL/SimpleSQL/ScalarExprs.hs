@@ -68,9 +68,8 @@ identifiers = Group "identifiers"
 
 star :: TestItem
 star = Group "star"
-    [t "*" Star
-    --,("t.*", Star2 "t")
-    --,("ROW(t.*,42)", App "ROW" [Star2 "t", NumLit "42"])
+    [t "count(*)" $ App [Name Nothing "count"] [Star]
+    ,t "ROW(t.*,42)" $ App [Name Nothing "ROW"] [QStar [Name Nothing "t"], NumLit "42"]
     ]
 
 parameter :: TestItem
@@ -81,10 +80,8 @@ parameter = Group "parameter"
 dots :: TestItem
 dots = Group "dot"
     [t "t.a" $ Iden [Name Nothing "t",Name Nothing "a"]
-    ,t "t.*" $ BinOp (Iden [Name Nothing "t"]) [Name Nothing "."] Star
     ,t "a.b.c" $ Iden [Name Nothing "a",Name Nothing "b",Name Nothing "c"]
-    ,t "ROW(t.*,42)"
-        $ App [Name Nothing "ROW"] [BinOp (Iden [Name Nothing "t"]) [Name Nothing "."] Star, NumLit "42"]
+    ,t "ROW(t.*,42)" $ App [Name Nothing "ROW"] [QStar [Name Nothing "t"], NumLit "42"]
     ]
 
 app :: TestItem

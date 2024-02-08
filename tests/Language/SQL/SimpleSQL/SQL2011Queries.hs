@@ -3283,8 +3283,9 @@ querySpecification = Group "query specification"
     ,("select distinct a from t",toQueryExpr $ ms {msSetQuantifier = Distinct})
     ,("select * from t", toQueryExpr $ ms {msSelectList = [(Star,Nothing)]})
     ,("select a.* from t"
-     ,toQueryExpr $ ms {msSelectList = [(BinOp (Iden [Name Nothing "a"]) [Name Nothing "."] Star
-                           ,Nothing)]})
+     ,toQueryExpr $ ms {msSelectList =
+                        [(QStar [Name Nothing "a"]
+                         ,Nothing)]})
     ,("select a b from t"
      ,toQueryExpr $ ms {msSelectList = [(Iden [Name Nothing "a"], Just $ Name Nothing "b")]})
     ,("select a as b from t"

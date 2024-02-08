@@ -3878,105 +3878,97 @@ expecting expression or query expr
 scalarExpr
 ansi2011
 a >*
-BinOp (Iden [ Name Nothing "a" ]) [ Name Nothing ">" ] Star
+
+1:4:
+  |
+1 | a >*
+  |    ^
+unexpected *
+expecting expression
+
 
 queryExpr
 ansi2011
 select a >*
 
-Select
-  { qeSetQuantifier = SQDefault
-  , qeSelectList =
-      [ ( BinOp (Iden [ Name Nothing "a" ]) [ Name Nothing ">" ] Star
-        , Nothing
-        )
-      ]
-  , qeFrom = []
-  , qeWhere = Nothing
-  , qeGroupBy = []
-  , qeHaving = Nothing
-  , qeOrderBy = []
-  , qeOffset = Nothing
-  , qeFetchFirst = Nothing
-  }
+1:11:
+  |
+1 | select a >*
+  |           ^
+unexpected *
+expecting expression
+
 
 queryExpr
 ansi2011
 select a >*,
 
-1:13:
+1:11:
   |
 1 | select a >*,
-  |             ^
-unexpected end of input
-expecting select item
+  |           ^
+unexpected *
+expecting expression
 
 
 queryExpr
 ansi2011
 select a >* from
 
-1:17:
+1:11:
   |
 1 | select a >* from
-  |                 ^
-unexpected end of input
-expecting table ref
+  |           ^
+unexpected *
+expecting expression
 
 
 scalarExpr
 ansi2011
 a >* b
 
-1:6:
+1:4:
   |
 1 | a >* b
-  |      ^
-unexpected b
+  |    ^
+unexpected *
+expecting expression
 
 
 queryExpr
 ansi2011
 select a >* b
 
-Select
-  { qeSetQuantifier = SQDefault
-  , qeSelectList =
-      [ ( BinOp (Iden [ Name Nothing "a" ]) [ Name Nothing ">" ] Star
-        , Just (Name Nothing "b")
-        )
-      ]
-  , qeFrom = []
-  , qeWhere = Nothing
-  , qeGroupBy = []
-  , qeHaving = Nothing
-  , qeOrderBy = []
-  , qeOffset = Nothing
-  , qeFetchFirst = Nothing
-  }
+1:11:
+  |
+1 | select a >* b
+  |           ^
+unexpected *
+expecting expression
+
 
 queryExpr
 ansi2011
 select a >* b,
 
-1:15:
+1:11:
   |
 1 | select a >* b,
-  |               ^
-unexpected end of input
-expecting select item
+  |           ^
+unexpected *
+expecting expression
 
 
 queryExpr
 ansi2011
 select a >* b from
 
-1:19:
+1:11:
   |
 1 | select a >* b from
-  |                   ^
-unexpected end of input
-expecting table ref
+  |           ^
+unexpected *
+expecting expression
 
 
 scalarExpr
@@ -5147,94 +5139,61 @@ queryExpr
 ansi2011
 select * as a
 
-Select
-  { qeSetQuantifier = SQDefault
-  , qeSelectList = [ ( Star , Just (Name Nothing "a") ) ]
-  , qeFrom = []
-  , qeWhere = Nothing
-  , qeGroupBy = []
-  , qeHaving = Nothing
-  , qeOrderBy = []
-  , qeOffset = Nothing
-  , qeFetchFirst = Nothing
-  }
+1:10:
+  |
+1 | select * as a
+  |          ^^
+unexpected as
+expecting from
+
 
 queryExpr
 ansi2011
 select t.* as a
 
-Select
-  { qeSetQuantifier = SQDefault
-  , qeSelectList =
-      [ ( BinOp (Iden [ Name Nothing "t" ]) [ Name Nothing "." ] Star
-        , Just (Name Nothing "a")
-        )
-      ]
-  , qeFrom = []
-  , qeWhere = Nothing
-  , qeGroupBy = []
-  , qeHaving = Nothing
-  , qeOrderBy = []
-  , qeOffset = Nothing
-  , qeFetchFirst = Nothing
-  }
+1:12:
+  |
+1 | select t.* as a
+  |            ^^
+unexpected as
+expecting from
+
 
 queryExpr
 ansi2011
 select 3 + *
 
-Select
-  { qeSetQuantifier = SQDefault
-  , qeSelectList =
-      [ ( BinOp (NumLit "3") [ Name Nothing "+" ] Star , Nothing ) ]
-  , qeFrom = []
-  , qeWhere = Nothing
-  , qeGroupBy = []
-  , qeHaving = Nothing
-  , qeOrderBy = []
-  , qeOffset = Nothing
-  , qeFetchFirst = Nothing
-  }
+1:12:
+  |
+1 | select 3 + *
+  |            ^
+unexpected *
+expecting expression
+
 
 queryExpr
 ansi2011
 select case when * then 1 end
 
-Select
-  { qeSetQuantifier = SQDefault
-  , qeSelectList =
-      [ ( Case
-            { caseTest = Nothing
-            , caseWhens = [ ( [ Star ] , NumLit "1" ) ]
-            , caseElse = Nothing
-            }
-        , Nothing
-        )
-      ]
-  , qeFrom = []
-  , qeWhere = Nothing
-  , qeGroupBy = []
-  , qeHaving = Nothing
-  , qeOrderBy = []
-  , qeOffset = Nothing
-  , qeFetchFirst = Nothing
-  }
+1:18:
+  |
+1 | select case when * then 1 end
+  |                  ^
+unexpected *
+expecting expression
+
 
 queryExpr
 ansi2011
 select (*)
 
-Select
-  { qeSetQuantifier = SQDefault
-  , qeSelectList = [ ( Parens Star , Nothing ) ]
-  , qeFrom = []
-  , qeWhere = Nothing
-  , qeGroupBy = []
-  , qeHaving = Nothing
-  , qeOrderBy = []
-  , qeOffset = Nothing
-  , qeFetchFirst = Nothing
-  }
+1:9:
+  |
+1 | select (*)
+  |         ^
+unexpected *
+expecting expression or query expr
+
 
 queryExpr
 ansi2011

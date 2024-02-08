@@ -73,7 +73,22 @@ selectLists = Group "selectLists"
       [(BinOp (Iden [Name Nothing "a"]) [Name Nothing "+"]
         (BinOp (Iden [Name Nothing "b"]) [Name Nothing "*"] (Iden [Name Nothing "c"]))
        ,Nothing)]}
+    ,q "select * from t"
+     $ toQueryExpr $ makeSelect {msSelectList = [(Star,Nothing)]
+                                ,msFrom = [TRSimple [Name Nothing "t"]]}
 
+    ,q "select t.* from t"
+     $ toQueryExpr $ makeSelect {msSelectList = [(QStar [Name Nothing "t"],Nothing)]
+                                ,msFrom = [TRSimple [Name Nothing "t"]]}
+
+    ,q "select t.*, a as b, u.* from t"
+     $ toQueryExpr $ makeSelect
+        {msSelectList =
+         [(QStar [Name Nothing "t"],Nothing)
+         ,(Iden [Name Nothing "a"], Just $ Name Nothing "b")
+         ,(QStar [Name Nothing "u"],Nothing)]
+        ,msFrom = [TRSimple [Name Nothing "t"]]}
+    
     ]
 
 whereClause :: TestItem
