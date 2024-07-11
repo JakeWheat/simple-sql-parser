@@ -80,7 +80,7 @@ data Dialect = Dialect
     ,diAtIdentifier :: Bool
      -- | allow identifiers with a leading \# \#example
     ,diHashIdentifier :: Bool
-     -- | allow positional identifiers like this: $1 
+     -- | allow positional identifiers like this: $1
     ,diPositionalArg :: Bool
      -- | allow postgres style dollar strings
     ,diDollarString :: Bool
@@ -96,6 +96,8 @@ data Dialect = Dialect
     ,diAutoincrement :: Bool
      -- | allow omitting the comma between constraint clauses
     ,diNonCommaSeparatedConstraints :: Bool
+     -- | allow marking tables as "without rowid"
+    ,diWithoutRowidTables :: Bool
     }
                deriving (Eq,Show,Read,Data,Typeable)
 
@@ -117,9 +119,10 @@ ansi2011 = Dialect {diKeywords = ansi2011ReservedKeywords
                    ,diEString = False
                    ,diPostgresSymbols = False
                    ,diSqlServerSymbols = False
-                   ,diConvertFunction = False                     
+                   ,diConvertFunction = False
                    ,diAutoincrement = False
                    ,diNonCommaSeparatedConstraints = False
+                   ,diWithoutRowidTables = False
                    }
 
 -- | mysql dialect

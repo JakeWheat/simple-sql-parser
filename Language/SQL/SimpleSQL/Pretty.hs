@@ -491,9 +491,10 @@ statement :: Dialect -> Statement -> Doc a
 statement _ (CreateSchema nm) =
     pretty "create" <+> pretty "schema" <+> names nm
 
-statement d (CreateTable nm cds) =
+statement d (CreateTable nm cds withoutRowid) =
     pretty "create" <+> pretty "table" <+> names nm
     <+> parens (commaSep $ map cd cds)
+    <+> (if withoutRowid then texts [ "without", "rowid" ] else mempty)
   where
     cd (TableConstraintDef n con) =
         maybe mempty (\s -> pretty "constraint" <+> names s) n
@@ -723,7 +724,7 @@ columnDef d (ColumnDef n t mdef cons) =
     pcon ColNotNullConstraint = texts ["not","null"]
     pcon ColNullableConstraint = texts ["null"]
     pcon ColUniqueConstraint = pretty "unique"
-    pcon (ColPrimaryKeyConstraint autoincrement) = 
+    pcon (ColPrimaryKeyConstraint autoincrement) =
       texts $ ["primary","key"] <> ["autoincrement"|autoincrement]
     --pcon ColPrimaryKeyConstraint = texts ["primary","key"]
     pcon (ColCheckConstraint v) = pretty "check" <+> parens (scalarExpr d v)
