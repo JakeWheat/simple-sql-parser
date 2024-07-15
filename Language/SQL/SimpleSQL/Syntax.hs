@@ -443,7 +443,7 @@ data Statement =
     -- ddl
     CreateSchema [Name]
   | DropSchema [Name] DropBehaviour
-  | CreateTable [Name] [TableElement]
+  | CreateTable [Name] [TableElement] Bool
   | AlterTable [Name] AlterTableAction
   | DropTable [Name] DropBehaviour
   | CreateIndex Bool [Name] [Name] [Name]

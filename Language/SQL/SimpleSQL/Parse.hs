@@ -198,7 +198,7 @@ import Text.Megaparsec
     ,hidden
     ,failure
     ,ErrorItem(..)
-    
+
     ,(<|>)
     ,token
     ,choice
@@ -233,11 +233,11 @@ import Control.Applicative ((<**>))
 import Data.Char (isDigit)
 import Data.List (sort,groupBy)
 import Data.Function (on)
-import Data.Maybe (catMaybes, isJust, mapMaybe)
+import Data.Maybe (catMaybes, isJust, mapMaybe, fromMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
 
-import Language.SQL.SimpleSQL.Syntax 
+import Language.SQL.SimpleSQL.Syntax
 import Language.SQL.SimpleSQL.Dialect
 import qualified Language.SQL.SimpleSQL.Lex as L
 --import Text.Megaparsec.Debug (dbg)
@@ -332,7 +332,7 @@ wrapParse :: Parser a
           -> Either ParseError a
 wrapParse parser d f p src = do
     lx <- either (Left . LexError) Right $ L.lexSQLWithPositions d True f p src
-    either (Left . ParseError) Right $ 
+    either (Left . ParseError) Right $
         runReader (runParserT (parser <* (hidden eof)) (T.unpack f)
                    $ L.SQLStream (T.unpack src) $ filter notSpace lx) d
   where
@@ -584,7 +584,7 @@ typeName' hideArg =
     reservedTypeNames = do
         stn <- askDialect diSpecialTypeNames
         (:[]) . Name Nothing . T.unwords <$> makeKeywordTree stn
-        
+
 
 {-
 = Scalar expressions
@@ -1589,7 +1589,7 @@ queryExpr :: Parser QueryExpr
 queryExpr = label "query expr" $ E.makeExprParser qeterm qeOpTable
   where
     qeterm = label "query expr" (with <|> select <|> table <|> values)
-    
+
     select = keyword_ "select" >>
         mkSelect
         <$> hoption SQDefault duplicates
@@ -1615,7 +1615,7 @@ queryExpr = label "query expr" $ E.makeExprParser qeterm qeOpTable
     cq o d c q0 q1 = QueryExprSetOp q0 o d c q1
     corr = hoption Respectively (Corresponding <$ keyword_ "corresponding")
 
-    
+
 {-
 local data type to help with parsing the bit after the select list,
 called 'table expression' in the ansi sql grammar. Maybe this should
@@ -1707,21 +1707,25 @@ createSchema = keyword_ "schema" >>
     CreateSchema <$> names "schema name"
 
 createTable :: Parser Statement
-createTable = do 
+createTable = do
   d <- askDialect id
-  let 
-    parseColumnDef = TableColumnDef <$> columnDef 
+  let
+    parseColumnDef = TableColumnDef <$> columnDef
     parseConstraintDef = uncurry TableConstraintDef <$> tableConstraintDef
     separator = if diNonCommaSeparatedConstraints d
       then optional comma
       else Just <$> comma
     constraints = sepBy parseConstraintDef (hidden separator)
     entries = ((:) <$> parseColumnDef <*> ((comma >> entries) <|> pure [])) <|> constraints
+    withoutRowid = if diWithoutRowidTables d
+      then fromMaybe False <$> optional (keywords_ ["without", "rowid"] >> pure True)
+      else pure False
 
   keyword_ "table" >>
     CreateTable
     <$> names  "table name"
     <*> parens entries
+    <*> withoutRowid
 
 createIndex :: Parser Statement
 createIndex =
@@ -1804,9 +1808,9 @@ colConstraintDef =
     notNull = ColNotNullConstraint <$ keywords_ ["not", "null"]
     unique = ColUniqueConstraint <$ keyword_ "unique"
     primaryKey = do
-      keywords_ ["primary", "key"] 
+      keywords_ ["primary", "key"]
       d <- askDialect id
-      autoincrement <- if diAutoincrement d 
+      autoincrement <- if diAutoincrement d
         then optional (keyword_ "autoincrement")
         else pure Nothing
       pure $ ColPrimaryKeyConstraint $ isJust autoincrement
@@ -1998,7 +2002,7 @@ delete = keywords_ ["delete","from"] >>
     <*> optional (hoptional (keyword_ "as") *> name "alias")
     <*> optional (keyword_ "where" *> scalarExpr)
 
-truncateSt :: Parser Statement 
+truncateSt :: Parser Statement
 truncateSt = keywords_ ["truncate", "table"] >>
     Truncate
     <$> names "table name"
@@ -2011,7 +2015,7 @@ insert = keywords_ ["insert", "into"] >>
     Insert
     <$> names "table name"
     <*> (hoptional (parens $ commaSep1 $ name "column name"))
-    <*> 
+    <*>
         -- slight hack
         (DefaultInsertValues <$ label "values" (keywords_ ["default", "values"])
          <|> InsertQuery <$> queryExpr)
