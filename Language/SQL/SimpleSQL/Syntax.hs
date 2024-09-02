@@ -554,7 +554,6 @@ data TableElement =
     deriving (Eq,Show,Read,Data,Typeable)
 
 data ColumnDef = ColumnDef Name (Maybe TypeName)
-       (Maybe DefaultClause)
        [ColConstraintDef]
        -- (Maybe CollateClause)
     deriving (Eq,Show,Read,Data,Typeable)
@@ -576,6 +575,7 @@ data ColConstraint =
        ReferentialAction
        ReferentialAction
   | ColCheckConstraint ScalarExpr
+  | ColDefaultClause DefaultClause
     deriving (Eq,Show,Read,Data,Typeable)
 
 data TableConstraint =

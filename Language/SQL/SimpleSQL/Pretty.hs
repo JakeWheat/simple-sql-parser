@@ -697,25 +697,9 @@ dropBehav DefaultDropBehaviour = mempty
 dropBehav Cascade = pretty "cascade"
 dropBehav Restrict = pretty "restrict"
 
-
 columnDef :: Dialect -> ColumnDef -> Doc a
-columnDef d (ColumnDef n t mdef cons) =
+columnDef d (ColumnDef n t cons) =
       name n <+> maybe mempty typeName t
-      <+> case mdef of
-             Nothing -> mempty
-             Just (DefaultClause def) ->
-                 pretty "default" <+> scalarExpr d def
-             Just (GenerationClause e) ->
-                 texts ["generated","always","as"] <+> parens (scalarExpr d e)
-             Just (IdentityColumnSpec w o) ->
-                 pretty "generated"
-                 <+> (case w of
-                         GeneratedAlways -> pretty "always"
-                         GeneratedByDefault -> pretty "by" <+> pretty "default")
-                 <+> pretty "as" <+> pretty "identity"
-                 <+> (case o of
-                         [] -> mempty
-                         os -> parens (sep $ map sequenceGeneratorOption os))
       <+> sep (map cdef cons)
   where
     cdef (ColConstraintDef cnm con) =
@@ -735,6 +719,20 @@ columnDef d (ColumnDef n t mdef cons) =
         <+> refMatch m
         <+> refAct "update" u
         <+> refAct "delete" del
+    pcon (ColDefaultClause clause) = case clause of
+        DefaultClause def ->
+            pretty "default" <+> scalarExpr d def
+        GenerationClause e ->
+            texts ["generated","always","as"] <+> parens (scalarExpr d e)
+        IdentityColumnSpec w o ->
+            pretty "generated"
+            <+> (case w of
+                    GeneratedAlways -> pretty "always"
+                    GeneratedByDefault -> pretty "by" <+> pretty "default")
+            <+> pretty "as" <+> pretty "identity"
+            <+> (case o of
+                    [] -> mempty
+                    os -> parens (sep $ map sequenceGeneratorOption os))
 
 sequenceGeneratorOption :: SequenceGeneratorOption -> Doc a
 sequenceGeneratorOption (SGODataType t) =

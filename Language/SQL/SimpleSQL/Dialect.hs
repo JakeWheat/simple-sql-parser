@@ -100,6 +100,8 @@ data Dialect = Dialect
     ,diWithoutRowidTables :: Bool
      -- | allow omitting types for columns
     ,diOptionalColumnTypes :: Bool
+     -- | allow mixing in DEFAULT clauses with other constraints
+    ,diDefaultClausesAsConstraints :: Bool
     }
                deriving (Eq,Show,Read,Data,Typeable)
 
@@ -126,6 +128,7 @@ ansi2011 = Dialect {diKeywords = ansi2011ReservedKeywords
                    ,diNonCommaSeparatedConstraints = False
                    ,diWithoutRowidTables = False
                    ,diOptionalColumnTypes = False
+                   ,diDefaultClausesAsConstraints = False
                    }
 
 -- | mysql dialect
