@@ -1738,22 +1738,7 @@ createIndex =
 
 columnDef :: Parser ColumnDef
 columnDef = ColumnDef <$> name "column name" <*> typeName
-            <*> optional defaultClause
             <*> option [] (some colConstraintDef)
-  where
-    defaultClause = label "column default clause" $ choice [
-        keyword_ "default" >>
-        DefaultClause <$> scalarExpr
-        -- todo: left factor
-       ,try (keywords_ ["generated","always","as"] >>
-             GenerationClause <$> parens scalarExpr)
-       ,keyword_ "generated" >>
-        IdentityColumnSpec
-        <$> (GeneratedAlways <$ keyword_ "always"
-             <|> GeneratedByDefault <$ keywords_ ["by", "default"])
-        <*> (keywords_ ["as", "identity"] *>
-             option [] (parens sequenceGeneratorOptions))
-       ]
 
 tableConstraintDef :: Parser (Maybe [Name], TableConstraint)
 tableConstraintDef =
@@ -1802,7 +1787,14 @@ colConstraintDef :: Parser ColConstraintDef
 colConstraintDef =
     ColConstraintDef
     <$> optional (keyword_ "constraint" *> names "constraint name")
-    <*> (nullable <|> notNull <|> unique <|> primaryKey <|> check <|> references)
+    <*> (nullable
+          <|> notNull
+          <|> unique
+          <|> primaryKey
+          <|> check
+          <|> references
+          <|> defaultClause
+        )
   where
     nullable = ColNullableConstraint <$ keyword "null"
     notNull = ColNotNullConstraint <$ keywords_ ["not", "null"]
@@ -1821,6 +1813,20 @@ colConstraintDef =
         <*> optional (parens $ name "column name")
         <*> refMatch
         <*> refActions
+    defaultClause = label "column default clause" $
+        ColDefaultClause <$> choice
+          [keyword_ "default"
+             >> DefaultClause <$> scalarExpr
+          -- todo: left factor
+          ,try (keywords_ ["generated","always","as"] >>
+             GenerationClause <$> parens scalarExpr)
+          ,keyword_ "generated" >>
+            IdentityColumnSpec
+            <$> (GeneratedAlways <$ keyword_ "always"
+                <|> GeneratedByDefault <$ keywords_ ["by", "default"])
+            <*> (keywords_ ["as", "identity"] *>
+                option [] (parens sequenceGeneratorOptions))
+          ]
 
 -- slightly hacky parser for signed integers
 
