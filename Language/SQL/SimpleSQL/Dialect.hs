@@ -98,6 +98,8 @@ data Dialect = Dialect
     ,diNonCommaSeparatedConstraints :: Bool
      -- | allow marking tables as "without rowid"
     ,diWithoutRowidTables :: Bool
+     -- | allow omitting types for columns
+    ,diOptionalColumnTypes :: Bool
     }
                deriving (Eq,Show,Read,Data,Typeable)
 
@@ -123,6 +125,7 @@ ansi2011 = Dialect {diKeywords = ansi2011ReservedKeywords
                    ,diAutoincrement = False
                    ,diNonCommaSeparatedConstraints = False
                    ,diWithoutRowidTables = False
+                   ,diOptionalColumnTypes = False
                    }
 
 -- | mysql dialect

@@ -553,7 +553,7 @@ data TableElement =
   | TableConstraintDef (Maybe [Name]) TableConstraint
     deriving (Eq,Show,Read,Data,Typeable)
 
-data ColumnDef = ColumnDef Name TypeName
+data ColumnDef = ColumnDef Name (Maybe TypeName)
        (Maybe DefaultClause)
        [ColConstraintDef]
        -- (Maybe CollateClause)

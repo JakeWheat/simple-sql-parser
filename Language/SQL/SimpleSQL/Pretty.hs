@@ -700,7 +700,7 @@ dropBehav Restrict = pretty "restrict"
 
 columnDef :: Dialect -> ColumnDef -> Doc a
 columnDef d (ColumnDef n t mdef cons) =
-      name n <+> typeName t
+      name n <+> maybe mempty typeName t
       <+> case mdef of
              Nothing -> mempty
              Just (DefaultClause def) ->

@@ -1737,9 +1737,12 @@ createIndex =
     <*> parens (commaSep1 (name "column name"))
 
 columnDef :: Parser ColumnDef
-columnDef = ColumnDef <$> name "column name" <*> typeName
-            <*> optional defaultClause
-            <*> option [] (some colConstraintDef)
+columnDef = do
+  optionalType <- askDialect diOptionalColumnTypes
+  ColumnDef <$> name "column name"
+    <*> (if optionalType then optional typeName else Just <$> typeName)
+    <*> optional defaultClause
+    <*> option [] (some colConstraintDef)
   where
     defaultClause = label "column default clause" $ choice [
         keyword_ "default" >>
