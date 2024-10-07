@@ -651,7 +651,11 @@ scalar expression parens, row ctor and scalar subquery
 
 parensExpr :: Parser ScalarExpr
 parensExpr = parens $ choice
-    [SubQueryExpr SqSq <$> queryExpr
+    -- no parens here used for nested parens expressions
+    -- this could be fixed to be general with some refactoring, but at
+    -- the moment, you can't use additional redundant parens in a
+    -- subqueryexpr
+    [SubQueryExpr SqSq <$> queryExprNoParens
     ,ctor <$> commaSep1 scalarExpr]
   where
     ctor [a] = Parens a
@@ -1443,7 +1447,9 @@ from = label "from" (keyword_ "from" *> commaSep1 tref)
     nonJoinTref =
         label "table ref" $ choice
         [hidden $ parens $ choice
-             [TRQueryExpr <$> queryExpr
+             -- will be tricky to figure out how to support mixes of nested
+             -- query expr parens and table ref parens
+             [TRQueryExpr <$> queryExprNoParens
              ,TRParens <$> tref]
         ,TRLateral <$> (hidden (keyword_ "lateral") *> nonJoinTref)
         ,do
@@ -1586,9 +1592,18 @@ and union, etc..
 -}
 
 queryExpr :: Parser QueryExpr
-queryExpr = label "query expr" $ E.makeExprParser qeterm qeOpTable
+queryExpr = queryExpr' True
+queryExprNoParens :: Parser QueryExpr
+queryExprNoParens = queryExpr' False
+
+queryExpr' :: Bool -> Parser QueryExpr
+queryExpr' allowParens = label "query expr" $ E.makeExprParser qeterm qeOpTable
   where
-    qeterm = label "query expr" (with <|> select <|> table <|> values)
+    qeterm
+        | allowParens =
+              label "query expr" (with <|> select <|> table <|> values <|> qeParens)
+        | otherwise =
+              label "query expr" (with <|> select <|> table <|> values)
 
     select = keyword_ "select" >>
         mkSelect
@@ -1602,6 +1617,7 @@ queryExpr = label "query expr" $ E.makeExprParser qeterm qeOpTable
     values = keyword_ "values"
              >> Values <$> commaSep (parens (commaSep scalarExpr))
     table = keyword_ "table" >> Table <$> names "table name"
+    qeParens = QueryExprParens <$> parens queryExpr
 
     qeOpTable =
         [[E.InfixL $ setOp Intersect "intersect"]

@@ -25,6 +25,7 @@ import Language.SQL.SimpleSQL.GroupBy
 import Language.SQL.SimpleSQL.Postgres
 import Language.SQL.SimpleSQL.QueryExprComponents
 import Language.SQL.SimpleSQL.QueryExprs
+import Language.SQL.SimpleSQL.QueryExprParens
 import Language.SQL.SimpleSQL.TableRefs
 import Language.SQL.SimpleSQL.ScalarExprs
 import Language.SQL.SimpleSQL.Odbc
@@ -59,6 +60,7 @@ testData =
     ,odbcTests
     ,queryExprComponentTests
     ,queryExprsTests
+    ,queryExprParensTests
     ,tableRefTests
     ,groupByTests
     ,fullQueriesTests

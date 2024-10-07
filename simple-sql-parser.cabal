@@ -75,6 +75,7 @@ Test-Suite Tests
                        Language.SQL.SimpleSQL.Oracle,
                        Language.SQL.SimpleSQL.QueryExprComponents,
                        Language.SQL.SimpleSQL.QueryExprs,
+                       Language.SQL.SimpleSQL.QueryExprParens,
                        Language.SQL.SimpleSQL.SQL2011Queries,
                        Language.SQL.SimpleSQL.SQL2011AccessControl,
                        Language.SQL.SimpleSQL.SQL2011Bits,
