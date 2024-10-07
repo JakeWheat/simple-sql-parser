@@ -25,8 +25,8 @@ oracleLobUnits = Group "oracleLobUnits"
       "create table t (a varchar2(55 BYTE));"
      $ CreateTable [Name Nothing "t"]
        [TableColumnDef $ ColumnDef (Name Nothing "a")
-        (PrecLengthTypeName [Name Nothing "varchar2"] 55 Nothing (Just PrecOctets))
-        Nothing []]
+        (Just (PrecLengthTypeName [Name Nothing "varchar2"] 55 Nothing (Just PrecOctets)))
+        []]
        False
     ]
 
