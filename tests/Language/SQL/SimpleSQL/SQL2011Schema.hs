@@ -107,8 +107,8 @@ add schema element support:
 
     ,s "create table t (a int, b int);"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing []
-       ,TableColumnDef $ ColumnDef (Name Nothing "b") (TypeName [Name Nothing "int"]) Nothing []]
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"])) []
+       ,TableColumnDef $ ColumnDef (Name Nothing "b") (Just (TypeName [Name Nothing "int"])) []]
        False
 
 
@@ -327,35 +327,35 @@ todo: constraint characteristics
     ,s
       "create table t (a int not null);"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"]))
         [ColConstraintDef Nothing ColNotNullConstraint]]
        False
 
     ,s
       "create table t (a int constraint a_not_null not null);"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"]))
         [ColConstraintDef (Just [Name Nothing "a_not_null"]) ColNotNullConstraint]]
        False
 
     ,s
       "create table t (a int unique);"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"]))
         [ColConstraintDef Nothing ColUniqueConstraint]]
        False
 
     ,s
       "create table t (a int primary key);"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"]))
         [ColConstraintDef Nothing (ColPrimaryKeyConstraint False)]]
        False
 
     ,testStatement ansi2011{ diAutoincrement = True }
       "create table t (a int primary key autoincrement);"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"]))
         [ColConstraintDef Nothing (ColPrimaryKeyConstraint True)]]
        False
 
@@ -369,7 +369,7 @@ references t(a,b)
     ,s
       "create table t (a int references u);"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"]))
         [ColConstraintDef Nothing $ ColReferencesConstraint
          [Name Nothing "u"] Nothing DefaultReferenceMatch
          DefaultReferentialAction DefaultReferentialAction]]
@@ -378,7 +378,7 @@ references t(a,b)
     ,s
       "create table t (a int references u(a));"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"]))
         [ColConstraintDef Nothing $ ColReferencesConstraint
          [Name Nothing "u"] (Just $ Name Nothing "a") DefaultReferenceMatch
          DefaultReferentialAction DefaultReferentialAction]]
@@ -387,7 +387,7 @@ references t(a,b)
     ,s
       "create table t (a int references u match full);"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"]))
         [ColConstraintDef Nothing $ ColReferencesConstraint
          [Name Nothing "u"] Nothing MatchFull
          DefaultReferentialAction DefaultReferentialAction]]
@@ -396,7 +396,7 @@ references t(a,b)
     ,s
       "create table t (a int references u match partial);"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"]))
         [ColConstraintDef Nothing $ ColReferencesConstraint
          [Name Nothing "u"] Nothing MatchPartial
          DefaultReferentialAction DefaultReferentialAction]]
@@ -405,7 +405,7 @@ references t(a,b)
     ,s
       "create table t (a int references u match simple);"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"]))
         [ColConstraintDef Nothing $ ColReferencesConstraint
          [Name Nothing "u"] Nothing MatchSimple
          DefaultReferentialAction DefaultReferentialAction]]
@@ -414,7 +414,7 @@ references t(a,b)
     ,s
       "create table t (a int references u on update cascade );"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"]))
         [ColConstraintDef Nothing $ ColReferencesConstraint
          [Name Nothing "u"] Nothing DefaultReferenceMatch
          RefCascade DefaultReferentialAction]]
@@ -423,7 +423,7 @@ references t(a,b)
     ,s
       "create table t (a int references u on update set null );"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"]))
         [ColConstraintDef Nothing $ ColReferencesConstraint
          [Name Nothing "u"] Nothing DefaultReferenceMatch
          RefSetNull DefaultReferentialAction]]
@@ -432,7 +432,7 @@ references t(a,b)
     ,s
       "create table t (a int references u on update set default );"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"]))
         [ColConstraintDef Nothing $ ColReferencesConstraint
          [Name Nothing "u"] Nothing DefaultReferenceMatch
          RefSetDefault DefaultReferentialAction]]
@@ -441,7 +441,7 @@ references t(a,b)
     ,s
       "create table t (a int references u on update no action );"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"]))
         [ColConstraintDef Nothing $ ColReferencesConstraint
          [Name Nothing "u"] Nothing DefaultReferenceMatch
          RefNoAction DefaultReferentialAction]]
@@ -450,7 +450,7 @@ references t(a,b)
     ,s
       "create table t (a int references u on delete cascade );"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"]))
         [ColConstraintDef Nothing $ ColReferencesConstraint
          [Name Nothing "u"] Nothing DefaultReferenceMatch
          DefaultReferentialAction RefCascade]]
@@ -460,7 +460,7 @@ references t(a,b)
     ,s
       "create table t (a int references u on update cascade on delete restrict );"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"]))
         [ColConstraintDef Nothing $ ColReferencesConstraint
          [Name Nothing "u"] Nothing DefaultReferenceMatch
          RefCascade RefRestrict]]
@@ -469,7 +469,7 @@ references t(a,b)
     ,s
       "create table t (a int references u on delete restrict on update cascade );"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"]))
         [ColConstraintDef Nothing $ ColReferencesConstraint
          [Name Nothing "u"] Nothing DefaultReferenceMatch
          RefCascade RefRestrict]]
@@ -484,7 +484,7 @@ options
     ,s
       "create table t (a int check (a>5));"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"]))
         [ColConstraintDef Nothing
          (ColCheckConstraint $ BinOp (Iden [Name Nothing "a"]) [Name Nothing ">"] (NumLit "5"))]]
        False
@@ -501,14 +501,18 @@ options
 
     ,s "create table t (a int generated always as identity);"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"])
-        (Just $ IdentityColumnSpec GeneratedAlways []) []]
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"]))
+        [ColConstraintDef Nothing
+         $ ColDefaultClause
+         $ IdentityColumnSpec GeneratedAlways []]]
        False
 
     ,s "create table t (a int generated by default as identity);"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"])
-        (Just $ IdentityColumnSpec GeneratedByDefault []) []]
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"]))
+        [ColConstraintDef Nothing
+         $ ColDefaultClause
+         $ IdentityColumnSpec GeneratedByDefault []]]
        False
 
 
@@ -516,25 +520,29 @@ options
       "create table t (a int generated always as identity\n\
       \  ( start with 5 increment by 5 maxvalue 500 minvalue 5 cycle ));"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"])
-        (Just $ IdentityColumnSpec GeneratedAlways
-         [SGOStartWith 5
-         ,SGOIncrementBy 5
-         ,SGOMaxValue 500
-         ,SGOMinValue 5
-         ,SGOCycle]) []]
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"]))
+        [ColConstraintDef Nothing
+         $ ColDefaultClause
+         $ IdentityColumnSpec GeneratedAlways
+          [SGOStartWith 5
+          ,SGOIncrementBy 5
+          ,SGOMaxValue 500
+          ,SGOMinValue 5
+          ,SGOCycle]]]
        False
 
     ,s
       "create table t (a int generated always as identity\n\
       \  ( start with -4 no maxvalue no minvalue no cycle ));"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"])
-        (Just $ IdentityColumnSpec GeneratedAlways
-         [SGOStartWith (-4)
-         ,SGONoMaxValue
-         ,SGONoMinValue
-         ,SGONoCycle]) []]
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"]))
+        [ColConstraintDef Nothing
+         $ ColDefaultClause
+         $ IdentityColumnSpec GeneratedAlways
+          [SGOStartWith (-4)
+          ,SGONoMaxValue
+          ,SGONoMinValue
+          ,SGONoCycle]]]
        False
 
 {-
@@ -560,10 +568,11 @@ generated always (valueexpr)
       "create table t (a int, \n\
       \                a2 int generated always as (a * 2));"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing []
-       ,TableColumnDef $ ColumnDef (Name Nothing "a2") (TypeName [Name Nothing "int"])
-        (Just $ GenerationClause
-         (BinOp (Iden [Name Nothing "a"]) [Name Nothing "*"] (NumLit "2"))) []]
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"])) []
+       ,TableColumnDef $ ColumnDef (Name Nothing "a2") (Just (TypeName [Name Nothing "int"]))
+        [ColConstraintDef Nothing
+         $ ColDefaultClause
+         $ GenerationClause (BinOp (Iden [Name Nothing "a"]) [Name Nothing "*"] (NumLit "2"))]]
        False
 
 
@@ -591,8 +600,10 @@ generated always (valueexpr)
 
     ,s "create table t (a int default 0);"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"])
-        (Just $ DefaultClause $ NumLit "0") []]
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"]))
+        [ColConstraintDef Nothing
+         $ ColDefaultClause
+         $ DefaultClause $ NumLit "0"]]
        False
 
 
@@ -627,7 +638,7 @@ generated always (valueexpr)
     ,s
       "create table t (a int, unique (a));"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing []
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"])) []
        ,TableConstraintDef Nothing $ TableUniqueConstraint [Name Nothing "a"]
         ]
        False
@@ -635,7 +646,7 @@ generated always (valueexpr)
     ,s
       "create table t (a int, constraint a_unique unique (a));"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing []
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"])) []
        ,TableConstraintDef (Just [Name Nothing "a_unique"]) $
             TableUniqueConstraint [Name Nothing "a"]
         ]
@@ -646,8 +657,8 @@ generated always (valueexpr)
     ,s
       "create table t (a int, b int, unique (a,b));"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing []
-       ,TableColumnDef $ ColumnDef (Name Nothing "b") (TypeName [Name Nothing "int"]) Nothing []
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"])) []
+       ,TableColumnDef $ ColumnDef (Name Nothing "b") (Just (TypeName [Name Nothing "int"])) []
        ,TableConstraintDef Nothing $
             TableUniqueConstraint [Name Nothing "a", Name Nothing "b"]
         ]
@@ -656,8 +667,8 @@ generated always (valueexpr)
     ,s
       "create table t (a int, b int, primary key (a,b));"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing []
-       ,TableColumnDef $ ColumnDef (Name Nothing "b") (TypeName [Name Nothing "int"]) Nothing []
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"])) []
+       ,TableColumnDef $ ColumnDef (Name Nothing "b") (Just (TypeName [Name Nothing "int"])) []
        ,TableConstraintDef Nothing $
             TablePrimaryKeyConstraint [Name Nothing "a", Name Nothing "b"]
         ]
@@ -684,8 +695,8 @@ defintely skip
       "create table t (a int, b int,\n\
       \                foreign key (a,b) references u(c,d) match full on update cascade on delete restrict );"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing []
-       ,TableColumnDef $ ColumnDef (Name Nothing "b") (TypeName [Name Nothing "int"]) Nothing []
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"])) []
+       ,TableColumnDef $ ColumnDef (Name Nothing "b") (Just (TypeName [Name Nothing "int"])) []
        ,TableConstraintDef Nothing $
             TableReferencesConstraint
                 [Name Nothing "a", Name Nothing "b"]
@@ -699,7 +710,7 @@ defintely skip
       "create table t (a int,\n\
       \                constraint tfku1 foreign key (a) references u);"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing []
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"])) []
        ,TableConstraintDef (Just [Name Nothing "tfku1"]) $
             TableReferencesConstraint
                 [Name Nothing "a"]
@@ -714,8 +725,8 @@ defintely skip
       \                foreign key (a) references u(c)\n\
       \                foreign key (b) references v(d));"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing []
-       ,TableColumnDef $ ColumnDef (Name Nothing "b") (TypeName [Name Nothing "int"]) Nothing []
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"])) []
+       ,TableColumnDef $ ColumnDef (Name Nothing "b") (Just (TypeName [Name Nothing "int"])) []
        ,TableConstraintDef Nothing $
             TableReferencesConstraint
                 [Name Nothing "a"]
@@ -735,8 +746,35 @@ defintely skip
     ,testStatement ansi2011{ diWithoutRowidTables = True }
       "create table t (a int) without rowid;"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing []]
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"])) []]
        True
+    ,testStatement ansi2011{ diOptionalColumnTypes = True }
+      "create table t (a,b);"
+     $ CreateTable [Name Nothing "t"]
+       [TableColumnDef $ ColumnDef (Name Nothing "a") Nothing []
+       ,TableColumnDef $ ColumnDef (Name Nothing "b") Nothing []
+       ]
+       False
+    ,testStatement ansi2011{ diDefaultClausesAsConstraints = True }
+      "create table t (a int default 1 default 2);"
+     $ CreateTable [Name Nothing "t"]
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"]))
+        [ColConstraintDef Nothing
+         $ ColDefaultClause
+         $ DefaultClause $ NumLit "1"
+        ,ColConstraintDef Nothing
+         $ ColDefaultClause
+         $ DefaultClause $ NumLit "2"]]
+       False
+    ,testStatement ansi2011{ diDefaultClausesAsConstraints = True }
+      "create table t (a int not null default 2);"
+     $ CreateTable [Name Nothing "t"]
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"]))
+        [ColConstraintDef Nothing ColNotNullConstraint
+        ,ColConstraintDef Nothing
+         $ ColDefaultClause
+         $ DefaultClause $ NumLit "2"]]
+       False
 
 
 {-
@@ -798,8 +836,8 @@ defintely skip
       "create table t (a int, b int, \n\
       \                check (a > b));"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing []
-       ,TableColumnDef $ ColumnDef (Name Nothing "b") (TypeName [Name Nothing "int"]) Nothing []
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"])) []
+       ,TableColumnDef $ ColumnDef (Name Nothing "b") (Just (TypeName [Name Nothing "int"])) []
        ,TableConstraintDef Nothing $
             TableCheckConstraint
             (BinOp (Iden [Name Nothing "a"]) [Name Nothing ">"] (Iden [Name Nothing "b"]))
@@ -811,8 +849,8 @@ defintely skip
       "create table t (a int, b int, \n\
       \                constraint agtb check (a > b));"
      $ CreateTable [Name Nothing "t"]
-       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing []
-       ,TableColumnDef $ ColumnDef (Name Nothing "b") (TypeName [Name Nothing "int"]) Nothing []
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"])) []
+       ,TableColumnDef $ ColumnDef (Name Nothing "b") (Just (TypeName [Name Nothing "int"])) []
        ,TableConstraintDef (Just [Name Nothing "agtb"]) $
             TableCheckConstraint
             (BinOp (Iden [Name Nothing "a"]) [Name Nothing ">"] (Iden [Name Nothing "b"]))
@@ -854,7 +892,7 @@ alter table t add a int unique not null check (a>0)
     ,s
       "alter table t add column a int"
      $ AlterTable [Name Nothing "t"] $ AddColumnDef
-       $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing []
+       $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"])) []
 
 {-
 todo: more add column
