@@ -3,6 +3,11 @@
           parse errors
         switch tests to hspec
         improve parse error messages
+	* and x.* change to only parse in limited expression contexts
+	support sqlite 'without rowid'
+	make types in columndefs optional
+	allow column constraints and defaults to be in arbitrary order
+	partially support parentheses at query expression level (some nested parens don't parse yet)
 0.7.1   fix error message source quoting
 0.7.0   support autoincrement for sqlite
 	support table constraints without separating comma for sqlite
