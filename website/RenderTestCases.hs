@@ -41,7 +41,8 @@ doc _ (LexTest d str _ _) =
 doc _ (LexFails d str _) =
     [Row (L.fromStrict str) (showResultL $ L.lexSQL d False "" Nothing str)]
 doc _ (GeneralParseFailTest {}) = []
-
+-- todo: find some way to render error message examples in a readable way
+doc _ (GoldenErrorTest {}) = []
 
 showResult :: Show a => Either P.ParseError a -> L.Text
 showResult = either (("Left\n" <>) . L.fromStrict . P.prettyError) (L.pack . ppShow)

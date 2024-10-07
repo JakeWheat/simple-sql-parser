@@ -43,7 +43,7 @@ ghcup install stack [latest from the list on stackage.org]
 stack test 
 ~~~~
 
-Run the tests on the previous 2 ghcs latest point releases, and the latest ghc, each with the latest cabal-install they support (e.g. as of the start of 2024, these three ghc versions are 9.8.1, 9.6.4, 9.4.8). This is now trivial to do with ghcup, amazing progress in Haskell tools in recent years.
+Run the tests on the previous 2 ghcs latest point releases, and the latest ghc, each with the latest cabal-install they support (e.g. as of October 2024, these three ghc versions are 9.10.1, 9.8.2, 9.6.6). This is now trivial to do with ghcup, amazing progress in Haskell tools in recent years.
 
 Build the release tarball, run a test with an example using this tarball:
 

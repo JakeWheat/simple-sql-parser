@@ -18,6 +18,8 @@ executable RenderTestCases
                        pretty-show,
                        hspec-expectations,
                        raw-strings-qq,
+                       hspec-golden,
+                       filepath,
   default-language:    Haskell2010
   ghc-options:         -Wall -O0
 
@@ -38,6 +40,7 @@ executable RenderTestCases
         Language.SQL.SimpleSQL.Pretty
         Language.SQL.SimpleSQL.QueryExprComponents
         Language.SQL.SimpleSQL.QueryExprs
+        Language.SQL.SimpleSQL.QueryExprParens
         Language.SQL.SimpleSQL.SQL2011AccessControl
         Language.SQL.SimpleSQL.SQL2011Bits
         Language.SQL.SimpleSQL.SQL2011DataManipulation

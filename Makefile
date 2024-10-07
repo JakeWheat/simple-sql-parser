@@ -32,7 +32,7 @@ parserexe :
 	cabal build -fparserexe SimpleSQLParserTool
 
 .PHONY : all
-all : build test parserexe website
+all : build test parserexe
 
 ###############################################
 
