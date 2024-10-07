@@ -5668,7 +5668,7 @@ statement
 ansi2011
 create table t (
 )
-CreateTable [ Name Nothing "t" ] []
+CreateTable [ Name Nothing "t" ] [] False
 
 statement
 ansi2011

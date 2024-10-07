@@ -27,5 +27,6 @@ oracleLobUnits = Group "oracleLobUnits"
        [TableColumnDef $ ColumnDef (Name Nothing "a")
         (PrecLengthTypeName [Name Nothing "varchar2"] 55 Nothing (Just PrecOctets))
         Nothing []]
+       False
     ]
-    
+

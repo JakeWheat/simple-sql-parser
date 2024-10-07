@@ -406,6 +406,7 @@ queryExpr d (Values vs) =
     pretty "values"
     <+> nest 7 (commaSep (map (parens . commaSep . map (scalarExpr d)) vs))
 queryExpr _ (Table t) = pretty "table" <+> names t
+queryExpr d (QueryExprParens qe) = parens (queryExpr d qe)
 queryExpr d (QEComment cmt v) =
     vsep $ map comment cmt <> [queryExpr d v]
 
@@ -491,9 +492,10 @@ statement :: Dialect -> Statement -> Doc a
 statement _ (CreateSchema nm) =
     pretty "create" <+> pretty "schema" <+> names nm
 
-statement d (CreateTable nm cds) =
+statement d (CreateTable nm cds withoutRowid) =
     pretty "create" <+> pretty "table" <+> names nm
     <+> parens (commaSep $ map cd cds)
+    <+> (if withoutRowid then texts [ "without", "rowid" ] else mempty)
   where
     cd (TableConstraintDef n con) =
         maybe mempty (\s -> pretty "constraint" <+> names s) n
@@ -723,7 +725,7 @@ columnDef d (ColumnDef n t mdef cons) =
     pcon ColNotNullConstraint = texts ["not","null"]
     pcon ColNullableConstraint = texts ["null"]
     pcon ColUniqueConstraint = pretty "unique"
-    pcon (ColPrimaryKeyConstraint autoincrement) = 
+    pcon (ColPrimaryKeyConstraint autoincrement) =
       texts $ ["primary","key"] <> ["autoincrement"|autoincrement]
     --pcon ColPrimaryKeyConstraint = texts ["primary","key"]
     pcon (ColCheckConstraint v) = pretty "check" <+> parens (scalarExpr d v)

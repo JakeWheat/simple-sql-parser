@@ -109,6 +109,7 @@ add schema element support:
      $ CreateTable [Name Nothing "t"]
        [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing []
        ,TableColumnDef $ ColumnDef (Name Nothing "b") (TypeName [Name Nothing "int"]) Nothing []]
+       False
 
 
 {-
@@ -328,30 +329,35 @@ todo: constraint characteristics
      $ CreateTable [Name Nothing "t"]
        [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing
         [ColConstraintDef Nothing ColNotNullConstraint]]
+       False
 
     ,s
       "create table t (a int constraint a_not_null not null);"
      $ CreateTable [Name Nothing "t"]
        [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing
         [ColConstraintDef (Just [Name Nothing "a_not_null"]) ColNotNullConstraint]]
+       False
 
     ,s
       "create table t (a int unique);"
      $ CreateTable [Name Nothing "t"]
        [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing
         [ColConstraintDef Nothing ColUniqueConstraint]]
+       False
 
     ,s
       "create table t (a int primary key);"
      $ CreateTable [Name Nothing "t"]
        [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing
         [ColConstraintDef Nothing (ColPrimaryKeyConstraint False)]]
+       False
 
     ,testStatement ansi2011{ diAutoincrement = True }
       "create table t (a int primary key autoincrement);"
      $ CreateTable [Name Nothing "t"]
        [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing
         [ColConstraintDef Nothing (ColPrimaryKeyConstraint True)]]
+       False
 
 {-
 references t(a,b)
@@ -367,6 +373,7 @@ references t(a,b)
         [ColConstraintDef Nothing $ ColReferencesConstraint
          [Name Nothing "u"] Nothing DefaultReferenceMatch
          DefaultReferentialAction DefaultReferentialAction]]
+       False
 
     ,s
       "create table t (a int references u(a));"
@@ -375,6 +382,7 @@ references t(a,b)
         [ColConstraintDef Nothing $ ColReferencesConstraint
          [Name Nothing "u"] (Just $ Name Nothing "a") DefaultReferenceMatch
          DefaultReferentialAction DefaultReferentialAction]]
+       False
 
     ,s
       "create table t (a int references u match full);"
@@ -383,6 +391,7 @@ references t(a,b)
         [ColConstraintDef Nothing $ ColReferencesConstraint
          [Name Nothing "u"] Nothing MatchFull
          DefaultReferentialAction DefaultReferentialAction]]
+       False
 
     ,s
       "create table t (a int references u match partial);"
@@ -391,6 +400,7 @@ references t(a,b)
         [ColConstraintDef Nothing $ ColReferencesConstraint
          [Name Nothing "u"] Nothing MatchPartial
          DefaultReferentialAction DefaultReferentialAction]]
+       False
 
     ,s
       "create table t (a int references u match simple);"
@@ -399,6 +409,7 @@ references t(a,b)
         [ColConstraintDef Nothing $ ColReferencesConstraint
          [Name Nothing "u"] Nothing MatchSimple
          DefaultReferentialAction DefaultReferentialAction]]
+       False
 
     ,s
       "create table t (a int references u on update cascade );"
@@ -407,6 +418,7 @@ references t(a,b)
         [ColConstraintDef Nothing $ ColReferencesConstraint
          [Name Nothing "u"] Nothing DefaultReferenceMatch
          RefCascade DefaultReferentialAction]]
+       False
 
     ,s
       "create table t (a int references u on update set null );"
@@ -415,6 +427,7 @@ references t(a,b)
         [ColConstraintDef Nothing $ ColReferencesConstraint
          [Name Nothing "u"] Nothing DefaultReferenceMatch
          RefSetNull DefaultReferentialAction]]
+       False
 
     ,s
       "create table t (a int references u on update set default );"
@@ -423,6 +436,7 @@ references t(a,b)
         [ColConstraintDef Nothing $ ColReferencesConstraint
          [Name Nothing "u"] Nothing DefaultReferenceMatch
          RefSetDefault DefaultReferentialAction]]
+       False
 
     ,s
       "create table t (a int references u on update no action );"
@@ -431,6 +445,7 @@ references t(a,b)
         [ColConstraintDef Nothing $ ColReferencesConstraint
          [Name Nothing "u"] Nothing DefaultReferenceMatch
          RefNoAction DefaultReferentialAction]]
+       False
 
     ,s
       "create table t (a int references u on delete cascade );"
@@ -439,6 +454,7 @@ references t(a,b)
         [ColConstraintDef Nothing $ ColReferencesConstraint
          [Name Nothing "u"] Nothing DefaultReferenceMatch
          DefaultReferentialAction RefCascade]]
+       False
 
 
     ,s
@@ -448,6 +464,7 @@ references t(a,b)
         [ColConstraintDef Nothing $ ColReferencesConstraint
          [Name Nothing "u"] Nothing DefaultReferenceMatch
          RefCascade RefRestrict]]
+       False
 
     ,s
       "create table t (a int references u on delete restrict on update cascade );"
@@ -456,6 +473,7 @@ references t(a,b)
         [ColConstraintDef Nothing $ ColReferencesConstraint
          [Name Nothing "u"] Nothing DefaultReferenceMatch
          RefCascade RefRestrict]]
+       False
 
 {-
 TODO: try combinations and permutations of column constraints and
@@ -469,6 +487,7 @@ options
        [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing
         [ColConstraintDef Nothing
          (ColCheckConstraint $ BinOp (Iden [Name Nothing "a"]) [Name Nothing ">"] (NumLit "5"))]]
+       False
 
 
 
@@ -484,11 +503,13 @@ options
      $ CreateTable [Name Nothing "t"]
        [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"])
         (Just $ IdentityColumnSpec GeneratedAlways []) []]
+       False
 
     ,s "create table t (a int generated by default as identity);"
      $ CreateTable [Name Nothing "t"]
        [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"])
         (Just $ IdentityColumnSpec GeneratedByDefault []) []]
+       False
 
 
     ,s
@@ -502,6 +523,7 @@ options
          ,SGOMaxValue 500
          ,SGOMinValue 5
          ,SGOCycle]) []]
+       False
 
     ,s
       "create table t (a int generated always as identity\n\
@@ -513,6 +535,7 @@ options
          ,SGONoMaxValue
          ,SGONoMinValue
          ,SGONoCycle]) []]
+       False
 
 {-
 I think <common sequence generator options> is supposed to just
@@ -541,6 +564,7 @@ generated always (valueexpr)
        ,TableColumnDef $ ColumnDef (Name Nothing "a2") (TypeName [Name Nothing "int"])
         (Just $ GenerationClause
          (BinOp (Iden [Name Nothing "a"]) [Name Nothing "*"] (NumLit "2"))) []]
+       False
 
 
 
@@ -569,6 +593,7 @@ generated always (valueexpr)
      $ CreateTable [Name Nothing "t"]
        [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"])
         (Just $ DefaultClause $ NumLit "0") []]
+       False
 
 
 
@@ -605,6 +630,7 @@ generated always (valueexpr)
        [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing []
        ,TableConstraintDef Nothing $ TableUniqueConstraint [Name Nothing "a"]
         ]
+       False
 
     ,s
       "create table t (a int, constraint a_unique unique (a));"
@@ -613,6 +639,7 @@ generated always (valueexpr)
        ,TableConstraintDef (Just [Name Nothing "a_unique"]) $
             TableUniqueConstraint [Name Nothing "a"]
         ]
+       False
 
 -- todo: test permutations of column defs and table constraints
 
@@ -624,6 +651,7 @@ generated always (valueexpr)
        ,TableConstraintDef Nothing $
             TableUniqueConstraint [Name Nothing "a", Name Nothing "b"]
         ]
+       False
 
     ,s
       "create table t (a int, b int, primary key (a,b));"
@@ -633,6 +661,7 @@ generated always (valueexpr)
        ,TableConstraintDef Nothing $
             TablePrimaryKeyConstraint [Name Nothing "a", Name Nothing "b"]
         ]
+       False
 
 
 {-
@@ -664,6 +693,7 @@ defintely skip
                 (Just [Name Nothing "c", Name Nothing "d"])
                 MatchFull RefCascade RefRestrict
        ]
+       False
 
     ,s
       "create table t (a int,\n\
@@ -677,6 +707,7 @@ defintely skip
                 Nothing DefaultReferenceMatch
                 DefaultReferentialAction DefaultReferentialAction
        ]
+       False
 
     ,testStatement ansi2011{ diNonCommaSeparatedConstraints = True }
       "create table t (a int, b int,\n\
@@ -700,6 +731,12 @@ defintely skip
                 DefaultReferenceMatch
                 DefaultReferentialAction DefaultReferentialAction
        ]
+       False
+    ,testStatement ansi2011{ diWithoutRowidTables = True }
+      "create table t (a int) without rowid;"
+     $ CreateTable [Name Nothing "t"]
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (TypeName [Name Nothing "int"]) Nothing []]
+       True
 
 
 {-
@@ -767,6 +804,7 @@ defintely skip
             TableCheckConstraint
             (BinOp (Iden [Name Nothing "a"]) [Name Nothing ">"] (Iden [Name Nothing "b"]))
        ]
+       False
 
 
     ,s
@@ -779,6 +817,7 @@ defintely skip
             TableCheckConstraint
             (BinOp (Iden [Name Nothing "a"]) [Name Nothing ">"] (Iden [Name Nothing "b"]))
        ]
+       False
 
 
 {-

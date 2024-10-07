@@ -373,6 +373,7 @@ This would make some things a bit cleaner?
       ,qeQueryExpression :: QueryExpr}
     | Values [[ScalarExpr]]
     | Table [Name]
+    | QueryExprParens QueryExpr
     | QEComment [Comment] QueryExpr
       deriving (Eq,Show,Read,Data,Typeable)
 
@@ -443,7 +444,7 @@ data Statement =
     -- ddl
     CreateSchema [Name]
   | DropSchema [Name] DropBehaviour
-  | CreateTable [Name] [TableElement]
+  | CreateTable [Name] [TableElement] Bool
   | AlterTable [Name] AlterTableAction
   | DropTable [Name] DropBehaviour
   | CreateIndex Bool [Name] [Name] [Name]
