@@ -406,6 +406,7 @@ queryExpr d (Values vs) =
     pretty "values"
     <+> nest 7 (commaSep (map (parens . commaSep . map (scalarExpr d)) vs))
 queryExpr _ (Table t) = pretty "table" <+> names t
+queryExpr d (QueryExprParens qe) = parens (queryExpr d qe)
 queryExpr d (QEComment cmt v) =
     vsep $ map comment cmt <> [queryExpr d v]
 

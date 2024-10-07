@@ -373,6 +373,7 @@ This would make some things a bit cleaner?
       ,qeQueryExpression :: QueryExpr}
     | Values [[ScalarExpr]]
     | Table [Name]
+    | QueryExprParens QueryExpr
     | QEComment [Comment] QueryExpr
       deriving (Eq,Show,Read,Data,Typeable)
 
