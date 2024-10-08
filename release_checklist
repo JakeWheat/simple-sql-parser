@@ -120,6 +120,8 @@ Upload candidate to hackage, run a test with example using this package
 
 If all good, release the candidate - a button on the hackage website.
 
+Update the website
+
 add a tag for the commit corresponding to the version:
 
 ~~~~

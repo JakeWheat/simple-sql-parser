@@ -4,7 +4,7 @@
 A parser for SQL in Haskell. Also includes a pretty printer which
 formats SQL.
 
-This is the documentation for version 0.7.0. Documentation for other
+This is the documentation for version 0.8.0. Documentation for other
 versions is available here:
 <http://jakewheat.github.io/simple-sql-parser/>.
 
@@ -12,7 +12,7 @@ Status: usable for parsing a substantial amount of SQL. Adding support
 for new SQL is easy. Expect a little bit of churn on the AST types
 when support for new SQL features is added.
 
-This version is tested with GHC 9.8.1, 9.6.4, and 9.4.8.
+This version is tested with GHC 9.10.1, 9.8.2, 9.6.6.
 
 # Examples
 
