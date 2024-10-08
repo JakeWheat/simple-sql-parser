@@ -1,9 +1,9 @@
-0.8.0   (not yet released)
-        lexer has new option to output an invalid token on some kinds of
+0.8.0   lexer has new option to output an invalid token on some kinds of
           parse errors
         switch tests to hspec
         improve parse error messages
-	* and x.* change to only parse in limited expression contexts
+	* and x.* changed to only parse in some expression contexts -
+  	  select items and function application argument lists
 	support sqlite 'without rowid'
 	make types in columndefs optional
 	allow column constraints and defaults to be in arbitrary order
