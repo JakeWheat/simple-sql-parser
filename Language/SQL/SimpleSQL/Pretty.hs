@@ -681,6 +681,10 @@ statement _ (RevokeRole ao rs trs db) =
     adminOptFor AdminOptionFor = texts ["admin","option","for"]
     adminOptFor NoAdminOptionFor = mempty
 
+statement dialect (Explain explainQueryPlan inner) =
+  pretty "explain"
+  <+> (if explainQueryPlan then pretty "query plan" else mempty)
+  <+> statement dialect inner
 
 statement _ (StatementComment cs) = vsep $ map comment cs
 statement _ EmptyStatement = mempty

@@ -523,9 +523,19 @@ data Statement =
   | SetNames
   | SetTransform
   | SetCollation -}
+  | Explain
+      -- When enabled, this corresponds to the higher level
+      -- "EXPLAIN QUERY PLAN" statement
+      {esExplainQueryPlan :: Bool
+      -- Technically a sqlite "explain" cannot be followed by another explain
+      -- statement, but I think this representation is good enough...
+      ,esStatement :: Statement
+      }
   | StatementComment [Comment]
   | EmptyStatement
     deriving (Eq,Show,Read,Data,Typeable)
+
+
 
 data DropBehaviour =
     Restrict
@@ -719,6 +729,7 @@ data PrivilegeAction =
     | PrivTrigger
     | PrivExecute
     deriving (Eq,Show,Read,Data,Typeable)
+
 
 -- | Comment. Useful when generating SQL code programmatically. The
 -- parser doesn't produce these.

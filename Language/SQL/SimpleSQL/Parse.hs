@@ -1712,6 +1712,7 @@ statementWithoutSemicolon =
     ,rollback
     ,grant
     ,revoke
+    ,explain
     ,SelectStatement <$> queryExpr
     ]
 
@@ -2167,6 +2168,14 @@ privilegeObject = choice
     ,keywords_ ["specific","function"] >> PrivFunction <$> names "function name"
     ,optional (keyword_ "table") >> PrivTable <$> names "table name"
     ]
+
+explain :: Parser Statement
+explain = do
+  keyword_ "explain" >>
+    Explain
+      <$> isJust <$> optional (keywords_ ["query", "plan"])
+      <*> statementWithoutSemicolon
+
 
 
 {-

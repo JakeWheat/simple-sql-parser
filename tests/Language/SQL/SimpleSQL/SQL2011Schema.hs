@@ -775,6 +775,18 @@ defintely skip
          $ ColDefaultClause
          $ DefaultClause $ NumLit "2"]]
        False
+    ,testStatement ansi2011
+      "explain create table t (a int);"
+     $ Explain False
+     $ CreateTable [Name Nothing "t"]
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"])) []]
+       False
+    ,testStatement ansi2011
+      "explain query plan create table t (a int);"
+     $ Explain True
+     $ CreateTable [Name Nothing "t"]
+       [TableColumnDef $ ColumnDef (Name Nothing "a") (Just (TypeName [Name Nothing "int"])) []]
+       False
 
 
 {-
